@@ -42,11 +42,13 @@ Work is planned as two epics:
 
 ## Tech Stack
 
-TBD — settled after recon confirms what the reference is built with. Working assumption: TypeScript, React-based app, pnpm, Vitest, Playwright.
+**Reference (observed 2026-09-12, logged out):** a Next.js App Router app served from a CDN; system sans-serif body text with **Outfit** and **Source Serif** loaded as web fonts (both SIL Open Font License) plus KaTeX; app API under `/v1/api/` on the same origin.
+
+**Ours:** TypeScript everywhere, `strict: true`. Node 26, pnpm 10 workspaces. Recon: Playwright 1.63 + tsx + Vitest. App stack is chosen in EPIC_002 with Next.js App Router as the working assumption, matching the reference.
 
 ## Project Structure
 
-TBD — created by the first stories. Planned top level:
+Present today: `recon/`, `docs/`, the workspace files. The rest is created by the epics that need it.
 
 ```
 app/          the UI
@@ -70,9 +72,19 @@ TBD — enumerated by the recon component inventory of the video generation surf
 
 TBD — defined by the testing-foundation epic. The bar itself (70/20/10 pyramid, stub generation server, no test may depend on the real model) is in [CLAUDE.md → §3](CLAUDE.md#3-how-features-are-built-important).
 
+## Running Recon
+
+```bash
+pnpm install
+pnpm recon:login    # opens a Chromium window; sign in to agent.minimax.io with GitHub yourself
+pnpm recon:check    # prints session: signed-in | signed-out | unknown (exit 0 / 1 / 2)
+```
+
+The session lives in `recon/.profile/` and raw captures in `recon/out/`; both are gitignored. Curated captures land in `docs/recon/<date>/`. See [CLAUDE.md → §4b](CLAUDE.md#4b-recon-with-playwright).
+
 ## Running the UI
 
-TBD. Dev server on port 3000.
+TBD (EPIC_002). Dev server on port 3000.
 
 ## Running the Model
 
