@@ -329,6 +329,13 @@ export function createStubServer(options: StubOptions = {}): StubServer {
     if (method === "GET" && p === "/__stub/jobs") {
       sendJson(res, 200, { jobs: [...jobs.values()].map((job) => ({ id: job.id, script: job.script, ...stateOf(job) })) }); return;
     }
+    if (method === "GET" && (m = /^\/__stub\/fixtures\/(fixture\.mp4|fixture\.webm|fixture-poster\.png|fixture-reference\.png)$/.exec(p)) && m[1] !== undefined) {
+      // Any fixture file directly, so a spec can probe what a browser plays regardless of which one the stub serves.
+      const file = m[1];
+      const mimeType = file.endsWith(".mp4") ? "video/mp4" : file.endsWith(".webm") ? "video/webm" : "image/png";
+      sendBytes(req, res, mimeType, readFileSync(path.join(fixturesDir, file)), true);
+      return;
+    }
     if (method === "GET" && (m = /^\/__stub\/jobs\/([^/]+)\/received$/.exec(p)) && m[1] !== undefined) {
       const job = jobOr404(m[1]);
       sendJson(res, 200, { id: job.id, script: job.script, request: job.request, uploads: job.uploads }); return;

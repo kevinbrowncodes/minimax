@@ -72,7 +72,17 @@ TBD — enumerated by the recon component inventory of the video generation surf
 
 ## Testing
 
-TBD — defined by the testing-foundation epic. The bar itself (70/20/10 pyramid, stub generation server, no test may depend on the real model) is in [CLAUDE.md → §3](CLAUDE.md#3-how-features-are-built-important).
+Three layers, all run inside the gate container against the [stub generation server](tools/stub-generation-server/README.md); no test depends on the model ([CLAUDE.md → §3](CLAUDE.md#3-how-features-are-built-important)).
+
+| Layer | Command | What it is |
+| --- | --- | --- |
+| Unit | `tools/gate/run.sh test` | Vitest (jsdom) for `app/lib/**` and the stub's own logic — pure helpers, the job-status reducer, polling with fake timers, upload validation, the stub's scripts and multipart parser |
+| Integration | `tools/gate/run.sh test:integration` | Vitest (node) calling the app's route handlers directly against a stub started in-process (`app/test/integration/`) |
+| E2E | `tools/gate/run.sh test:e2e` | Playwright 1.63 against the production build (`pnpm build` first) with the stub started by the config; projects `desktop` (Chromium, 1440×900) and `narrow` (`devices["iPhone 13"]`, WebKit); fixtures in `app/e2e/fixtures/` for stub scripts, terminal-status waits, playability and settling |
+
+**Fixture codec (measured 2026-09-12 in the gate image, Chromium 1243 and WebKit 2359 on arm64):** both browsers report `canplay` for `fixture.mp4` (H.264 baseline + AAC) and for `fixture.webm` (VP9 + Opus). The stub therefore serves `fixture.mp4` by default, the same container format the real server produces; `STUB_FIXTURE=webm` switches. The probe is `app/e2e/fixture-codec.spec.ts` and writes its verdict to `app/test-results/codec-probe-<project>.json` on every run.
+
+Coverage floors and the pre-push hook: STORY_011.
 
 ## Running Recon
 

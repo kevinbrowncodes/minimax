@@ -159,6 +159,16 @@ describe("contract: validation, capabilities, health, hooks", () => {
     expect((await api(`/jobs/${id}`)).status).toBe(404);
   });
 
+  it("serves any fixture file through the /__stub/fixtures hook", async () => {
+    for (const [file, type] of [["fixture.mp4", "video/mp4"], ["fixture.webm", "video/webm"], ["fixture-poster.png", "image/png"]] as const) {
+      const res = await api(`/__stub/fixtures/${file}`);
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toBe(type);
+      expect((await res.arrayBuffer()).byteLength).toBe(readFileSync(path.join(DEFAULT_FIXTURES_DIR, file)).length);
+    }
+    expect((await api("/__stub/fixtures/../package.json")).status).toBe(404);
+  });
+
   it("requires the bearer token when the server is configured with a key", async () => {
     const secured = createStubServer({ fixture: "webm", apiKey: "secret" });
     const port = await secured.listen(0);

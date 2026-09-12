@@ -26,5 +26,6 @@ Per job, with `X-Stub-Script: <name>` or `?script=<name>` on `POST /jobs`. Progr
 - `POST /__stub/reset` forgets every job.
 - `GET /__stub/jobs` → `{ jobs: [{ id, script, status, progress }] }` — assert nothing is left running.
 - `GET /__stub/jobs/:id/received` → what the job was sent: `request` and `uploads[] { filename, contentType, size, sha256 }`.
+- `GET /__stub/fixtures/<fixture.mp4|fixture.webm|fixture-poster.png|fixture-reference.png>` → that file, whatever `STUB_FIXTURE` is (for the codec probe).
 
 Hooks never require the bearer token. Fixtures and how they were made: [fixtures/README.md](fixtures/README.md).
