@@ -60,7 +60,8 @@ Everything is defined in the repo under [`spark/comfyui/`](comfyui/) and runs in
 ```
 spark/comfyui/
   Dockerfile                  nvidia/cuda:13.0.2-runtime-ubuntu24.04 + venv + PyTorch 2.11.0+cu130 (aarch64) + ComfyUI at COMFYUI_TAG (v0.35.1)
-  compose.yaml                services: comfyui (GPU, 127.0.0.1:8188), fetch (one-shot, profile "tools")
+  compose.yaml                services: comfyui (GPU, 127.0.0.1:8188), adapter (STORY_006, 127.0.0.1:4020 and http://adapter:4020 on the shared "minimax" network), fetch (one-shot, profile "tools")
+spark/adapter/                the job-API adapter (STORY_006): zero-dependency TypeScript on Node 26, its own Dockerfile, unit + integration tests against a fake ComfyUI
   container/comfyui-entrypoint.sh   python main.py --disable-mmap --disable-async-offload --disable-pinned-memory --cache-none [COMFY_EXTRA_ARGS]
   container/fetch-h3.sh       runs inside the image: disk gate, hf download, size check against the Hub, template copy
   h3.sh                       file names per precision, the 17k+5 frame rule (shared by host and image)
@@ -70,7 +71,8 @@ spark/comfyui/
 
 spark/data/                   gitignored
   models/{diffusion_models,text_encoders,vae}/   the H3 files      (-> /comfy/ComfyUI/models)
-  output/video/               what ComfyUI writes                   (-> /comfy/ComfyUI/output)
+  output/video/               what ComfyUI writes                   (-> /comfy/ComfyUI/output; read-only in the adapter as /comfy/output)
+  adapter/jobs.json           the adapter's job table, survives restarts
   templates/                  the official video_minimax_h3_t2v.json
   logs/                       memwatch-<ts>.log, smoke-<ts>-comfyui.log (the container log for each run)
   smoke/                      smoke-<ts>-<precision>.mp4 and .txt summaries
@@ -79,9 +81,9 @@ spark/data/                   gitignored
 
 | Script | Does | Env overrides |
 | --- | --- | --- |
-| `install.sh` | `docker compose build` of the image (pinned ComfyUI tag, pinned cu130 wheels), then verifies from inside a container that CUDA sees the GB10; writes `spark/data/versions.txt`. Idempotent through docker's layer cache | `COMFYUI_TAG`, `CUDA_IMAGE`, `TORCH_VERSION`, `SPARK_DATA` |
+| `install.sh` | `docker compose build` of the ComfyUI image (pinned ComfyUI tag, pinned cu130 wheels) and the adapter image, creates the shared docker network `minimax`, then verifies from inside a container that CUDA sees the GB10; writes `spark/data/versions.txt`. Idempotent through docker's layer cache | `COMFYUI_TAG`, `CUDA_IMAGE`, `TORCH_VERSION`, `SPARK_DATA` |
 | `fetch-h3.sh` | Runs the `fetch` service: refuses unless ≥ 300 GB is free behind the models mount, downloads from `Comfy-Org/MiniMax-H3` only what FL2VA text-to-video needs at one precision (default `int8_convrot`), the text encoder (default `nvfp4_awq`, the template's default), both VAEs; verifies every size against the Hub; copies the official template | `H3_PRECISION`, `H3_TEXT_ENCODER`, `MIN_FREE_GB`, `HF_TOKEN` |
-| `run.sh` / `stop.sh` | `docker compose up -d comfyui` and wait for `/system_stats`; `compose stop` (30 s grace) after `POST /interrupt`. Logs: `docker logs -t minimax-comfyui` | `COMFY_PORT`, `COMFY_EXTRA_ARGS` |
+| `run.sh` / `stop.sh` | `docker compose up -d comfyui adapter` and wait for both health endpoints; `compose stop adapter comfyui` (ComfyUI gets SIGINT). Logs: `docker logs -t minimax-comfyui`, `docker logs minimax-adapter` | `COMFY_PORT`, `COMFY_EXTRA_ARGS`, `ADAPTER_PORT`, `ADAPTER_API_KEY` |
 | `memwatch.sh` | Samples used unified memory every 2 s from the host's `/proc/meminfo`; prints the peak on exit | `memwatch.sh [log] [interval]` |
 | `smoke.sh` | Submits `h3_t2v_prompt.json` through `POST /prompt` at 1344×768, 5 s, 24 fps with the story's fixed prompt; polls `GET /history/<id>`; saves the MP4 through `GET /view`; runs `memwatch.sh` for the duration; keeps the container log; prints wall time, peak memory, load lines, file size and duration | `H3_PRECISION`, `H3_TEXT_ENCODER`, `WIDTH`, `HEIGHT`, `DURATION`, `SEED`, `STEPS` |
 | `lint.sh` | shellcheck of every script through the `koalaman/shellcheck:stable` image | — |

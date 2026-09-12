@@ -31,13 +31,18 @@ compose() { docker compose --project-directory "$ROOT" -f "$ROOT/compose.yaml" "
 gate() { compose run --rm --no-deps -T gate "$@"; }
 log() { printf '[gate] %s\n' "$*"; }
 has_script() { jq -e --arg s "$1" '.scripts[$s] != null' "$ROOT/package.json" > /dev/null; }
-run_step() {  # run_step <step>
-  if [ -n "${GATE_DRY_RUN:-}" ]; then "$GATE_DRY_RUN" "$1"; return; fi
-  gate pnpm run --silent "$1"
-  if [ "$1" = "build" ]; then
-    log "5/6 build — production image (docker compose build app)"
-    compose build --quiet app
+run_step() {  # run_step <step>; returns the step's status explicitly (an if-statement's status is not a step's status)
+  local rc=0
+  if [ -n "${GATE_DRY_RUN:-}" ]; then
+    "$GATE_DRY_RUN" "$1" || rc=$?
+  else
+    gate pnpm run --silent "$1" || rc=$?
   fi
+  if [ "$rc" -eq 0 ] && [ "$1" = "build" ] && [ -z "${GATE_DRY_RUN:-}" ]; then
+    log "5/6 build — production image (docker compose build app)"
+    compose build --quiet app || rc=$?
+  fi
+  return "$rc"
 }
 rank_coverage() {  # rank_coverage <step>
   local summary
@@ -47,7 +52,8 @@ rank_coverage() {  # rank_coverage <step>
     *) return 0 ;;
   esac
   [ -f "$summary" ] || return 0
-  log "coverage: $(gate node tools/gate/src/coverage-rank.ts "${summary#"$ROOT"/}" 8 2>/dev/null | sed '1d' | sed 's/^/\n[gate]   /' | tr -d '\n' || true)"
+  log "coverage — files with the most uncovered branches:"
+  gate node tools/gate/src/coverage-rank.ts "${summary#"$ROOT"/}" 8 2>/dev/null | sed '1d;s/^/[gate]   /' || true
 }
 
 if [ -z "${GATE_DRY_RUN:-}" ]; then

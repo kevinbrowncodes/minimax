@@ -15,11 +15,14 @@ command -v docker >/dev/null || die "docker is required"
 docker info --format '{{json .Runtimes}}' 2>/dev/null | grep -q nvidia || die "the NVIDIA container runtime is not registered with docker"
 [ "$(uname -m)" = "aarch64" ] || die "the image pins aarch64 wheels; this machine is $(uname -m)"
 
-mkdir -p "$SPARK_DATA"/{models,output,logs,smoke,templates}
+mkdir -p "$SPARK_DATA"/{models,output,logs,smoke,templates,adapter}
+docker network inspect minimax > /dev/null 2>&1 || { docker network create minimax > /dev/null; log "created the shared docker network minimax"; }
 log "data dir $SPARK_DATA (gitignored); image minimax-spark/comfyui:$COMFYUI_TAG; uid:gid $SPARK_UID:$SPARK_GID"
 
 log "building (base ${CUDA_IMAGE:-nvidia/cuda:13.0.2-runtime-ubuntu24.04 pinned by digest}, ComfyUI $COMFYUI_TAG, torch ${TORCH_VERSION:-2.11.0+cu130})"
 compose build comfyui
+log "building the adapter image (spark/adapter/Dockerfile)"
+compose build adapter
 
 log "verifying PyTorch + CUDA inside the image"
 compose run --rm --no-deps -T --entrypoint python comfyui - <<'PY'

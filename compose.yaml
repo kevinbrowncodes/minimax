@@ -57,8 +57,9 @@ services:
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
-      MODEL_BASE_URL: ${MODEL_BASE_URL:-http://stub:4010}   # production sets the adapter URL in .env
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-http://adapter:4020}   # the adapter on the shared network (spark/comfyui/compose.yaml)
       MODEL_API_KEY: ${MODEL_API_KEY:-}
+    networks: [default, minimax]
     restart: unless-stopped
 
   stub:
@@ -76,3 +77,8 @@ services:
 
 volumes:
   pnpm-store: {}
+
+networks:
+  # Shared with the model side (spark/comfyui/compose.yaml); created by spark/comfyui/install.sh or tools/gate/install-network.sh
+  minimax:
+    external: true

@@ -9,10 +9,11 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 log() { printf '[stop] %s\n' "$*"; }
 if container_running; then
   curl -fsS -X POST "$COMFY_URL/interrupt" > /dev/null 2>&1 || true
-  log "stopping $COMFY_CONTAINER"
-  compose stop comfyui
+  log "stopping $COMFY_CONTAINER and the adapter"
+  compose stop adapter comfyui
 else
-  log "not running"
+  log "ComfyUI not running"
+  compose stop adapter 2>/dev/null || true
 fi
 if [ "${1:-}" = "--down" ]; then compose down --remove-orphans; fi
 log "stopped"

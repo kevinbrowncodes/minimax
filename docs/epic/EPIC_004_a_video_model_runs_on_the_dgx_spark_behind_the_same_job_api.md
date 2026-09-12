@@ -1,6 +1,6 @@
 # EPIC_004 — A video model runs on the DGX Spark behind the same job API
 
-**Status:** In progress on the Spark from 2026-09-12. STORY_005 Done. From the evening of 2026-09-12 a single session on the Spark carries every epic (owner's decision); everything is hosted on the Spark in containers and the Mac is only a browser
+**Status:** Done (2026-09-12) — STORY_005 and STORY_006 landed on the Spark; the UI's default endpoint is the adapter. Later items below stay open as improvements, not MVP work
 
 ## Goal
 
@@ -55,9 +55,9 @@ The decision, and the license terms it rests on (read from the model's own repos
 | # | Story | Status |
 | --- | --- | --- |
 | 005 | [One H3 clip renders on the Spark through ComfyUI, and its time and memory are written down](../story/STORY_005_one_h3_clip_renders_on_the_spark_through_comfyui_and_its_time_and_memory_are_written_down.md) | Done (2026-09-12: int8_convrot, 17 min 21 s, 66.8 GiB peak) |
-| 006 | [The Spark answers create, status and result for a video job, so the UI never talks to ComfyUI directly](../story/STORY_006_the_spark_answers_create_status_and_result_for_a_video_job_so_the_ui_never_talks_to_comfyui_directly.md) | Ready (redrafted 2026-09-12 against the contract; adapter as a compose service) |
+| 006 | [The Spark answers create, status and result for a video job, so the UI never talks to ComfyUI directly](../story/STORY_006_the_spark_answers_create_status_and_result_for_a_video_job_so_the_ui_never_talks_to_comfyui_directly.md) | Done (2026-09-12: one real job through the UI route, 17 min 33 s, 63.8 GiB peak) |
 
-Later: a second precision measured against the first on the same prompt; Ref2VA; the UI's env pointed at the Spark with a manual verification note.
+Later: a second precision measured against the first on the same prompt; Ref2VA; coexistence with `spark-primary` (lower its `--gpu-memory-utilization`, or the pruned DiT) so the owner's LLM need not stop for a clip. The UI's env is pointed at the adapter by default (`MODEL_BASE_URL=http://adapter:4020`, verified 2026-09-12: the UI container answered `/api/capabilities` with the adapter's capabilities and relayed a `2K` request as `unsupported_option`).
 
 ## Working on two machines at once
 

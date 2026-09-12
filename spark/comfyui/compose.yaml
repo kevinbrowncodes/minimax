@@ -2,6 +2,7 @@
 #
 #   comfyui   the server, GPU attached, published on 127.0.0.1:8188 only     -> run.sh / stop.sh
 #   fetch     one-shot: downloads the H3 files into the models bind mount     -> fetch-h3.sh
+#   adapter   the job-API adapter in front of ComfyUI (STORY_006), port 4020 on the shared "minimax" network -> run.sh / stop.sh
 #
 # Weights, outputs, logs and templates live in ${SPARK_DATA} (default ../data = spark/data, gitignored).
 # The host-side scripts set SPARK_DATA, SPARK_UID and SPARK_GID before calling compose.
@@ -29,11 +30,32 @@ services:
     volumes:
       - ${SPARK_DATA:-../data}/models:/comfy/ComfyUI/models
       - ${SPARK_DATA:-../data}/output:/comfy/ComfyUI/output
+    networks: [default, minimax]
     environment:
       COMFY_EXTRA_ARGS: ${COMFY_EXTRA_ARGS:-}
     # ComfyUI ignores SIGTERM (measured 2026-09-12: 30 s then SIGKILL, exit 137) but exits in ~2 s on SIGINT ("Stopped server", exit 0).
     stop_signal: SIGINT
     stop_grace_period: 30s
+    restart: "no"
+
+  adapter:
+    build:
+      context: ../..
+      dockerfile: spark/adapter/Dockerfile
+    image: minimax-spark/adapter:${ADAPTER_TAG:-dev}
+    container_name: minimax-adapter
+    depends_on: [comfyui]
+    networks: [default, minimax]
+    ports:
+      - "127.0.0.1:${ADAPTER_PORT:-4020}:4020"
+    volumes:
+      - ${SPARK_DATA:-../data}/output:/comfy/output:ro
+      - ${SPARK_DATA:-../data}/adapter:/comfy/adapter
+    environment:
+      COMFY_URL: http://comfyui:8188
+      ADAPTER_API_KEY: ${ADAPTER_API_KEY:-}
+    user: "${SPARK_UID:-1000}:${SPARK_GID:-1000}"
+    stop_grace_period: 10s
     restart: "no"
 
   fetch:
@@ -48,3 +70,9 @@ services:
     volumes:
       - ${SPARK_DATA:-../data}/models:/comfy/ComfyUI/models
       - ${SPARK_DATA:-../data}/templates:/comfy/templates
+
+networks:
+  # Shared with the UI's compose project (../../compose.yaml) so the app container reaches http://adapter:4020.
+  # Created by install.sh: docker network create minimax
+  minimax:
+    external: true
