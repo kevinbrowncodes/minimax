@@ -47,6 +47,7 @@ services:
     environment:
       <<: *model-env
       HOME: /tmp/gate-home
+      HISTORY_FILE: /tmp/gate-home/history.json
 
   app:
     build:
@@ -59,6 +60,9 @@ services:
     environment:
       MODEL_BASE_URL: ${MODEL_BASE_URL:-http://adapter:4020}   # the adapter on the shared network (spark/comfyui/compose.yaml)
       MODEL_API_KEY: ${MODEL_API_KEY:-}
+      HISTORY_FILE: /data/history.json
+    volumes:
+      - app-data:/data
     networks: [default, minimax]
     restart: unless-stopped
 
@@ -77,6 +81,7 @@ services:
 
 volumes:
   pnpm-store: {}
+  app-data: {}   # the UI's history (STORY_014)
 
 networks:
   # Shared with the model side (spark/comfyui/compose.yaml); created by spark/comfyui/install.sh or tools/gate/install-network.sh

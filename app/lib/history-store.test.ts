@@ -1,0 +1,60 @@
+import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { HistoryStore, titleFor } from "./history-store";
+
+let dir: string;
+afterEach(() => {
+  if (dir) rmSync(dir, { recursive: true, force: true });
+});
+const params = { ratio: "16:9", resolution: "768P", durationSeconds: 5, model: "minimax-h3" };
+function store(): HistoryStore {
+  dir = mkdtempSync(path.join(tmpdir(), "history-"));
+  return new HistoryStore(path.join(dir, "nested", "history.json"));
+}
+
+describe("titleFor", () => {
+  it("cuts at a word boundary within 48 characters and adds an ellipsis", () => {
+    expect(titleFor("A small paper boat")).toBe("A small paper boat");
+    expect(titleFor("  A   small  paper boat  ")).toBe("A small paper boat");
+    const long = "A small paper boat drifting across a rain puddle in soft morning light, gentle ripples";
+    const title = titleFor(long);
+    expect(title.length).toBeLessThanOrEqual(49);
+    expect(title.endsWith("…")).toBe(true);
+    expect(title).toBe("A small paper boat drifting across a rain puddle…");
+    expect(titleFor("")).toBe("Unnamed Session");
+  });
+});
+
+describe("HistoryStore", () => {
+  it("creates, lists newest first, gets, patches, records status and removes, with atomic writes", () => {
+    const s = store();
+    s.create({ id: "a", prompt: "first boat", params, referenceImages: 0, createdAt: "2026-09-12T18:00:00Z" });
+    s.create({ id: "b", prompt: "second boat", params, referenceImages: 1, createdAt: "2026-09-12T19:00:00Z" });
+    expect(s.list().map((e) => e.id)).toEqual(["b", "a"]);
+    expect(s.get("a")).toMatchObject({ title: "first boat", status: "queued", progress: 0 });
+    expect(s.recordStatus("a", { id: "a", status: "running", progress: 40 })).toMatchObject({ status: "running", progress: 40 });
+    expect(s.recordStatus("a", { id: "a", status: "running", progress: 10 })?.progress).toBe(40);
+    const done = s.recordStatus("a", { id: "a", status: "done", progress: 100, result: { url: "/jobs/a/result", posterUrl: "/jobs/a/poster", mimeType: "video/mp4", durationSeconds: 5, width: 1344, height: 768, sizeBytes: 1 } });
+    expect(done?.finishedAt).toBeDefined();
+    expect(done?.result?.url).toBe("/jobs/a/result");
+    const later = s.recordStatus("a", { id: "a", status: "running", progress: 1 });
+    expect(later?.status).toBe("done");
+    expect(s.patch("a", { openedAt: "2026-09-12T20:00:00Z" })?.openedAt).toBe("2026-09-12T20:00:00Z");
+    expect(s.patch("zzz", { progress: 1 })).toBeUndefined();
+    expect(s.recordStatus("zzz", { id: "zzz", status: "done", progress: 100 })).toBeUndefined();
+    expect(s.remove("b")).toBe(true);
+    expect(s.remove("b")).toBe(false);
+    expect(s.list().map((e) => e.id)).toEqual(["a"]);
+    expect(readdirSync(path.dirname(s.file)).filter((f) => f.endsWith(".tmp"))).toEqual([]);
+    expect(existsSync(s.file)).toBe(true);
+  });
+
+  it("starts empty when the file does not exist and survives a new instance", () => {
+    const s = store();
+    expect(s.list()).toEqual([]);
+    s.create({ id: "x", prompt: "boat", params, referenceImages: 0 });
+    expect(new HistoryStore(s.file).get("x")?.title).toBe("boat");
+  });
+});

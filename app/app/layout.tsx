@@ -9,11 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { readonly children: ReactNode }) {
-  // Recents come from the history store in STORY_014; until then the list is empty.
   return (
     <html lang="en">
       <body>
-        <Shell recents={[]}>{children}</Shell>
+        <Shell>{children}</Shell>
       </body>
     </html>
   );

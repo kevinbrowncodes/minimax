@@ -1,11 +1,13 @@
-// Placeholder (STORY_013): Send lands here; STORY_014 turns it into the task page with progress, playback and history.
+import { notFound } from "next/navigation";
+import { TaskPage } from "@/components/task/TaskPage";
+import { historyStore } from "@/lib/history-store";
+
+// The task page (STORY_014): the history entry is read on the server; the client follows the job from there.
 export const dynamic = "force-dynamic";
 
-export default async function TaskPage({ params }: { readonly params: Promise<{ readonly id: string }> }) {
+export default async function Task({ params }: { readonly params: Promise<{ readonly id: string }> }) {
   const { id } = await params;
-  return (
-    <main style={{ padding: "var(--spacing_24) var(--spacing_64)" }}>
-      <p style={{ color: "var(--gray_500)" }}>Job {id} submitted. The task page arrives with STORY_014.</p>
-    </main>
-  );
+  const entry = historyStore().get(id);
+  if (!entry) notFound();
+  return <TaskPage entry={entry} />;
 }

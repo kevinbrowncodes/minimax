@@ -27,6 +27,8 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 WORKDIR /srv
 COPY --from=build --chown=node:node /work/app/.next/standalone ./
 COPY --from=build --chown=node:node /work/app/.next/static ./app/.next/static
+RUN mkdir -p /data && chown node:node /data
+VOLUME /data
 USER node
 EXPOSE 3000
 CMD ["node", "app/server.js"]

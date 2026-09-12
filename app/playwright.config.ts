@@ -1,3 +1,5 @@
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 /**
@@ -43,7 +45,7 @@ export default defineConfig({
       url: appUrl,
       reuseExistingServer: false,
       timeout: 60_000,
-      env: { PORT: String(APP_PORT), HOSTNAME: "127.0.0.1", MODEL_BASE_URL: stubUrl, NEXT_TELEMETRY_DISABLED: "1" },
+      env: { PORT: String(APP_PORT), HOSTNAME: "127.0.0.1", MODEL_BASE_URL: stubUrl, NEXT_TELEMETRY_DISABLED: "1", HISTORY_FILE: path.join(tmpdir(), `minimax-e2e-history-${String(process.pid)}.json`) },
     },
   ],
 });

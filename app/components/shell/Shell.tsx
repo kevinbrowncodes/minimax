@@ -11,16 +11,30 @@ import styles from "./shell.module.css";
 const INERT_TITLE = "Not part of MiniMax Local";
 
 export interface ShellProps {
-  readonly recents: readonly RecentEntry[];
   readonly children: ReactNode;
 }
 
-/** The frame every page sits in: sidebar (a drawer below 900 px), top bar, content. STORY_012. */
-export function Shell({ recents, children }: ShellProps) {
+/** The frame every page sits in: sidebar (a drawer below 900 px), top bar, content. STORY_012; Recents from history (STORY_014). */
+export function Shell({ children }: ShellProps) {
   const pathname = usePathname();
   const narrow = useNarrow();
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [recents, setRecents] = useState<readonly RecentEntry[]>([]);
+
+  // Recents follow the history store; refetched on every navigation so a new job or a finished one shows up.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/history")
+      .then(async (res) => (res.ok ? ((await res.json()) as { entries: RecentEntry[] }).entries : []))
+      .then((entries) => {
+        if (!cancelled) setRecents(entries);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
   }, []);

@@ -26,12 +26,17 @@ const RatioGlyph = ({ ratio }: { readonly ratio: string }) => {
 export interface ComposerProps {
   /** Injected for tests; the page uses the real fetch. */
   readonly fetchImpl?: typeof fetch;
+  /** "docked" = the task page's composer (task-submitted@1440): no mode chips, video mode from the start, no tag. */
+  readonly variant?: "home" | "docked";
+  /** While a job runs, Send becomes "Stop generation" (task-generating-000s@1440). */
+  readonly stop?: { readonly pending: boolean; readonly onStop: () => void };
 }
 
 /** The home composer (STORY_013): text mode, video mode with references, model, parameters, Send. */
-export function Composer({ fetchImpl }: ComposerProps) {
+export function Composer({ fetchImpl, variant = "home", stop }: ComposerProps) {
   const router = useRouter();
-  const [state, dispatch] = useReducer(reduceComposer, undefined, initialComposer);
+  const docked = variant === "docked";
+  const [state, dispatch] = useReducer(reduceComposer, docked, (startInVideoMode) => (startInVideoMode ? reduceComposer(initialComposer(), { type: "enter-video-mode" }) : initialComposer()));
   const [popover, setPopover] = useState<"params" | "model" | undefined>(undefined);
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -121,7 +126,7 @@ export function Composer({ fetchImpl }: ComposerProps) {
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === "Enter" && !event.shiftKey && !stop) {
       event.preventDefault();
       void send();
     }
@@ -165,7 +170,7 @@ export function Composer({ fetchImpl }: ComposerProps) {
           </div>
         ) : null}
         <div className={styles.editorRow}>
-          {video ? (
+          {video && !docked ? (
             <span className={styles.tag}>
               <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="3" width="8" height="8" rx="2" fill="currentColor" /><path d="M9 6.5 13 4.5v5L9 7.5z" fill="currentColor" /></svg>
               video-creator
@@ -256,9 +261,15 @@ export function Composer({ fetchImpl }: ComposerProps) {
           ) : null}
           <div className={styles.barRight}>
             <span className={styles.inertModel} role="button" aria-disabled="true" title={INERT_TITLE}>MiniMax-M3 <span aria-hidden="true">⌄</span></span>
-            <button type="button" className={styles.send} aria-label="Send message" disabled={!canSend(state)} onClick={() => void send()}>
-              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
+            {stop ? (
+              <button type="button" className={styles.send} aria-label="Stop generation" disabled={stop.pending} onClick={stop.onStop}>
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" /></svg>
+              </button>
+            ) : (
+              <button type="button" className={styles.send} aria-label="Send message" disabled={!canSend(state)} onClick={() => void send()}>
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -268,6 +279,7 @@ export function Composer({ fetchImpl }: ComposerProps) {
         </div>
       ) : null}
       {state.capabilitiesError ? <div className={styles.error} role="alert">{state.capabilitiesError}</div> : null}
+      {docked ? null : (
       <div className={styles.chips} role="group" aria-label="Modes">
         <button type="button" className={cx(styles.chip, video && styles.chipActive)} aria-pressed={video} onClick={() => { dispatch({ type: video ? "leave-video-mode" : "enter-video-mode" }); }}>
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="9" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="m10.5 7 4-2v6l-4-2z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
@@ -277,6 +289,7 @@ export function Composer({ fetchImpl }: ComposerProps) {
           <span key={label} className={cx(styles.chip, styles.chipInert)} role="button" aria-disabled="true" title={INERT_TITLE}>{label}</span>
         ))}
       </div>
+      )}
     </div>
   );
 }
