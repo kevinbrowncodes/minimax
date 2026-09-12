@@ -15,6 +15,8 @@ COPY tools/stub-generation-server/package.json tools/stub-generation-server/
 RUN pnpm install --frozen-lockfile --filter app...
 
 FROM deps AS build
+# The stub package too: app's integration tests import it, and `next build` type-checks the whole app project.
+COPY tools/stub-generation-server/ tools/stub-generation-server/
 COPY app/ app/
 RUN pnpm --filter app build
 
