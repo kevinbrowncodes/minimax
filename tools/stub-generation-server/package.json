@@ -15,5 +15,9 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.0",
     "vitest": "5.0.0"
+  },
+  "exports": {
+    ".": "./src/server.ts",
+    "./scripts": "./src/scripts.ts"
   }
 }

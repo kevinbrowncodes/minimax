@@ -18,7 +18,7 @@ Drafted 2026-09-12 from the expected shape. Numbers continue the global sequence
 | --- | --- | --- |
 | 007 | [The app skeleton builds and serves a page from a container on the Spark](../story/STORY_007_the_app_skeleton_builds_and_serves_a_page_from_a_container_on_the_spark.md) | Done (2026-09-12) |
 | 008 | [A stub generation server plays the video job API with scripted outcomes, so no test needs the model](../story/STORY_008_a_stub_generation_server_plays_the_video_job_api_with_scripted_outcomes.md) | Done (2026-09-12) |
-| 009 | [The app reaches the generation server only through its own API routes, proven against the stub](../story/STORY_009_the_app_reaches_the_generation_server_only_through_its_own_api_routes.md) | Ready |
+| 009 | [The app reaches the generation server only through its own API routes, proven against the stub](../story/STORY_009_the_app_reaches_the_generation_server_only_through_its_own_api_routes.md) | Done (2026-09-12) |
 | 010 | [Playwright drives the built app against the stub, inside the gate container](../story/STORY_010_playwright_drives_the_built_app_against_the_stub_inside_the_gate_container.md) | Ready |
 | 011 | [The seven-step gate runs on every push from one script, with coverage floors](../story/STORY_011_the_seven_step_gate_runs_on_every_push_from_one_script_with_coverage_floors.md) | Ready |
 

@@ -12,7 +12,8 @@
     "recon:check": "pnpm --filter recon check",
     "recon:capture": "pnpm --filter recon capture",
     "recon:tokens": "pnpm --filter recon tokens",
-    "recon:interactions": "pnpm --filter recon interactions"
+    "recon:interactions": "pnpm --filter recon interactions",
+    "test:integration": "pnpm --filter app test:integration"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
