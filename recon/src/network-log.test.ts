@@ -35,7 +35,9 @@ describe("sanitizePath", () => {
     expect(sanitizePath("https://agent.minimax.io/v1/api/task/3f1c2a4e-1b2c-4d5e-8f90-abcdef123456/status")).toBe("/v1/api/task/:uuid/status");
     expect(sanitizePath("https://agent.minimax.io/v1/api/chat/348713812640899/messages")).toBe("/v1/api/chat/:id/messages");
     expect(sanitizePath("https://filecdn.minimax.chat/public/9eed7c85-a1af-40a0-be5e-26d133c045d6.png")).toBe("/public/:uuid.png");
+    expect(sanitizePath("https://x.oss-us-east-1.aliyuncs.com/Mavis/348713812640899/files/348713812640900/441031527284814.mp4?Expires=1&Signature=abc")).toBe("/Mavis/:id/files/:id/:id.mp4");
     expect(sanitizePath("https://agent.minimax.io/v1/api/file/0123456789abcdef0123456789abcdef")).toBe("/v1/api/file/:hex");
+    expect(sanitizePath("https://agent-cdn.minimax.io/icons/video-creater/1.4.2/e3e41c5567d62ce6fa47ccd335ec2e5548d30b217e9f21ae9d3ee2deddf2d757.webp")).toBe("/icons/video-creater/1.4.2/:hex.webp");
   });
   it("leaves short numbers and version segments alone", () => {
     expect(sanitizePath("https://agent.minimax.io/v1/api/config/web/common_config")).toBe("/v1/api/config/web/common_config");

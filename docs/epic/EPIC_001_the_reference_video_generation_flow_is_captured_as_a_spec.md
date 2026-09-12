@@ -1,6 +1,6 @@
 # EPIC_001 — The reference's video generation flow is captured as a spec we can build from
 
-**Status:** In progress
+**Status:** Done (2026-09-12) — one recorded gap: the post-cancel thread state (STORY_002)
 **Started:** 2026-09-12
 
 ## Goal
@@ -22,9 +22,9 @@ The owner's plan is UI first, model second. The UI is a clone, and a clone witho
 | # | Story | Status |
 | --- | --- | --- |
 | 001 | [The owner signs in to the reference once and every recon run reuses that session](../story/STORY_001_the_owner_signs_in_to_the_reference_once_and_every_recon_run_reuses_that_session.md) | Done |
-| 002 | [Every state of the video generation flow is captured as dated screenshots](../story/STORY_002_every_state_of_the_video_generation_flow_is_captured_as_dated_screenshots.md) | Done except the cancel state (needs one more job when the account has resources) |
+| 002 | [Every state of the video generation flow is captured as dated screenshots](../story/STORY_002_every_state_of_the_video_generation_flow_is_captured_as_dated_screenshots.md) | Done (gap: post-cancel thread state, owner accepted) |
 | 003 | [The reference's design tokens are measured, not eyeballed](../story/STORY_003_the_references_design_tokens_are_measured_not_eyeballed.md) | Done |
-| 004 | [The component inventory and interaction notes say what the flow does on the network](../story/STORY_004_the_component_inventory_and_interaction_notes_say_what_the_flow_does_on_the_network.md) | Draft |
+| 004 | [The component inventory and interaction notes say what the flow does on the network](../story/STORY_004_the_component_inventory_and_interaction_notes_say_what_the_flow_does_on_the_network.md) | Done |
 
 ## Constraints
 

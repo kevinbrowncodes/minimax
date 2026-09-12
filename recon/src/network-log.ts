@@ -32,8 +32,8 @@ export function isNoise(url: string): boolean {
 }
 
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
-const LONG_ID = /(?<=\/)\d{6,}(?=\/|$)/g;
-const HEX_ID = /(?<=\/)[0-9a-f]{24,}(?=\/|$)/gi;
+const LONG_ID = /(?<=\/)\d{6,}(?=\.[a-z0-9]+$|\/|$)/g;
+const HEX_ID = /(?<=\/)[0-9a-f]{24,}(?=\.[a-z0-9]+$|\/|$)/gi;
 
 /** The path with UUIDs, long numeric ids and long hex ids replaced by placeholders; no query, no hash. */
 export function sanitizePath(url: string): string {

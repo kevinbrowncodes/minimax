@@ -8,7 +8,8 @@
     "recon:login": "pnpm --filter recon login",
     "recon:check": "pnpm --filter recon check",
     "recon:capture": "pnpm --filter recon capture",
-    "recon:tokens": "pnpm --filter recon tokens"
+    "recon:tokens": "pnpm --filter recon tokens",
+    "recon:interactions": "pnpm --filter recon interactions"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

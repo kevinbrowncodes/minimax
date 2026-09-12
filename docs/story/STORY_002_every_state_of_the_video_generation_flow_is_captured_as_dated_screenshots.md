@@ -1,7 +1,7 @@
 # STORY_002 — Every state of the video generation flow is captured as dated screenshots
 
 **Epic:** [EPIC_001](../epic/EPIC_001_the_reference_video_generation_flow_is_captured_as_a_spec.md)
-**Status:** Part 1 Done; part 2 Done except the cancel state (2026-09-12) — see the part 2 log
+**Status:** Done (2026-09-12) — one recorded gap: the post-cancel thread state
 **Created:** 2026-09-12
 
 As the assistant building the clone, I want a dated screenshot of every state of the reference's video generation flow, at the wide and the narrow width, so that each clone story can cite the exact picture it must match.
@@ -89,4 +89,4 @@ Observed for the inventory (STORY_004): the + control opens a menu — Add files
 
 **Outcome.** Every part-2 state is captured except two: **the cancel state** (the control itself is captured and named — "Stop generation" at the Send position while the thread reads Merging/Thinking/Improving — but what the thread shows after pressing it is not) and **the agent posting the result in the thread** (the result is captured via Assets instead). Credits spent: one Hailuo-2.3 job on the Token Plan; no account credits. Three frames of attempt 4 were re-derived from raw frames after a later run overwrote them, with the sidebar name masked in the image. Manifests: `manifest-generate.json` (attempt 4), `manifest-revisit.json`, `manifest-cancel-only.json` (attempts 5–6), `manifest-attempt2.json`.
 
-**Open (owner):** capturing the post-cancel state needs one more job once the account has conversation resources again (subscription or top-up). Until then EPIC_003's cancel story cites the stop control and marks the post-cancel thread state as unobserved.
+**Owner's decision (2026-09-12):** asked whether the post-cancel state is critical; answered no — the control's look, position and label are captured, and only the thread's post-cancel content is unknown. Gap accepted; one cancel-only job fills it in whenever the account has conversation resources again, before EPIC_003's cancel story is implemented. **Story Done with that gap recorded.**
