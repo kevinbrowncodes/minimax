@@ -52,9 +52,22 @@ export async function dismissAnnouncement(page: Page): Promise<boolean> {
   return !(await cta.isVisible().catch(() => false));
 }
 
-/** Reads the two signals the session classifier needs. Never touches cookies or storage. */
+const HOME_MARKER = /^\s*new task\s*$/i;
+
+/** Waits up to `timeoutMs` for the home to render (the "New task" sidebar item). */
+export async function waitForHome(page: Page, timeoutMs: number): Promise<boolean> {
+  return page
+    .getByText(HOME_MARKER)
+    .first()
+    .waitFor({ state: "visible", timeout: timeoutMs })
+    .then(() => true)
+    .catch(() => false);
+}
+
+/** Reads the signals the session classifier needs. Never touches cookies or storage. */
 export async function readSessionSignals(page: Page): Promise<SessionSignals> {
+  const homeRendered = await page.getByText(HOME_MARKER).first().isVisible({ timeout: 1_000 }).catch(() => false);
   const control = page.getByText(/^\s*sign in\s*$/i).first();
-  const signInControlVisible = await control.isVisible({ timeout: 2_000 }).catch(() => false);
-  return { url: page.url(), signInControlVisible };
+  const signInControlVisible = await control.isVisible({ timeout: 1_000 }).catch(() => false);
+  return { url: page.url(), homeRendered, signInControlVisible };
 }

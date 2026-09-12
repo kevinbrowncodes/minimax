@@ -41,6 +41,7 @@ session: signed-in
 - The announcement modal is not `role="dialog"`. It is found by its "Try it now" call to action; Escape is tried first, then the icon-only close button at the modal's top right.
 - The login loop tolerates navigation to github.com during OAuth (reads as unknown, keeps polling) and evaluation errors while a page is mid-navigation.
 - Nothing prints a URL: the check prints only the verdict.
+- **Amended 2026-09-12 after the first login attempt (story not yet Done).** The classifier gained a third signal, *home rendered* (the "New task" sidebar item is visible). Without it, a reference page that has not finished rendering has no "Sign in" control and read as signed in — which is exactly what happened: the login script printed "Signed in" seconds after opening and closed the window before the owner had signed in, and the saved profile held a logged-out session. Now a page that has not rendered is `unknown`, the login loop requires three consecutive signed-in readings (six seconds) before it trusts the verdict, it prints each state change so the owner can see it is still waiting, and the check waits up to 20 s for the home to render before classifying.
 
 ## Testing Plan
 
@@ -53,5 +54,9 @@ session: signed-in
 S — two scripts, one pure module, one test file.
 
 ## Done note (partial, 2026-09-12)
+
+**First manual verification failed.** The owner ran `pnpm recon:login`; it printed "Signed in" almost immediately and `pnpm recon:check` then reported `signed-out`. A probe with the saved profile showed the logged-out home. Cause and fix in the amended Technical Notes above; unit cases added for the not-yet-rendered page and for the confirmation run. Second manual verification pending.
+
+**Earlier verification (same day, before the fix):**
 
 Verified by the assistant, logged out, headless: the announcement modal is dismissed (probe: visible before, gone after), the "Sign in" control is detected, `pnpm recon:check` prints `session: signed-out` and exits 1, `git status` shows no profile, `pnpm typecheck` and `pnpm test` (6 unit cases) pass. **Not yet verified:** `pnpm recon:login` end to end and the signed-in verdict — that needs the owner at the keyboard. Gate steps that do not exist yet (lint, integration, build, e2e) were not run; they arrive with EPIC_002.

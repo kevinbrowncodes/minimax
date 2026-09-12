@@ -1,6 +1,6 @@
 import { dismissAnnouncement, openReference, readSessionSignals } from "./browser.js";
 import { REFERENCE_URL } from "./config.js";
-import { classifySession, type SessionState } from "./session.js";
+import { CONFIRMATIONS_REQUIRED, classifySession, countConfirmation, type SessionState } from "./session.js";
 
 const TIMEOUT_MS = 10 * 60_000;
 const POLL_MS = 2_000;
@@ -9,7 +9,8 @@ const POLL_MS = 2_000;
  * Headed: opens the reference in a window the owner signs in to. This script
  * never types, never reads a cookie, never prints a URL beyond the fixed
  * reference address. It only polls the session classifier until it reads
- * signed in, then closes the browser so the profile is written to disk.
+ * signed in for several consecutive polls, then closes the browser so the
+ * profile is written to disk.
  */
 async function main(): Promise<number> {
   console.log(`A Chromium window is opening on ${REFERENCE_URL}.`);
@@ -19,6 +20,8 @@ async function main(): Promise<number> {
   const { context, page } = await openReference(false);
   const deadline = Date.now() + TIMEOUT_MS;
   let state: SessionState = "unknown";
+  let run = 0;
+  let lastReported: SessionState | undefined;
   try {
     while (Date.now() < deadline) {
       try {
@@ -27,10 +30,15 @@ async function main(): Promise<number> {
       } catch {
         state = "unknown"; // mid-navigation; try again on the next tick
       }
-      if (state === "signed-in") break;
+      if (state !== lastReported) {
+        console.log(`  … session reads as ${state}${state === "signed-in" ? ", confirming" : ""}`);
+        lastReported = state;
+      }
+      run = countConfirmation(run, state);
+      if (run >= CONFIRMATIONS_REQUIRED) break;
       await page.waitForTimeout(POLL_MS).catch(() => undefined);
     }
-    if (state === "signed-in") {
+    if (run >= CONFIRMATIONS_REQUIRED) {
       // Give the site a moment to finish writing its session before the profile is flushed.
       await page.waitForTimeout(3_000).catch(() => undefined);
     }
@@ -38,7 +46,7 @@ async function main(): Promise<number> {
     await context.close();
   }
 
-  if (state === "signed-in") {
+  if (run >= CONFIRMATIONS_REQUIRED) {
     console.log("Signed in. The session is saved in recon/.profile/ (gitignored). You can close this.");
     return 0;
   }

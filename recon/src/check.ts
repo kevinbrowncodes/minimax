@@ -1,4 +1,4 @@
-import { dismissAnnouncement, openReference, readSessionSignals } from "./browser.js";
+import { dismissAnnouncement, openReference, readSessionSignals, waitForHome } from "./browser.js";
 import { classifySession, exitCodeFor, type SessionState } from "./session.js";
 
 /**
@@ -10,7 +10,8 @@ async function main(): Promise<number> {
   const { context, page } = await openReference(true);
   let state: SessionState = "unknown";
   try {
-    await page.waitForTimeout(4_000);
+    await waitForHome(page, 20_000);
+    await page.waitForTimeout(1_500);
     await dismissAnnouncement(page).catch(() => false);
     state = classifySession(await readSessionSignals(page));
   } finally {
