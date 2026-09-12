@@ -48,4 +48,4 @@ Every story above is Done, `docs/recon/` contains the four artefact kinds named 
 ## Open questions
 
 1. ~~What does the signed-in home look like — does the video chip route somewhere, and what replaces the "Sign in" control?~~ **Answered 2026-09-12:** the chip stays on `/` and swaps the composer into video mode; nothing replaces the control — it is simply absent, and the sidebar gains Search, Scheduled, Assets, Projects, Recents, Agent Team and a user chip. See STORY_002's Current state.
-2. How many real generations does a full state capture need? **STORY_002 proposes N = 1 (768P · 5s) for the main chain, N = 2 to add cancel; owner approves.**
+2. ~~How many real generations does a full state capture need?~~ **Approved 2026-09-12: N = 2 at 768P · 5s** (main chain plus a submitted-then-cancelled job). The owner offered to add credits if more are needed; ask before spending beyond two.

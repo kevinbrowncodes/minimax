@@ -6,7 +6,15 @@
 
 The UI's configured generation endpoint points at the Spark, and a real video comes back.
 
-## Open question #1 — which model (must be answered before any weights are fetched)
+## Decision #1 — which model: MiniMax-H3 (2026-09-12)
+
+**The Spark is used in El Salvador (owner, 2026-09-12), which is not an Excluded Territory** under the MiniMax H3 Community License (EU, UK, South Korea, United States). H3's open weights are therefore licensed for it, and this epic builds toward **MiniMax-H3 on the Spark**. The remaining decision is the **flavor** — checkpoint (FL2VA / Ref2VA), precision or quantization, and serving stack — chosen from options with pros and cons the owner reviews before any weights are fetched (owner's instruction, 2026-09-12; see Open question #2 below).
+
+## Open question #2 — which H3 flavor fits the Spark
+
+Presented to the owner as options with pros and cons; recorded here once chosen. Inputs: 128 GB unified memory, aarch64 + Blackwell (GB10), the model card's supported inference stacks (SGLang, vLLM, Diffusers, ComfyUI), community repackagings and quantizations, and whether the H3-Regenerate-2K module is published.
+
+## Superseded — open question #1 as first posed (kept for the record)
 
 Read from the official LICENSE on 2026-09-12: **MiniMax-H3**'s Community License excludes the EU, UK, South Korea and the **United States** and forbids use, reproduction, modification, distribution or display of the works and their outputs outside the applicable territory ([README.md → Running the Model](../../README.md#running-the-model)). If the Spark sits in an excluded territory, H3's open weights are not licensed for it. The owner chooses between:
 
