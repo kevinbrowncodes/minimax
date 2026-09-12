@@ -26,12 +26,14 @@ Generate videos locally on a DGX Spark, through an interface that matches the Mi
 
 ## Architecture
 
-Two machines:
+One machine hosts everything (owner's decision, 2026-09-12): the **DGX Spark** runs the UI, the job-API adapter, ComfyUI with the model, the stub generation server and the whole test gate, each as a container defined in this repo. The owner's Mac, or any device on the LAN, is only a browser opening the UI's URL; development happens on the Spark through a VS Code tunnel. Nothing is installed on the Spark itself.
 
-| Machine | Role | Reached via |
+| Container | Role | Reached via |
 | --- | --- | --- |
-| **Mac** | Development, the UI, the whole test gate | local |
-| **DGX Spark** | Runs the video model behind an async job API | SSH on the LAN |
+| UI (`app/`, EPIC_002) | The video generation screen | a URL on the LAN |
+| Adapter (`spark/adapter/`, STORY_006) | Create → status → result job API in front of ComfyUI | the compose network; the UI's configured base URL |
+| ComfyUI (`spark/comfyui/`, STORY_005) | Runs MiniMax-H3 on the GPU | 127.0.0.1:8188 and the compose network only |
+| Stub generation server (`tools/`, EPIC_002) | Scripted outcomes and a fixture video for the test gate | the gate only |
 
 The UI talks to the generation server through configuration only (base URL, optional key). The protocol is an async job: create a generation, poll its status, fetch the result file. Locally the same variables point at a **stub generation server** that returns scripted outcomes and a tiny fixture video, so nothing in the test gate depends on the Spark being reachable.
 
@@ -113,4 +115,4 @@ Sources: [MiniMaxAI/MiniMax-H3 model card](https://huggingface.co/MiniMaxAI/Mini
 
 ## Deployment
 
-Local only. The UI is started on the Mac (`app/`); the model runs on the Spark as a Docker container started by `spark/comfyui/run.sh` (weights in `spark/data/`). There is no CI as of 2026-09-12.
+Local only, all on the Spark: the model container is started by `spark/comfyui/run.sh` (weights in `spark/data/`); the UI and adapter containers by the scripts EPIC_002 and STORY_006 add. The UI is opened from a browser on the LAN. There is no CI as of 2026-09-12.

@@ -17,7 +17,7 @@ The work is planned as two epics:
 1. **UI recon and rebuild** — capture the reference's video generation surface with Playwright through the owner's own logged-in session, record what was measured, then recreate it as our own code.
 2. **Video model on the Spark** — serve a video generation model on the DGX Spark behind an async job API (create a generation → poll its status → fetch the result) and point the UI at it through configuration. **Which model is the epic's first decision, and its license is part of that decision** — see [README.md → Running the Model](README.md#running-the-model) for the current answer and the open question.
 
-Two machines are involved: the **Mac** (where the assistant runs, and where the UI is developed and tested) and the **Spark** (reached over SSH, where the model runs). **Nothing in the test gate may depend on the Spark being reachable** — see [§4](#4-dev-workflow).
+One machine is involved (owner, 2026-09-12): the **DGX Spark** hosts everything — the UI, the job-API adapter, ComfyUI with the model, the stub generation server and the test gate — each as a container defined in this repo. The assistant runs on the Spark through a VS Code tunnel; the owner opens the UI from any browser on the LAN. **Nothing in the test gate may depend on the model container running** — see [§4](#4-dev-workflow). Nothing is installed on the Spark itself: see the owner's global "Containers first" rule.
 
 See **[README.md](README.md)** for the full overview, MVP scope, tech stack, and feature list.
 
@@ -118,7 +118,7 @@ See **[README.md → Project Structure](README.md#project-structure)**. The `doc
 ## 4. Dev Workflow
 
 - **Always push to `develop` only — NEVER push to `main`.**
-- **There is no CI (as of 2026-09-12).** The test gate is local. The testing-foundation epic adds a Husky pre-push hook that runs steps 1–6 below on every `git push origin develop`; until that hook exists, **run the steps by hand before every push** and say so in the summary. Deploying is a local act too: the UI runs on the Mac, the model runs on the Spark, and each is started by the scripts the README documents.
+- **There is no CI (as of 2026-09-12).** The test gate is local. The testing-foundation epic adds a Husky pre-push hook that runs steps 1–6 below on every `git push origin develop`; until that hook exists, **run the steps by hand before every push** and say so in the summary. Deploying is a local act too: everything runs on the Spark as containers started by the scripts the README documents.
 - **Before every commit, all seven steps must pass in order.** Cheapest checks first so failures surface in seconds, not minutes:
   1. `pnpm typecheck` (`tsc --noEmit`) — fastest; the real type gate.
   2. `pnpm lint` — the real lint gate, parallel to step 1.
@@ -137,21 +137,17 @@ See **[README.md → Project Structure](README.md#project-structure)**. The `doc
   git add -A                                                # no
   ```
   `git status --short` before every commit, and read it. The cost of listing paths is seconds; the cost of a blanket add is someone else's work in your commit message. **This matters doubly here because the recon output directory, generated videos, and the models directory must never be staged** — a blanket add puts session cookies, hundreds of megabytes of mp4, or tens of gigabytes of weights into git.
-- Dev server runs on port 3000. Before starting, kill anything on that port:
-  ```bash
-  lsof -ti :3000 | xargs kill -9 2>/dev/null; true
-  cd /Users/kevinbrown/Documents/GitHub/kevinbrowncodes/minimax/app && pnpm dev
-  ```
-- Confirm the server is running at http://localhost:3000 before proceeding.
+- The dev server runs on port 3000 inside the app container, started by the command README → Running the UI documents (defined by EPIC_002). Before starting, check nothing else holds the port (`ss -ltn 'sport = :3000'`); never kill a process that is not ours.
+- Confirm the server answers at http://localhost:3000 on the Spark (and at the Spark's LAN address from the owner's browser) before proceeding.
 - After every change, open the integrated browser at http://localhost:3000 so the user can verify visually. For clone stories, open the reference capture alongside it.
 - Always prefer CLI tools (git, pnpm, ssh, playwright, huggingface-cli, etc.) over asking the user to do anything manually in a UI or dashboard. The one standing exception is the recon browser login — see [§4b](#4b-recon-with-playwright).
 - **An AI assistant's shell does not read `~/.zshrc`.** Non-interactive zsh sources **`~/.zshenv`** only, so a secret or `PATH` entry exported in `.zshrc` is invisible to tooling even though it works fine in the user's own terminal. If a credential or tool "is definitely set" but the assistant cannot see it, check which file it is in before anything else.
 - Always give a clear summary after making changes — what was changed, what commands were run, and what the outcome was.
 
-### 4a. Two machines: the Mac and the Spark
+### 4a. One machine, many containers
 
-- **The gate runs entirely on the Mac against the stub generation server.** The stub is a small local server that speaks the same async job protocol as the real one — create a generation, poll its status, fetch the result file — and returns scripted, deterministic outcomes chosen by name: a job that completes after N polls, one that fails, one that is moderated, one that is cancelled mid-way. Its result is a small committed fixture video. Every unit, integration and e2e test targets it. A test that needs the real Spark is not a test — it is a manual verification step ([§3 item 5](#3-how-features-are-built-important)).
-- **The model endpoint is configuration, never a literal.** The UI reads the generation server's base URL and any key from environment variables the README names. The Spark's hostname does not appear in application code, tests, or fixtures.
+- **The gate runs entirely in containers on the Spark against the stub generation server.** The stub is a small local server that speaks the same async job protocol as the real one — create a generation, poll its status, fetch the result file — and returns scripted, deterministic outcomes chosen by name: a job that completes after N polls, one that fails, one that is moderated, one that is cancelled mid-way. Its result is a small committed fixture video. Every unit, integration and e2e test targets it. A test that needs the real model container is not a test — it is a manual verification step ([§3 item 5](#3-how-features-are-built-important)).
+- **The model endpoint is configuration, never a literal.** The UI reads the adapter's base URL and any key from environment variables the README names; on the compose network that is a service name, on the LAN it is whatever the owner's browser can reach. No hostname or LAN address appears in application code, tests, or fixtures.
 - **A model's license is read before its weights are fetched.** The phase-2 epic records, for each candidate model, the license name, the territorial and commercial terms, and the date they were read from the license file in the model's own repository. A model whose terms exclude where the Spark sits is not a candidate, whatever its benchmarks say, unless the owner decides otherwise in writing in the epic. The README's Running the Model section carries the current answer.
 - **On the Spark, read before you write.** Before starting, stopping or reconfiguring the serving process, check what is running and what it is using (`nvidia-smi`, the process list, disk free). Another job may be mid-download, mid-generation or mid-benchmark. A signal that looks like a known failure may have a different cause — confirm before restarting anything.
 - **Weights are precious.** Model files are tens of gigabytes and take hours to fetch. Never delete, move or re-quantize a weights directory without the owner's explicit say-so in that session, and say which directory and size before doing it. Never commit weights, checkpoints, or anything under the models directory; they live on the Spark's disk and are gitignored. **Generated videos are gitignored too**, on both machines; the only video in git is the stub's fixture, and it is kept tiny.

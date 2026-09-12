@@ -1,6 +1,6 @@
 # EPIC_004 — A video model runs on the DGX Spark behind the same job API
 
-**Status:** In progress on the Spark from 2026-09-12, in parallel with EPIC_002/003 on the Mac (owner's decision)
+**Status:** In progress on the Spark from 2026-09-12. STORY_005 Done. From the evening of 2026-09-12 a single session on the Spark carries every epic (owner's decision); everything is hosted on the Spark in containers and the Mac is only a browser
 
 ## Goal
 
@@ -61,7 +61,7 @@ Later: a second precision measured against the first on the same prompt; Ref2VA;
 
 ## Working on two machines at once
 
-From 2026-09-12 the Spark session works this epic while the Mac session works EPIC_002 and EPIC_003. Rules that keep them from colliding:
+~~From 2026-09-12 the Spark session works this epic while the Mac session works EPIC_002 and EPIC_003.~~ **Superseded the same evening (owner): there is no Mac session; one session on the Spark carries EPIC_002, EPIC_003 and EPIC_004 in that order, and the UI, adapter, ComfyUI, stub and test gate all run as containers on the Spark.** The rules below are kept for the record and still apply wherever two sessions ever share the repo:
 
 - The Spark session touches only `spark/`, `docs/story/STORY_005…`/`006…`, this epic, `spark/README.md`, and the Running the Model section of the root README. It never touches `app/`, `recon/`, or `tools/`.
 - The Spark has no recon browser profile and must never run the recon scripts.
