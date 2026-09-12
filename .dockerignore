@@ -1,0 +1,13 @@
+.git
+node_modules
+**/node_modules
+**/.next
+**/playwright-report
+**/test-results
+**/coverage
+spark/data
+recon/out
+recon/.profile
+docs
+*.md
+!app/**/*.md

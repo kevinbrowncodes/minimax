@@ -1,0 +1,64 @@
+# compose.yaml — the UI side of MiniMax Local on the Spark (STORY_007). Project "minimax".
+#
+#   gate      the toolchain image with the repo bind-mounted: every gate step runs here   -> tools/gate/run.sh
+#   app-dev   the same image running `next dev` with hot reload, on port 3000 for the owner's browser (profile "dev")
+#   app       the production image (app/Dockerfile) serving the built UI on port 3000       -> docker compose up -d app
+#
+# Only one of app-dev / app runs at a time (both publish 3000). The model side is spark/comfyui/compose.yaml
+# (project "minimax-spark"); the UI reaches it through MODEL_BASE_URL only. Values come from the environment or a
+# gitignored .env (see .env.example). SPARK_UID/SPARK_GID are set by the scripts so mounted files stay the owner's.
+name: minimax
+
+x-gate-image: &gate-image minimax/gate:${GATE_TAG:-1.63.0-node26}
+x-gate-mounts: &gate-mounts
+  - .:/work
+  - pnpm-store:/pnpm-store
+x-model-env: &model-env
+  MODEL_BASE_URL: ${MODEL_BASE_URL:-http://stub:4010}
+  MODEL_API_KEY: ${MODEL_API_KEY:-}
+
+services:
+  gate:
+    build:
+      context: tools/gate
+      args:
+        UID: ${SPARK_UID:-1000}
+        GID: ${SPARK_GID:-1000}
+    image: *gate-image
+    profiles: ["tools"]
+    user: "${SPARK_UID:-1000}:${SPARK_GID:-1000}"
+    working_dir: /work
+    volumes: *gate-mounts
+    environment:
+      <<: *model-env
+      HOME: /tmp/gate-home
+
+  app-dev:
+    image: *gate-image
+    profiles: ["dev"]
+    container_name: minimax-app-dev
+    user: "${SPARK_UID:-1000}:${SPARK_GID:-1000}"
+    working_dir: /work
+    command: ["pnpm", "--filter", "app", "dev", "--hostname", "0.0.0.0", "--port", "3000"]
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes: *gate-mounts
+    environment:
+      <<: *model-env
+      HOME: /tmp/gate-home
+
+  app:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    image: minimax/app:${APP_TAG:-dev}
+    container_name: minimax-app
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-http://stub:4010}   # production sets the adapter URL in .env
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+    restart: unless-stopped
+
+volumes:
+  pnpm-store: {}

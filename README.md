@@ -46,15 +46,15 @@ Work is planned as two epics:
 
 **Reference (observed 2026-09-12, logged out):** a Next.js App Router app served from a CDN; system sans-serif body text with **Outfit** and **Source Serif** loaded as web fonts (both SIL Open Font License) plus KaTeX; app API under `/v1/api/` on the same origin.
 
-**Ours:** TypeScript everywhere, `strict: true`. Node 26, pnpm 10 workspaces. Recon: Playwright 1.63 + tsx + Vitest. App stack is chosen in EPIC_002 with Next.js App Router as the working assumption, matching the reference.
+**Ours:** TypeScript everywhere, `strict: true` and `noUncheckedIndexedAccess`. Node 26 and pnpm 10 in the gate image (`tools/gate/Dockerfile`), never on the host. App (STORY_007): Next.js 16 App Router, React 19, TypeScript 5.9 (typescript-eslint does not support TS 7 yet; `recon/` keeps TS 7), ESLint 9 with typescript-eslint strict type-checked rules and `eslint-config-next`, Vitest 5 with jsdom and React Testing Library. E2E: Playwright 1.63 (the same as recon), browsers baked into the gate image. Production UI image: `app/Dockerfile`, Next standalone output on `node:26-bookworm-slim`.
 
 ## Project Structure
 
-Present today: `recon/`, `docs/`, `spark/`, the workspace files. The rest is created by the epics that need it.
+Present today: `app/` (skeleton), `tools/gate/`, `spark/`, `recon/`, `docs/`, the root `compose.yaml`, the workspace files. The rest is created by the stories that need it.
 
 ```
 app/          the UI
-tools/        the stub generation server, its fixture video and image, other dev tooling
+tools/        gate/ (the toolchain image and the gate runner), the stub generation server with its fixtures (STORY_008), other dev tooling
 spark/        the ComfyUI image (Dockerfile, compose) and scripts that run the model on the Spark; spark/data/ (gitignored) holds weights, outputs, logs
 recon/        Playwright recon scripts (profile and raw output are gitignored)
 docs/
@@ -86,7 +86,17 @@ The session lives in `recon/.profile/` and raw captures in `recon/out/`; both ar
 
 ## Running the UI
 
-TBD (EPIC_002). Dev server on port 3000.
+Everything runs in containers on the Spark (STORY_007). The host needs only `docker`, `jq` and a browser somewhere on the LAN.
+
+```bash
+cp .env.example .env            # once; set MODEL_BASE_URL to the adapter's URL for production (the stub URL is the default)
+tools/gate/build.sh             # once (and after tools/gate/Dockerfile changes): the toolchain image, Node 26 + pnpm + Playwright browsers
+tools/gate/run.sh               # the gate: install, typecheck, lint, unit, integration, build, e2e — inside the gate container
+docker compose --profile dev up app-dev      # hot-reload dev server on port 3000 (Ctrl-C to stop)
+docker compose up -d --build app             # production build served on port 3000, restarts with the box
+```
+
+Open `http://<the Spark's LAN address>:3000` from the Mac. `tools/gate/run.sh lint build` runs only the named steps; `--from 4` restarts after a fix. Dependencies land in `node_modules/` inside the repo tree (written by the container, gitignored); the pnpm store persists in the `minimax_pnpm-store` volume.
 
 ## Running the Model
 

@@ -32,3 +32,9 @@ test-results/
 
 # The Spark: weights, outputs, logs and smoke clips for the ComfyUI container live here, never in git (STORY_005)
 spark/data/
+
+# Next.js build output and generated types (STORY_007)
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
