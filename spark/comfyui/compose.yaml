@@ -31,6 +31,8 @@ services:
       - ${SPARK_DATA:-../data}/output:/comfy/ComfyUI/output
     environment:
       COMFY_EXTRA_ARGS: ${COMFY_EXTRA_ARGS:-}
+    # ComfyUI ignores SIGTERM (measured 2026-09-12: 30 s then SIGKILL, exit 137) but exits in ~2 s on SIGINT ("Stopped server", exit 0).
+    stop_signal: SIGINT
     stop_grace_period: 30s
     restart: "no"
 
