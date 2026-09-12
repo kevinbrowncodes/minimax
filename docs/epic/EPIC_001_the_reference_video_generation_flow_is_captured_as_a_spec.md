@@ -22,7 +22,7 @@ The owner's plan is UI first, model second. The UI is a clone, and a clone witho
 | # | Story | Status |
 | --- | --- | --- |
 | 001 | [The owner signs in to the reference once and every recon run reuses that session](../story/STORY_001_the_owner_signs_in_to_the_reference_once_and_every_recon_run_reuses_that_session.md) | Done |
-| 002 | [Every state of the video generation flow is captured as dated screenshots](../story/STORY_002_every_state_of_the_video_generation_flow_is_captured_as_dated_screenshots.md) | In progress |
+| 002 | [Every state of the video generation flow is captured as dated screenshots](../story/STORY_002_every_state_of_the_video_generation_flow_is_captured_as_dated_screenshots.md) | Part 1 Done; part 2 awaits N |
 | 003 | [The reference's design tokens are measured, not eyeballed](../story/STORY_003_the_references_design_tokens_are_measured_not_eyeballed.md) | Draft |
 | 004 | [The component inventory and interaction notes say what the flow does on the network](../story/STORY_004_the_component_inventory_and_interaction_notes_say_what_the_flow_does_on_the_network.md) | Draft |
 
@@ -47,5 +47,5 @@ Every story above is Done, `docs/recon/` contains the four artefact kinds named 
 
 ## Open questions
 
-1. What does the signed-in home look like — does the video chip route somewhere, and what replaces the "Sign in" control? (Answered by the first authenticated run in STORY_001/002.)
-2. How many real generations does a full state capture need? (STORY_002 proposes; owner approves.)
+1. ~~What does the signed-in home look like — does the video chip route somewhere, and what replaces the "Sign in" control?~~ **Answered 2026-09-12:** the chip stays on `/` and swaps the composer into video mode; nothing replaces the control — it is simply absent, and the sidebar gains Search, Scheduled, Assets, Projects, Recents, Agent Team and a user chip. See STORY_002's Current state.
+2. How many real generations does a full state capture need? **STORY_002 proposes N = 1 (768P · 5s) for the main chain, N = 2 to add cancel; owner approves.**

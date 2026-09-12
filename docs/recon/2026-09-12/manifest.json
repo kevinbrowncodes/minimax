@@ -1,0 +1,122 @@
+{
+  "date": "2026-09-12",
+  "reference": "https://agent.minimax.io/",
+  "note": "Narrow states are the same persistent context resized to 390×844 (layout only, no touch semantics).",
+  "entries": [
+    {
+      "state": "home-signed-in",
+      "width": 1440,
+      "file": "home-signed-in@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T14:02:38.644Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "composer-video-mode",
+      "width": 1440,
+      "file": "composer-video-mode@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T14:02:41.287Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "model-menu-open",
+      "width": 1440,
+      "file": "model-menu-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T14:02:42.687Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "video-params-open",
+      "width": 1440,
+      "file": "video-params-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T14:02:44.636Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "agent-model-menu-open",
+      "width": 1440,
+      "file": "agent-model-menu-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T14:02:46.595Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "attach-menu-open",
+      "width": 1440,
+      "file": "attach-menu-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T14:02:48.599Z",
+      "reachedBy": "auto",
+      "note": "whatever the + control opens; a native file chooser would not be visible"
+    },
+    {
+      "state": "scene-selected",
+      "width": 1440,
+      "file": "scene-selected@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T14:02:52.304Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "composer-typed",
+      "width": 1440,
+      "file": "composer-typed@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T14:03:00.233Z",
+      "reachedBy": "auto",
+      "note": "typed by the script, never sent"
+    },
+    {
+      "state": "assets-empty",
+      "width": 1440,
+      "file": "assets-empty@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-12T14:03:03.435Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "assets-videos-filter",
+      "width": 1440,
+      "file": "assets-videos-filter@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-12T14:03:05.503Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-home",
+      "width": 390,
+      "file": "narrow-home@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T14:03:28.242Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-video-mode",
+      "width": 390,
+      "file": "narrow-video-mode@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T14:03:30.834Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-video-params",
+      "width": 390,
+      "file": "narrow-video-params@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T14:03:32.216Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-assets",
+      "width": 390,
+      "file": "narrow-assets@390.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-12T14:03:36.482Z",
+      "reachedBy": "auto"
+    }
+  ],
+  "skipped": []
+}
