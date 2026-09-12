@@ -1,0 +1,17 @@
+{
+  "date": "2026-09-12",
+  "reference": "https://agent.minimax.io/",
+  "note": "Attempt 2 of STORY_002 part 2, stopped by hand after the agent reported a billing wall. One state kept.",
+  "entries": [
+    {
+      "state": "task-rejected-insufficient-credits",
+      "width": 1440,
+      "file": "task-rejected-insufficient-credits@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-12T14:57:35.000Z",
+      "reachedBy": "auto",
+      "note": "The task page ~90 s after Send with H3 selected: the agent's message reports HTTP 402 from the provider (this task needs 400 credits; H3 bills account credits, not the Token Plan) and offers Hailuo-2.3 on the Token Plan; the Progress panel lists the pipeline steps; the low-credits notice sits above the docked composer."
+    }
+  ],
+  "skipped": []
+}

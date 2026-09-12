@@ -5,6 +5,8 @@ import { dismissAnnouncement, openReference, readSessionSignals, waitForHome } f
 import { NARROW, WIDE, dateStamp, manifestEntry, screenshotFile, type ManifestEntry, type ReachedBy } from "./capture-plan.ts";
 import { OUT_DIR, RECON_ROOT, REFERENCE_URL, VIEWPORT } from "./config.ts";
 import { isNoise, sanitizePath, type NetworkEvent } from "./network-log.ts";
+import { parseModelArg } from "./generate-plan.ts";
+import { runGenerations } from "./generate.ts";
 import { classifySession } from "./session.ts";
 
 /**
@@ -16,15 +18,17 @@ import { classifySession } from "./session.ts";
 const args = process.argv.slice(2);
 const generateIndex = args.indexOf("--generate");
 const generate = generateIndex >= 0 ? Number(args[generateIndex + 1] ?? "0") : 0;
-if (generate > 0) {
-  console.error("--generate N is not implemented yet: part 2 of STORY_002 waits for the owner's approval of N.");
+const APPROVED_GENERATIONS = 2; // owner, 2026-09-12: two at 768P, shortest duration; ask before more
+const captureModel = parseModelArg(args);
+if (generate > APPROVED_GENERATIONS) {
+  console.error(`--generate ${generate} exceeds the ${APPROVED_GENERATIONS} generations the owner approved on 2026-09-12; ask first.`);
   process.exit(2);
 }
 
 const stamp = dateStamp(new Date());
 const DOCS_DIR = path.join(RECON_ROOT, "..", "docs", "recon", stamp);
 const RAW_DIR = path.join(OUT_DIR, stamp);
-const NETWORK_LOG = path.join(RAW_DIR, "network.jsonl");
+const NETWORK_LOG = path.join(RAW_DIR, generate > 0 ? "network-generate.jsonl" : "network.jsonl");
 
 type Manifest = {
   date: string;
@@ -293,11 +297,31 @@ async function main(): Promise<number> {
       return 1;
     }
     console.log(`Capturing to docs/recon/${stamp}/ (raw network log in recon/out/${stamp}/)`);
-    await captureWide(page);
-    await captureNarrow(page);
+    if (generate > 0) {
+      await runGenerations(
+        {
+          page,
+          rawDir: RAW_DIR,
+          docsDir: DOCS_DIR,
+          shot: (state, note) => shot(page, state, "auto", note),
+          step,
+          gotoHome: () => gotoHome(page),
+          enterVideoMode: () => enterVideoMode(page),
+          clearComposer: () => clearComposer(page),
+          editor: () => editor(page),
+          paramsButton: () => paramsButton(page),
+          modelButton: () => modelButton(page),
+          model: captureModel,
+        },
+        generate,
+      );
+    } else {
+      await captureWide(page);
+      await captureNarrow(page);
+    }
     await step("composer-restored", () => restoreComposer(page));
   } finally {
-    writeFileSync(path.join(DOCS_DIR, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+    writeFileSync(path.join(DOCS_DIR, generate > 0 ? "manifest-generate.json" : "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
     await context.close();
   }
   console.log(`Done: ${manifest.entries.length} captured, ${manifest.skipped.length} skipped.`);
