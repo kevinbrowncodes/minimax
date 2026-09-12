@@ -34,7 +34,7 @@ Reduced from 6 raw log(s) (12681 events) in the gitignored `recon/out/2026-09-12
 | 5 | POST | agent.minimax.io | `/minimax-cloud/api/v1/agent/:id/session` | 200×5 | application/json | 1237.8s |
 | 5 | POST | agent-stream.minimax.io | `/minimax-cloud/api/v1/session/:id/message` | 200×5 | text/event-stream | 1241.8s |
 | 3 | GET | agent.minimax.io | `/matrix/api/v1/user/get_water_mark_setting` | 200×3 | application/json | 1461.4s |
-| 3 | GET | matrix-internal.oss-us-east-1.aliyuncs.com | `/Mavis/:id/files/:id/441031527284814.mp4` | 206×3 | video/mp4 | 0.1s |
+| 3 | GET | matrix-internal.oss-us-east-1.aliyuncs.com | `/Mavis/:id/files/:id/:id.mp4` | 206×3 | video/mp4 | 0.1s |
 
 ## network-cancel-only-attempt5.jsonl
 
@@ -182,7 +182,7 @@ Reduced from 6 raw log(s) (12681 events) in the gitignored `recon/out/2026-09-12
 | 5 | GET | agent.minimax.io | `/v1/api/user/info` | 200×5 | application/json | 5.1s |
 | 5 | POST | agent.minimax.io | `/v1/api/user/renewal` | 200×5 | application/json | 5.1s |
 | 4 | GET | agent.minimax.io | `/minimax-cloud/api/v1/plugins/enabled` | 200×4 | application/json | 3.4s |
-| 3 | GET | matrix-internal.oss-us-east-1.aliyuncs.com | `/Mavis/:id/files/:id/441031527284814.mp4` | 206×3 | video/mp4 | 0.1s |
+| 3 | GET | matrix-internal.oss-us-east-1.aliyuncs.com | `/Mavis/:id/files/:id/:id.mp4` | 206×3 | video/mp4 | 0.1s |
 | 3 | GET | agent.minimax.io | `/minimax-cloud/api/v1/session/:id` | 200×3 | application/json | 12.9s |
 | 3 | GET | agent.minimax.io | `/minimax-cloud/api/v1/session/:id/queue` | 200×3 | application/json | 12.9s |
 | 2 | GET | agent.minimax.io | `/minimax-cloud/api/v1/drive/file` | 200×2 | application/json | 1.9s |

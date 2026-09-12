@@ -1,6 +1,6 @@
 /** Pure reducers that turn the raw network log (recon/out) into STORY_004's interaction notes. */
 
-import type { NetworkEvent } from "./network-log.ts";
+import { placeholderIds, type NetworkEvent } from "./network-log.ts";
 
 const STATIC_EXT = /\.(js|css|png|jpe?g|webp|gif|svg|ico|woff2?|ttf|map)$/i;
 const STATIC_HOSTS = /^(cdn\.hailuo\.ai|filecdn\.minimax\.chat|file\.cdn\.minimax\.io|cdn\.hailuoai\.(video|com)|agent-cdn\.minimax\.io)$/;
@@ -57,9 +57,10 @@ export function groupEndpoints(events: NetworkEvent[]): Endpoint[] {
   const map = new Map<string, { e: Endpoint; times: string[] }>();
   for (const ev of events) {
     if (ev.kind !== "response" || !isApiEvent(ev)) continue;
-    const key = `${ev.method} ${ev.host}${ev.path}`;
+    const path = placeholderIds(ev.path); // logs written under an older rule set may still carry ids
+    const key = `${ev.method} ${ev.host}${path}`;
     const entry = map.get(key) ?? {
-      e: { method: ev.method, host: ev.host, path: ev.path, count: 0, statuses: {}, contentTypes: [], medianGapSeconds: null, responseShape: undefined },
+      e: { method: ev.method, host: ev.host, path, count: 0, statuses: {}, contentTypes: [], medianGapSeconds: null, responseShape: undefined },
       times: [],
     };
     entry.e.count += 1;

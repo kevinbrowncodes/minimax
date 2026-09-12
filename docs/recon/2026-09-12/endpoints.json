@@ -880,7 +880,7 @@
     {
       "method": "GET",
       "host": "matrix-internal.oss-us-east-1.aliyuncs.com",
-      "path": "/Mavis/:id/files/:id/441031527284814.mp4",
+      "path": "/Mavis/:id/files/:id/:id.mp4",
       "count": 3,
       "statuses": {
         "206": 3
@@ -4764,7 +4764,7 @@
         {
           "method": "GET",
           "host": "matrix-internal.oss-us-east-1.aliyuncs.com",
-          "path": "/Mavis/:id/files/:id/441031527284814.mp4",
+          "path": "/Mavis/:id/files/:id/:id.mp4",
           "count": 3,
           "statuses": {
             "206": 3

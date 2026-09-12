@@ -35,6 +35,11 @@ const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 const LONG_ID = /(?<=\/)\d{6,}(?=\.[a-z0-9]+$|\/|$)/g;
 const HEX_ID = /(?<=\/)[0-9a-f]{24,}(?=\.[a-z0-9]+$|\/|$)/gi;
 
+/** Applies the placeholder rules to a bare path (also used to re-sanitise paths stored by an earlier rule set). */
+export function placeholderIds(path: string): string {
+  return path.replace(UUID, ":uuid").replace(HEX_ID, ":hex").replace(LONG_ID, ":id");
+}
+
 /** The path with UUIDs, long numeric ids and long hex ids replaced by placeholders; no query, no hash. */
 export function sanitizePath(url: string): string {
   let path: string;
@@ -43,7 +48,7 @@ export function sanitizePath(url: string): string {
   } catch {
     return "";
   }
-  return path.replace(UUID, ":uuid").replace(HEX_ID, ":hex").replace(LONG_ID, ":id");
+  return placeholderIds(path);
 }
 
 export type NetworkEvent = {

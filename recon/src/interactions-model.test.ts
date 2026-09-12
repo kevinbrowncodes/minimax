@@ -42,6 +42,8 @@ describe("groupEndpoints", () => {
     ];
     const grouped = groupEndpoints(events);
     expect(grouped.map((e) => `${e.method} ${e.path}`)).toEqual(["GET /minimax-cloud/api/v1/session/:id", "POST /minimax-cloud/api/v1/session/:id/message"]);
+    const stored = groupEndpoints([res({ host: "x.oss-us-east-1.aliyuncs.com", path: "/Mavis/:id/files/:id/441031527284814.mp4", contentType: "video/mp4" })]);
+    expect(stored[0]?.path).toBe("/Mavis/:id/files/:id/:id.mp4");
     expect(grouped[0]).toMatchObject({ count: 3, statuses: { "200": 2, "500": 1 }, medianGapSeconds: 40, responseShape: { base_resp: { status_code: "number" }, session: { id: "string" } } });
     const md = renderEndpointsMarkdown(grouped);
     expect(md).toContain("| 3 | GET | agent.minimax.io | `/minimax-cloud/api/v1/session/:id` | 200×2 500×1 | application/json | 40s |");
