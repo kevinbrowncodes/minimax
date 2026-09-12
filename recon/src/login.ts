@@ -1,6 +1,6 @@
-import { dismissAnnouncement, openReference, readSessionSignals } from "./browser.js";
-import { REFERENCE_URL } from "./config.js";
-import { CONFIRMATIONS_REQUIRED, classifySession, countConfirmation, type SessionState } from "./session.js";
+import { dismissAnnouncement, openReference, readSessionSignals } from "./browser.ts";
+import { REFERENCE_URL } from "./config.ts";
+import { CONFIRMATIONS_REQUIRED, classifySession, countConfirmation, type SessionState } from "./session.ts";
 
 const TIMEOUT_MS = 10 * 60_000;
 const POLL_MS = 2_000;

@@ -1,5 +1,5 @@
-import { dismissAnnouncement, openReference, readSessionSignals, waitForHome } from "./browser.js";
-import { classifySession, exitCodeFor, type SessionState } from "./session.js";
+import { dismissAnnouncement, openReference, readSessionSignals, waitForHome } from "./browser.ts";
+import { classifySession, exitCodeFor, type SessionState } from "./session.ts";
 
 /**
  * Headless: opens the reference with the saved profile and prints one line,

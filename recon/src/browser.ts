@@ -1,6 +1,6 @@
 import { chromium, type BrowserContext, type Page } from "playwright";
-import { PROFILE_DIR, REFERENCE_URL, VIEWPORT } from "./config.js";
-import type { SessionSignals } from "./session.js";
+import { PROFILE_DIR, REFERENCE_URL, VIEWPORT } from "./config.ts";
+import type { SessionSignals } from "./session.ts";
 
 /**
  * Opens the reference in a persistent-profile Chromium. `channel: "chromium"`

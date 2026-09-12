@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CONFIRMATIONS_REQUIRED, classifySession, countConfirmation, exitCodeFor } from "./session.js";
+import { CONFIRMATIONS_REQUIRED, classifySession, countConfirmation, exitCodeFor } from "./session.ts";
 
 const home = "https://agent.minimax.io/";
 
