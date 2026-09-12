@@ -3,6 +3,7 @@
 #   gate      the toolchain image with the repo bind-mounted: every gate step runs here   -> tools/gate/run.sh
 #   app-dev   the same image running `next dev` with hot reload, on port 3000 for the owner's browser (profile "dev")
 #   app       the production image (app/Dockerfile) serving the built UI on port 3000       -> docker compose up -d app
+#   stub      the stub generation server (STORY_008) on the compose network, port 4010, no host port (profile "tools")
 #
 # Only one of app-dev / app runs at a time (both publish 3000). The model side is spark/comfyui/compose.yaml
 # (project "minimax-spark"); the UI reaches it through MODEL_BASE_URL only. Values come from the environment or a
@@ -59,6 +60,19 @@ services:
       MODEL_BASE_URL: ${MODEL_BASE_URL:-http://stub:4010}   # production sets the adapter URL in .env
       MODEL_API_KEY: ${MODEL_API_KEY:-}
     restart: unless-stopped
+
+  stub:
+    image: *gate-image
+    profiles: ["tools"]
+    container_name: minimax-stub
+    user: "${SPARK_UID:-1000}:${SPARK_GID:-1000}"
+    working_dir: /work
+    command: ["pnpm", "--filter", "stub-generation-server", "start"]
+    volumes: *gate-mounts
+    environment:
+      HOME: /tmp/gate-home
+      STUB_PORT: "4010"
+      STUB_FIXTURE: ${STUB_FIXTURE:-mp4}
 
 volumes:
   pnpm-store: {}

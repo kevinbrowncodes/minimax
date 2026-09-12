@@ -11,6 +11,7 @@ WORKDIR /work
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY app/package.json app/
 COPY recon/package.json recon/
+COPY tools/stub-generation-server/package.json tools/stub-generation-server/
 RUN pnpm install --frozen-lockfile --filter app...
 
 FROM deps AS build

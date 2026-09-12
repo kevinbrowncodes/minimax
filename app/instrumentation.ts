@@ -1,16 +1,8 @@
-import { ConfigError, readConfig } from "./lib/config";
-
-// Runs once when the Next.js server starts. A missing or malformed MODEL_BASE_URL must stop the server with a clear
-// message rather than serve 500s (STORY_007 acceptance criterion): Next only logs a failed instrumentation hook and
-// keeps the process alive, so exit explicitly.
-export function register(): void {
-  try {
-    readConfig();
-  } catch (error) {
-    if (error instanceof ConfigError) {
-      console.error(`[minimax] refusing to start: ${error.message}`);
-      process.exit(1);
-    }
-    throw error;
+// Runs once when the Next.js server starts (STORY_007). The check lives in a Node-only module loaded behind the
+// NEXT_RUNTIME guard, the pattern Next documents, so the Edge bundle never sees process.exit.
+export async function register(): Promise<void> {
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { assertConfigOrExit } = await import("./lib/startup-check");
+    assertConfigOrExit();
   }
 }

@@ -1,0 +1,26 @@
+{
+  "fixture.mp4": {
+    "mimeType": "video/mp4",
+    "durationSeconds": 2.0,
+    "width": 320,
+    "height": 180,
+    "videoCodec": "h264",
+    "audioCodec": "aac"
+  },
+  "fixture.webm": {
+    "mimeType": "video/webm",
+    "durationSeconds": 2.008,
+    "width": 320,
+    "height": 180,
+    "videoCodec": "vp9",
+    "audioCodec": "opus"
+  },
+  "fixture-poster.png": {
+    "mimeType": "image/png"
+  },
+  "fixture-reference.png": {
+    "mimeType": "image/png",
+    "width": 512,
+    "height": 512
+  }
+}
