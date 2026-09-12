@@ -9,12 +9,14 @@ export default defineConfig({
   resolve: { alias: { "@": path.resolve(import.meta.dirname) } },
   test: {
     environment: "jsdom",
-    include: ["lib/**/*.test.ts", "app/**/*.test.tsx", "components/**/*.test.tsx"],
+    setupFiles: ["./vitest.setup.ts"],
+    include: ["lib/**/*.test.ts", "lib/**/*.test.tsx", "app/**/*.test.tsx", "components/**/*.test.tsx"],
     exclude: ["node_modules/**", ".next/**", "test/integration/**", "e2e/**"],
     coverage: {
       provider: "v8",
       include: ["lib/**/*.ts"],
-      exclude: ["lib/**/*.test.ts", "lib/model-client.ts"],
+      // model-client is covered by the integration lane; startup-check only calls process.exit and is verified by starting the image.
+      exclude: ["lib/**/*.test.ts", "lib/**/*.test.tsx", "lib/model-client.ts", "lib/startup-check.ts"],
       reporter: ["text-summary", "json-summary"],
       reportsDirectory: "coverage",
       // Floors set from the measured baseline minus 2 (STORY_011 Done note). They only ever go up (CLAUDE.md §4).

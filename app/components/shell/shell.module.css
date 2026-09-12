@@ -1,0 +1,123 @@
+/* Shell layout — home-signed-in@1440.png, narrow-home@390.png (STORY_012) */
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar_width) minmax(0, 1fr);
+  min-height: 100vh;
+}
+.shellCollapsed {
+  grid-template-columns: 0 minmax(0, 1fr);
+}
+.shellCollapsed .aside {
+  overflow: hidden;
+}
+.aside {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  transition: width var(--duration_sidebar) var(--ease_standard);
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--topbar_height);
+  padding: 0 var(--spacing_16);
+}
+.topbarTitle {
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  color: var(--gray_1000);
+}
+.topbarActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  margin-left: auto;
+}
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--gray_500);
+  cursor: default;
+}
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_6);
+  height: 32px;
+  padding: 0 var(--spacing_12);
+  border: 1px solid var(--opacity_black_1_8);
+  border-radius: var(--radius_8);
+  background: var(--gray_0);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: var(--line_height_20);
+  color: var(--gray_1000);
+  cursor: default;
+}
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.menuButton {
+  display: none;
+}
+.scrim {
+  display: none;
+}
+@media (max-width: 899px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .aside {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: var(--sidebar_width);
+    z-index: 20;
+    transform: translateX(-100%);
+    transition: transform var(--duration_sidebar) var(--ease_standard);
+    background: var(--gray_0);
+  }
+  .asideOpen {
+    transform: translateX(0);
+  }
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: var(--opacity_black_1_50);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration_sidebar) var(--ease_standard);
+    z-index: 10;
+  }
+  .scrimOpen {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .menuButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: var(--radius_8);
+    background: transparent;
+    color: var(--gray_500);
+    cursor: pointer;
+    margin-left: calc(-1 * var(--spacing_8));
+  }
+}

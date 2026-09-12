@@ -12,7 +12,7 @@ Drafted 2026-09-12 from EPIC_001's component inventory, one per surface/state gr
 
 | # | Story | Status |
 | --- | --- | --- |
-| 012 | [The app shell matches the reference: sidebar, top bar and design tokens](../story/STORY_012_the_app_shell_matches_the_reference_sidebar_top_bar_and_tokens.md) | Ready |
+| 012 | [The app shell matches the reference: sidebar, top bar and design tokens](../story/STORY_012_the_app_shell_matches_the_reference_sidebar_top_bar_and_tokens.md) | Done (2026-09-12) |
 | 013 | [The composer and its video mode match the reference, with reference-image upload and the options the Spark supports](../story/STORY_013_the_composer_and_video_mode_match_the_reference_with_reference_image_upload.md) | Ready |
 | 014 | [A submitted job becomes a task page that shows progress, plays the result, can be cancelled, and is kept in history](../story/STORY_014_a_submitted_job_becomes_a_task_page_that_shows_progress_plays_the_result_and_is_kept_in_history.md) | Ready |
 | 015 | [Assets lists every finished video with a poster, a preview modal and download](../story/STORY_015_assets_lists_every_finished_video_with_a_poster_preview_and_download.md) | Ready |

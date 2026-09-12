@@ -1,15 +1,10 @@
-import { readConfig } from "@/lib/config";
+import styles from "./home.module.css";
 
-// Placeholder page (STORY_007): proves the container, the config and the LAN URL end to end. Replaced by EPIC_003.
-export const dynamic = "force-dynamic";
-
+// Home (STORY_012): the shell and the heading; the composer arrives with STORY_013.
 export default function HomePage() {
-  const { modelBaseUrl } = readConfig();
-  const host = new URL(modelBaseUrl).host;
   return (
-    <main>
-      <h1>MiniMax Local</h1>
-      <p>Generation server: {host}</p>
+    <main className={styles.home}>
+      <h1 className={styles.heading}>MiniMax makes your work easier</h1>
     </main>
   );
 }

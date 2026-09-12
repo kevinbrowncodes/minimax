@@ -1,0 +1,110 @@
+/*
+ * Design tokens measured from agent.minimax.io on 2026-09-12 (docs/recon/2026-09-12/tokens.md), STORY_012.
+ * The names are the reference's own custom properties so a delta review reads one-to-one. Nothing in the app may use a
+ * colour, radius, spacing or font that is not one of these.
+ */
+:root {
+  --gray_0: #fff;
+  --gray_50: #fafafa;
+  --gray_75: #f5f5f5;
+  --gray_100: #ededed;
+  --gray_200: #ccc;
+  --gray_300: #adadad;
+  --gray_400: #949494;
+  --gray_500: #666;
+  --gray_600: #4a4a4a;
+  --gray_700: #303030;
+  --gray_800: #262626;
+  --gray_900: #1c1c1c;
+  --gray_1000: #171717;
+  --blue_400: #0094fc;
+  --violet_500: #8147f6;
+  --purple_50: #f3f0fc;
+  --purple_500: #9a55c2;
+  --red_400: #f73646;
+  --red_500: #e31937;
+  --red_50: #feedee;
+  --green_400: #04b54b;
+  --opacity_black_1_4: #0a0a0a0a;
+  --opacity_black_1_8: #0a0a0a14;
+  --opacity_black_1_15: #0a0a0a26;
+  --opacity_black_1_50: #0a0a0a80;
+  --opacity_black_1_80: #0a0a0acc;
+  --opacity_purple_500_10: #9a55c21a;
+
+  --radius_4: 4px;
+  --radius_6: 6px;
+  --radius_8: 8px;
+  --radius_10: 10px;
+  --radius_12: 12px;
+  --radius_16: 16px;
+  --radius_20: 20px;
+  --radius_full: 999px;
+
+  --spacing_2: 2px;
+  --spacing_4: 4px;
+  --spacing_6: 6px;
+  --spacing_8: 8px;
+  --spacing_12: 12px;
+  --spacing_16: 16px;
+  --spacing_20: 20px;
+  --spacing_24: 24px;
+  --spacing_32: 32px;
+  --spacing_40: 40px;
+  --spacing_48: 48px;
+  --spacing_64: 64px;
+
+  --line_height_16: 16px;
+  --line_height_20: 20px;
+  --line_height_22: 22px;
+  --line_height_26: 26px;
+  --line_height_32: 32px;
+
+  --font_sans: ui-sans-serif, -apple-system, system-ui, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+  --shadow_composer: rgba(10, 10, 10, 0.08) 0 0 10px 0;
+  --ease_standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration_fast: 0.15s;
+  --duration_sidebar: 0.27s;
+
+  --sidebar_width: 260px;
+  --topbar_height: 56px;
+  --composer_width: 736px;
+  --breakpoint_sidebar: 900px;
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--gray_0);
+  color: var(--gray_1000);
+  font-family: var(--font_sans);
+  font-size: 13px;
+  line-height: 19.5px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--blue_400);
+  outline-offset: 2px;
+}

@@ -2,10 +2,10 @@ import { expect, test } from "./fixtures/test";
 import { settled } from "./fixtures/settle";
 
 test.describe("smoke: browser → app container → stub", () => {
-  test("the home page renders the placeholder heading", async ({ page }) => {
+  test("the home page renders the reference heading", async ({ page }) => {
     await page.goto("/");
     await settled(page);
-    await expect(page.getByRole("heading", { level: 1, name: "MiniMax Local" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "MiniMax makes your work easier" })).toBeVisible();
   });
 
   test("the app answers /api/capabilities with the stub's capabilities", async ({ page, request }) => {

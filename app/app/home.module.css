@@ -1,0 +1,21 @@
+/* Home — home-signed-in@1440.png: heading 32px/400 at 1440, 24px/400 at 390 (tokens.md › type scale) */
+.home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(96px, 22vh, 190px) var(--spacing_16) var(--spacing_64);
+}
+.heading {
+  margin: 0 0 var(--spacing_32);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: normal;
+  color: var(--gray_1000);
+  text-align: center;
+}
+@media (max-width: 899px) {
+  .heading {
+    font-size: 24px;
+    line-height: var(--line_height_32);
+  }
+}

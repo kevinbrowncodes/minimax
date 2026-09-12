@@ -1,0 +1,15 @@
+/* Assets — assets-empty@1440.png: title 26px/500/32px, 64px from the top bar */
+.page {
+  padding: var(--spacing_24) var(--spacing_64);
+}
+.title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: var(--line_height_32);
+}
+@media (max-width: 899px) {
+  .page {
+    padding: var(--spacing_16);
+  }
+}

@@ -1,7 +1,7 @@
 # STORY_012 — The app shell matches the reference: sidebar, top bar and design tokens
 
 **Epic:** [EPIC_003](../epic/EPIC_003_the_video_generation_screen_is_rebuilt_to_match_the_reference.md)
-**Status:** Ready (drafted 2026-09-12)
+**Status:** Done (2026-09-12, on the Spark)
 **Created:** 2026-09-12
 
 As the owner, I want the app to open onto the same shell as agent.minimax.io — the 260 px sidebar with its sections, the top bar, the system font and the measured colours, radii and spacing — so that every later surface sits inside a frame that already matches the reference at desktop and at phone width.
@@ -40,14 +40,14 @@ The app renders STORY_007's placeholder page. No layout, no tokens, no history t
 
 ## Acceptance Criteria
 
-- [ ] `app/app/globals.css` defines the tokens from [tokens.md](../recon/2026-09-12/tokens.md) as CSS custom properties with the reference's own names where it has them (`--gray_0 … --gray_1000`, `--blue_400`, `--violet_500`, `--opacity_black_1_8`, `--radius_8/12/16/20`, `--spacing_*`, `--line_height_*`) and the body font stack above; nothing in the app uses a colour, radius or font that is not a token.
-- [ ] `app/components/shell/` renders the sidebar exactly as captured: logo mark, collapse button, primary rows **New task**, **Search**, **Plugins**, **Scheduled**, **Assets**, **Connect Mobile**; sections **More** (MaxHermes, MaxClaw), **Projects** (Add new project), **Recents**, **Agent Team** (General, Coder, Verifier); footer chip **Owner** and the download icon. **New task** (`/`), **Assets** (`/assets`) and Recents entries navigate; every other row is rendered but inert (`aria-disabled="true"`, no navigation, a tooltip "Not part of MiniMax Local") — see Departures.
-- [ ] Recents lists history entries (from STORY_014's `GET /api/history`, newest first, up to 20) with the title and a red 6 px dot when the job finished and has not been opened since; the empty state reads "No task history." with the reference's second line omitted (Departures).
-- [ ] The active row follows the route (`/` → New task, `/assets` → Assets, `/task/:id` → that Recents entry).
-- [ ] Top bar: home shows the document icon and the **Download** button (both inert); a task page shows the entry's title and the Work Area icon (inert); Assets shows nothing in the bar (the page has its own title).
-- [ ] At widths below 900 px the sidebar is hidden and a toggle at the top-left opens it as a drawer over a scrim (0.27 s, the reference's easing); `Escape` and the scrim close it. Touch targets on the narrow project are ≥ 44 px.
-- [ ] The placeholder page from STORY_007 is replaced by the shell around an empty main area with the heading "MiniMax makes your work easier" (32 px/400 at 1440, 24 px/400 at 390); the composer comes in STORY_013.
-- [ ] `page.tsx` no longer shows the configured host; the startup config check stays.
+- [x] `app/app/globals.css` defines the tokens from [tokens.md](../recon/2026-09-12/tokens.md) as CSS custom properties with the reference's own names where it has them (`--gray_0 … --gray_1000`, `--blue_400`, `--violet_500`, `--opacity_black_1_8`, `--radius_8/12/16/20`, `--spacing_*`, `--line_height_*`) and the body font stack above; nothing in the app uses a colour, radius or font that is not a token.
+- [x] `app/components/shell/` renders the sidebar exactly as captured: logo mark, collapse button, primary rows **New task**, **Search**, **Plugins**, **Scheduled**, **Assets**, **Connect Mobile**; sections **More** (MaxHermes, MaxClaw), **Projects** (Add new project), **Recents**, **Agent Team** (General, Coder, Verifier); footer chip **Owner** and the download icon. **New task** (`/`), **Assets** (`/assets`) and Recents entries navigate; every other row is rendered but inert (`aria-disabled="true"`, no navigation, a tooltip "Not part of MiniMax Local") — see Departures.
+- [x] Recents lists history entries (from STORY_014's `GET /api/history`, newest first, up to 20) with the title and a red 6 px dot when the job finished and has not been opened since; the empty state reads "No task history." with the reference's second line omitted (Departures).
+- [x] The active row follows the route (`/` → New task, `/assets` → Assets, `/task/:id` → that Recents entry).
+- [x] Top bar: home shows the document icon and the **Download** button (both inert); a task page shows the entry's title and the Work Area icon (inert); Assets shows nothing in the bar (the page has its own title).
+- [x] At widths below 900 px the sidebar is hidden and a toggle at the top-left opens it as a drawer over a scrim (0.27 s, the reference's easing); `Escape` and the scrim close it. Touch targets on the narrow project are ≥ 44 px.
+- [x] The placeholder page from STORY_007 is replaced by the shell around an empty main area with the heading "MiniMax makes your work easier" (32 px/400 at 1440, 24 px/400 at 390); the composer comes in STORY_013.
+- [x] `page.tsx` no longer shows the configured host; the startup config check stays.
 
 ## Departures from the reference
 
@@ -73,3 +73,10 @@ The app renders STORY_007's placeholder page. No layout, no tokens, no history t
 ## Estimated Complexity
 
 M
+
+## Done note (2026-09-12)
+
+- **Built:** `app/app/globals.css` (the reference's token names: greys, blue_400, violet_500, purple, radii 4–20, spacing, line heights, the system font stack, 0.15 s / 0.27 s easings, 260 px sidebar, 56 px top bar); `components/shell/Shell.tsx` (grid at ≥ 900 px, drawer + scrim below with the 0.27 s standard easing, Escape and scrim close, `aria-expanded` toggle 44×44), `Sidebar.tsx` (every captured row; inert rows `role=link aria-disabled` with the tooltip; Recents from a prop with the unread dot), `TopBar` inside the shell (home: Changelog icon + Download; task: title + Work Area; assets: nothing), 13 inline SVG icons drawn here, `lib/route-title.ts` (`topBarFor`, `activeRow`, `isUnread`), `lib/use-narrow.ts` (matchMedia hook), `lib/cx.ts`. Home renders the heading (32 px / 24 px at 390); `/assets` is a placeholder page with the title so the row navigates.
+- **Tests:** unit — `route-title` 2, `cx` 1, `use-narrow` 2 (mocked `matchMedia`), `Sidebar.test.tsx` 3 (rows in order, inert rows, active row + dot, callbacks); e2e — `shell.spec.ts` 4 (active row and navigation at both widths, inert rows do not navigate, the drawer at 390 with a ≥ 44 px toggle and Escape, the 260 px sidebar at desktop); `smoke.spec.ts` updated to the new heading. Gate green: 14 e2e in 12 s.
+- **Side by side (not a gate):** at 1440 the sidebar, rows, section labels and the heading sit where `home-signed-in@1440.png` has them; deltas known: our section labels use `--gray_300` (the capture's exact grey for labels was not among the measured elements), the heading's vertical position is `clamp(96px, 22vh, 190px)` from the top bar versus the reference's ~194 px at 900 tall, and our icons are approximations of the glyphs.
+- **Dependencies added:** `@testing-library/dom`, `@testing-library/jest-dom` (dev). `startup-check.ts` excluded from unit coverage (it only calls `process.exit`; the image start verifies it).
