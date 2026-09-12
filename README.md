@@ -88,7 +88,17 @@ TBD (EPIC_002). Dev server on port 3000.
 
 ## Running the Model
 
-TBD — this section records the serving stack, the exact model and checkpoint currently on the Spark, its license and the terms that apply, the memory split (weights + activations at the served resolution and clip length + headroom), the port, and the env vars the UI reads. It is a description, not evidence: verify on the Spark before relying on it.
+**Status (2026-09-12): nothing is on the Spark yet.** STORY_005 puts ComfyUI and the Comfy-Org quantized H3 weights there and fills in this section with measured numbers; STORY_006 adds the job-API adapter and the env vars the UI reads. Until then this section records the plan, not the state — verify on the Spark before relying on it.
+
+| Item | Value |
+| --- | --- |
+| Serving stack | ComfyUI (pinned, ≥ 0.30.0) behind our job-API adapter — owner's choice |
+| Model / checkpoint | MiniMax-H3 FL2VA (Comfy-Org repackage), precision to be measured (int8_convrot first) |
+| Licence | MiniMax H3 Community License; the Spark is outside the excluded territories |
+| Memory split | to be measured (STORY_005) |
+| Port / env vars | to be set (STORY_006) |
+
+The Spark facts (OS, CUDA, memory, disk, what was already installed) are recorded in `spark/README.md` by STORY_005 before anything is changed.
 
 **Open question #1 (2026-09-12): which model.** The obvious candidate is MiniMax's own **MiniMax-H3** (Hailuo 3.0), open-weighted on 2026-08-03. Facts read from its Hugging Face model card and LICENSE file that day:
 

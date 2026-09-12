@@ -1,6 +1,6 @@
 # EPIC_004 — A video model runs on the DGX Spark behind the same job API
 
-**Status:** Not started (after EPIC_003)
+**Status:** In progress on the Spark from 2026-09-12, in parallel with EPIC_002/003 on the Mac (owner's decision)
 
 ## Goal
 
@@ -50,6 +50,21 @@ Read from the official LICENSE on 2026-09-12: **MiniMax-H3**'s Community License
 
 The decision, and the license terms it rests on (read from the model's own repository that session), are recorded here before the first story is drafted ([CLAUDE.md → §4a](../../CLAUDE.md#4a-two-machines-the-mac-and-the-spark)).
 
-## Stories
+## Stories (in implementation order)
 
-Drafted after the model decision. Expected shape: serving stack install script; weight fetch; memory-budget derivation and measurement; the job-API adapter in front of the serving stack; systemd unit; the UI's env pointed at the Spark with a manual verification note.
+| # | Story | Status |
+| --- | --- | --- |
+| 005 | [One H3 clip renders on the Spark through ComfyUI, and its time and memory are written down](../story/STORY_005_one_h3_clip_renders_on_the_spark_through_comfyui_and_its_time_and_memory_are_written_down.md) | Ready |
+| 006 | [The Spark answers create, status and result for a video job, so the UI never talks to ComfyUI directly](../story/STORY_006_the_spark_answers_create_status_and_result_for_a_video_job_so_the_ui_never_talks_to_comfyui_directly.md) | Draft |
+
+Later: a second precision measured against the first on the same prompt; Ref2VA; the UI's env pointed at the Spark with a manual verification note.
+
+## Working on two machines at once
+
+From 2026-09-12 the Spark session works this epic while the Mac session works EPIC_002 and EPIC_003. Rules that keep them from colliding:
+
+- The Spark session touches only `spark/`, `docs/story/STORY_005…`/`006…`, this epic, `spark/README.md`, and the Running the Model section of the root README. It never touches `app/`, `recon/`, or `tools/`.
+- The Spark has no recon browser profile and must never run the recon scripts.
+- Both sessions commit to `develop` with explicit paths and **pull before every push**; a conflict in the root README is resolved by keeping both machines' sections.
+- Weights, outputs and logs live outside the repo on the Spark; `.gitignore` already excludes them, and `git status --short` is read before every commit.
+- Story numbers continue the global sequence (005, 006, …); the Mac's EPIC_002 stories take the next free numbers when drafted, so the two sessions must pull before drafting a story.
