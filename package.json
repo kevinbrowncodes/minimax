@@ -7,7 +7,8 @@
     "test": "pnpm -r test",
     "recon:login": "pnpm --filter recon login",
     "recon:check": "pnpm --filter recon check",
-    "recon:capture": "pnpm --filter recon capture"
+    "recon:capture": "pnpm --filter recon capture",
+    "recon:tokens": "pnpm --filter recon tokens"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
