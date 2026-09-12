@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { frameState, frameToKeep, isResultControl, looksFailed, looksOutOfCredits, parseModelArg, smallestDuration } from "./generate-plan.ts";
+import { frameState, frameToKeep, isResultControl, looksFailed, looksOutOfCredits, looksWorking, parseModeArg, parseModelArg, parseSessionArg, smallestDuration } from "./generate-plan.ts";
 
 describe("frameToKeep", () => {
   it("keeps the first frame at or past each mark once", () => {
@@ -39,9 +39,23 @@ describe("looksFailed", () => {
 });
 
 describe("looksOutOfCredits", () => {
-  it("matches the low-balance notice and its Buy Credits control, not ordinary text", () => {
-    expect(looksOutOfCredits("Fewer than 1,000 Credits remain. Buy Credits Subscribe")).toBe(true);
+  it("ignores the pinned low-balance banner, which sits on every task page while the balance is low", () => {
+    expect(looksOutOfCredits("Request failed Retry Fewer than 1,000 Credits remain. Buy Credits Subscribe")).toBe(false);
     expect(looksOutOfCredits("Track progress on longer tasks.")).toBe(false);
+  });
+  it("matches the agent's own wording, and the exhausted-allowance wall seen on 2026-09-12", () => {
+    expect(looksOutOfCredits("insufficient account credits for MiniMax-H3 video generation")).toBe(true);
+    expect(looksOutOfCredits("Provider returned HTTP 402")).toBe(true);
+    expect(looksOutOfCredits("No conversation resources are available. Subscribe to continue.")).toBe(true);
+    expect(looksFailed("No conversation resources are available. Subscribe to continue.")).toBe(true);
+  });
+});
+
+describe("looksWorking", () => {
+  it("recognises the agent's in-progress status words", () => {
+    expect(looksWorking("Merging…")).toBe(true);
+    expect(looksWorking("Thinking")).toBe(true);
+    expect(looksWorking("Processed 42s Submitted.")).toBe(false);
   });
 });
 
@@ -76,5 +90,18 @@ describe("smallestDuration", () => {
     expect(smallestDuration(["16:9", "6s", "10s", "768P"])).toBe("6s");
     expect(smallestDuration(["5s", "6s", "15s"])).toBe("5s");
     expect(smallestDuration(["16:9"])).toBeNull();
+  });
+});
+
+describe("parseModeArg and parseSessionArg", () => {
+  it("defaults to full and recognises the two other modes", () => {
+    expect(parseModeArg(["--generate", "2"])).toBe("full");
+    expect(parseModeArg(["--generate", "2", "--revisit"])).toBe("revisit");
+    expect(parseModeArg(["--generate", "1", "--cancel-only"])).toBe("cancel-only");
+  });
+  it("builds a case-insensitive session matcher with a default", () => {
+    expect(parseSessionArg([]).test("Paper boat in rain puddle")).toBe(true);
+    expect(parseSessionArg(["--session", "candle"]).test("A single candle")).toBe(true);
+    expect(parseSessionArg(["--session", "candle"]).test("Paper boat")).toBe(false);
   });
 });

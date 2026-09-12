@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-12",
+  "reference": "https://agent.minimax.io/",
+  "note": "Cancel-only attempts (the second approved job). Neither reached a running generation, so the cancel state itself is not captured; the stop control is visible in task-generating-000s (attempt 4) and named 'Stop generation' in that run's page dump.",
+  "entries": [
+    {
+      "state": "task-request-failed",
+      "width": 1440,
+      "file": "task-request-failed@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-12T15:46:53.000Z",
+      "reachedBy": "auto",
+      "note": "Attempt 5: the agent processed for 5 s (thought once, viewed two files) and the thread shows 'Request failed' with Retry, the pinned low-credits banner above the composer."
+    },
+    {
+      "state": "task-no-conversation-resources",
+      "width": 1440,
+      "file": "task-no-conversation-resources@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-12T15:50:10.000Z",
+      "reachedBy": "auto",
+      "note": "Attempt 6: the thread answers 'No conversation resources are available. Subscribe to continue.' with a Subscribe control; the composer's control is back to Send. The account's conversation allowance was exhausted after the day's five requests."
+    }
+  ],
+  "skipped": [
+    {
+      "state": "task-cancelled",
+      "width": 1440,
+      "reason": "no job reached a running state on the second approved slot: attempt 5 'Request failed' after 5 s, attempt 6 refused for lack of conversation resources"
+    }
+  ]
+}

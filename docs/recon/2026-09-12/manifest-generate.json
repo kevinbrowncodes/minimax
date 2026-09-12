@@ -1,0 +1,98 @@
+{
+  "date": "2026-09-12",
+  "reference": "https://agent.minimax.io/",
+  "note": "Attempt 4 (full mode, Hailuo-2.3). The job was queued by the agent and completed on the backend (see manifest-revisit.json: the file appeared in Assets), but the agent never posted the result in the thread within the 20-minute wait, so task-done was not captured here.",
+  "entries": [
+    {
+      "state": "task-submitted",
+      "width": 1440,
+      "file": "task-submitted@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-12T15:23:08.797Z",
+      "reachedBy": "auto",
+      "note": "right after Send; path pattern /mavis"
+    },
+    {
+      "state": "task-generating-000s",
+      "width": 1440,
+      "file": "task-generating-000s@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-12T15:23:09.393Z",
+      "reachedBy": "auto",
+      "note": "gen1, 3 s after Send \u2014 file re-derived after the run from the raw frame (a later run had overwritten it); the sidebar name was masked in the image rather than in the page."
+    },
+    {
+      "state": "task-generating-030s",
+      "width": 1440,
+      "file": "task-generating-030s@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-12T15:23:40.125Z",
+      "reachedBy": "auto",
+      "note": "gen1, 34 s after Send \u2014 file re-derived after the run from the raw frame (a later run had overwritten it); the sidebar name was masked in the image rather than in the page."
+    },
+    {
+      "state": "task-generating-090s",
+      "width": 1440,
+      "file": "task-generating-090s@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-12T15:24:40.926Z",
+      "reachedBy": "auto",
+      "note": "gen1, 94 s after Send \u2014 file re-derived after the run from the raw frame (a later run had overwritten it); the sidebar name was masked in the image rather than in the page."
+    },
+    {
+      "state": "task-generating-180s",
+      "width": 1440,
+      "file": "task-generating-180s@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-12T15:26:11.850Z",
+      "reachedBy": "auto",
+      "note": "gen1, 185 s after Send"
+    },
+    {
+      "state": "task-generating-300s",
+      "width": 1440,
+      "file": "task-generating-300s@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-12T15:28:13.012Z",
+      "reachedBy": "auto",
+      "note": "gen1, 307 s after Send"
+    },
+    {
+      "state": "task-generating-600s",
+      "width": 1440,
+      "file": "task-generating-600s@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-12T15:33:14.962Z",
+      "reachedBy": "auto",
+      "note": "gen1, 608 s after Send"
+    },
+    {
+      "state": "task-timeout",
+      "width": 1440,
+      "file": "task-timeout@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-12T15:43:08.214Z",
+      "reachedBy": "auto",
+      "note": "timeout after 1202 s"
+    },
+    {
+      "state": "assets-one-video",
+      "width": 1440,
+      "file": "assets-one-video@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-12T15:43:12.909Z",
+      "reachedBy": "auto",
+      "note": "Assets with the Videos filter after generation 1"
+    },
+    {
+      "state": "home-with-recents",
+      "width": 1440,
+      "file": "home-with-recents@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T15:43:16.017Z",
+      "reachedBy": "auto",
+      "note": "sidebar Recents after generation 1"
+    }
+  ],
+  "skipped": []
+}

@@ -1,0 +1,68 @@
+{
+  "date": "2026-09-12",
+  "reference": "https://agent.minimax.io/",
+  "note": "Narrow states are the same persistent context resized to 390×844 (layout only, no touch semantics).",
+  "entries": [
+    {
+      "state": "task-revisited-pending",
+      "width": 1440,
+      "file": "task-revisited-pending@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-12T15:45:32.899Z",
+      "reachedBy": "auto",
+      "note": "the reopened session, no video element yet"
+    },
+    {
+      "state": "assets-one-video",
+      "width": 1440,
+      "file": "assets-one-video@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-12T15:45:37.617Z",
+      "reachedBy": "auto",
+      "note": "Assets with the Videos filter on revisit"
+    },
+    {
+      "state": "assets-video-tile-hover",
+      "width": 1440,
+      "file": "assets-video-tile-hover@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-12T15:45:38.799Z",
+      "reachedBy": "auto",
+      "note": "pointer over the video tile"
+    },
+    {
+      "state": "assets-video-preview",
+      "width": 1440,
+      "file": "assets-video-preview@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-12T15:45:41.968Z",
+      "reachedBy": "auto",
+      "note": "the preview with a video element"
+    },
+    {
+      "state": "assets-video-preview-hover",
+      "width": 1440,
+      "file": "assets-video-preview-hover@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-12T15:45:43.427Z",
+      "reachedBy": "auto",
+      "note": "pointer over the preview video"
+    },
+    {
+      "state": "home-with-recents",
+      "width": 1440,
+      "file": "home-with-recents@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-12T15:45:58.105Z",
+      "reachedBy": "auto",
+      "note": "sidebar Recents on revisit"
+    }
+  ],
+  "skipped": [
+    {
+      "state": "assets-video-actions",
+      "width": 1440,
+      "reason": "locator.click: Timeout 10000ms exceeded."
+    }
+  ]
+}
