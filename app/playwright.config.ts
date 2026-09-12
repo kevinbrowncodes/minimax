@@ -38,11 +38,12 @@ export default defineConfig({
       env: { STUB_PORT: String(STUB_PORT), STUB_HOST: "127.0.0.1", STUB_FIXTURE: process.env["STUB_FIXTURE"] ?? "mp4" },
     },
     {
-      command: `pnpm --filter app start -H 127.0.0.1 -p ${String(APP_PORT)}`,
+      // The standalone server, exactly what app/Dockerfile ships (CHORE_001); `pnpm build` (gate step 5) must have run.
+      command: "cp -r .next/static .next/standalone/app/.next/ && node .next/standalone/app/server.js",
       url: appUrl,
       reuseExistingServer: false,
       timeout: 60_000,
-      env: { MODEL_BASE_URL: stubUrl, NEXT_TELEMETRY_DISABLED: "1" },
+      env: { PORT: String(APP_PORT), HOSTNAME: "127.0.0.1", MODEL_BASE_URL: stubUrl, NEXT_TELEMETRY_DISABLED: "1" },
     },
   ],
 });

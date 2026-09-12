@@ -118,7 +118,7 @@ See **[README.md → Project Structure](README.md#project-structure)**. The `doc
 ## 4. Dev Workflow
 
 - **Always push to `develop` only — NEVER push to `main`.**
-- **There is no CI (as of 2026-09-12).** The test gate is local. The testing-foundation epic adds a Husky pre-push hook that runs steps 1–6 below on every `git push origin develop`; until that hook exists, **run the steps by hand before every push** and say so in the summary. Deploying is a local act too: everything runs on the Spark as containers started by the scripts the README documents.
+- **There is no CI (as of 2026-09-12).** The test gate is local: the Husky pre-push hook (`.husky/pre-push`, STORY_011) runs steps 1–6 below on every `git push origin develop`. Deploying is a local act too: everything runs on the Spark as containers started by the scripts the README documents.
 - **Before every commit, all seven steps must pass in order.** Cheapest checks first so failures surface in seconds, not minutes:
   1. `pnpm typecheck` (`tsc --noEmit`) — fastest; the real type gate.
   2. `pnpm lint` — the real lint gate, parallel to step 1.
