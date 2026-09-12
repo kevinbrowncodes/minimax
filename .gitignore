@@ -1,0 +1,31 @@
+node_modules/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Recon: the owner's browser session and raw captures never enter git (CLAUDE.md §3e, §4b)
+recon/.profile/
+recon/out/
+
+# Model weights live on the Spark's disk, never here (CLAUDE.md §4a)
+models/
+*.safetensors
+*.gguf
+*.ckpt
+*.pt
+*.bin
+
+# Generated videos are never committed; the stub's tiny fixture is the one exception
+*.mp4
+*.webm
+*.mov
+!tools/**/fixtures/*.mp4
+!tools/**/fixtures/*.webm
+
+# Build and test output
+coverage/
+dist/
+.turbo/
+playwright-report/
+test-results/
