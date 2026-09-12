@@ -10,7 +10,17 @@ The UI's configured generation endpoint points at the Spark, and a real video co
 
 **The Spark is used in El Salvador (owner, 2026-09-12), which is not an Excluded Territory** under the MiniMax H3 Community License (EU, UK, South Korea, United States). H3's open weights are therefore licensed for it, and this epic builds toward **MiniMax-H3 on the Spark**. The remaining decision is the **flavor** — checkpoint (FL2VA / Ref2VA), precision or quantization, and serving stack — chosen from options with pros and cons the owner reviews before any weights are fetched (owner's instruction, 2026-09-12; see Open question #2 below).
 
-## Open question #2 — which H3 flavor fits the Spark (options prepared 2026-09-12, awaiting the owner's pick)
+## Decision #2 — H3 flavor: **B, ComfyUI on the Spark with Comfy-Org quantized weights** (owner, 2026-09-12)
+
+The owner chose B over the recommended A. Consequences this epic must carry:
+
+- **The job API is ours to write.** ComfyUI exposes a queue (`POST /prompt`, `GET /history/{id}`, `GET /view`) and a websocket for progress; EPIC_004 adds a small adapter that presents the create → status → result shape the UI and the stub already speak, and maps the UI's ratio, duration and resolution onto a ComfyUI workflow graph. The adapter is the only thing the UI talks to.
+- **Launch flags are part of the serving config**: `--disable-mmap` (and the related offload flags) or the Spark loads every safetensors file twice.
+- **Precision is a story-level choice** among int8_convrot (Comfy-Org's recommendation for cu130), fp8_scaled and NVFP4 (fastest on Blackwell, lowest fidelity); the first story measures at least two on the same prompt and records time and memory.
+- **Both checkpoints are available** (FL2VA and Ref2VA), so the reference's subject-reference behaviour is reachable later without changing the stack.
+- Starting points to evaluate, not to adopt blindly: the NVIDIA-forum one-click deploy (Sol-Attn), the SparkyUI container, and Comfy-Org's own MiniMax-H3 tutorial and templates.
+
+The options as presented, kept for the record:
 
 **Facts the options rest on** (sources at the end of this section, read 2026-09-12):
 
