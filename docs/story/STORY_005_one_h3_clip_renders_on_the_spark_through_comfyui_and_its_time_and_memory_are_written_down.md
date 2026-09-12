@@ -31,6 +31,7 @@ N/A (no UI change; the deliverables are scripts under `spark/comfyui/`, `spark/R
 ## Technical Notes
 
 - **Read before you write on the Spark** ([CLAUDE.md → §4a](../../CLAUDE.md#4a-two-machines-the-mac-and-the-spark)). Another process may own the GPU. Never delete a weights directory without the owner saying so in that session.
+- **If memory is short, do not free it yourself.** Other Docker containers and services on the Spark are the owner's. List them with their memory use and ask which are not required; stop only what he names, and record in the Done note what was stopped and how much it freed (EPIC_004 → Working on two machines at once).
 - Starting points, to read rather than adopt blindly: MiniMax's self-hosting guide (ComfyUI 0.30.0+, Comfy-Org weights), Comfy-Org's MiniMax-H3 tutorial and templates, the NVIDIA-forum "one-click deploy" thread (Sol-Attn, 12 workflows, Docker packaging in the replies) and the SparkyUI container (aarch64 cu130 PyTorch, SageAttention for sm_121), and the memory-doubling thread (the flags above; upstream fixes in ComfyUI PR #13609 and safetensors PR #759 — check whether the pinned ComfyUI already includes them). All linked from EPIC_004.
 - The weights are licensed under the MiniMax H3 Community License; the Spark is outside the excluded territories (owner, 2026-09-12). The download scripts print the licence name and where it was read.
 - Prefer a plain venv on the host over Docker for the first run: one fewer layer between the numbers and the hardware. Docker is a later chore if it helps reproducibility.

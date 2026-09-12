@@ -67,4 +67,5 @@ From 2026-09-12 the Spark session works this epic while the Mac session works EP
 - The Spark has no recon browser profile and must never run the recon scripts.
 - Both sessions commit to `develop` with explicit paths and **pull before every push**; a conflict in the root README is resolved by keeping both machines' sections.
 - Weights, outputs and logs live outside the repo on the Spark; `.gitignore` already excludes them, and `git status --short` is read before every commit.
+- **The Spark runs other things — Docker containers among them — that are not ours. Never stop, restart or remove a container, service or process to free memory or the GPU.** When memory is short, list what is running with its memory use (`docker ps`, `docker stats --no-stream`, `free -g`, `nvidia-smi`) and put the list to the owner; he says which are not required, and only then is anything stopped, by name (owner's rule, 2026-09-12).
 - Story numbers continue the global sequence (005, 006, …); the Mac's EPIC_002 stories take the next free numbers when drafted, so the two sessions must pull before drafting a story.
