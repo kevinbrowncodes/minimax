@@ -1,10 +1,8 @@
-import styles from "./assets.module.css";
+import { AssetsPage } from "@/components/assets/AssetsPage";
 
-// Assets (STORY_012 placeholder): the shell's Assets row needs a destination; STORY_015 fills the page.
-export default function AssetsPage() {
-  return (
-    <main className={styles.page}>
-      <h1 className={styles.title}>Assets</h1>
-    </main>
-  );
+// Assets (STORY_015): the gallery of finished videos from history.
+export const dynamic = "force-dynamic";
+
+export default function Assets() {
+  return <AssetsPage />;
 }
