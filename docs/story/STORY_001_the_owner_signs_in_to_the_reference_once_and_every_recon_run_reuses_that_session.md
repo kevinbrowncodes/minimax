@@ -1,7 +1,7 @@
 # STORY_001 — The owner signs in to the reference once and every recon run reuses that session
 
 **Epic:** [EPIC_001](../epic/EPIC_001_the_reference_video_generation_flow_is_captured_as_a_spec.md)
-**Status:** Implemented — awaiting the owner's manual verification (login + check)
+**Status:** Done (2026-09-12)
 **Created:** 2026-09-12
 
 As the owner, I want to sign in to agent.minimax.io once, in a browser the recon scripts control, so that every later capture runs against my account without the assistant ever handling my credentials.
@@ -27,7 +27,7 @@ session: signed-in
 
 ## Acceptance Criteria
 
-- [ ] `pnpm recon:login` opens a **headed** Chromium on the reference using a **persistent profile at `recon/.profile/`**, prints the instructions above, polls until the session reads as signed in (up to 10 minutes), then closes the browser so the profile is flushed, and prints that it is signed in. On timeout it says so and exits non-zero.
+- [x] `pnpm recon:login` opens a **headed** Chromium on the reference using a **persistent profile at `recon/.profile/`**, prints the instructions above, polls until the session reads as signed in (up to 10 minutes), then closes the browser so the profile is flushed, and prints that it is signed in. On timeout it says so and exits non-zero.
 - [x] `pnpm recon:check` opens the reference **headless** with the same profile and prints exactly one of `session: signed-in`, `session: signed-out`, `session: unknown`, exiting 0 / 1 / 2 respectively.
 - [x] Signed-out is detected by a visible control whose text is exactly "Sign in" on the reference origin (observed 2026-09-12). Absence of that control on the reference origin reads as signed in. A page that is not on the reference origin (e.g. mid-OAuth on github.com) reads as unknown.
 - [x] Both scripts dismiss the reference's first-visit announcement modal before reading the page, and do nothing when no modal is shown.
@@ -54,6 +54,8 @@ session: signed-in
 S — two scripts, one pure module, one test file.
 
 ## Done note (partial, 2026-09-12)
+
+**Second manual verification passed (2026-09-12).** The owner ran `pnpm recon:login`; the terminal showed the states unknown → signed-out → unknown (GitHub OAuth) → signed-in, confirming; the window closed; `pnpm recon:check` printed `session: signed-in`. `git status --short -uall` shows no profile files. Story Done.
 
 **First manual verification failed.** The owner ran `pnpm recon:login`; it printed "Signed in" almost immediately and `pnpm recon:check` then reported `signed-out`. A probe with the saved profile showed the logged-out home. Cause and fix in the amended Technical Notes above; unit cases added for the not-yet-rendered page and for the confirmation run. Second manual verification pending.
 
