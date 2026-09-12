@@ -5,7 +5,7 @@
   "scripts": {
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r --if-present lint",
-    "test": "pnpm --filter app --filter stub-generation-server test",
+    "test": "pnpm --filter app --filter stub-generation-server --filter gate test",
     "build": "pnpm --filter app build",
     "start": "pnpm --filter app start",
     "recon:login": "pnpm --filter recon login",
@@ -14,11 +14,15 @@
     "recon:tokens": "pnpm --filter recon tokens",
     "recon:interactions": "pnpm --filter recon interactions",
     "test:integration": "pnpm --filter app test:integration",
-    "test:e2e": "pnpm --filter app test:e2e"
+    "test:e2e": "pnpm --filter app test:e2e",
+    "prepare": "husky"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
     ]
+  },
+  "devDependencies": {
+    "husky": "9.1.7"
   }
 }

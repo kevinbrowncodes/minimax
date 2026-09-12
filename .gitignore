@@ -25,6 +25,7 @@ models/
 
 # Build and test output
 coverage/
+coverage-integration/
 dist/
 .turbo/
 playwright-report/

@@ -1,12 +1,12 @@
 {
-  "name": "stub-generation-server",
+  "name": "gate",
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node src/main.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run --coverage"
+    "test": "vitest run --coverage",
+    "coverage-rank": "node src/coverage-rank.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
@@ -16,9 +16,5 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.0",
     "vitest": "5.0.0"
-  },
-  "exports": {
-    ".": "./src/server.ts",
-    "./scripts": "./src/scripts.ts"
   }
 }

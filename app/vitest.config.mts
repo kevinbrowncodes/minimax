@@ -11,5 +11,14 @@ export default defineConfig({
     environment: "jsdom",
     include: ["lib/**/*.test.ts", "app/**/*.test.tsx", "components/**/*.test.tsx"],
     exclude: ["node_modules/**", ".next/**", "test/integration/**", "e2e/**"],
+    coverage: {
+      provider: "v8",
+      include: ["lib/**/*.ts"],
+      exclude: ["lib/**/*.test.ts", "lib/model-client.ts"],
+      reporter: ["text-summary", "json-summary"],
+      reportsDirectory: "coverage",
+      // Floors set from the measured baseline minus 2 (STORY_011 Done note). They only ever go up (CLAUDE.md §4).
+      thresholds: { lines: 87, branches: 84, functions: 90, statements: 87 },
+    },
   },
 });

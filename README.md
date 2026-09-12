@@ -82,7 +82,18 @@ Three layers, all run inside the gate container against the [stub generation ser
 
 **Fixture codec (measured 2026-09-12 in the gate image, Chromium 1243 and WebKit 2359 on arm64):** both browsers report `canplay` for `fixture.mp4` (H.264 baseline + AAC) and for `fixture.webm` (VP9 + Opus). The stub therefore serves `fixture.mp4` by default, the same container format the real server produces; `STUB_FIXTURE=webm` switches. The probe is `app/e2e/fixture-codec.spec.ts` and writes its verdict to `app/test-results/codec-probe-<project>.json` on every run.
 
-Coverage floors and the pre-push hook: STORY_011.
+**Coverage floors** (Vitest v8, enforced by the unit and integration lanes; set from the measured baseline minus 2 on 2026-09-12 and never lowered — [CLAUDE.md → §4](CLAUDE.md#4-dev-workflow)):
+
+| Lane | lines | branches | functions | statements |
+| --- | --- | --- | --- | --- |
+| `app` unit (`app/lib/**`) | 87 | 84 | 90 | 87 |
+| `app` integration (`app/app/api/**`, model client, config, upload validation) | 90 | 73 | 98 | 90 |
+| stub generation server | 93 | 82 | 98 | 88 |
+| gate helper (`tools/gate/src`) | 60 | 61 | 98 | 66 |
+
+When a floor fails, `tools/gate/run.sh` prints the files with the most uncovered branches (`tools/gate/src/coverage-rank.ts`).
+
+**The gate and the hook.** `tools/gate/run.sh` runs the six steps in order inside the gate container (step 5 also builds the production image, `docker compose build app`) and stops at the first failure, naming it; `--from N` restarts after a fix. `pnpm install` (inside the container) installs husky's `.husky/_` shims and points `core.hooksPath` at them through the bind mount (`tools/gate/install-hooks.sh` does the same by hand); `.husky/pre-push` runs the gate only when a ref is pushed to `develop`. Measured on the Spark on 2026-09-12: the whole gate takes **27 s** with a warm image cache and about 45 s when the lockfile changed (image dependency stage rebuilt). `--no-verify` skips everything and is for emergencies only, with the justification in the commit message.
 
 ## Running Recon
 

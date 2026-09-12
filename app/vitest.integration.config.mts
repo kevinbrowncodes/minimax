@@ -10,5 +10,12 @@ export default defineConfig({
     include: ["test/integration/**/*.test.ts"],
     testTimeout: 15_000,
     fileParallelism: false,
+    coverage: {
+      provider: "v8",
+      include: ["app/api/**/*.ts", "lib/model-client.ts", "lib/config.ts", "lib/upload-validation.ts"],
+      reporter: ["text-summary", "json-summary"],
+      reportsDirectory: "coverage-integration",
+      thresholds: { lines: 90, branches: 73, functions: 98, statements: 90 },
+    },
   },
 });
