@@ -54,7 +54,7 @@ The decision, and the license terms it rests on (read from the model's own repos
 
 | # | Story | Status |
 | --- | --- | --- |
-| 005 | [One H3 clip renders on the Spark through ComfyUI, and its time and memory are written down](../story/STORY_005_one_h3_clip_renders_on_the_spark_through_comfyui_and_its_time_and_memory_are_written_down.md) | Ready |
+| 005 | [One H3 clip renders on the Spark through ComfyUI, and its time and memory are written down](../story/STORY_005_one_h3_clip_renders_on_the_spark_through_comfyui_and_its_time_and_memory_are_written_down.md) | Done (2026-09-12: int8_convrot, 17 min 21 s, 66.8 GiB peak) |
 | 006 | [The Spark answers create, status and result for a video job, so the UI never talks to ComfyUI directly](../story/STORY_006_the_spark_answers_create_status_and_result_for_a_video_job_so_the_ui_never_talks_to_comfyui_directly.md) | Draft |
 
 Later: a second precision measured against the first on the same prompt; Ref2VA; the UI's env pointed at the Spark with a manual verification note.

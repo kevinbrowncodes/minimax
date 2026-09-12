@@ -48,12 +48,12 @@ Work is planned as two epics:
 
 ## Project Structure
 
-Present today: `recon/`, `docs/`, the workspace files. The rest is created by the epics that need it.
+Present today: `recon/`, `docs/`, `spark/`, the workspace files. The rest is created by the epics that need it.
 
 ```
 app/          the UI
 tools/        the stub generation server, its fixture video and image, other dev tooling
-spark/        scripts and unit files that set up and run the model on the Spark
+spark/        the ComfyUI image (Dockerfile, compose) and scripts that run the model on the Spark; spark/data/ (gitignored) holds weights, outputs, logs
 recon/        Playwright recon scripts (profile and raw output are gitignored)
 docs/
   epic/       EPIC_NNN_*.md
@@ -88,17 +88,18 @@ TBD (EPIC_002). Dev server on port 3000.
 
 ## Running the Model
 
-**Status (2026-09-12): nothing is on the Spark yet.** STORY_005 puts ComfyUI and the Comfy-Org quantized H3 weights there and fills in this section with measured numbers; STORY_006 adds the job-API adapter and the env vars the UI reads. Until then this section records the plan, not the state — verify on the Spark before relying on it.
+**Status (2026-09-12, measured on the Spark): STORY_005 is Done.** ComfyUI runs on the Spark in a container built from `spark/comfyui/Dockerfile`, with the Comfy-Org quantized MiniMax-H3 weights, and rendered one 5 s clip at 1344×768. STORY_006 adds the job-API adapter and the env vars the UI reads. Numbers below are from that one run; re-measure before relying on them ([spark/README.md](spark/README.md) has the box and the scripts).
 
-| Item | Value |
+| Item | Value (STORY_005, 2026-09-12) |
 | --- | --- |
-| Serving stack | ComfyUI (pinned, ≥ 0.30.0) behind our job-API adapter — owner's choice |
-| Model / checkpoint | MiniMax-H3 FL2VA (Comfy-Org repackage), precision to be measured (int8_convrot first) |
+| Serving stack | **ComfyUI v0.35.1** in the image `minimax-spark/comfyui:v0.35.1` (base `nvidia/cuda:13.0.2-runtime-ubuntu24.04`, arm64, pinned by digest; Python 3.12.3; **PyTorch 2.11.0+cu130**; CUDA 13.0; driver 580.142). Launched with `--disable-mmap --disable-async-offload --disable-pinned-memory --cache-none`, published on 127.0.0.1:8188 only. Our job-API adapter in front of it is STORY_006. Nothing is installed on the host |
+| Model / checkpoint | **MiniMax-H3 FL2VA, `minimax_h3_fl2va_int8_convrot` (34 GB)** + text encoder `qwen3vl_32b_minimax_h3_nvfp4_awq` (16 GB) + video VAE fp16 + audio VAE fp32; Comfy-Org repackage, 52 GB in `spark/data/models` (gitignored) |
 | Licence | MiniMax H3 Community License; the Spark is outside the excluded territories |
-| Memory split | to be measured (STORY_005) |
-| Port / env vars | to be set (STORY_006) |
+| Measured | 1344×768, 124 frames (5.17 s) at 24 fps, 20 steps `res_multistep`/`simple`: **17 min 21 s submit → file** (text encoder ≈ 7 s, DiT load 51 s, sampling 15 min 53 s at 47.7 s/step, VAE decode + mux 72 s). Output 1.5 MiB h264 + aac 32 kHz stereo |
+| Memory split | **Peak 66.8 GiB used** (VAE decode); sampling plateau 61 GiB = DiT 32.4 GB staged + text encoder 15 GB resident + activations; no swap. The box's other services must leave ≈ 70 GiB free: on 2026-09-12 that meant stopping `spark-primary` and `cosmos3-api` (owner's call, by name) for the run |
+| Port / env vars | ComfyUI 127.0.0.1:8188 on the Spark; the UI's env vars are set by STORY_006 |
 
-The Spark facts (OS, CUDA, memory, disk, what was already installed) are recorded in `spark/README.md` by STORY_005 before anything is changed.
+The Spark facts (OS, CUDA, memory, disk, what was already installed and running) are in [spark/README.md](spark/README.md), read before anything was changed. Run order: `spark/comfyui/lint.sh`, `install.sh`, `fetch-h3.sh`, `run.sh`, `smoke.sh`, `stop.sh`.
 
 **Open question #1 (2026-09-12): which model.** The obvious candidate is MiniMax's own **MiniMax-H3** (Hailuo 3.0), open-weighted on 2026-08-03. Facts read from its Hugging Face model card and LICENSE file that day:
 
@@ -112,4 +113,4 @@ Sources: [MiniMaxAI/MiniMax-H3 model card](https://huggingface.co/MiniMaxAI/Mini
 
 ## Deployment
 
-Local only. The UI is started on the Mac and the model on the Spark by the scripts under `spark/` and `app/`. There is no CI as of 2026-09-12.
+Local only. The UI is started on the Mac (`app/`); the model runs on the Spark as a Docker container started by `spark/comfyui/run.sh` (weights in `spark/data/`). There is no CI as of 2026-09-12.

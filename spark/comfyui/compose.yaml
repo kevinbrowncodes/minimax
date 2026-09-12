@@ -1,0 +1,48 @@
+# spark/comfyui/compose.yaml — ComfyUI for MiniMax-H3 on the DGX Spark, entirely in containers (STORY_005).
+#
+#   comfyui   the server, GPU attached, published on 127.0.0.1:8188 only     -> run.sh / stop.sh
+#   fetch     one-shot: downloads the H3 files into the models bind mount     -> fetch-h3.sh
+#
+# Weights, outputs, logs and templates live in ${SPARK_DATA} (default ../data = spark/data, gitignored).
+# The host-side scripts set SPARK_DATA, SPARK_UID and SPARK_GID before calling compose.
+name: minimax-spark
+
+x-image: &image minimax-spark/comfyui:${COMFYUI_TAG:-v0.35.1}
+
+services:
+  comfyui:
+    build:
+      context: .
+      args:
+        CUDA_IMAGE: ${CUDA_IMAGE:-nvidia/cuda:13.0.2-runtime-ubuntu24.04@sha256:6a0e31b59e70890446f2c17356d6efc0d54260090a8c63d6ca7c2ad049db95d2}
+        COMFYUI_TAG: ${COMFYUI_TAG:-v0.35.1}
+        TORCH_VERSION: ${TORCH_VERSION:-2.11.0+cu130}
+        TORCHVISION_VERSION: ${TORCHVISION_VERSION:-0.26.0+cu130}
+        TORCHAUDIO_VERSION: ${TORCHAUDIO_VERSION:-2.11.0+cu130}
+        UID: ${SPARK_UID:-1000}
+        GID: ${SPARK_GID:-1000}
+    image: *image
+    container_name: minimax-comfyui
+    gpus: all
+    ports:
+      - "127.0.0.1:${COMFY_PORT:-8188}:8188"
+    volumes:
+      - ${SPARK_DATA:-../data}/models:/comfy/ComfyUI/models
+      - ${SPARK_DATA:-../data}/output:/comfy/ComfyUI/output
+    environment:
+      COMFY_EXTRA_ARGS: ${COMFY_EXTRA_ARGS:-}
+    stop_grace_period: 30s
+    restart: "no"
+
+  fetch:
+    image: *image
+    profiles: ["tools"]
+    entrypoint: ["/comfy/bin/fetch-h3.sh"]
+    environment:
+      H3_PRECISION: ${H3_PRECISION:-int8_convrot}
+      H3_TEXT_ENCODER: ${H3_TEXT_ENCODER:-nvfp4_awq}
+      MIN_FREE_GB: ${MIN_FREE_GB:-300}
+      HF_TOKEN: ${HF_TOKEN:-}
+    volumes:
+      - ${SPARK_DATA:-../data}/models:/comfy/ComfyUI/models
+      - ${SPARK_DATA:-../data}/templates:/comfy/templates
