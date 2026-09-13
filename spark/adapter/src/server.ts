@@ -263,7 +263,16 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
   };
 
   const recover = async (): Promise<void> => {
-    for (const job of store.open()) {
+    const open = store.open();
+    if (open.length === 0) return;
+    // BUG_002: a job ComfyUI still lists is left open — the adapter can be redeployed under a running job.
+    let queue: { running: readonly string[]; pending: readonly string[] } | undefined;
+    try {
+      queue = await comfy.queue();
+    } catch {
+      queue = undefined;
+    }
+    for (const job of open) {
       if (job.promptId !== undefined) {
         try {
           const entry = await comfy.history(job.promptId);
@@ -272,7 +281,11 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
             continue;
           }
         } catch {
-          // fall through: no history → failed below
+          // fall through: no history → the queue decides below
+        }
+        if (queue && (queue.running.includes(job.promptId) || queue.pending.includes(job.promptId))) {
+          log(`job ${job.id} is still ${queue.running.includes(job.promptId) ? "running" : "pending"} in ComfyUI after the restart; keeping it open`);
+          continue;
         }
       }
       fail(job.id, "adapter restarted while the job was open");

@@ -104,11 +104,12 @@ describe("extension arithmetic (STORY_016)", () => {
     expect(graph["source_parts"]).toEqual({ class_type: "GetVideoComponents", inputs: { video: ["source_video", 0] } });
     expect(graph["context_frames"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: 119, length: 124 } });
     expect(graph["context_audio"]).toEqual({ class_type: "TrimAudioDuration", inputs: { audio: ["source_parts", 1], start_index: 4.958, duration: 5.167 } });
+    expect(graph["last_frame_ref"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: 242, length: 1 } });
     expect(graph["anchor_frames"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: 221, length: 22 } });
     expect(graph["anchor_audio"]).toEqual({ class_type: "TrimAudioDuration", inputs: { audio: ["source_parts", 1], start_index: 9.208, duration: 0.917 } });
     expect(graph["cond"]).toEqual({
       class_type: "MiniMaxH3ReferenceToVideo",
-      inputs: { clip: ["clip", 0], vae: ["vae_video", 0], audio_vae: ["vae_audio", 0], prompt: "WRAPPED", width: 1344, height: 768, length: 277, ref_image_size: "match", "ref_videos.ref_video_0": ["context_frames", 0], "ref_video_audios.ref_video_audio_0": ["context_audio", 0] },
+      inputs: { clip: ["clip", 0], vae: ["vae_video", 0], audio_vae: ["vae_audio", 0], prompt: "WRAPPED", width: 1344, height: 768, length: 277, ref_image_size: "match", "ref_images.ref_image_0": ["last_frame_ref", 0], "ref_videos.ref_video_0": ["context_frames", 0], "ref_video_audios.ref_video_audio_0": ["context_audio", 0] },
     });
     expect(graph["guide"]).toEqual({ class_type: "MiniMaxH3AddGuide", inputs: { positive: ["cond", 0], vae: ["vae_video", 0], audio_vae: ["vae_audio", 0], latent: ["cond", 1], image: ["anchor_frames", 0], audio: ["anchor_audio", 0], frame_idx: 0 } });
     expect(graph["guider"]?.inputs).toMatchObject({ conditioning: ["guide", 0], model: ["unet", 0] });

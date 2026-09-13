@@ -213,6 +213,18 @@ describe("resilience", () => {
     expect((failed["error"] as { message: string }).message).toMatch(/stopped answering/);
   });
 
+  it("keeps a job open across an adapter restart while ComfyUI still lists it (BUG_002)", async () => {
+    fake.behaviour = "hold";
+    const id = await create();
+    await adapter?.close();
+    adapter = await startAdapter();
+    await sleep(120);
+    expect((await status(id))["status"]).toBe("queued");
+    fake.behaviour = "success";
+    fake.completeHeld(fake.prompts.at(-1)?.id ?? "");
+    expect((await waitFor(id, (s) => s["status"] === "done"))["progress"]).toBe(100);
+  });
+
   it("never fails a job ComfyUI still lists, whatever its age; orphans are failed after orphanTimeoutMs; the cap is last resort (BUG_002)", async () => {
     // held = queued in ComfyUI's queue_pending: older than any timeout, still not failed
     await adapter?.close();
@@ -240,18 +252,20 @@ describe("resilience", () => {
     await api(`/jobs/${forever}`, { method: "DELETE" }).catch(() => undefined);
   });
 
-  it("after a restart, an open job is failed unless ComfyUI's history shows it finished", async () => {
+  it("after a restart, an open job ComfyUI no longer has is failed; one whose history shows it finished is done (BUG_002: a listed one stays open)", async () => {
     fake.behaviour = "hold";
-    const held = await create();
+    const lost = await create();
     const finished = await create();
+    const lostPrompt = fake.prompts[0];
     const finishedPrompt = fake.prompts[1];
-    if (!finishedPrompt) throw new Error("no second prompt");
+    if (!lostPrompt || !finishedPrompt) throw new Error("no prompts");
     const store = path.join(dir, "adapter", "jobs.json");
     await adapter?.close();
     adapter = undefined;
+    fake.dropHeld(lostPrompt.id); // ComfyUI restarted too: the prompt is gone from its queue and has no history
     fake.completeHeld(finishedPrompt.id);
     adapter = await startAdapter({ storeFile: store });
-    expect(await status(held)).toMatchObject({ status: "failed", error: { message: expect.stringContaining("adapter restarted") as string } });
+    expect(await status(lost)).toMatchObject({ status: "failed", error: { message: expect.stringContaining("adapter restarted") as string } });
     expect(await status(finished)).toMatchObject({ status: "done", result: { width: 1344 } });
   });
 
@@ -312,8 +326,10 @@ describe("extensions (STORY_016)", () => {
     expect(graph?.["context_frames"]?.inputs).toMatchObject({ batch_index: 0, length: 124 });
     expect(graph?.["anchor_frames"]?.inputs).toMatchObject({ batch_index: 102, length: 22 });
     expect(graph?.["cond"]?.class_type).toBe("MiniMaxH3ReferenceToVideo");
-    expect(String(graph?.["cond"]?.inputs["prompt"])).toContain("[video continuation + audio reference]");
-    expect(String(graph?.["cond"]?.inputs["prompt"])).toContain("[Shot 1] A small paper boat");
+    expect(graph?.["cond"]?.inputs["ref_images.ref_image_0"]).toEqual(["last_frame_ref", 0]);
+    expect(graph?.["last_frame_ref"]?.inputs).toMatchObject({ batch_index: 123, length: 1 });
+    expect(String(graph?.["cond"]?.inputs["prompt"])).toContain("[video continuation + keyframe completion + audio reference]");
+    expect(String(graph?.["cond"]?.inputs["prompt"])).toContain("[Shot 1] The shot begins from <Picture 1>. A small paper boat");
     expect(graph?.["guider"]?.inputs["conditioning"]).toEqual(["guide", 0]);
     const done = await waitFor(ext, isDone);
     expect(done["result"]).toMatchObject({ frames: 379, durationSeconds: 15.792, width: 1344, height: 768 });

@@ -140,6 +140,8 @@ export function buildGraph(template: Graph, request: JobRequest, images: readonl
   graph["source_parts"] = { class_type: "GetVideoComponents", inputs: { video: ["source_video", 0] } };
   graph["context_frames"] = { class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: sourceFrames - ctx, length: ctx } };
   graph["context_audio"] = { class_type: "TrimAudioDuration", inputs: { audio: ["source_parts", 1], start_index: seconds(sourceFrames - ctx), duration: seconds(ctx) } };
+  // CHORE_003: the source's last frame is also <Picture 1>, the shot's first frame in MiniMax's own vocabulary, so the set stays.
+  graph["last_frame_ref"] = { class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: sourceFrames - 1, length: 1 } };
   graph["anchor_frames"] = { class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: sourceFrames - ANCHOR_FRAMES, length: ANCHOR_FRAMES } };
   graph["anchor_audio"] = { class_type: "TrimAudioDuration", inputs: { audio: ["source_parts", 1], start_index: seconds(sourceFrames - ANCHOR_FRAMES), duration: seconds(ANCHOR_FRAMES) } };
   graph["cond"] = {
@@ -153,6 +155,7 @@ export function buildGraph(template: Graph, request: JobRequest, images: readonl
       height,
       length: segment,
       ref_image_size: "match",
+      "ref_images.ref_image_0": ["last_frame_ref", 0],
       "ref_videos.ref_video_0": ["context_frames", 0],
       "ref_video_audios.ref_video_audio_0": ["context_audio", 0],
     },

@@ -9,13 +9,18 @@ describe("continuationPrompt (STORY_016)", () => {
     const positions = SECTIONS.map((s) => text.indexOf(s));
     expect(positions.every((p) => p >= 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+    expect(text).toContain("<Subject 1> is everything visible in <Picture 1>");
+    expect(text).toContain("<Picture 1> is the last frame of <Video 1> and the first frame of [Shot 1].");
     expect(text).toContain("<Video 1> is the last 5.2 seconds of the source video");
     expect(text).toContain("<Audio 1> is the synchronized soundtrack of <Video 1>");
-    expect(text).toContain("summary:\n[video continuation + audio reference] ");
+    expect(text).toContain("summary:\n[video continuation + keyframe completion + audio reference] The target video is a single continuous shot that begins from <Picture 1>");
+    expect(text).toContain("<Subject 1> (appears in [Shot 1]): fully_preserved - ");
+    expect(text).toContain("<Picture 1> ([Shot 1] first frame): fully_preserved - ");
     expect(text).toContain("<Video 1> (continuation source): fully_preserved - ");
     expect(text).toContain("<Audio 1>: reference - ");
-    expect(text).toContain("[Shot 1] He steps his left foot back and holds the angle.");
-    expect(text.indexOf("[Shot 1]")).toBeGreaterThan(text.indexOf("detailed_description:"));
+    expect(text).toContain("one continuous shot with no cut and no transition");
+    expect(text).toContain("[Shot 1] The shot begins from <Picture 1>. He steps his left foot back and holds the angle.");
+    expect(text.indexOf("[Shot 1] The shot begins")).toBeGreaterThan(text.indexOf("detailed_description:"));
     expect(text).toMatch(/overall_soundscape: .*<Audio 1>/);
   });
 
