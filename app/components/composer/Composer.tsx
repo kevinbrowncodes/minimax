@@ -54,7 +54,7 @@ export function Composer({ fetchImpl, variant = "home", stop }: ComposerProps) {
         if (!cancelled) dispatch({ type: "capabilities", capabilities });
       })
       .catch(() => {
-        if (!cancelled) dispatch({ type: "capabilities-failed", message: "The generation server is unreachable" });
+        if (!cancelled) dispatch({ type: "capabilities-failed", message: "The Spark's adapter is not reachable — on the Spark, run spark/comfyui/run.sh" });
       });
     return () => {
       cancelled = true;

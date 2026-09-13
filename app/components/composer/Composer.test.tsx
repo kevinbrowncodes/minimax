@@ -99,6 +99,14 @@ describe("Composer", () => {
     });
   });
 
+  it("says how to start the adapter when capabilities cannot be fetched (BUG_001)", async () => {
+    const down = vi.fn((): Promise<Response> => Promise.reject(new Error("fetch failed")));
+    render(<Composer fetchImpl={down} />);
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("run spark/comfyui/run.sh");
+    });
+  });
+
   it("outside video mode, Send explains that only videos are generated", async () => {
     render(<Composer fetchImpl={fetchWith(() => json({}, 500))} />);
     fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "hello" } });

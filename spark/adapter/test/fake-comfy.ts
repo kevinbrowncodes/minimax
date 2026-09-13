@@ -19,6 +19,10 @@ export interface FakeComfyOptions {
   readonly tickMs?: number;
   /** Milliseconds after execution_success before the history entry exists (ComfyUI does this for real). */
   readonly historyDelayMs?: number;
+  /** Bind to this port instead of a random one. */
+  readonly port?: number;
+  /** Node classes to leave out of /object_info (to test the adapter's verification). */
+  readonly omitClasses?: readonly string[];
 }
 export interface SubmittedPrompt {
   readonly id: string;
@@ -45,6 +49,11 @@ function readBody(req: IncomingMessage): Promise<Buffer> {
     req.on("data", (c: Buffer) => chunks.push(c));
     req.on("end", () => { resolve(Buffer.concat(chunks)); });
   });
+}
+
+/** The same fake bound to a known port (to bring "ComfyUI" back on the address an adapter already watches). */
+export function startFakeComfyOn(port: number, options: FakeComfyOptions): Promise<FakeComfy> {
+  return startFakeComfy({ ...options, port });
 }
 
 export async function startFakeComfy(options: FakeComfyOptions): Promise<FakeComfy> {
@@ -133,7 +142,7 @@ export async function startFakeComfy(options: FakeComfyOptions): Promise<FakeCom
         res.end(JSON.stringify(body));
       };
       if (method === "GET" && url.pathname === "/system_stats") { json(200, { system: { comfyui_version: "fake" } }); return; }
-      if (method === "GET" && url.pathname === "/object_info") { json(200, Object.fromEntries(REQUIRED.map((n) => [n, { input: {} }]))); return; }
+      if (method === "GET" && url.pathname === "/object_info") { json(200, Object.fromEntries(REQUIRED.filter((n) => !(options.omitClasses ?? []).includes(n)).map((n) => [n, { input: {} }]))); return; }
       if (method === "POST" && url.pathname === "/upload/image") {
         const body = await readBody(req);
         const name = /filename="([^"]+)"/.exec(body.toString("latin1"))?.[1] ?? `upload-${String(uploads.length)}.png`;
@@ -181,7 +190,7 @@ export async function startFakeComfy(options: FakeComfyOptions): Promise<FakeCom
     ws.send(JSON.stringify({ type: "status", data: { status: { exec_info: { queue_remaining: pending.size } } } }));
   });
   const port = await new Promise<number>((resolve) => {
-    server.listen(0, "127.0.0.1", () => { resolve((server.address() as AddressInfo).port); });
+    server.listen(options.port ?? 0, "127.0.0.1", () => { resolve((server.address() as AddressInfo).port); });
   });
 
   return {

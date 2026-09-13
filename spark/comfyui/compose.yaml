@@ -2,7 +2,7 @@
 #
 #   comfyui   the server, GPU attached, published on 127.0.0.1:8188 only     -> run.sh / stop.sh
 #   fetch     one-shot: downloads the H3 files into the models bind mount     -> fetch-h3.sh
-#   adapter   the job-API adapter in front of ComfyUI (STORY_006), port 4020 on the shared "minimax" network -> run.sh / stop.sh
+#   adapter   the job-API adapter in front of ComfyUI (STORY_006), port 4020 on the shared "minimax" network; always up (BUG_001)
 #
 # Weights, outputs, logs and templates live in ${SPARK_DATA} (default ../data = spark/data, gitignored).
 # The host-side scripts set SPARK_DATA, SPARK_UID and SPARK_GID before calling compose.
@@ -44,7 +44,8 @@ services:
       dockerfile: spark/adapter/Dockerfile
     image: minimax-spark/adapter:${ADAPTER_TAG:-dev}
     container_name: minimax-adapter
-    depends_on: [comfyui]
+    # No depends_on: the adapter runs whether or not ComfyUI does (BUG_001); it serves capabilities and health and
+    # answers 503 to jobs until ComfyUI is reachable. Stays up across reboots.
     networks: [default, minimax]
     ports:
       - "127.0.0.1:${ADAPTER_PORT:-4020}:4020"
@@ -56,7 +57,7 @@ services:
       ADAPTER_API_KEY: ${ADAPTER_API_KEY:-}
     user: "${SPARK_UID:-1000}:${SPARK_GID:-1000}"
     stop_grace_period: 10s
-    restart: "no"
+    restart: unless-stopped
 
   fetch:
     image: *image

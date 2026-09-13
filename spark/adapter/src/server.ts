@@ -39,7 +39,8 @@ export interface AdapterOptions {
   readonly maxOpenJobs?: number;
   /** Check /object_info for the node classes the graph needs at start (default true). */
   readonly verifyNodes?: boolean;
-  /** How long to wait for ComfyUI to answer at start before giving up (default 120 s; 0 = one try). */
+  /** How long to wait for ComfyUI at start before serving anyway (default 10 s; 0 = do not wait). The adapter serves
+   *  capabilities and health regardless; jobs answer 503 until ComfyUI is reachable and its node classes verified. */
   readonly startupWaitMs?: number;
   readonly log?: (message: string) => void;
 }
@@ -204,7 +205,10 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
     polling = true;
     try {
       const open = store.open();
-      if (open.length === 0) return;
+      if (open.length === 0) {
+        await checkComfy();
+        return;
+      }
       let queue: { running: readonly string[]; pending: readonly string[] } | undefined;
       try {
         queue = await comfy.queue();
@@ -253,24 +257,53 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
     }
   };
 
+  const NOT_RUNNING = "ComfyUI is not running on the Spark — start it with spark/comfyui/run.sh";
+  let comfyReachable = false;
+  let nodesVerified = options.verifyNodes === false;
+  let nodeError: string | undefined;
+
+  const verifyNodes = async (): Promise<void> => {
+    const info = await comfy.objectInfo();
+    const missing = REQUIRED_CLASSES.filter((name) => !(name in info));
+    if (missing.length > 0) {
+      nodeError = `ComfyUI at ${options.comfyUrl} lacks node classes the graph needs: ${missing.join(", ")}`;
+      throw new Error(nodeError);
+    }
+    nodeError = undefined;
+    nodesVerified = true;
+  };
+
+  /** Probe ComfyUI; on the first contact verify the node classes. Never throws. */
+  const checkComfy = async (): Promise<boolean> => {
+    const up = await comfy.health();
+    if (up !== comfyReachable) log(up ? `ComfyUI reachable at ${options.comfyUrl}` : `ComfyUI unreachable at ${options.comfyUrl}`);
+    comfyReachable = up;
+    if (up && !nodesVerified) {
+      try {
+        await verifyNodes();
+        log("ComfyUI has every node class the graph needs");
+      } catch (error) {
+        log(error instanceof Error ? error.message : String(error));
+      }
+    }
+    return up;
+  };
+
   const waitForComfy = async (): Promise<void> => {
-    const deadline = Date.now() + (options.startupWaitMs ?? 120_000);
+    const deadline = Date.now() + (options.startupWaitMs ?? 10_000);
     let announced = false;
     for (;;) {
-      if (await comfy.health()) return;
-      if (Date.now() >= deadline) throw new ComfyError(`ComfyUI unreachable at ${options.comfyUrl}: gave up waiting`);
+      if (await checkComfy()) return;
+      if (Date.now() >= deadline) {
+        log(`ComfyUI not reachable at ${options.comfyUrl}; serving capabilities and health, jobs answer 503 until it is`);
+        return;
+      }
       if (!announced) {
         log(`waiting for ComfyUI at ${options.comfyUrl}`);
         announced = true;
       }
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
-  };
-
-  const verifyNodes = async (): Promise<void> => {
-    const info = await comfy.objectInfo();
-    const missing = REQUIRED_CLASSES.filter((name) => !(name in info));
-    if (missing.length > 0) throw new Error(`ComfyUI at ${options.comfyUrl} lacks node classes the graph needs: ${missing.join(", ")}`);
   };
 
   // --- routes ---------------------------------------------------------------------------------------
@@ -337,6 +370,8 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
       throw error;
     }
     if (store.open().length >= maxOpenJobs) throw new HttpError(503, "busy", `the Spark already has ${String(maxOpenJobs)} jobs open; try again later`);
+    if (!comfyReachable && !(await checkComfy())) throw new HttpError(503, "busy", NOT_RUNNING);
+    if (!nodesVerified) throw new HttpError(503, "busy", nodeError ?? NOT_RUNNING);
 
     const id = randomUUID();
     let images: UploadedImage[];
@@ -351,6 +386,10 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
       promptId = await comfy.submit(graph);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      if (error instanceof ComfyError && error.status === undefined) {
+        comfyReachable = false;
+        throw new HttpError(503, "busy", `${NOT_RUNNING} (${message})`);
+      }
       throw new HttpError(503, "busy", `the Spark could not accept the job: ${message}`);
     }
     const job = store.create(id, request);
@@ -407,7 +446,7 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
     }
     let m: RegExpExecArray | null;
     if (method === "GET" && p === "/health") {
-      sendJson(res, 200, { ok: true, server: "adapter", version: VERSION, comfyui: { url: options.comfyUrl, websocket: events.connected }, openJobs: store.open().length });
+      sendJson(res, 200, { ok: true, server: "adapter", version: VERSION, comfyui: { url: options.comfyUrl, reachable: comfyReachable, nodesVerified, websocket: events.connected, ...(nodeError === undefined ? {} : { error: nodeError }) }, openJobs: store.open().length });
       return;
     }
     if (method === "GET" && p === "/capabilities") {
@@ -459,17 +498,22 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
     server,
     store,
     start: async (port = 4020, host = "0.0.0.0") => {
-      await waitForComfy();
-      if (options.verifyNodes !== false) await verifyNodes();
-      await recover();
+      // Listen first so health and capabilities answer at once (BUG_001); ComfyUI is probed in the background.
+      const bound = await new Promise<number>((resolve, reject) => {
+        server.once("error", reject);
+        server.listen(port, host, () => { resolve((server.address() as AddressInfo).port); });
+      });
       events.start();
       pollTimer = setInterval(() => {
         void poll();
       }, pollIntervalMs);
-      return new Promise<number>((resolve, reject) => {
-        server.once("error", reject);
-        server.listen(port, host, () => { resolve((server.address() as AddressInfo).port); });
-      });
+      if ((options.startupWaitMs ?? 10_000) === 0) {
+        await checkComfy();
+        await recover();
+      } else {
+        void waitForComfy().then(recover);
+      }
+      return bound;
     },
     close: () =>
       new Promise<void>((resolve, reject) => {

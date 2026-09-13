@@ -27,8 +27,10 @@ describe("submitJob", () => {
     expect(await submitJob(typed(), ok)).toEqual({ ok: true, id: "j1" });
     const bad = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { code: "unsupported_option", message: "no 2K", field: "resolution" } }), { status: 400 }));
     expect(await submitJob(typed(), bad)).toEqual({ ok: false, status: 400, message: "no 2K", field: "resolution" });
-    const busy = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { code: "busy", message: "x" } }), { status: 503 }));
-    expect(await submitJob(typed(), busy)).toMatchObject({ ok: false, status: 503, message: /busy/ });
+    const busy = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { code: "busy", message: "ComfyUI is not running on the Spark — start it with spark/comfyui/run.sh" } }), { status: 503 }));
+    expect(await submitJob(typed(), busy)).toMatchObject({ ok: false, status: 503, message: /ComfyUI is not running on the Spark/ });
+    const bare503 = vi.fn().mockResolvedValue(new Response("", { status: 503 }));
+    expect(await submitJob(typed(), bare503)).toMatchObject({ ok: false, status: 503, message: /busy/ });
     const down = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
     expect(await submitJob(typed(), down)).toMatchObject({ ok: false, status: 0, message: /could not be reached/ });
   });

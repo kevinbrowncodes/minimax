@@ -39,6 +39,7 @@ export async function submitJob(state: ComposerState, fetchImpl: typeof fetch = 
   } catch {
     // keep the status message
   }
-  if (response.status === 503) message = "The Spark is busy; try again in a moment";
+  // A 503 carries the adapter's own reason (e.g. "ComfyUI is not running on the Spark — start it with …"); keep it.
+  if (response.status === 503 && message === `The generation server answered 503`) message = "The Spark is busy; try again in a moment";
   return { ok: false, status: response.status, message, ...(field === undefined ? {} : { field }) };
 }

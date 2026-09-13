@@ -82,6 +82,8 @@ Three layers, all run inside the gate container against the [stub generation ser
 
 **Fixture codec (measured 2026-09-12 in the gate image, Chromium 1243 and WebKit 2359 on arm64):** both browsers report `canplay` for `fixture.mp4` (H.264 baseline + AAC) and for `fixture.webm` (VP9 + Opus). The stub therefore serves `fixture.mp4` by default, the same container format the real server produces; `STUB_FIXTURE=webm` switches. The probe is `app/e2e/fixture-codec.spec.ts` and writes its verdict to `app/test-results/codec-probe-<project>.json` on every run.
 
+**What the gate proves, and what it does not.** Every e2e spec in the gate drives the real UI build against the **stub** generation server, by design: the gate never depends on the model. It proves the UI, its routes and any contract-conformant server work together. The **real chain** — the UI container → the adapter → ComfyUI on the GPU — is proven by `spark/comfyui/verify.sh` (adapter health, the UI relaying the adapter's capabilities, the adapter refusing `2K` through the UI route; seconds, no GPU) and by `spark/comfyui/verify.sh --generate [seconds]`, which runs the real Playwright trial through the UI (`app/e2e-trial/`, minutes, needs ComfyUI up and the memory a run needs). Both are run by hand and recorded in the story or bug they belong to.
+
 **Coverage floors** (Vitest v8, enforced by the unit and integration lanes; set from the measured baseline minus 2 on 2026-09-12 and never lowered — [CLAUDE.md → §4](CLAUDE.md#4-dev-workflow)):
 
 | Lane | lines | branches | functions | statements |
@@ -117,7 +119,7 @@ docker compose --profile dev up app-dev      # hot-reload dev server on port 300
 docker compose up -d --build app             # production build served on port 3000, restarts with the box
 ```
 
-Open `http://<the Spark's LAN address>:3000` from the Mac. `tools/gate/run.sh lint build` runs only the named steps; `--from 4` restarts after a fix. Dependencies land in `node_modules/` inside the repo tree (written by the container, gitignored); the pnpm store persists in the `minimax_pnpm-store` volume; the UI's history in the `minimax_app-data` volume.
+Open `http://<the Spark's LAN address>:3000` from the Mac. The adapter stays up whenever the Spark is up (it needs no GPU); the model itself is started with `spark/comfyui/run.sh` when the memory is free and stopped with `spark/comfyui/stop.sh`; `spark/comfyui/verify.sh` proves the real chain in seconds. `tools/gate/run.sh lint build` runs only the named steps; `--from 4` restarts after a fix. Dependencies land in `node_modules/` inside the repo tree (written by the container, gitignored); the pnpm store persists in the `minimax_pnpm-store` volume; the UI's history in the `minimax_app-data` volume.
 
 **A real run through the UI, driven by Playwright** (EPIC_003's trial; not part of the gate — it needs ComfyUI and the adapter up, `spark/comfyui/run.sh`):
 

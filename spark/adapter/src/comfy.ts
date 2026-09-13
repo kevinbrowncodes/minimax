@@ -199,7 +199,8 @@ export class ComfyEvents {
     if (this.#stopped) return;
     const delay = [1000, 2000, 5000][Math.min(this.#attempt, 2)] ?? 5000;
     this.#attempt += 1;
-    this.#log(`websocket ${reason instanceof Error ? reason.message : String(reason)}; reconnecting in ${String(delay)} ms`);
+    // Say it once, then about once a minute while ComfyUI stays away (BUG_001: the adapter now runs without it).
+    if (this.#attempt <= 1 || this.#attempt % 12 === 0) this.#log(`websocket ${reason instanceof Error ? reason.message : String(reason)}; reconnecting (attempt ${String(this.#attempt)}, every ${String(delay)} ms)`);
     this.#timer = setTimeout(() => {
       this.#connect();
     }, delay);

@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { startFakeComfy, type FakeComfy } from "../test/fake-comfy.ts";
+import { startFakeComfy, startFakeComfyOn, type FakeComfy } from "../test/fake-comfy.ts";
 import type { Graph } from "./mapping.ts";
 import { createAdapterServer, type AdapterOptions, type AdapterServer } from "./server.ts";
 
@@ -188,7 +188,7 @@ describe("validation, auth, busy, health", () => {
     await fake.close();
     const down = await json("/jobs", valid);
     expect(down.status).toBe(503);
-    expect(((await down.json()) as { error: { message: string } }).error.message).toMatch(/could not accept/);
+    expect(((await down.json()) as { error: { message: string } }).error.message).toMatch(/ComfyUI is not running on the Spark/);
     fake = await startFakeComfy({ outputDir: path.join(dir, "output"), fixturesDir: FIXTURES });
   });
 });
@@ -237,16 +237,37 @@ describe("resilience", () => {
     expect(await status(finished)).toMatchObject({ status: "done", result: { width: 1344 } });
   });
 
-  it("refuses to start when ComfyUI lacks a node class the graph needs", async () => {
+  it("serves capabilities and health while ComfyUI is down, refuses jobs with the start command, and recovers when it appears (BUG_001)", async () => {
+    await adapter?.close();
+    await fake.close();
+    const port = Number(fake.url.split(":")[2]);
+    const alone = createAdapterServer({ comfyUrl: fake.url, outputDir: path.join(dir, "output"), graphTemplate: template, storeFile: path.join(dir, "adapter", "jobs-alone.json"), pollIntervalMs: 40, log: () => undefined, startupWaitMs: 0 });
+    base = `http://127.0.0.1:${String(await alone.start(0, "127.0.0.1"))}`;
+    adapter = alone;
+    expect(await (await api("/capabilities")).json()).toMatchObject({ resolutions: ["768P"] });
+    expect(await (await api("/health")).json()).toMatchObject({ ok: true, comfyui: { reachable: false, nodesVerified: false } });
+    const refused = await json("/jobs", valid);
+    expect(refused.status).toBe(503);
+    expect(((await refused.json()) as { error: { message: string } }).error.message).toMatch(/ComfyUI is not running on the Spark — start it with spark\/comfyui\/run.sh/);
+    // ComfyUI comes up on the same port: the next create verifies the nodes and goes through
+    fake = await startFakeComfyOn(port, { outputDir: path.join(dir, "output"), fixturesDir: FIXTURES });
+    const id = await create();
+    await waitFor(id, (s) => s["status"] === "done");
+    expect(await (await api("/health")).json()).toMatchObject({ comfyui: { reachable: true, nodesVerified: true } });
+  });
+
+  it("refuses jobs while ComfyUI lacks a node class the graph needs, and says which", async () => {
     await adapter?.close();
     adapter = undefined;
-    const broken = createAdapterServer({ comfyUrl: "http://127.0.0.1:9", outputDir: dir, graphTemplate: template, log: () => undefined, startupWaitMs: 0 });
-    await expect(broken.start(0, "127.0.0.1")).rejects.toThrow(/unreachable/);
-    const partial = createAdapterServer({ comfyUrl: fake.url, outputDir: dir, graphTemplate: { unet: { class_type: "X", inputs: {} } }, log: () => undefined, verifyNodes: false, startupWaitMs: 0 });
+    const lacking = await startFakeComfy({ outputDir: path.join(dir, "output"), fixturesDir: FIXTURES, omitClasses: ["ImageFromBatch"] });
+    const partial = createAdapterServer({ comfyUrl: lacking.url, outputDir: dir, graphTemplate: template, log: () => undefined, startupWaitMs: 0 });
     await partial.start(0, "127.0.0.1");
     base = `http://127.0.0.1:${String((partial.server.address() as { port: number }).port)}`;
     const res = await json("/jobs", valid);
     expect(res.status).toBe(503);
+    expect(((await res.json()) as { error: { message: string } }).error.message).toMatch(/lacks node classes .*ImageFromBatch/);
+    expect(await (await api("/health")).json()).toMatchObject({ comfyui: { reachable: true, nodesVerified: false } });
     await partial.close();
+    await lacking.close();
   });
 });
