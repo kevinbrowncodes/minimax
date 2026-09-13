@@ -79,3 +79,16 @@ describe("AssetsPage", () => {
     });
   });
 });
+
+describe("AssetsPage — extend (STORY_016)", () => {
+  it("the kebab offers Extend, linking to the task with ?extend", async () => {
+    render(<AssetsPage fetchImpl={fetchWith([entry("a", "Gallery clip")]).fetchImpl} />);
+    await waitFor(() => {
+      expect(screen.getByTestId("asset-tile")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "More actions for Gallery clip.mp4" }));
+    const items = screen.getAllByRole("menuitem").map((el) => el.textContent);
+    expect(items).toEqual(["Open task", "Extend", "Download", "Delete from history"]);
+    expect(screen.getByRole("menuitem", { name: "Extend" })).toHaveAttribute("href", "/task/a?extend");
+  });
+});

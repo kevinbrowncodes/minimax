@@ -19,6 +19,8 @@ export interface JobResultFiles {
   readonly video: OutputFile;
   readonly poster?: OutputFile;
   readonly mimeType: string;
+  /** Frames in the clip on the 24 fps grid; an extension's is the source's plus the new ones (STORY_016). */
+  readonly frames?: number;
   readonly durationSeconds: number;
   readonly width: number;
   readonly height: number;
@@ -89,7 +91,7 @@ export class JobStore {
   }
 
   /** Apply a change; terminal jobs never change; progress never goes backwards. Returns the stored job. */
-  update(id: string, patch: Partial<Pick<Job, "status" | "progress" | "promptId" | "error" | "result">>, now = new Date()): Job {
+  update(id: string, patch: Partial<Pick<Job, "status" | "progress" | "promptId" | "error" | "result" | "request">>, now = new Date()): Job {
     const job = this.#jobs.get(id);
     if (!job) throw new Error(`no job ${id}`);
     if (isTerminal(job.status)) return job;
@@ -101,6 +103,7 @@ export class JobStore {
       status,
       progress,
       updatedAt: now.toISOString(),
+      ...(patch.request === undefined ? {} : { request: patch.request }),
       ...(patch.promptId === undefined ? {} : { promptId: patch.promptId }),
       ...(patch.error === undefined ? {} : { error: patch.error }),
       ...(patch.result === undefined ? {} : { result: patch.result }),

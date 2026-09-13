@@ -9,15 +9,18 @@ import type { AddressInfo } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
+import { ANCHOR_FRAMES, contextFrames, extensionLength, lengthForSeconds, seconds } from "./extension.ts";
 import { DEFAULT_SCRIPT, isScriptName, isTerminal, stepFor, type JobError, type JobStatus, type ScriptName } from "./scripts.ts";
 
-export const VERSION = "1.0.0";
+export const VERSION = "1.1.0";
 export const CAPABILITIES = {
   models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }],
   ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
   resolutions: ["768P"],
   durationsSeconds: { min: 4, max: 15, step: 1 },
   referenceImages: { max: 2 },
+  /** Extending a finished video (STORY_016), the same numbers as the adapter's. */
+  extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, contextSeconds: { min: 2, max: 15, default: 5 }, maxSourceSeconds: 30 },
 } as const;
 const IMAGE_TYPES: ReadonlySet<string> = new Set(["image/png", "image/jpeg", "image/webp"]);
 const MAX_PROMPT = 2000;
@@ -29,6 +32,11 @@ export interface JobRequest {
   readonly durationSeconds: number;
   readonly model: string;
   readonly referenceImages: number;
+  /** STORY_016: the finished job this one continues; durationSeconds is then the seconds added. */
+  readonly continueFrom?: string;
+  readonly contextSeconds?: number;
+  readonly contextFed?: { readonly frames: number; readonly seconds: number };
+  readonly seed?: number;
 }
 export interface ReceivedUpload {
   readonly filename: string;
@@ -40,6 +48,8 @@ interface Job {
   readonly id: string;
   readonly script: ScriptName;
   readonly request: JobRequest;
+  /** Frames the clip would have on the adapter (the fixture's for a fresh job; joined for an extension) — for the next extension's arithmetic. */
+  readonly frames: number;
   readonly uploads: readonly ReceivedUpload[];
   readonly createdAt: string;
   updatedAt: string;
@@ -157,12 +167,19 @@ function validateRequest(fields: Record<string, unknown>, uploads: readonly Mult
   if (typeof resolution !== "string") throw new HttpError(400, "validation", "resolution is required", "resolution");
   if (!(CAPABILITIES.resolutions as readonly string[]).includes(resolution)) throw new HttpError(400, "unsupported_option", `resolution ${resolution} is not offered by this server`, "resolution");
 
+  const rawContinue = fields["continueFrom"];
+  if (rawContinue !== undefined && rawContinue !== null && rawContinue !== "" && (typeof rawContinue !== "string" || rawContinue.trim() === "")) {
+    throw new HttpError(400, "validation", "continueFrom must be a job id", "continueFrom");
+  }
+  const continueFrom = typeof rawContinue === "string" && rawContinue.trim() !== "" ? rawContinue.trim() : undefined;
+
   const rawDuration = fields["durationSeconds"];
   const durationSeconds = typeof rawDuration === "string" ? Number(rawDuration) : rawDuration;
   if (typeof durationSeconds !== "number" || !Number.isInteger(durationSeconds)) throw new HttpError(400, "validation", "durationSeconds must be an integer", "durationSeconds");
-  const { min, max, step } = CAPABILITIES.durationsSeconds;
+  const { min, max, step } = continueFrom === undefined ? CAPABILITIES.durationsSeconds : CAPABILITIES.extension.durationsSeconds;
   if (durationSeconds < min || durationSeconds > max || (durationSeconds - min) % step !== 0) {
-    throw new HttpError(400, "unsupported_option", `durationSeconds must be between ${String(min)} and ${String(max)} in steps of ${String(step)}`, "durationSeconds");
+    const what = continueFrom === undefined ? "durationSeconds" : "an extension's durationSeconds (the seconds added)";
+    throw new HttpError(400, "unsupported_option", `${what} must be between ${String(min)} and ${String(max)} in steps of ${String(step)}`, "durationSeconds");
   }
 
   const rawModel = fields["model"];
@@ -170,12 +187,46 @@ function validateRequest(fields: Record<string, unknown>, uploads: readonly Mult
   if (typeof model !== "string") throw new HttpError(400, "validation", "model must be a string", "model");
   if (!CAPABILITIES.models.some((m) => m.id === model)) throw new HttpError(400, "unsupported_option", `model ${model} is not offered by this server`, "model");
 
+  let contextSeconds: number | undefined;
+  if (continueFrom !== undefined) {
+    const range = CAPABILITIES.extension.contextSeconds;
+    const raw = fields["contextSeconds"];
+    if (raw === undefined || raw === null || raw === "") contextSeconds = range.default;
+    else {
+      const n = integerOf(raw);
+      if (n === undefined || n < range.min || n > range.max) throw new HttpError(400, "unsupported_option", `contextSeconds must be a whole number between ${String(range.min)} and ${String(range.max)}`, "contextSeconds");
+      contextSeconds = n;
+    }
+    if (uploads.length > 0) throw new HttpError(400, "validation", "an extension takes no reference images: the video being extended is the reference", "referenceImage");
+  }
+  let seed: number | undefined;
+  const rawSeed = fields["seed"];
+  if (rawSeed !== undefined && rawSeed !== null && rawSeed !== "") {
+    const n = integerOf(rawSeed);
+    if (n === undefined || n < 0 || n > 0xffffffff) throw new HttpError(400, "validation", "seed must be a whole number between 0 and 4294967295", "seed");
+    seed = n;
+  }
+
   if (uploads.length > CAPABILITIES.referenceImages.max) throw new HttpError(400, "validation", `at most ${String(CAPABILITIES.referenceImages.max)} reference images`, "referenceImage");
   for (const upload of uploads) {
     if (upload.field !== "referenceImage") throw new HttpError(400, "validation", `unexpected file field ${upload.field}`, upload.field);
     if (!IMAGE_TYPES.has(upload.contentType)) throw new HttpError(400, "validation", `reference images must be png, jpeg or webp (got ${upload.contentType})`, "referenceImage");
   }
-  return { prompt: prompt.trim(), ratio, resolution, durationSeconds, model, referenceImages: uploads.length };
+  return {
+    prompt: prompt.trim(),
+    ratio,
+    resolution,
+    durationSeconds,
+    model,
+    referenceImages: uploads.length,
+    ...(continueFrom === undefined ? {} : { continueFrom }),
+    ...(contextSeconds === undefined ? {} : { contextSeconds }),
+    ...(seed === undefined ? {} : { seed }),
+  };
+}
+function integerOf(value: unknown): number | undefined {
+  const n = typeof value === "string" && value.trim() !== "" ? Number(value) : value;
+  return typeof n === "number" && Number.isInteger(n) ? n : undefined;
 }
 
 export function createStubServer(options: StubOptions = {}): StubServer {
@@ -203,6 +254,7 @@ export function createStubServer(options: StubOptions = {}): StubServer {
             url: `/jobs/${job.id}/result`,
             posterUrl: `/jobs/${job.id}/poster`,
             mimeType: video.mimeType,
+            frames: lengthForSeconds(video.durationSeconds),
             durationSeconds: video.durationSeconds,
             width: video.width,
             height: video.height,
@@ -259,15 +311,32 @@ export function createStubServer(options: StubOptions = {}): StubServer {
     }
     const scriptName = req.headers["x-stub-script"]?.toString() ?? url.searchParams.get("script") ?? (typeof fields["script"] === "string" ? fields["script"] : DEFAULT_SCRIPT);
     if (!isScriptName(scriptName)) throw new HttpError(400, "validation", `unknown stub script ${scriptName}`, "script");
-    const request = validateRequest(fields, uploads);
+    let request = validateRequest(fields, uploads);
     if (uploads.length > 0 && scriptName === "rejects-upload") {
       throw new HttpError(400, "validation", "reference images are refused (scripted rejects-upload)", "referenceImage");
     }
+    // STORY_016: an extension mirrors the adapter's rules; the result stays the fixture (rule 10), the arithmetic is echoed.
+    let frames = lengthForSeconds(video.durationSeconds);
+    if (request.continueFrom !== undefined) {
+      const source = jobs.get(request.continueFrom);
+      if (!source || stateOf(source).status !== "done") throw new HttpError(400, "validation", `continueFrom names no finished job on this server (${request.continueFrom})`, "continueFrom");
+      const { maxSourceSeconds } = CAPABILITIES.extension;
+      if (source.frames / 24 > maxSourceSeconds) throw new HttpError(400, "unsupported_option", `the video is ${String(Math.round(source.frames / 24))} s long; this server extends videos up to ${String(maxSourceSeconds)} s`, "continueFrom");
+      for (const field of ["ratio", "resolution", "model"] as const) {
+        if (request[field] !== source.request[field]) throw new HttpError(400, "validation", `an extension keeps the source's ${field} (${source.request[field]})`, field);
+      }
+      const segment = extensionLength(request.durationSeconds);
+      const fed = contextFrames(source.frames, segment, request.contextSeconds ?? CAPABILITIES.extension.contextSeconds.default);
+      request = { ...request, contextFed: { frames: fed, seconds: seconds(fed) } };
+      frames = source.frames + segment - ANCHOR_FRAMES;
+    }
+    request = { ...request, seed: request.seed ?? Math.floor(Math.random() * 2 ** 32) };
     const now = new Date().toISOString();
     const job: Job = {
       id: randomUUID(),
       script: scriptName,
       request,
+      frames,
       uploads: uploads.map((u) => ({ filename: u.filename, contentType: u.contentType, size: u.data.length, sha256: createHash("sha256").update(u.data).digest("hex") })),
       createdAt: now,
       updatedAt: now,

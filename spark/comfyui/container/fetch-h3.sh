@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # spark/comfyui/container/fetch-h3.sh — runs inside the image (docker compose run --rm fetch): download from
-# Comfy-Org/MiniMax-H3 only what FL2VA text-to-video needs, at one precision, into the models bind mount; verify every
+# Comfy-Org/MiniMax-H3 what FL2VA text-to-video and Ref2VA extensions (STORY_016) need, at one precision, into the models bind mount; verify every
 # size against the Hub; copy the official template out of the pinned templates package; print the total on disk.
 #
 # Refuses to start unless MIN_FREE_GB (300) is free on the volume behind the models mount. Never deletes anything.
@@ -24,8 +24,9 @@ gb() { awk -v b="$1" 'BEGIN { printf "%.2f", b / 1000000000 }'; }
 
 [ -d "$MODELS" ] || die "$MODELS is not mounted"
 unet_file="$(h3_unet_file "$H3_PRECISION")"
+ref2va_file="$(h3_ref2va_file "$H3_PRECISION")"
 clip_file="$(h3_clip_file "$H3_TEXT_ENCODER")"
-FILES=("diffusion_models/$unet_file" "text_encoders/$clip_file" "vae/$H3_VIDEO_VAE" "vae/$H3_AUDIO_VAE")
+FILES=("diffusion_models/$unet_file" "diffusion_models/$ref2va_file" "text_encoders/$clip_file" "vae/$H3_VIDEO_VAE" "vae/$H3_AUDIO_VAE")
 
 log "licence: $H3_LICENSE"
 log "the Spark is used outside the licence's Excluded Territories (EPIC_004 decision #1, owner 2026-09-12)"

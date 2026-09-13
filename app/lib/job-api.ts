@@ -6,10 +6,15 @@ export interface JobError {
   readonly code: string;
   readonly message: string;
 }
+export interface ContextFed {
+  readonly frames: number;
+  readonly seconds: number;
+}
 export interface JobResult {
   readonly url: string;
   readonly posterUrl: string;
   readonly mimeType: string;
+  readonly frames?: number;
   readonly durationSeconds: number;
   readonly width: number;
   readonly height: number;
@@ -22,6 +27,11 @@ export interface JobRequest {
   readonly durationSeconds: number;
   readonly model: string;
   readonly referenceImages: number;
+  /** v1.1 (STORY_016): set on an extension. */
+  readonly continueFrom?: string;
+  readonly contextSeconds?: number;
+  readonly contextFed?: ContextFed;
+  readonly seed?: number;
 }
 export interface JobStatusResponse {
   readonly id: string;
@@ -44,6 +54,13 @@ export interface Capabilities {
   readonly resolutions: readonly string[];
   readonly durationsSeconds: { readonly min: number; readonly max: number; readonly step: number };
   readonly referenceImages: { readonly max: number };
+  /** v1.1 (STORY_016): how a finished video can be extended; absent on a server without extensions. */
+  readonly extension?: ExtensionCapabilities;
+}
+export interface ExtensionCapabilities {
+  readonly durationsSeconds: { readonly min: number; readonly max: number; readonly step: number; readonly default: number };
+  readonly contextSeconds: { readonly min: number; readonly max: number; readonly default: number };
+  readonly maxSourceSeconds: number;
 }
 export interface ApiError {
   readonly error: { readonly code: string; readonly message: string; readonly field?: string };

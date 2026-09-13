@@ -21,11 +21,15 @@ Per job, with `X-Stub-Script: <name>` or `?script=<name>` on `POST /jobs`. Progr
 | `cancel-midway` | running 10 → 25 → 50 and stays running until `DELETE` |
 | `rejects-upload` | `POST /jobs` with a reference image → `400` (`field: referenceImage`) |
 
+## Extensions (contract v1.1, STORY_016)
+
+`POST /jobs` with `continueFrom: <id of a job this stub has seen reach done>` is an extension: `durationSeconds` is the seconds added (4–14), `contextSeconds` (2–15, default 5) is how much of the source the model would watch, and the parameters must match the source's. The stub validates exactly as the adapter does and echoes `request.contextFed` computed by the same rule (`src/extension.ts` mirrors `spark/adapter/src/mapping.ts`; the fixture counts as 56 frames), but **its result is always the fixture** — the joined length is the adapter's arithmetic, unit-tested there. An optional integer `seed` is echoed on any job.
+
 ## Test hooks (not part of the contract)
 
 - `POST /__stub/reset` forgets every job.
 - `GET /__stub/jobs` → `{ jobs: [{ id, script, status, progress }] }` — assert nothing is left running.
-- `GET /__stub/jobs/:id/received` → what the job was sent: `request` and `uploads[] { filename, contentType, size, sha256 }`.
+- `GET /__stub/jobs/:id/received` → what the job was sent: `request` (with `continueFrom`, `contextSeconds`, `contextFed` and `seed` when they apply) and `uploads[] { filename, contentType, size, sha256 }`.
 - `GET /__stub/fixtures/<fixture.mp4|fixture.webm|fixture-poster.png|fixture-reference.png>` → that file, whatever `STUB_FIXTURE` is (for the codec probe).
 
 Hooks never require the bearer token. Fixtures and how they were made: [fixtures/README.md](fixtures/README.md).

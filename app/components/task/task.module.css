@@ -243,3 +243,15 @@
     min-height: 44px;
   }
 }
+
+/* An extension's bubble names the video it continues (STORY_016). */
+.continues {
+  display: block;
+  margin-top: var(--spacing_8);
+  font-size: 13px;
+  color: var(--gray_500);
+}
+.continues a {
+  color: var(--gray_1000);
+  text-decoration: underline;
+}

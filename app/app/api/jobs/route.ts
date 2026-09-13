@@ -11,19 +11,42 @@ interface Fields {
   readonly resolution: string;
   readonly durationSeconds: number;
   readonly model: string;
+  /** STORY_016: an extension's source and requested context. */
+  readonly continueFrom?: string;
+  readonly contextSeconds?: number;
 }
 
 function fieldsFrom(source: Record<string, unknown>): Fields {
   const str = (v: unknown): string => (typeof v === "string" ? v : "");
-  const raw = source["durationSeconds"];
-  return { prompt: str(source["prompt"]), ratio: str(source["ratio"]), resolution: str(source["resolution"]), durationSeconds: typeof raw === "number" ? raw : Number(str(raw)), model: str(source["model"]) || "minimax-h3" };
+  const num = (v: unknown): number => (typeof v === "number" ? v : Number(str(v)));
+  const continueFrom = str(source["continueFrom"]).trim();
+  const context = source["contextSeconds"];
+  return {
+    prompt: str(source["prompt"]),
+    ratio: str(source["ratio"]),
+    resolution: str(source["resolution"]),
+    durationSeconds: num(source["durationSeconds"]),
+    model: str(source["model"]) || "minimax-h3",
+    ...(continueFrom === "" ? {} : { continueFrom }),
+    ...(continueFrom !== "" && context !== undefined && context !== null && context !== "" ? { contextSeconds: num(context) } : {}),
+  };
 }
 
 /** After the server accepted the job, record it in history BEFORE answering the browser (STORY_014). */
 async function accepted(response: Response, fields: Fields, referenceImages: number): Promise<Response> {
   if (response.status !== 202) return relayJson(response);
   const body = (await response.json()) as CreateJobResponse;
-  historyStore().create({ id: body.id, prompt: fields.prompt, params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model }, referenceImages });
+  const store = historyStore();
+  // STORY_016: an extension remembers its source by id and by the title it had (the source may leave history later).
+  const source = fields.continueFrom === undefined ? undefined : store.get(fields.continueFrom);
+  const continuesFrom = fields.continueFrom === undefined ? undefined : { id: fields.continueFrom, title: source?.title ?? fields.continueFrom, ...(source?.result ? { durationSeconds: source.result.durationSeconds } : {}) };
+  store.create({
+    id: body.id,
+    prompt: fields.prompt,
+    params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model, ...(fields.contextSeconds === undefined ? {} : { contextSeconds: fields.contextSeconds }) },
+    referenceImages,
+    ...(continuesFrom ? { continuesFrom } : {}),
+  });
   return Response.json(body, { status: 202 });
 }
 

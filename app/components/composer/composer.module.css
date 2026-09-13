@@ -391,3 +391,55 @@
     min-width: 44px;
   }
 }
+
+/* Extend mode (STORY_016): the source's poster and what the model will watch, in place of the reference tiles. */
+.continuation {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_12);
+  min-height: 90px;
+}
+.continuationPoster {
+  width: 90px;
+  height: 90px;
+  flex: 0 0 90px;
+  border-radius: var(--radius_12);
+  background: var(--gray_75);
+  object-fit: cover;
+  display: block;
+}
+.continuationText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_4);
+  min-width: 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--gray_500);
+}
+.continuationTitle {
+  color: var(--gray_1000);
+  font-weight: 500;
+}
+.continuationRemove {
+  margin-left: auto;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius_full);
+  background: transparent;
+  color: var(--gray_500);
+  font-size: 20px;
+  cursor: pointer;
+}
+.continuationRemove:hover {
+  background: var(--opacity_black_1_4);
+  color: var(--gray_1000);
+}
+.fixedNote {
+  display: block;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--gray_300);
+  margin: var(--spacing_4) 0 0;
+}

@@ -1,10 +1,12 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { Composer } from "@/components/composer/Composer";
+import type { ExtendSource } from "@/lib/composer-state";
 import { cx } from "@/lib/cx";
 import type { HistoryEntry } from "@/lib/history-store";
-import type { JobStatusResponse } from "@/lib/job-api";
+import type { ContextFed, JobStatusResponse } from "@/lib/job-api";
 import { initialJob, isTerminal, reduceJob, type JobSnapshot } from "@/lib/job-status";
 import { PollAbortedError, pollUntilTerminal } from "@/lib/polling";
 import { indicatorFor, stepsFor } from "@/lib/todo-steps";
@@ -12,6 +14,8 @@ import styles from "./task.module.css";
 
 export interface TaskPageProps {
   readonly entry: HistoryEntry;
+  /** Open with the docked composer already extending this video (`/task/:id?extend`, STORY_016). */
+  readonly extendOnOpen?: boolean;
   /** Injected for tests. */
   readonly fetchImpl?: typeof fetch;
 }
@@ -26,12 +30,14 @@ function formatBytes(bytes: number): string {
 }
 
 /** The task page (STORY_014): the thread, the Progress panel, the docked composer; polling drives it to a terminal state. */
-export function TaskPage({ entry, fetchImpl }: TaskPageProps) {
+export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPageProps) {
   const router = useRouter();
   const doFetch = fetchImpl ?? fetch;
   const [job, dispatch] = useReducer(reduceJob, entry, fromEntry);
   const [busy, setBusy] = useState<"stop" | "retry" | undefined>(undefined);
   const [copied, setCopied] = useState(false);
+  const [extending, setExtending] = useState(extendOnOpen && entry.status === "done");
+  const [contextFed, setContextFed] = useState<ContextFed | undefined>(entry.contextFed);
   const opened = useRef(false);
 
   // Mark the entry opened once (the sidebar's unread dot). StrictMode runs effects twice; the ref makes it once.
@@ -57,6 +63,7 @@ export function TaskPage({ entry, fetchImpl }: TaskPageProps) {
       signal: controller.signal,
       onUpdate: (response) => {
         dispatch({ type: "status", response });
+        if (response.request?.contextFed) setContextFed(response.request.contextFed);
       },
     }).catch((error: unknown) => {
       if (!(error instanceof PollAbortedError)) dispatch({ type: "status", response: { id: entry.id, status: "failed", progress: job.progress, error: { code: "unreachable", message: error instanceof Error ? error.message : String(error) } } });
@@ -84,7 +91,9 @@ export function TaskPage({ entry, fetchImpl }: TaskPageProps) {
   const retry = async (): Promise<void> => {
     setBusy("retry");
     try {
-      const res = await doFetch("/api/jobs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: entry.prompt, ...entry.params }) });
+      // An extension retries as an extension (STORY_016): the source id and the requested context come from history.
+      const body = { prompt: entry.prompt, ...entry.params, ...(entry.continuesFrom ? { continueFrom: entry.continuesFrom.id } : {}) };
+      const res = await doFetch("/api/jobs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       if (res.status === 202) {
         const body = (await res.json()) as { id: string };
         router.push(`/task/${encodeURIComponent(body.id)}`);
@@ -110,6 +119,10 @@ export function TaskPage({ entry, fetchImpl }: TaskPageProps) {
   const steps = stepsFor(job);
   const resultPath = `/api/jobs/${encodeURIComponent(entry.id)}/result`;
   const posterPath = `/api/jobs/${encodeURIComponent(entry.id)}/poster`;
+  const extendSource: ExtendSource | undefined =
+    extending && job.status === "done" && job.result
+      ? { id: entry.id, title: entry.title, durationSeconds: job.result.durationSeconds, ratio: entry.params.ratio, resolution: entry.params.resolution, model: entry.params.model, posterUrl: posterPath }
+      : undefined;
 
   return (
     <div className={styles.page}>
@@ -118,6 +131,13 @@ export function TaskPage({ entry, fetchImpl }: TaskPageProps) {
           <div className={styles.bubble} data-testid="user-message">
             <span className={styles.mention}>@video-creator</span> {entry.prompt}
             {entry.referenceImages > 0 ? <div className={styles.refs}>{String(entry.referenceImages)} reference image{entry.referenceImages > 1 ? "s" : ""} attached</div> : null}
+            {entry.continuesFrom ? (
+              <span className={styles.continues} data-testid="continues">
+                Continues <Link href={`/task/${encodeURIComponent(entry.continuesFrom.id)}`}>{entry.continuesFrom.title}</Link>
+                {entry.continuesFrom.durationSeconds === undefined ? "" : ` · ${entry.continuesFrom.durationSeconds.toFixed(1)} s`}
+                {contextFed ? ` · watched its last ${contextFed.seconds.toFixed(1)} s` : ""}
+              </span>
+            ) : null}
           </div>
 
           <div className={styles.indicator} role="status" aria-live="polite" data-testid="indicator">
@@ -137,6 +157,7 @@ export function TaskPage({ entry, fetchImpl }: TaskPageProps) {
               <div className={styles.actions}>
                 <a className={styles.actionLink} href={resultPath} download={`${entry.title.replace(/[/\\?%*:|"<>…]/g, "").trim() || "video"}.mp4`}>⤓ Download</a>
                 <button type="button" className={styles.actionLink} onClick={() => void copyPrompt()}>⧉ {copied ? "Copied" : "Copy prompt"}</button>
+                <button type="button" className={styles.actionLink} onClick={() => { setExtending(true); }} aria-pressed={extending}>⤴ Extend</button>
                 <span>{new Date(entry.finishedAt ?? entry.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
               </div>
             </div>
@@ -164,7 +185,7 @@ export function TaskPage({ entry, fetchImpl }: TaskPageProps) {
           ) : null}
 
           <div className={styles.docked}>
-            <Composer variant="docked" fetchImpl={fetchImpl} stop={running ? { pending: busy === "stop", onStop: () => void stop() } : undefined} />
+            <Composer variant="docked" fetchImpl={fetchImpl} stop={running ? { pending: busy === "stop", onStop: () => void stop() } : undefined} extend={extendSource} onStopExtending={() => { setExtending(false); }} />
             <p className={styles.footer}>MiniMax Local generates on your Spark</p>
           </div>
         </div>

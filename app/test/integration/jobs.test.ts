@@ -11,6 +11,7 @@ import { DELETE as cancelJob, GET as getJob } from "@/app/api/jobs/[id]/route";
 import { GET as getPoster } from "@/app/api/jobs/[id]/poster/route";
 import { GET as getResult } from "@/app/api/jobs/[id]/result/route";
 import { POST as createJob } from "@/app/api/jobs/route";
+import { historyStore } from "@/lib/history-store";
 import type { ApiError, Capabilities, CreateJobResponse, JobStatusResponse } from "@/lib/job-api";
 
 const valid = { prompt: "A small paper boat", ratio: "16:9", resolution: "768P", durationSeconds: 5 };
@@ -32,8 +33,8 @@ async function status(id: string): Promise<JobStatusResponse> {
   expect(res.status).toBe(200);
   return (await res.json()) as JobStatusResponse;
 }
-async function stubReceived(id: string): Promise<{ uploads: { filename: string; sha256: string }[] }> {
-  return (await (await fetch(`${stubUrl}/__stub/jobs/${id}/received`)).json()) as { uploads: { filename: string; sha256: string }[] };
+async function stubReceived(id: string): Promise<{ request: Record<string, unknown>; uploads: { filename: string; sha256: string }[] }> {
+  return (await (await fetch(`${stubUrl}/__stub/jobs/${id}/received`)).json()) as { request: Record<string, unknown>; uploads: { filename: string; sha256: string }[] };
 }
 
 beforeAll(async () => {
@@ -169,5 +170,32 @@ describe("config, auth and errors", () => {
     const down = await getCapabilities();
     expect(down.status).toBe(502);
     expect(((await down.json()) as ApiError).error.code).toBe("unreachable");
+  });
+});
+
+describe("extensions (STORY_016)", () => {
+  it("records continuesFrom with the source's title and length, relays the stub's echo, records what was fed, and the stub receives the request", async () => {
+    const src = await create("done-after-1-poll");
+    await status(src);
+    const res = await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, durationSeconds: 10, continueFrom: src, contextSeconds: 2 }));
+    expect(res.status).toBe(202);
+    const { id } = (await res.json()) as CreateJobResponse;
+    const entry = historyStore().get(id);
+    expect(entry).toMatchObject({ continuesFrom: { id: src, title: "A small paper boat", durationSeconds: 2 }, params: { durationSeconds: 10, contextSeconds: 2 } });
+    expect(entry?.contextFed).toBeUndefined();
+    const s = await status(id);
+    expect(s.request).toMatchObject({ continueFrom: src, contextSeconds: 2, contextFed: { frames: 56, seconds: 2.333 } });
+    expect(historyStore().get(id)?.contextFed).toEqual({ frames: 56, seconds: 2.333 });
+    expect((await stubReceived(id)).request).toMatchObject({ continueFrom: src, contextSeconds: 2, durationSeconds: 10 });
+  });
+
+  it("a refused continueFrom relays the stub's 400 and writes no history entry; capabilities relay the extension limits", async () => {
+    const before = historyStore().list().length;
+    const res = await createJob(jsonRequest("/api/jobs", { ...valid, durationSeconds: 10, continueFrom: "nope" }));
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as ApiError).error).toMatchObject({ code: "validation", field: "continueFrom" });
+    expect(historyStore().list().length).toBe(before);
+    const caps = (await (await getCapabilities()).json()) as Capabilities;
+    expect(caps.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, contextSeconds: { min: 2, max: 15, default: 5 }, maxSourceSeconds: 30 });
   });
 });

@@ -1,8 +1,9 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
-import { canSend, durationOptions, initialComposer, isModelEnabled, isResolutionEnabled, paramsLabel, reduceComposer, REFERENCE_MODELS, REFERENCE_RATIOS, REFERENCE_RESOLUTIONS, type ComposerImage } from "@/lib/composer-state";
+import { canSend, contextOptions, durationOptions, initialComposer, isModelEnabled, isResolutionEnabled, paramsLabel, reduceComposer, REFERENCE_MODELS, REFERENCE_RATIOS, REFERENCE_RESOLUTIONS, type ComposerImage, type ExtendSource } from "@/lib/composer-state";
 import { cx } from "@/lib/cx";
+import { contextFedSeconds } from "@/lib/extend";
 import type { Capabilities } from "@/lib/job-api";
 import { submitJob } from "@/lib/submit-job";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
@@ -10,6 +11,8 @@ import styles from "./composer.module.css";
 
 const INERT_TITLE = "Not part of MiniMax Local";
 const PLACEHOLDER = "Enter message... (use / for commands)";
+const EXTEND_PLACEHOLDER = "Describe what happens next…";
+const FIXED_NOTE = "fixed by the video being extended";
 
 function objectUrl(file: File): string {
   return typeof URL.createObjectURL === "function" ? URL.createObjectURL(file) : "";
@@ -30,12 +33,16 @@ export interface ComposerProps {
   readonly variant?: "home" | "docked";
   /** While a job runs, Send becomes "Stop generation" (task-generating-000s@1440). */
   readonly stop?: { readonly pending: boolean; readonly onStop: () => void };
+  /** Extend mode (STORY_016): the finished video to continue; the page owns the flag and clears it through onStopExtending. */
+  readonly extend?: ExtendSource;
+  readonly onStopExtending?: () => void;
 }
 
-/** The home composer (STORY_013): text mode, video mode with references, model, parameters, Send. */
-export function Composer({ fetchImpl, variant = "home", stop }: ComposerProps) {
+/** The home composer (STORY_013): text mode, video mode with references, model, parameters, Send; extend mode (STORY_016). */
+export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExtending }: ComposerProps) {
   const router = useRouter();
   const docked = variant === "docked";
+  const textarea = useRef<HTMLTextAreaElement>(null);
   const [state, dispatch] = useReducer(reduceComposer, docked, (startInVideoMode) => (startInVideoMode ? reduceComposer(initialComposer(), { type: "enter-video-mode" }) : initialComposer()));
   const [popover, setPopover] = useState<"params" | "model" | undefined>(undefined);
   const [dragging, setDragging] = useState(false);
@@ -61,6 +68,16 @@ export function Composer({ fetchImpl, variant = "home", stop }: ComposerProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch once on mount
   }, []);
+
+  // The page decides when the composer extends a video; the reducer makes the dispatches idempotent (StrictMode-safe).
+  useEffect(() => {
+    if (extend) {
+      dispatch({ type: "extend-from", source: extend });
+      textarea.current?.focus();
+    } else {
+      dispatch({ type: "clear-extend" });
+    }
+  }, [extend]);
 
   useEffect(() => {
     const live = new Set(state.images.map((i) => i.id));
@@ -106,8 +123,12 @@ export function Composer({ fetchImpl, variant = "home", stop }: ComposerProps) {
   const onDrop = (event: DragEvent<HTMLDivElement>): void => {
     event.preventDefault();
     setDragging(false);
-    if (state.mode !== "video") return;
+    if (state.mode !== "video" || state.extend) return;
     addFiles(Array.from(event.dataTransfer.files));
+  };
+  const stopExtending = (): void => {
+    dispatch({ type: "clear-extend" });
+    onStopExtending?.();
   };
 
   const send = async (): Promise<void> => {
@@ -134,13 +155,14 @@ export function Composer({ fetchImpl, variant = "home", stop }: ComposerProps) {
 
   const video = state.mode === "video";
   const caps = state.capabilities;
+  const extending = state.extend;
 
   return (
     <div className={styles.wrap}>
       <div
         className={cx(styles.card, dragging && styles.cardDrop)}
         onDragOver={(event) => {
-          if (video) {
+          if (video && !extending) {
             event.preventDefault();
             setDragging(true);
           }
@@ -151,7 +173,17 @@ export function Composer({ fetchImpl, variant = "home", stop }: ComposerProps) {
         onDrop={onDrop}
         data-testid="composer"
       >
-        {video ? (
+        {video && extending ? (
+          <div className={styles.continuation} data-testid="continuation">
+            {/* eslint-disable-next-line @next/next/no-img-element -- the source's poster, served by our own route */}
+            <img className={styles.continuationPoster} src={extending.posterUrl} alt="" />
+            <div className={styles.continuationText}>
+              <span className={styles.continuationTitle}>Continues · {extending.durationSeconds.toFixed(1)} s</span>
+              <span data-testid="context-line">the model watches the last {contextFedSeconds(extending.durationSeconds, state.durationSeconds, state.contextSeconds).toFixed(1)} s</span>
+            </div>
+            <button type="button" className={styles.continuationRemove} aria-label="Stop extending" onClick={stopExtending}>×</button>
+          </div>
+        ) : video ? (
           <div className={styles.references}>
             {state.images.map((image, index) => (
               <div key={image.id} className={styles.thumb}>
@@ -178,9 +210,10 @@ export function Composer({ fetchImpl, variant = "home", stop }: ComposerProps) {
             </span>
           ) : null}
           <textarea
+            ref={textarea}
             className={styles.editor}
             aria-label="Message"
-            placeholder={PLACEHOLDER}
+            placeholder={extending ? EXTEND_PLACEHOLDER : PLACEHOLDER}
             value={state.text}
             rows={2}
             onChange={(event) => { dispatch({ type: "text", text: event.target.value }); }}
@@ -196,7 +229,7 @@ export function Composer({ fetchImpl, variant = "home", stop }: ComposerProps) {
           {video ? (
             <>
               <span style={{ position: "relative" }} data-popover="model">
-                <button type="button" className={styles.pill} aria-haspopup="menu" aria-expanded={popover === "model"} aria-label={`Model: ${REFERENCE_MODELS.find((m) => m.id === state.model)?.label ?? "MiniMax-H3"}`} onClick={() => { setPopover(popover === "model" ? undefined : "model"); }} disabled={!caps}>
+                <button type="button" className={styles.pill} aria-haspopup="menu" aria-expanded={popover === "model"} aria-label={`Model: ${REFERENCE_MODELS.find((m) => m.id === state.model)?.label ?? "MiniMax-H3"}`} onClick={() => { setPopover(popover === "model" ? undefined : "model"); }} disabled={!caps || extending !== undefined} title={extending ? FIXED_NOTE : undefined}>
                   <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><circle cx="7" cy="7" r="2" fill="currentColor" /></svg>
                   {(REFERENCE_MODELS.find((m) => m.id === state.model)?.label ?? "MiniMax-H3.0").replace(".0", "")}
                   <span aria-hidden="true">⌄</span>
@@ -229,7 +262,7 @@ export function Composer({ fetchImpl, variant = "home", stop }: ComposerProps) {
                     <span className={styles.sectionLabel}>Ratio</span>
                     <div className={styles.track} role="radiogroup" aria-label="Ratio">
                       {REFERENCE_RATIOS.map((ratio) => (
-                        <button key={ratio} type="button" role="radio" aria-checked={state.ratio === ratio} className={cx(styles.segment, styles.segmentRatio, state.ratio === ratio && styles.segmentSelected)} disabled={!caps.ratios.includes(ratio)} onClick={() => { dispatch({ type: "ratio", ratio }); }}>
+                        <button key={ratio} type="button" role="radio" aria-checked={state.ratio === ratio} className={cx(styles.segment, styles.segmentRatio, state.ratio === ratio && styles.segmentSelected)} disabled={!caps.ratios.includes(ratio) || extending !== undefined} onClick={() => { dispatch({ type: "ratio", ratio }); }}>
                           <RatioGlyph ratio={ratio} />
                           {ratio}
                         </button>
@@ -240,20 +273,33 @@ export function Composer({ fetchImpl, variant = "home", stop }: ComposerProps) {
                       {REFERENCE_RESOLUTIONS.map((resolution) => {
                         const enabled = isResolutionEnabled(state, resolution);
                         return (
-                          <button key={resolution} type="button" role="radio" aria-checked={state.resolution === resolution} className={cx(styles.segment, state.resolution === resolution && styles.segmentSelected)} disabled={!enabled} title={enabled ? undefined : "not on the Spark"} onClick={() => { dispatch({ type: "resolution", resolution }); }}>
+                          <button key={resolution} type="button" role="radio" aria-checked={state.resolution === resolution} className={cx(styles.segment, state.resolution === resolution && styles.segmentSelected)} disabled={!enabled || extending !== undefined} title={enabled ? undefined : "not on the Spark"} onClick={() => { dispatch({ type: "resolution", resolution }); }}>
                             {resolution}{enabled ? "" : " — not on the Spark"}
                           </button>
                         );
                       })}
                     </div>
-                    <span className={styles.sectionLabel}>Duration</span>
+                    {extending ? <span className={styles.fixedNote}>{FIXED_NOTE}</span> : null}
+                    <span className={styles.sectionLabel}>{extending ? "Duration (added)" : "Duration"}</span>
                     <div className={styles.track} role="radiogroup" aria-label="Duration">
                       {durationOptions(state).map((seconds) => (
                         <button key={seconds} type="button" role="radio" aria-checked={state.durationSeconds === seconds} className={cx(styles.segment, state.durationSeconds === seconds && styles.segmentSelected)} onClick={() => { dispatch({ type: "duration", durationSeconds: seconds }); }}>
-                          {String(seconds)}s
+                          {extending ? "+" : ""}{String(seconds)}s
                         </button>
                       ))}
                     </div>
+                    {extending ? (
+                      <>
+                        <span className={styles.sectionLabel}>Context (what the model watches)</span>
+                        <div className={styles.track} role="radiogroup" aria-label="Context">
+                          {contextOptions(state).map((option) => (
+                            <button key={option.seconds} type="button" role="radio" aria-checked={state.contextSeconds === option.seconds} className={cx(styles.segment, state.contextSeconds === option.seconds && styles.segmentSelected)} onClick={() => { dispatch({ type: "context", contextSeconds: option.seconds }); }}>
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
                   </div>
                 ) : null}
               </span>

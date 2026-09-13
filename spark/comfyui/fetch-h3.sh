@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# spark/comfyui/fetch-h3.sh — run the one-shot fetch container: the H3 files FL2VA text-to-video needs, at one precision,
+# spark/comfyui/fetch-h3.sh — run the one-shot fetch container: the H3 files FL2VA text-to-video and Ref2VA extensions need, at one precision,
 # into $SPARK_DATA/models, sizes verified against the Hub, the official template into $SPARK_DATA/templates.
 # The disk gate (>= MIN_FREE_GB free) runs inside, on the bind mount. See container/fetch-h3.sh.
 #

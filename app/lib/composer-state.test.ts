@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Capabilities } from "./job-api";
-import { canSend, durationOptions, initialComposer, isModelEnabled, isResolutionEnabled, paramsLabel, reduceComposer, type ComposerImage, type ComposerState } from "./composer-state";
+import { canSend, contextOptions, durationOptions, initialComposer, isModelEnabled, isResolutionEnabled, paramsLabel, reduceComposer, type ComposerImage, type ComposerState, type ExtendSource } from "./composer-state";
 
 const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 } };
 const img = (id: string, type = "image/png", size = 1000): ComposerImage => ({ id, file: new File(["x"], `${id}.png`, { type }), url: "", name: `${id}.png`, type, size });
@@ -100,5 +100,45 @@ describe("reduceComposer edge branches", () => {
     expect(reduceComposer(s, { type: "resolution", resolution: "768P" }).resolution).toBe("768P");
     expect(reduceComposer(reduceComposer(s, { type: "text", text: "x" }), { type: "error", error: { message: "e" } }).error?.message).toBe("e");
     expect(reduceComposer(reduceComposer(s, { type: "error", error: { message: "e" } }), { type: "text", text: "y" }).error).toBeUndefined();
+  });
+});
+
+describe("extend mode (STORY_016)", () => {
+  const source: ExtendSource = { id: "src", title: "A boat", durationSeconds: 10.125, ratio: "9:16", resolution: "768P", model: "minimax-h3", posterUrl: "/api/jobs/src/poster" };
+  const extCaps: Capabilities = { ...caps, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, contextSeconds: { min: 2, max: 15, default: 5 }, maxSourceSeconds: 30 } };
+
+  it("extend-from takes the source's ratio/resolution/model and the extension defaults, locks the fixed fields and refuses images", () => {
+    const s = reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: extCaps }), { type: "extend-from", source });
+    expect(s).toMatchObject({ mode: "video", extend: source, ratio: "9:16", resolution: "768P", model: "minimax-h3", durationSeconds: 10, contextSeconds: 5, images: [] });
+    expect(reduceComposer(s, { type: "ratio", ratio: "16:9" })).toBe(s);
+    expect(reduceComposer(s, { type: "resolution", resolution: "768P" })).toBe(s);
+    expect(reduceComposer(s, { type: "model", model: "minimax-h3" })).toBe(s);
+    expect(reduceComposer(s, { type: "duration", durationSeconds: 15 }).durationSeconds).toBe(14);
+    expect(reduceComposer(s, { type: "duration", durationSeconds: 4 }).durationSeconds).toBe(4);
+    const refused = reduceComposer(s, { type: "add-images", images: [img("a")] });
+    expect(refused.images).toHaveLength(0);
+    expect(refused.error).toMatchObject({ field: "referenceImage", message: /takes no reference images/ });
+    expect(paramsLabel(s)).toBe("9:16 768P +10s");
+    expect(durationOptions(s)).toEqual([4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
+    expect(contextOptions(s)).toEqual([{ seconds: 2, label: "last 2s" }, { seconds: 5, label: "last 5s" }, { seconds: 10, label: "last 10s" }, { seconds: 15, label: "max" }]);
+    expect(canSend(reduceComposer(s, { type: "text", text: "next" }))).toBe(true);
+  });
+
+  it("context changes only while extending and is clamped; clear-extend and leave-video-mode restore the normal composer", () => {
+    const s = reduceComposer(ready(), { type: "extend-from", source });
+    expect(reduceComposer(s, { type: "context", contextSeconds: 15 }).contextSeconds).toBe(15);
+    expect(reduceComposer(s, { type: "context", contextSeconds: 99 }).contextSeconds).toBe(15);
+    expect(reduceComposer(s, { type: "context", contextSeconds: 1 }).contextSeconds).toBe(2);
+    const plain = ready();
+    expect(reduceComposer(plain, { type: "context", contextSeconds: 10 })).toBe(plain);
+    expect(reduceComposer(plain, { type: "clear-extend" })).toBe(plain);
+    expect(contextOptions(plain)).toEqual([]);
+    const cleared = reduceComposer(reduceComposer(s, { type: "context", contextSeconds: 10 }), { type: "clear-extend" });
+    expect(cleared).toMatchObject({ extend: undefined, ratio: "16:9", resolution: "768P", model: "minimax-h3", durationSeconds: 5, contextSeconds: 5 });
+    expect(paramsLabel(cleared)).toBe("16:9 768P 5s");
+    expect(reduceComposer(s, { type: "leave-video-mode" })).toMatchObject({ mode: "text", extend: undefined });
+    // capabilities that arrive while extending keep the source's values and clamp into the server's ranges
+    const late = reduceComposer(reduceComposer(initialComposer(), { type: "extend-from", source }), { type: "capabilities", capabilities: extCaps });
+    expect(late).toMatchObject({ extend: source, ratio: "9:16", model: "minimax-h3", durationSeconds: 10, contextSeconds: 5 });
   });
 });

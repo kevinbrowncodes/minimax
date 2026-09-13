@@ -271,3 +271,111 @@ describe("resilience", () => {
     await lacking.close();
   });
 });
+
+describe("extensions (STORY_016)", () => {
+  const isDone = (s: Record<string, unknown>) => s["status"] === "done";
+  const finish = async (body: unknown = valid): Promise<string> => {
+    const id = await create(body);
+    await waitFor(id, isDone);
+    return id;
+  };
+  const errorOf = async (res: Response): Promise<{ code: string; field?: string; message: string }> => ((await res.json()) as { error: { code: string; field?: string; message: string } }).error;
+
+  it("extends a done job on Ref2VA with the source's tail as the reference, echoes what it fed, and reports the joined length", async () => {
+    const src = await finish(); // the fixture job: 5 s → 124 frames
+    expect((await status(src))["result"]).toMatchObject({ frames: 124, durationSeconds: 5.167 });
+    const ext = await create({ ...valid, durationSeconds: 10, continueFrom: src });
+    const first = await status(ext);
+    expect(first["request"]).toMatchObject({ continueFrom: src, durationSeconds: 10, contextSeconds: 5, contextFed: { frames: 124, seconds: 5.167 } });
+    expect(typeof (first["request"] as { seed: unknown }).seed).toBe("number");
+    const graph = fake.prompts[1]?.graph;
+    expect(graph?.["unet"]?.inputs["unet_name"]).toBe("minimax_h3_ref2va_int8_convrot.safetensors");
+    expect(graph?.["source_video"]?.inputs["file"]).toBe(`video/job-${src}_00001_.mp4 [output]`);
+    expect(graph?.["context_frames"]?.inputs).toMatchObject({ batch_index: 0, length: 124 });
+    expect(graph?.["anchor_frames"]?.inputs).toMatchObject({ batch_index: 102, length: 22 });
+    expect(graph?.["cond"]?.class_type).toBe("MiniMaxH3ReferenceToVideo");
+    expect(String(graph?.["cond"]?.inputs["prompt"])).toContain("[video continuation + audio reference]");
+    expect(String(graph?.["cond"]?.inputs["prompt"])).toContain("[Shot 1] A small paper boat");
+    expect(graph?.["guider"]?.inputs["conditioning"]).toEqual(["guide", 0]);
+    const done = await waitFor(ext, isDone);
+    expect(done["result"]).toMatchObject({ frames: 379, durationSeconds: 15.792, width: 1344, height: 768 });
+    // extending the extension reads the joined frames; a longer context is capped by the step being generated
+    const ext2 = await create({ ...valid, durationSeconds: 10, continueFrom: ext, contextSeconds: 15 });
+    expect((await status(ext2))["request"]).toMatchObject({ contextSeconds: 15, contextFed: { frames: 277, seconds: 11.542 } });
+    expect(fake.prompts[2]?.graph["context_frames"]?.inputs).toMatchObject({ batch_index: 379 - 277, length: 277 });
+    expect((await waitFor(ext2, isDone))["result"]).toMatchObject({ frames: 634 });
+  });
+
+  it("a given seed is the graph's noise seed and is echoed; without one a seed is drawn and echoed", async () => {
+    const id = await create({ ...valid, seed: 123 });
+    expect(fake.prompts[0]?.graph["noise"]?.inputs["noise_seed"]).toBe(123);
+    expect((await status(id))["request"]).toMatchObject({ seed: 123 });
+    await waitFor(id, isDone);
+    const other = await create();
+    const seed = ((await status(other))["request"] as { seed: number }).seed;
+    expect(Number.isInteger(seed)).toBe(true);
+    expect(fake.prompts[1]?.graph["noise"]?.inputs["noise_seed"]).toBe(seed);
+    await waitFor(other, isDone);
+  });
+
+  it("refuses an unknown, unfinished, deleted or mismatched source and an out-of-range step or context, without submitting anything", async () => {
+    const src = await finish();
+    const cases: [Record<string, unknown>, string, string][] = [
+      [{ ...valid, durationSeconds: 10, continueFrom: "nope" }, "validation", "continueFrom"],
+      [{ ...valid, durationSeconds: 10, continueFrom: src, ratio: "9:16" }, "validation", "ratio"],
+      [{ ...valid, durationSeconds: 15, continueFrom: src }, "unsupported_option", "durationSeconds"],
+      [{ ...valid, durationSeconds: 10, continueFrom: src, contextSeconds: 16 }, "unsupported_option", "contextSeconds"],
+    ];
+    for (const [body, code, field] of cases) {
+      const res = await json("/jobs", body);
+      expect(res.status, JSON.stringify(body)).toBe(400);
+      expect(await errorOf(res)).toMatchObject({ code, field });
+    }
+    fake.behaviour = "hold";
+    const held = await create();
+    const unfinished = await json("/jobs", { ...valid, durationSeconds: 10, continueFrom: held });
+    expect(unfinished.status).toBe(400);
+    expect(await errorOf(unfinished)).toMatchObject({ code: "validation", field: "continueFrom" });
+    await api(`/jobs/${held}`, { method: "DELETE" });
+    fake.behaviour = "success";
+    rmSync(path.join(dir, "output", "video", `job-${src}_00001_.mp4`));
+    const gone = await json("/jobs", { ...valid, durationSeconds: 10, continueFrom: src });
+    expect(gone.status).toBe(400);
+    expect((await errorOf(gone)).message).toMatch(/gone from ComfyUI's output directory/);
+    expect(fake.prompts).toHaveLength(2); // the source and the held job only
+  });
+
+  it("refuses to extend a source longer than 30 s", async () => {
+    let id = await finish(); // 124 frames
+    for (const frames of [379, 634, 889]) {
+      id = await finish({ ...valid, durationSeconds: 10, continueFrom: id });
+      expect((await status(id))["result"]).toMatchObject({ frames });
+    }
+    const res = await json("/jobs", { ...valid, durationSeconds: 10, continueFrom: id }); // 889 frames = 37 s
+    expect(res.status).toBe(400);
+    expect(await errorOf(res)).toMatchObject({ code: "unsupported_option", field: "continueFrom", message: expect.stringContaining("up to 30 s") as string });
+  });
+
+  it("needs the Ref2VA checkpoint: health lists what ComfyUI offers, and an extension is refused with the fetch command when it is missing", async () => {
+    await adapter?.close();
+    await fake.close();
+    fake = await startFakeComfy({ outputDir: path.join(dir, "output"), fixturesDir: FIXTURES, unets: ["minimax_h3_fl2va_int8_convrot.safetensors"] });
+    adapter = await startAdapter();
+    const health = (await (await api("/health")).json()) as { comfyui: { checkpoints: unknown } };
+    expect(health.comfyui.checkpoints).toEqual({ fl2va: true, ref2va: false });
+    const src = await finish();
+    const res = await json("/jobs", { ...valid, durationSeconds: 10, continueFrom: src });
+    expect(res.status).toBe(503);
+    expect((await errorOf(res)).message).toMatch(/Ref2VA checkpoint .*fetch-h3\.sh/);
+  });
+
+  it("refuses every job while ComfyUI lacks the reference-to-video node class, and says so", async () => {
+    await adapter?.close();
+    await fake.close();
+    fake = await startFakeComfy({ outputDir: path.join(dir, "output"), fixturesDir: FIXTURES, omitClasses: ["MiniMaxH3ReferenceToVideo"] });
+    adapter = await startAdapter();
+    const res = await json("/jobs", valid);
+    expect(res.status).toBe(503);
+    expect((await errorOf(res)).message).toMatch(/MiniMaxH3ReferenceToVideo/);
+  });
+});

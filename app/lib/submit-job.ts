@@ -5,11 +5,19 @@ import type { ComposerState } from "./composer-state";
 export type SubmitResult = { readonly ok: true; readonly id: string } | { readonly ok: false; readonly status: number; readonly message: string; readonly field?: string };
 
 export function buildJobRequest(state: ComposerState): { readonly url: string; readonly init: RequestInit } {
-  const fields = { prompt: state.text.trim(), ratio: state.ratio, resolution: state.resolution, durationSeconds: state.durationSeconds, model: state.model };
+  const fields = {
+    prompt: state.text.trim(),
+    ratio: state.ratio,
+    resolution: state.resolution,
+    durationSeconds: state.durationSeconds,
+    model: state.model,
+    // STORY_016: an extension names its source and the context; it never carries images.
+    ...(state.extend ? { continueFrom: state.extend.id, contextSeconds: state.contextSeconds } : {}),
+  };
   // A `?script=` on the page URL is forwarded so the e2e lane can choose the stub's outcome; the adapter ignores it.
   const script = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("script");
   const url = script === null ? "/api/jobs" : `/api/jobs?script=${encodeURIComponent(script)}`;
-  if (state.images.length === 0) {
+  if (state.images.length === 0 || state.extend) {
     return { url, init: { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(fields) } };
   }
   const form = new FormData();

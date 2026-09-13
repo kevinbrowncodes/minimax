@@ -1,12 +1,14 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { ExtendSource } from "@/lib/composer-state";
 import type { Capabilities } from "@/lib/job-api";
 import { Composer } from "./Composer";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
-const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 } };
+const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 }, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, contextSeconds: { min: 2, max: 15, default: 5 }, maxSourceSeconds: 30 } };
+const source: ExtendSource = { id: "src", title: "The first clip", durationSeconds: 2, ratio: "16:9", resolution: "768P", model: "minimax-h3", posterUrl: "/api/jobs/src/poster" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
 function fetchWith(onJobs: (init: RequestInit | undefined) => Response): typeof fetch {
@@ -115,5 +117,62 @@ describe("Composer", () => {
       await Promise.resolve();
     });
     expect(screen.getByRole("alert")).toHaveTextContent(/only generates videos/);
+  });
+});
+
+describe("Composer — extend mode (STORY_016)", () => {
+  it("shows the continuation tile and what the model watches, locks ratio/resolution/model, offers +Ns and Context, and Send posts continueFrom", async () => {
+    let captured: RequestInit | undefined;
+    const fetchImpl = fetchWith((init) => {
+      captured = init;
+      return json({ id: "j2", status: "queued", progress: 0 }, 202);
+    });
+    render(<Composer fetchImpl={fetchImpl} variant="docked" extend={source} onStopExtending={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^Video parameters:/ })).toBeEnabled();
+    });
+    expect(screen.getByTestId("continuation")).toHaveTextContent("Continues · 2.0 s");
+    expect(screen.getByTestId("context-line")).toHaveTextContent("the model watches the last 2.3 s");
+    expect(screen.queryByRole("button", { name: "Add reference image" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Model:/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Video parameters: 16:9 768P +10s" })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Describe what happens next…")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Video parameters:/ }));
+    expect(screen.getByRole("radio", { name: "9:16" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "16:9" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: "768P" })).toBeDisabled();
+    expect(screen.getByText("fixed by the video being extended")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "+10s" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByRole("radio", { name: "+15s" })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "last 5s" })).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(screen.getByRole("radio", { name: "max" }));
+    expect(screen.getByRole("radio", { name: "max" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByTestId("context-line")).toHaveTextContent("2.3 s"); // a 2 s source: all of it, whatever the choice
+    fireEvent.click(screen.getByRole("radio", { name: "+4s" }));
+    expect(screen.getByRole("button", { name: "Video parameters: 16:9 768P +4s" })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "and then he bows" } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith("/task/j2");
+    });
+    expect(captured?.body).toBe(JSON.stringify({ prompt: "and then he bows", ratio: "16:9", resolution: "768P", durationSeconds: 4, model: "minimax-h3", continueFrom: "src", contextSeconds: 15 }));
+  });
+
+  it("Stop extending restores the normal composer and tells the page", async () => {
+    const onStop = vi.fn();
+    render(<Composer fetchImpl={fetchWith(() => json({}, 500))} variant="docked" extend={source} onStopExtending={onStop} />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^Video parameters:/ })).toBeEnabled();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Stop extending" }));
+    expect(onStop).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId("continuation")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add reference image" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Video parameters: 16:9 768P 5s" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled();
   });
 });

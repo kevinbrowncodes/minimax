@@ -129,6 +129,7 @@ export function AssetsPage({ fetchImpl, confirmImpl }: AssetsPageProps) {
                     {menuFor === entry.id ? (
                       <div className={styles.menu} role="menu" aria-label={`Actions for ${name}`}>
                         <Link href={`/task/${encodeURIComponent(entry.id)}`} role="menuitem" className={styles.menuItem}>Open task</Link>
+                        <Link href={`/task/${encodeURIComponent(entry.id)}?extend`} role="menuitem" className={styles.menuItem}>Extend</Link>
                         <a href={resultPath} download={name} role="menuitem" className={styles.menuItem}>Download</a>
                         <button type="button" role="menuitem" className={cx(styles.menuItem, styles.menuDanger)} onClick={() => void remove(entry)}>Delete from history</button>
                       </div>

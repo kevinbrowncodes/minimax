@@ -21,6 +21,16 @@ describe("buildJobRequest", () => {
   });
 });
 
+describe("buildJobRequest in extend mode (STORY_016)", () => {
+  it("always sends JSON with continueFrom and contextSeconds, even after images were attached", () => {
+    const withImage = reduceComposer(typed(), { type: "add-images", images: [img] });
+    const extending = reduceComposer(reduceComposer(withImage, { type: "extend-from", source: { id: "src", title: "t", durationSeconds: 2, ratio: "16:9", resolution: "768P", model: "minimax-h3", posterUrl: "/p" } }), { type: "context", contextSeconds: 10 });
+    const req = buildJobRequest(extending);
+    expect(req.url).toBe("/api/jobs");
+    expect(req.init.body).toBe(JSON.stringify({ prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", continueFrom: "src", contextSeconds: 10 }));
+  });
+});
+
 describe("submitJob", () => {
   it("returns the id on 202, the server's message and field on 400, a busy message on 503, and unreachable on a network error", async () => {
     const ok = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "j1", status: "queued", progress: 0 }), { status: 202 }));

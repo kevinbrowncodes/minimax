@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HistoryEntry } from "@/lib/history-store";
@@ -11,12 +11,17 @@ const entry = (over: Partial<HistoryEntry> = {}): HistoryEntry => ({ id: "j1", t
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const caps = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["16:9"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 } };
 
-function fetchScript(statuses: readonly { status: string; progress: number; result?: unknown; error?: unknown }[]) {
+function fetchScript(statuses: readonly { status: string; progress: number; result?: unknown; error?: unknown; request?: unknown }[]) {
   let polls = 0;
   const calls: string[] = [];
+  const posts: string[] = [];
   const impl = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     calls.push(`${init?.method ?? "GET"} ${url}`);
+    if (url === "/api/jobs" && init?.method === "POST") {
+      posts.push(typeof init.body === "string" ? init.body : "");
+      return Promise.resolve(json({ id: "j9", status: "queued", progress: 0 }, 202));
+    }
     if (url.startsWith("/api/capabilities")) return Promise.resolve(json(caps));
     if (url.startsWith("/api/history/")) return Promise.resolve(json({}));
     if (url === "/api/jobs/j1" && (init?.method ?? "GET") === "GET") {
@@ -27,7 +32,7 @@ function fetchScript(statuses: readonly { status: string; progress: number; resu
     if (url === "/api/jobs/j1" && init?.method === "DELETE") return Promise.resolve(json({ id: "j1", status: "cancelled", progress: 41 }, 202));
     return Promise.resolve(json({ error: { code: "not_found", message: url } }, 404));
   };
-  return { fetchImpl: vi.fn(impl), calls, polls: () => polls };
+  return { fetchImpl: vi.fn(impl), calls, posts, polls: () => polls };
 }
 
 beforeEach(() => {
@@ -100,5 +105,60 @@ describe("TaskPage", () => {
     render(<TaskPage entry={entry({ status: "failed", progress: 0, error: { code: "moderated", message: "no" } })} fetchImpl={fetchScript([]).fetchImpl} />);
     expect(screen.getByRole("alert")).toHaveTextContent("refused on content grounds");
     expect(screen.queryByRole("button", { name: /Retry/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("TaskPage — extend (STORY_016)", () => {
+  const result = { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", frames: 56, durationSeconds: 2, width: 320, height: 180, sizeBytes: 1 };
+
+  it("Extend puts the docked composer in extend mode and Stop extending leaves it; ?extend opens extending", () => {
+    render(<TaskPage entry={entry({ status: "done", progress: 100, result })} fetchImpl={fetchScript([]).fetchImpl} />);
+    expect(screen.queryByTestId("continuation")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Extend/ }));
+    expect(screen.getByTestId("continuation")).toHaveTextContent("Continues · 2.0 s");
+    expect(screen.getByTestId("context-line")).toHaveTextContent("the model watches the last 2.3 s");
+    expect(screen.getByPlaceholderText("Describe what happens next…")).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Stop extending" }));
+    expect(screen.queryByTestId("continuation")).not.toBeInTheDocument();
+    cleanup();
+    render(<TaskPage entry={entry({ status: "done", progress: 100, result })} extendOnOpen fetchImpl={fetchScript([]).fetchImpl} />);
+    expect(screen.getByTestId("continuation")).toBeInTheDocument();
+    cleanup();
+    // not done: ?extend is ignored and there is no Extend action
+    render(<TaskPage entry={entry({ status: "failed", progress: 0, error: { code: "generation_failed", message: "x" } })} extendOnOpen fetchImpl={fetchScript([]).fetchImpl} />);
+    expect(screen.queryByTestId("continuation")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Extend/ })).not.toBeInTheDocument();
+  });
+
+  it("an extension's bubble names its source and what the model watched, from history or from the first status", async () => {
+    render(<TaskPage entry={entry({ status: "done", progress: 100, result, continuesFrom: { id: "src", title: "The first clip", durationSeconds: 10.125 }, contextFed: { frames: 124, seconds: 5.167 } })} fetchImpl={fetchScript([]).fetchImpl} />);
+    expect(screen.getByTestId("continues")).toHaveTextContent("Continues The first clip · 10.1 s · watched its last 5.2 s");
+    expect(screen.getByRole("link", { name: "The first clip" })).toHaveAttribute("href", "/task/src");
+    cleanup();
+    const script = fetchScript([{ status: "running", progress: 10, request: { prompt: "p", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", referenceImages: 0, continueFrom: "src", contextFed: { frames: 56, seconds: 2.333 } } }, { status: "done", progress: 100, result }]);
+    render(<StrictMode><TaskPage entry={entry({ continuesFrom: { id: "src", title: "The first clip" } })} fetchImpl={script.fetchImpl} /></StrictMode>);
+    expect(screen.getByTestId("continues")).toHaveTextContent("Continues The first clip");
+    expect(screen.getByTestId("continues")).not.toHaveTextContent("watched");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(screen.getByTestId("continues")).toHaveTextContent("watched its last 2.3 s");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    expect(screen.getByTestId("indicator")).toHaveTextContent("Your video is ready");
+  });
+
+  it("Retry of a failed extension re-posts continueFrom and the requested context", async () => {
+    const script = fetchScript([]);
+    render(<TaskPage entry={entry({ status: "failed", progress: 40, error: { code: "generation_failed", message: "boom" }, params: { ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", contextSeconds: 10 }, continuesFrom: { id: "src", title: "The first clip" } })} fetchImpl={script.fetchImpl} />);
+    await act(async () => {
+      screen.getByRole("button", { name: /Retry/ }).click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(script.posts).toHaveLength(1);
+    expect(JSON.parse(script.posts[0] ?? "{}")).toEqual({ prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", contextSeconds: 10, continueFrom: "src" });
+    expect(push).toHaveBeenCalledWith("/task/j9");
   });
 });

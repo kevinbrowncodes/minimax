@@ -6,13 +6,15 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { JobError, JobResult, JobStatus, JobStatusResponse } from "./job-api";
+import type { ContextFed, JobError, JobResult, JobStatus, JobStatusResponse } from "./job-api";
 
 export interface HistoryParams {
   readonly ratio: string;
   readonly resolution: string;
   readonly durationSeconds: number;
   readonly model: string;
+  /** STORY_016: the requested context of an extension, kept so Retry re-posts it. */
+  readonly contextSeconds?: number;
 }
 export interface HistoryEntry {
   readonly id: string;
@@ -20,6 +22,10 @@ export interface HistoryEntry {
   readonly prompt: string;
   readonly params: HistoryParams;
   readonly referenceImages: number;
+  /** STORY_016: the finished job this one continues (title as it was when the extension was created). */
+  readonly continuesFrom?: { readonly id: string; readonly title: string; readonly durationSeconds?: number };
+  /** STORY_016: what the server fed the model, from the first status that carried it. */
+  readonly contextFed?: ContextFed;
   readonly createdAt: string;
   readonly status: JobStatus;
   readonly progress: number;
@@ -28,7 +34,7 @@ export interface HistoryEntry {
   readonly error?: JobError;
   readonly result?: JobResult;
 }
-export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title">>;
+export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "contextFed">>;
 
 const TERMINAL: ReadonlySet<JobStatus> = new Set(["done", "failed", "cancelled"]);
 const TITLE_MAX = 48;
@@ -105,6 +111,7 @@ export class HistoryStore {
       progress: Math.max(current.progress, status.progress),
       ...(status.error ? { error: status.error } : {}),
       ...(status.result ? { result: status.result } : {}),
+      ...(status.request?.contextFed && !current.contextFed ? { contextFed: status.request.contextFed } : {}),
       ...(terminal && current.finishedAt === undefined ? { finishedAt: new Date().toISOString() } : {}),
     });
   }

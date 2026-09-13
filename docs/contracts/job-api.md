@@ -1,6 +1,6 @@
 # Job API contract — create → status → result
 
-**Version 1 (2026-09-12).** This is the one protocol the UI speaks to a generation server. Two servers implement it: the **stub** (`tools/stub-generation-server/`, STORY_008 — scripted outcomes for the test gate) and the **adapter** on the Spark in front of ComfyUI (`spark/adapter/`, STORY_006). The UI reaches either only through its own API routes (STORY_009), which read the base URL from `MODEL_BASE_URL`. A change to this document is a story on both sides.
+**Version 1.1 (2026-09-13; v1 2026-09-12).** v1.1 adds extending a finished video (`continueFrom`, `contextSeconds`, `capabilities.extension`, STORY_016) and an optional `seed`. This is the one protocol the UI speaks to a generation server. Two servers implement it: the **stub** (`tools/stub-generation-server/`, STORY_008 — scripted outcomes for the test gate) and the **adapter** on the Spark in front of ComfyUI (`spark/adapter/`, STORY_006). The UI reaches either only through its own API routes (STORY_009), which read the base URL from `MODEL_BASE_URL`. A change to this document is a story on both sides.
 
 ## Conventions
 
@@ -28,6 +28,11 @@ or `multipart/form-data` with the same fields as text parts plus **0–2** `refe
 | `resolution` | one of `capabilities.resolutions`, required |
 | `durationSeconds` | integer within `capabilities.durationsSeconds` (`min`, `max`, `step`), required |
 | `model` | one of `capabilities.models[].id`; optional, defaults to the first |
+| `seed` | integer 0–4294967295; optional. The noise seed, for like-for-like runs; the server draws one when absent and echoes the one used |
+| `continueFrom` | id of a job of **this** server whose status is `done`; optional. Makes the job an **extension** (v1.1): the result is the source video followed by a continuation |
+| `contextSeconds` | integer within `capabilities.extension.contextSeconds`; optional, only with `continueFrom`; defaults to its `default`. How many seconds of the source's end the model watches |
+
+**Extensions (v1.1).** With `continueFrom`: `durationSeconds` is the number of seconds **added** and must lie within `capabilities.extension.durationsSeconds`; `ratio`, `resolution` and `model` must equal the source's; no `referenceImage` part may be sent; the source must not be longer than `capabilities.extension.maxSourceSeconds`. The server feeds the model the source's last `contextFed` (see the status) — the requested seconds snapped to the model's frame grid and cut down to what the source has and to the length being generated — anchors the seam, and joins the source and the new segment into one clip; `result.durationSeconds` is the joined length, and an extension can be extended again.
 
 Response `202`:
 
@@ -35,7 +40,7 @@ Response `202`:
 { "id": "…", "status": "queued", "progress": 0 }
 ```
 
-Errors: `400 validation` (with `field`), `400 unsupported_option` (a value the server's capabilities do not list, with `field`), `413 too_large`, `415 unsupported_media_type`, `503 busy` (the server cannot accept a job now; the UI may retry later).
+Errors: `400 validation` (with `field`; for an extension also an unknown, unfinished or vanished `continueFrom`, a differing `ratio`/`resolution`/`model`, or a reference image), `400 unsupported_option` (a value the server's capabilities do not list, with `field`; for an extension also a source longer than `maxSourceSeconds` under `continueFrom`), `413 too_large`, `415 unsupported_media_type`, `503 busy` (the server cannot accept a job now — ComfyUI down, the job limit, or a checkpoint the extension needs missing; the UI shows the message).
 
 ## `GET /jobs/:id` — status
 
@@ -48,11 +53,13 @@ Response `200`:
   "progress": 33,
   "createdAt": "2026-09-12T18:32:22Z",
   "updatedAt": "2026-09-12T18:33:10Z",
-  "request": { "prompt": "…", "ratio": "16:9", "resolution": "768P", "durationSeconds": 5, "model": "minimax-h3", "referenceImages": 0 },
+  "request": { "prompt": "…", "ratio": "16:9", "resolution": "768P", "durationSeconds": 5, "model": "minimax-h3", "referenceImages": 0, "seed": 1234567 },
   "error": { "code": "moderated", "message": "…" },
-  "result": { "url": "/jobs/…/result", "posterUrl": "/jobs/…/poster", "mimeType": "video/mp4", "durationSeconds": 5.17, "width": 1344, "height": 768, "sizeBytes": 1581571 }
+  "result": { "url": "/jobs/…/result", "posterUrl": "/jobs/…/poster", "mimeType": "video/mp4", "frames": 124, "durationSeconds": 5.167, "width": 1344, "height": 768, "sizeBytes": 1581571 }
 }
 ```
+
+`request` echoes what was accepted, `seed` included. For an extension it also carries `continueFrom`, `contextSeconds` (as requested) and `contextFed: { frames, seconds }` (what the server actually fed the model). `result.frames` is the clip's length on the 24 fps grid (an extension's is the source's plus the new frames).
 
 `error` is present only when `status` is `failed` (`code` is `moderated` for a prompt or image the server refused on content grounds, `generation_failed` otherwise). `result` is present only when `status` is `done`; `url` and `posterUrl` are paths relative to the base URL. Unknown id → `404 not_found`.
 
@@ -76,9 +83,12 @@ Response `202 { "id": "…", "status": "cancelled", "progress": <last> }`. The s
   "ratios": ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
   "resolutions": ["768P"],
   "durationsSeconds": { "min": 4, "max": 15, "step": 1 },
-  "referenceImages": { "max": 2 }
+  "referenceImages": { "max": 2 },
+  "extension": { "durationsSeconds": { "min": 4, "max": 14, "step": 1, "default": 10 }, "contextSeconds": { "min": 2, "max": 15, "default": 5 }, "maxSourceSeconds": 30 }
 }
 ```
+
+`extension` (v1.1) says how a finished video can be extended: the seconds added per step (its `max` keeps one generation inside the model's trained 362 frames), the seconds of the source the model watches, and the longest source the server joins.
 
 The UI renders its option controls from this and greys out what is absent (for example the reference's `2K`, which the Spark cannot produce — [interactions.md §5](../recon/2026-09-12/interactions.md)).
 

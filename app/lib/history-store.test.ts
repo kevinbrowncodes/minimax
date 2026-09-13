@@ -58,3 +58,17 @@ describe("HistoryStore", () => {
     expect(new HistoryStore(s.file).get("x")?.title).toBe("boat");
   });
 });
+
+describe("HistoryStore — extensions (STORY_016)", () => {
+  it("keeps continuesFrom and the requested context, and records what was fed once, from the first status that carries it", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "history-ext-"));
+    const store = new HistoryStore(path.join(dir, "history.json"));
+    store.create({ id: "e1", prompt: "next", params: { ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", contextSeconds: 5 }, referenceImages: 0, continuesFrom: { id: "src", title: "The first clip", durationSeconds: 10.125 } });
+    expect(store.get("e1")).toMatchObject({ continuesFrom: { id: "src", title: "The first clip", durationSeconds: 10.125 }, params: { contextSeconds: 5 } });
+    store.recordStatus("e1", { id: "e1", status: "running", progress: 10, request: { prompt: "next", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", referenceImages: 0, continueFrom: "src", contextSeconds: 5, contextFed: { frames: 124, seconds: 5.167 } } });
+    expect(store.get("e1")?.contextFed).toEqual({ frames: 124, seconds: 5.167 });
+    store.recordStatus("e1", { id: "e1", status: "running", progress: 50, request: { prompt: "next", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", referenceImages: 0, contextFed: { frames: 1, seconds: 0.042 } } });
+    expect(store.get("e1")?.contextFed).toEqual({ frames: 124, seconds: 5.167 });
+    rmSync(dir, { recursive: true, force: true });
+  });
+});

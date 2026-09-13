@@ -23,6 +23,8 @@ export interface FakeComfyOptions {
   readonly port?: number;
   /** Node classes to leave out of /object_info (to test the adapter's verification). */
   readonly omitClasses?: readonly string[];
+  /** Checkpoint files UNETLoader lists (default: the FL2VA and Ref2VA int8_convrot files). */
+  readonly unets?: readonly string[];
 }
 export interface SubmittedPrompt {
   readonly id: string;
@@ -41,7 +43,8 @@ export interface FakeComfy {
   close(): Promise<void>;
 }
 
-const REQUIRED = ["UNETLoader", "CLIPLoader", "VAELoader", "MiniMaxH3ImageToVideo", "RandomNoise", "BasicGuider", "KSamplerSelect", "BasicScheduler", "SamplerCustomAdvanced", "VAEDecode", "VAEDecodeAudio", "CreateVideo", "SaveVideo", "LoadImage", "ImageFromBatch", "SaveImage"];
+const REQUIRED = ["UNETLoader", "CLIPLoader", "VAELoader", "MiniMaxH3ImageToVideo", "RandomNoise", "BasicGuider", "KSamplerSelect", "BasicScheduler", "SamplerCustomAdvanced", "VAEDecode", "VAEDecodeAudio", "CreateVideo", "SaveVideo", "LoadImage", "ImageFromBatch", "SaveImage", "LoadVideo", "GetVideoComponents", "MiniMaxH3ReferenceToVideo", "MiniMaxH3AddGuide", "ImageBatch", "TrimAudioDuration", "AudioConcat"];
+export const FAKE_UNETS = ["minimax_h3_fl2va_int8_convrot.safetensors", "minimax_h3_ref2va_int8_convrot.safetensors"];
 
 function readBody(req: IncomingMessage): Promise<Buffer> {
   return new Promise((resolve) => {
@@ -142,7 +145,11 @@ export async function startFakeComfy(options: FakeComfyOptions): Promise<FakeCom
         res.end(JSON.stringify(body));
       };
       if (method === "GET" && url.pathname === "/system_stats") { json(200, { system: { comfyui_version: "fake" } }); return; }
-      if (method === "GET" && url.pathname === "/object_info") { json(200, Object.fromEntries(REQUIRED.filter((n) => !(options.omitClasses ?? []).includes(n)).map((n) => [n, { input: {} }]))); return; }
+      if (method === "GET" && url.pathname === "/object_info") {
+        const info = Object.fromEntries(REQUIRED.filter((n) => !(options.omitClasses ?? []).includes(n)).map((n) => [n, { input: {} }]));
+        if ("UNETLoader" in info) info["UNETLoader"] = { input: { required: { unet_name: [[...(options.unets ?? FAKE_UNETS)]] } } };
+        json(200, info); return;
+      }
       if (method === "POST" && url.pathname === "/upload/image") {
         const body = await readBody(req);
         const name = /filename="([^"]+)"/.exec(body.toString("latin1"))?.[1] ?? `upload-${String(uploads.length)}.png`;

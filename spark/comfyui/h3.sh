@@ -25,6 +25,13 @@ h3_unet_file() {
   esac
 }
 
+# The Ref2VA diffusion model file for the same precision names (STORY_016: extensions run on Ref2VA).
+h3_ref2va_file() {
+  local f
+  f="$(h3_unet_file "$1")" || return 1
+  echo "${f/fl2va/ref2va}"
+}
+
 # The Qwen3-VL-32B text encoder file for a quantisation name. nvfp4_awq is the official template's default.
 h3_clip_file() {
   case "$1" in
