@@ -1,0 +1,391 @@
+# ComfyUI
+
+- [Get Started (242 pages)](https://docs.comfy.org/_llms/en/get-started.md): Documentation for Get Started.
+- [Built-in Nodes (1022 pages)](https://docs.comfy.org/_llms/en/built-in-nodes.md): Documentation for Built-in Nodes.
+- [Developers (295 pages)](https://docs.comfy.org/_llms/en/developers.md): Documentation for Developers.
+
+## Custom Nodes
+
+- [Custom Nodes](https://docs.comfy.org/custom-nodes/intro.md): Choose the right path for building, extending, and publishing ComfyUI custom nodes.
+
+### Build Custom Nodes
+
+- [Overview](https://docs.comfy.org/custom-nodes/overview.md): Learn how ComfyUI custom nodes work, the client-server model, and the four node categories: server side only, client side only, independent, and connected.
+- [Getting Started](https://docs.comfy.org/custom-nodes/walkthrough.md): Getting Started with Custom Nodes: a step-by-step ComfyUI walkthrough covering backend node setup, defining CATEGORY, INPUT_TYPES, and FUNCTION, registering nodes, adding options, and building a client-side JS extension.
+- [ComfyUI Custom Nodes i18n Support](https://docs.comfy.org/custom-nodes/i18n.md): Learn how to add multi-language support for ComfyUI custom nodes
+
+#### Python (Backend)
+
+- [Properties](https://docs.comfy.org/custom-nodes/backend/server_overview.md): Properties of a custom node
+- [Lifecycle](https://docs.comfy.org/custom-nodes/backend/lifecycle.md): Understand how ComfyUI loads custom nodes via init.py, including NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS, and WEB_DIRECTORY for deploying client-side JavaScript.
+- [ComfyUI Custom Node Datatypes](https://docs.comfy.org/custom-nodes/backend/datatypes.md): Reference for ComfyUI custom node data types: Python types, tensor formats (IMAGE, LATENT, MASK), custom types, and wildcards in INPUT_TYPES.
+- [Images, Latents, and Masks](https://docs.comfy.org/custom-nodes/backend/images_and_masks.md): Master backend data handling for Comfy custom nodes images and masks. Learn PyTorch tensor shapes, PIL conversions, and latents. Read the developer docs today.
+- [Hidden and Flexible inputs](https://docs.comfy.org/custom-nodes/backend/more_on_inputs.md): ComfyUI hidden inputs (UNIQUE_ID, PROMPT, EXTRA_PNGINFO, DYNPROMPT) and flexible inputs, including custom datatypes and wildcard inputs for custom nodes.
+- [Lazy Evaluation](https://docs.comfy.org/custom-nodes/backend/lazy_evaluation.md): Learn how lazy evaluation works in ComfyUI (v0.2.0+). Discover how to defer input evaluation, optimize VRAM usage, and implement lazy: True in custom nodes.
+- [Node Expansion](https://docs.comfy.org/custom-nodes/backend/expansion.md): Master Comfy node expansion to return new subgraphs in your backend custom nodes. Learn GraphBuilder requirements and caching techniques. Read the docs today!
+- [Data lists](https://docs.comfy.org/custom-nodes/backend/lists.md): Learn how ComfyUI handles data as Python lists internally, including length-one processing, list processing for batches, and how to use INPUT_IS_LIST and OUTPUT_IS_LIST when developing custom nodes.
+- [Working with torch.Tensor](https://docs.comfy.org/custom-nodes/backend/tensors.md): Learn the torch.Tensor basics needed for ComfyUI custom nodes: tensor shapes, squeeze/unsqueeze, notation, elementwise operations, and tensor truthiness.
+- [Annotated Examples](https://docs.comfy.org/custom-nodes/backend/snippets.md): Code examples for ComfyUI custom nodes: loading and saving images, inverting masks, converting mask shapes, using masks as transparency layers, and creating noise variations.
+- [Execution Model Inversion Guide](https://docs.comfy.org/development/comfyui-server/execution_model_inversion_guide.md): ComfyUI execution model inversion guide: breaking changes to monkey patching and optional input validation, plus lazy evaluation and node expansion.
+
+#### JavaScript (UI)
+
+- [Javascript Extensions](https://docs.comfy.org/custom-nodes/js/javascript_overview.md): Learn how to extend ComfyUI with JavaScript extensions by exporting WEB_DIRECTORY, adding .js files, and registering an extension with app.registerExtension.
+- [Comfy Hooks](https://docs.comfy.org/custom-nodes/js/javascript_hooks.md): Comprehensive reference for ComfyUI frontend JavaScript hooks. Learn how to use app.registerExtension, handle nodeCreated & beforeRegisterNodeDef, and customize UI behavior.
+- [Comfy Objects](https://docs.comfy.org/custom-nodes/js/javascript_objects_and_hijacking.md): Reference guide to ComfyUI's core frontend objects - LiteGraph, ComfyApp, LGraph, LLink, and ComfyNode - with their properties, functions, and widget types.
+- [Settings API](https://docs.comfy.org/custom-nodes/js/javascript_settings.md): Add, read, write, and react to ComfyUI extension settings with app.registerExtension, covering boolean, text, number, slider, combo, color, and image types.
+- [Dialog API](https://docs.comfy.org/custom-nodes/js/javascript_dialog.md): Use ComfyUI's Dialog API for standardized prompt and confirm dialogs across desktop and web, with usage examples and full API reference.
+- [Toast API](https://docs.comfy.org/custom-nodes/js/javascript_toast.md): Use ComfyUI's Toast API to show non-blocking notification messages to users. Covers basic usage, toast types (success, warning, error), the alert helper, and the full API reference.
+- [About Panel Badges](https://docs.comfy.org/custom-nodes/js/javascript_about_panel_badges.md): Learn how to use ComfyUI's About Panel Badges API to add custom badges with labels, URLs, and icons to the ComfyUI about page, linking to documentation, GitHub, or other extension resources.
+- [Bottom Panel Tabs](https://docs.comfy.org/custom-nodes/js/javascript_bottom_panel_tabs.md): Add custom tabs to ComfyUI's bottom panel using the Bottom Panel Tabs API, including interactive elements, React components, and standalone registration.
+- [Sidebar Tabs](https://docs.comfy.org/custom-nodes/js/javascript_sidebar_tabs.md): Master the Comfy Extension API to build custom JavaScript sidebar tabs. Explore code examples for React components and dynamic content updates. Read the docs.
+- [Selection Toolbox](https://docs.comfy.org/custom-nodes/js/javascript_selection_toolbox.md): Add custom action commands to ComfyUI's Selection Toolbox for selected nodes, groups, and canvas items using getSelectionToolboxCommands.
+- [Commands and Keybindings](https://docs.comfy.org/custom-nodes/js/javascript_commands_keybindings.md): Master Comfy commands and keybindings to register custom actions and shortcuts for your extensions. Read the guide and start optimizing today.
+- [Topbar Menu](https://docs.comfy.org/custom-nodes/js/javascript_topbar_menu.md): Add custom commands to ComfyUI's topbar menu, including adding to existing menus, creating submenus, and placing one command in multiple locations.
+- [Subgraphs](https://docs.comfy.org/custom-nodes/js/subgraphs.md): Working with subgraphs in ComfyUI extensions: node IDs, graph traversal, events, widget promotion, and cleanup.
+- [Annotated Examples](https://docs.comfy.org/custom-nodes/js/javascript_examples.md): Explore Comfy JavaScript examples to build custom nodes and UI extensions. Access practical code snippets and start creating robust web interfaces today.
+
+#### Migration Guides
+
+- [V3 Migration](https://docs.comfy.org/custom-nodes/v3_migration.md): How to migrate your existing V1 nodes to the new V3 schema.
+- [Context Menu Migration Guide](https://docs.comfy.org/custom-nodes/js/context-menu-migration.md): Migrate from deprecated monkey-patching to ComfyUI's context menu API. Covers migrating canvas menus and node menus, conditional items, submenus, and how to identify and troubleshoot old API usage.
+- [Node replacement](https://docs.comfy.org/custom-nodes/backend/node-replacement.md): Register node replacements to help users migrate from deprecated nodes
+
+### Package & Publish
+
+- [Add node docs for your ComfyUI custom node](https://docs.comfy.org/custom-nodes/help_page.md): How to create rich documentation for your custom nodes
+- [Workflow templates](https://docs.comfy.org/custom-nodes/workflow_templates.md): Learn how to include example workflow JSON files and thumbnails in your ComfyUI custom nodes using the example_workflows directory for the ComfyUI Template Browser.
+- [Subgraph blueprints](https://docs.comfy.org/custom-nodes/subgraph_blueprints.md): Learn how to create reusable subgraph blueprints for custom nodes in Comfy. Follow this guide to expose pre-built node groups and start building today.
+- [Overview](https://docs.comfy.org/registry/overview.md): Learn what the Comfy Registry is, why it's used for node versioning and security, and how to start publishing custom nodes to ComfyUI-Manager.
+- [Publishing Nodes](https://docs.comfy.org/registry/publishing.md): Learn how to set up a Comfy Registry account, create a publisher, generate an API key, add metadata, and publish custom nodes via Comfy CLI or GitHub Actions.
+- [Claim My Node](https://docs.comfy.org/registry/claim-my-node.md): Learn how to claim ownership of unclaimed custom nodes migrated to the Comfy Registry, including publisher setup and GitHub verification steps.
+- [Standards](https://docs.comfy.org/registry/standards.md): Security and other standards for publishing to the Registry
+- [Custom Node CI/CD](https://docs.comfy.org/registry/cicd.md): Test ComfyUI custom nodes before publishing using Comfy-Action to run workflows on GitHub Actions and view results in the CI/CD Dashboard.
+- [pyproject.toml](https://docs.comfy.org/registry/specifications.md): Full spec for pyproject.toml in ComfyUI custom nodes: [project] and [tool.comfy] sections, required fields, versioning, and a complete example.
+- [API Overview](https://docs.comfy.org/registry/api-reference/overview.md): Custom Node Registry API Overview: explore the publisher, user, custom node, and node version data model, plus commonly used endpoints for listing and installing nodes in ComfyUI's registry.
+
+#### Registry API Reference
+
+- [Get information about the calling user.](https://docs.comfy.org/registry/api-reference/registry/get-information-about-the-calling-user.md)
+- [Retrieve all publishers for a given user](https://docs.comfy.org/registry/api-reference/registry/retrieve-all-publishers-for-a-given-user.md)
+- [Validate if a publisher username is available](https://docs.comfy.org/registry/api-reference/registry/validate-if-a-publisher-username-is-available.md): Checks if the publisher username is already taken.
+- [Create a new publisher](https://docs.comfy.org/registry/api-reference/registry/create-a-new-publisher.md)
+- [Retrieve all publishers](https://docs.comfy.org/registry/api-reference/registry/retrieve-all-publishers.md)
+- [Retrieve a publisher by ID](https://docs.comfy.org/registry/api-reference/registry/retrieve-a-publisher-by-id.md)
+- [Update a publisher](https://docs.comfy.org/registry/api-reference/registry/update-a-publisher.md)
+- [Delete a publisher](https://docs.comfy.org/registry/api-reference/registry/delete-a-publisher.md)
+- [Retrieve permissions the user has for a given publisher](https://docs.comfy.org/registry/api-reference/registry/retrieve-permissions-the-user-has-for-a-given-publisher.md)
+- [Create a new personal access token](https://docs.comfy.org/registry/api-reference/registry/create-a-new-personal-access-token.md)
+- [Delete a specific personal access token](https://docs.comfy.org/registry/api-reference/registry/delete-a-specific-personal-access-token.md)
+- [Retrieve all nodes](https://docs.comfy.org/registry/api-reference/registry/retrieve-all-nodes.md)
+- [Retrieve all nodes](https://docs.comfy.org/registry/api-reference/registry/retrieve-all-nodes.md)
+- [Create a new custom node](https://docs.comfy.org/registry/api-reference/registry/create-a-new-custom-node.md)
+- [Update a specific node](https://docs.comfy.org/registry/api-reference/registry/update-a-specific-node.md)
+- [Delete a specific node](https://docs.comfy.org/registry/api-reference/registry/delete-a-specific-node.md)
+- [Retrieve permissions the user has for a given publisher](https://docs.comfy.org/registry/api-reference/registry/retrieve-permissions-the-user-has-for-a-given-publisher.md)
+- [Claim nodeId into publisherId for the authenticated publisher](https://docs.comfy.org/registry/api-reference/registry/claim-nodeid-into-publisherid-for-the-authenticated-publisher.md): This endpoint allows a publisher to claim an unclaimed node that they own the repo, which is identified by the nodeId. The unclaimed node's repository must be owned by the authenticated user.
+- [Publish a new version of a node](https://docs.comfy.org/registry/api-reference/registry/publish-a-new-version-of-a-node.md)
+- [Update changelog and deprecation status of a node version](https://docs.comfy.org/registry/api-reference/registry/update-changelog-and-deprecation-status-of-a-node-version.md): Update only the changelog and deprecated status of a specific version of a node.
+- [Unpublish (delete) a specific version of a node](https://docs.comfy.org/registry/api-reference/registry/unpublish-delete-a-specific-version-of-a-node.md)
+- [Retrieves a list of nodes](https://docs.comfy.org/registry/api-reference/registry/retrieves-a-list-of-nodes.md): Returns a paginated list of nodes across all publishers.
+- [Retrieves a list of nodes](https://docs.comfy.org/registry/api-reference/registry/retrieves-a-list-of-nodes.md): Returns a paginated list of nodes across all publishers.
+- [Retrieve a specific node by ID](https://docs.comfy.org/registry/api-reference/registry/retrieve-a-specific-node-by-id.md): Returns the details of a specific node.
+- [Returns a node version to be installed.](https://docs.comfy.org/registry/api-reference/registry/returns-a-node-version-to-be-installed.md): Retrieves the node data for installation, either the latest or a specific version.
+- [Add review to a specific version of a node](https://docs.comfy.org/registry/api-reference/registry/add-review-to-a-specific-version-of-a-node.md)
+- [Create Node Translations](https://docs.comfy.org/registry/api-reference/registry/create-node-translations.md)
+- [List all versions of a node](https://docs.comfy.org/registry/api-reference/registry/list-all-versions-of-a-node.md)
+- [Retrieve a specific version of a node](https://docs.comfy.org/registry/api-reference/registry/retrieve-a-specific-version-of-a-node.md)
+- [Retrieve multiple node versions in a single request](https://docs.comfy.org/registry/api-reference/registry/retrieve-multiple-node-versions-in-a-single-request.md)
+- [List all node versions given some filters.](https://docs.comfy.org/registry/api-reference/registry/list-all-node-versions-given-some-filters.md)
+- [list all comfy-nodes](https://docs.comfy.org/registry/api-reference/registry/list-all-comfy-nodes.md)
+- [Retrieve a node by ComfyUI node name](https://docs.comfy.org/registry/api-reference/registry/retrieve-a-node-by-comfyui-node-name.md): Returns the node that contains a ComfyUI node with the specified name
+- [create comfy-nodes for certain node](https://docs.comfy.org/registry/api-reference/registry/create-comfy-nodes-for-certain-node.md)
+- [list comfy-nodes for node version](https://docs.comfy.org/registry/api-reference/registry/list-comfy-nodes-for-node-version.md)
+- [get specify comfy-node based on its id](https://docs.comfy.org/registry/api-reference/registry/get-specify-comfy-node-based-on-its-id.md)
+- [Update a specific comfy-node](https://docs.comfy.org/registry/api-reference/registry/update-a-specific-comfy-node.md)
+- [Get server feature flags](https://docs.comfy.org/registry/api-reference/registry/get-server-feature-flags.md): Returns the server's feature capabilities
+- [Get release notes](https://docs.comfy.org/registry/api-reference/releases/get-release-notes.md): Fetch release notes from Strapi with caching
+
+## Support
+
+- [Contact ComfyUI support](https://docs.comfy.org/support/contact-support.md): Get help with ComfyUI, Comfy Cloud, and Comfy Desktop. Use support.comfy.org, or report bugs in the matching GitHub repository.
+- [Data Retention](https://docs.comfy.org/support/data-retention.md): How Comfy retains and manages customer data
+
+### Account Management
+
+- [Create a Comfy account](https://docs.comfy.org/account/create-account.md): Learn how to create a new Comfy account for ComfyUI to access all features and services.
+- [Log in to your Comfy account](https://docs.comfy.org/account/login.md): Access your Comfy account for ComfyUI to use all platform features and services.
+- [Delete your Comfy account](https://docs.comfy.org/account/delete-account.md): Learn how to permanently delete your Comfy account for ComfyUI and associated data.
+
+### Billing Support
+
+#### Subscription
+
+- [Subscribe to Comfy Cloud](https://docs.comfy.org/support/subscription/subscribing.md): Subscribe to Comfy Cloud from Plans & pricing. Choose For Personal or For Teams, pick monthly or yearly billing, then confirm payment to run workflows.
+- [Manage Comfy Cloud billing and invoices](https://docs.comfy.org/support/subscription/managing.md): Open Manage plan on Comfy Cloud to reach Plan & Credits. Billing & invoices opens the Stripe portal for payment methods and invoices. Use Change plan to switch plans.
+- [Change your Comfy Cloud plan](https://docs.comfy.org/support/subscription/changing-plan.md): Upgrade or downgrade a Comfy Cloud plan. Switch Personal or Teams, choose monthly or yearly billing, and see when the change takes effect.
+- [Cancel your Comfy Cloud subscription](https://docs.comfy.org/support/subscription/canceling.md): Cancel a Comfy Cloud plan from Plan & Credits. Open more options, choose Cancel plan, then confirm. Access continues until the current billing period ends.
+
+#### Payment
+
+- [Comfy Cloud accepted payment methods](https://docs.comfy.org/support/payment/accepted-payment-methods.md): Pay for Comfy Cloud with major cards, Google Pay, or Link. Alipay is available in USD for Cloud and API credits. WeChat Pay is available in USD for API credits.
+- [Edit Comfy Cloud payment information](https://docs.comfy.org/support/payment/editing-payment-information.md): Update a Comfy Cloud payment method or billing address from Plan & Credits. Billing & invoices opens the Stripe billing portal, where you edit the details.
+- [View Comfy Cloud payment history](https://docs.comfy.org/support/payment/payment-history.md): Open Plan & Credits on Comfy Cloud, then Billing & invoices. Invoice history and PDF downloads are in the Stripe billing portal.
+- [Fix a failed Comfy Cloud payment](https://docs.comfy.org/support/payment/unsuccessful-payments.md): If a Comfy Cloud payment fails, update your payment method from Plan & Credits or the Payment failed banner to avoid a paused subscription.
+- [Comfy Cloud payment currency](https://docs.comfy.org/support/payment/payment-currency.md): Comfy Cloud prices are listed in USD. Choose USD at checkout to use Alipay. WeChat Pay is USD-only for local API credits. Your bank may convert other currencies.
+- [Comfy Cloud invoice information](https://docs.comfy.org/support/payment/invoice-information.md): Comfy Cloud invoices use the billing details you enter at checkout. Updates apply only to future invoices, not ones already issued.
+
+### Troubleshooting
+
+- [How to Troubleshoot and Solve ComfyUI Issues](https://docs.comfy.org/troubleshooting/overview.md): ComfyUI troubleshooting guide: rule out custom nodes first, fix common core issues, and file a bug report with the right details.
+- [How to Troubleshoot and Solve ComfyUI Model Issues](https://docs.comfy.org/troubleshooting/model-issues.md): Troubleshooting model-related problems including architecture mismatches, missing models, and loading errors
+- [Troubleshooting Custom Node Issues](https://docs.comfy.org/troubleshooting/custom-node-issues.md): Fix ComfyUI custom node issues: disable all custom nodes with --disable-all-custom-nodes, then binary-search to isolate, fix, or remove the broken node.
+
+### Community
+
+- [Contributing](https://docs.comfy.org/community/contributing.md): Learn how to contribute to Comfy by exploring the GitHub organization's repositories, sharing workflows, or developing custom nodes.
+- [Community links](https://docs.comfy.org/community/links.md): Connect with the ComfyUI community through various platforms
+
+## OpenAPI Specs
+
+- [openapi-v2](/openapi-v2.yaml)
+- [openapi-cloud](/openapi-cloud.yaml)
+- [openapi](https://api.comfy.org/openapi)
+- [claude-fable-5-1](/router-schemas/anthropic/claude-fable-5-1.json)
+- [claude-fable-5](/router-schemas/anthropic/claude-fable-5.json)
+- [claude-haiku-4-5-20251001](/router-schemas/anthropic/claude-haiku-4-5-20251001.json)
+- [claude-opus-4-6](/router-schemas/anthropic/claude-opus-4-6.json)
+- [claude-opus-4-7](/router-schemas/anthropic/claude-opus-4-7.json)
+- [claude-opus-4-8](/router-schemas/anthropic/claude-opus-4-8.json)
+- [claude-opus-5](/router-schemas/anthropic/claude-opus-5.json)
+- [claude-sonnet-4-5-20250929](/router-schemas/anthropic/claude-sonnet-4-5-20250929.json)
+- [claude-sonnet-4-6](/router-schemas/anthropic/claude-sonnet-4-6.json)
+- [claude-sonnet-5](/router-schemas/anthropic/claude-sonnet-5.json)
+- [switchx](/router-schemas/beeble/switchx.json)
+- [erase-v1](/router-schemas/bfl/erase-v1.json)
+- [flux-2-max](/router-schemas/bfl/flux-2-max.json)
+- [flux-2-pro](/router-schemas/bfl/flux-2-pro.json)
+- [flux-3-video](/router-schemas/bfl/flux-3-video.json)
+- [flux-kontext-max](/router-schemas/bfl/flux-kontext-max.json)
+- [flux-kontext-pro](/router-schemas/bfl/flux-kontext-pro.json)
+- [flux-pro-1.0-canny](/router-schemas/bfl/flux-pro-1.0-canny.json)
+- [flux-pro-1.0-depth](/router-schemas/bfl/flux-pro-1.0-depth.json)
+- [flux-pro-1.0-expand](/router-schemas/bfl/flux-pro-1.0-expand.json)
+- [flux-pro-1.0-fill](/router-schemas/bfl/flux-pro-1.0-fill.json)
+- [flux-pro-1.1-ultra](/router-schemas/bfl/flux-pro-1.1-ultra.json)
+- [flux-pro-1.1](/router-schemas/bfl/flux-pro-1.1.json)
+- [video-edit-v1](/router-schemas/bfl/video-edit-v1.json)
+- [video-upscale-v1](/router-schemas/bfl/video-upscale-v1.json)
+- [vto-v1](/router-schemas/bfl/vto-v1.json)
+- [fibo](/router-schemas/bria/fibo.json)
+- [image-edit-erase](/router-schemas/bria/image-edit-erase.json)
+- [image-edit-expand](/router-schemas/bria/image-edit-expand.json)
+- [image-edit-gen-fill](/router-schemas/bria/image-edit-gen-fill.json)
+- [image-edit-increase-resolution](/router-schemas/bria/image-edit-increase-resolution.json)
+- [image-edit-remove-background](/router-schemas/bria/image-edit-remove-background.json)
+- [structured-instruction](/router-schemas/bria/structured-instruction.json)
+- [video-edit-green-screen](/router-schemas/bria/video-edit-green-screen.json)
+- [video-edit-remove-background](/router-schemas/bria/video-edit-remove-background.json)
+- [video-edit-replace-background](/router-schemas/bria/video-edit-replace-background.json)
+- [dreamina-seedance-2-0-260128](/router-schemas/byteplus/dreamina-seedance-2-0-260128.json)
+- [dreamina-seedance-2-0-fast-260128](/router-schemas/byteplus/dreamina-seedance-2-0-fast-260128.json)
+- [dreamina-seedance-2-0-mini](/router-schemas/byteplus/dreamina-seedance-2-0-mini.json)
+- [dreamina-seedance-2-5-260628](/router-schemas/byteplus/dreamina-seedance-2-5-260628.json)
+- [seed-2-0-lite-260228](/router-schemas/byteplus/seed-2-0-lite-260228.json)
+- [seed-2-0-mini-260215](/router-schemas/byteplus/seed-2-0-mini-260215.json)
+- [seed-2-0-pro-260328](/router-schemas/byteplus/seed-2-0-pro-260328.json)
+- [seed-audio-1.0-multilingual](/router-schemas/byteplus/seed-audio-1.0-multilingual.json)
+- [seed-audio-1.0](/router-schemas/byteplus/seed-audio-1.0.json)
+- [seedance-1-0-lite-i2v-250428](/router-schemas/byteplus/seedance-1-0-lite-i2v-250428.json)
+- [seedance-1-0-lite-t2v-250428](/router-schemas/byteplus/seedance-1-0-lite-t2v-250428.json)
+- [seedance-1-0-pro-250528](/router-schemas/byteplus/seedance-1-0-pro-250528.json)
+- [seedance-1-0-pro-fast-251015](/router-schemas/byteplus/seedance-1-0-pro-fast-251015.json)
+- [seedance-1-5-pro-251215](/router-schemas/byteplus/seedance-1-5-pro-251215.json)
+- [seededit-3-0-i2i-250628](/router-schemas/byteplus/seededit-3-0-i2i-250628.json)
+- [seedream-3-0-t2i-250415](/router-schemas/byteplus/seedream-3-0-t2i-250415.json)
+- [seedream-4-0-250828](/router-schemas/byteplus/seedream-4-0-250828.json)
+- [seedream-4-5-251128](/router-schemas/byteplus/seedream-4-5-251128.json)
+- [seedream-5-0-260128](/router-schemas/byteplus/seedream-5-0-260128.json)
+- [seedream-5-0-pro-260628](/router-schemas/byteplus/seedream-5-0-pro-260628.json)
+- [eleven_sfx_v2](/router-schemas/elevenlabs/eleven_sfx_v2.json)
+- [eleven_v3](/router-schemas/elevenlabs/eleven_v3.json)
+- [h3-max-turbo](/router-schemas/fal/h3-max-turbo.json)
+- [h3-max](/router-schemas/fal/h3-max.json)
+- [patina](/router-schemas/fal/patina.json)
+- [ai-image-upscaler-precision-v2](/router-schemas/freepik/ai-image-upscaler-precision-v2.json)
+- [ai-skin-enhancer-creative](/router-schemas/freepik/ai-skin-enhancer-creative.json)
+- [ai-skin-enhancer-faithful](/router-schemas/freepik/ai-skin-enhancer-faithful.json)
+- [ai-skin-enhancer-flexible](/router-schemas/freepik/ai-skin-enhancer-flexible.json)
+- [gemini-omni-1.1-flash](/router-schemas/gemini-interactions/gemini-omni-1.1-flash.json)
+- [gemini-omni-flash-preview](/router-schemas/gemini-interactions/gemini-omni-flash-preview.json)
+- [starfish](/router-schemas/heygen/starfish.json)
+- [ideogram-v3](/router-schemas/ideogram/ideogram-v3.json)
+- [ideogram-v4](/router-schemas/ideogram/ideogram-v4.json)
+- [p-image-ideogram](/router-schemas/ideogram/p-image-ideogram.json)
+- [kling-3.0-turbo](/router-schemas/kling/kling-3.0-turbo.json)
+- [kling-image-o1](/router-schemas/kling/kling-image-o1.json)
+- [kling-v1-5](/router-schemas/kling/kling-v1-5.json)
+- [kling-v1-6](/router-schemas/kling/kling-v1-6.json)
+- [kling-v1](/router-schemas/kling/kling-v1.json)
+- [kling-v2-1-master](/router-schemas/kling/kling-v2-1-master.json)
+- [kling-v2-1](/router-schemas/kling/kling-v2-1.json)
+- [kling-v2-5-turbo](/router-schemas/kling/kling-v2-5-turbo.json)
+- [kling-v2-6](/router-schemas/kling/kling-v2-6.json)
+- [kling-v2-master](/router-schemas/kling/kling-v2-master.json)
+- [kling-v3-omni](/router-schemas/kling/kling-v3-omni.json)
+- [kling-v3](/router-schemas/kling/kling-v3.json)
+- [kling-video-o1](/router-schemas/kling/kling-video-o1.json)
+- [videos-avatar-image2video](/router-schemas/kling/videos-avatar-image2video.json)
+- [videos-lip-sync](/router-schemas/kling/videos-lip-sync.json)
+- [videos-video-extend](/router-schemas/kling/videos-video-extend.json)
+- [krea-2-large](/router-schemas/krea/krea-2-large.json)
+- [krea-2-medium-turbo](/router-schemas/krea/krea-2-medium-turbo.json)
+- [krea-2-medium](/router-schemas/krea/krea-2-medium.json)
+- [krea-2](/router-schemas/krea/krea-2.json)
+- [ltx-2-5-fast](/router-schemas/ltx/ltx-2-5-fast.json)
+- [ltx-2-5-pro](/router-schemas/ltx/ltx-2-5-pro.json)
+- [uni-1-max](/router-schemas/luma_2/uni-1-max.json)
+- [uni-1](/router-schemas/luma_2/uni-1.json)
+- [photon-1](/router-schemas/luma/photon-1.json)
+- [photon-flash-1](/router-schemas/luma/photon-flash-1.json)
+- [ray-2](/router-schemas/luma/ray-2.json)
+- [ray-flash-2](/router-schemas/luma/ray-flash-2.json)
+- [animations](/router-schemas/meshy/animations.json)
+- [meshy-5](/router-schemas/meshy/meshy-5.json)
+- [meshy-6](/router-schemas/meshy/meshy-6.json)
+- [meshy-7](/router-schemas/meshy/meshy-7.json)
+- [remesh](/router-schemas/meshy/remesh.json)
+- [rigging](/router-schemas/meshy/rigging.json)
+- [minimax-h3](/router-schemas/minimax/minimax-h3.json)
+- [image-to-video](/router-schemas/moonvalley/image-to-video.json)
+- [text-to-image](/router-schemas/moonvalley/text-to-image.json)
+- [text-to-video](/router-schemas/moonvalley/text-to-video.json)
+- [video-to-video-resize](/router-schemas/moonvalley/video-to-video-resize.json)
+- [video-to-video](/router-schemas/moonvalley/video-to-video.json)
+- [gpt-4.1-mini](/router-schemas/openai/gpt-4.1-mini.json)
+- [gpt-4.1-nano](/router-schemas/openai/gpt-4.1-nano.json)
+- [gpt-4.1](/router-schemas/openai/gpt-4.1.json)
+- [gpt-4o](/router-schemas/openai/gpt-4o.json)
+- [gpt-5-mini](/router-schemas/openai/gpt-5-mini.json)
+- [gpt-5-nano](/router-schemas/openai/gpt-5-nano.json)
+- [gpt-5.5-pro](/router-schemas/openai/gpt-5.5-pro.json)
+- [gpt-5.5](/router-schemas/openai/gpt-5.5.json)
+- [gpt-5.6-luna](/router-schemas/openai/gpt-5.6-luna.json)
+- [gpt-5.6-sol](/router-schemas/openai/gpt-5.6-sol.json)
+- [gpt-5.6-terra](/router-schemas/openai/gpt-5.6-terra.json)
+- [gpt-5](/router-schemas/openai/gpt-5.json)
+- [gpt-6-astra](/router-schemas/openai/gpt-6-astra.json)
+- [gpt-image-1.5](/router-schemas/openai/gpt-image-1.5.json)
+- [gpt-image-1](/router-schemas/openai/gpt-image-1.json)
+- [gpt-image-2.5-flare](/router-schemas/openai/gpt-image-2.5-flare.json)
+- [gpt-image-2.5-sunburst](/router-schemas/openai/gpt-image-2.5-sunburst.json)
+- [gpt-image-2](/router-schemas/openai/gpt-image-2.json)
+- [o1-pro](/router-schemas/openai/o1-pro.json)
+- [o1](/router-schemas/openai/o1.json)
+- [o3](/router-schemas/openai/o3.json)
+- [o4-mini](/router-schemas/openai/o4-mini.json)
+- [p-video-2](/router-schemas/pruna/p-video-2.json)
+- [qwen-image-3.0-pro](/router-schemas/qwen/qwen-image-3.0-pro.json)
+- [qwen-image-3.0](/router-schemas/qwen/qwen-image-3.0.json)
+- [recraftv2](/router-schemas/recraft/recraftv2.json)
+- [recraftv3](/router-schemas/recraft/recraftv3.json)
+- [recraftv4_1_pro_vector](/router-schemas/recraft/recraftv4_1_pro_vector.json)
+- [recraftv4_1_pro](/router-schemas/recraft/recraftv4_1_pro.json)
+- [recraftv4_1_utility_pro_vector](/router-schemas/recraft/recraftv4_1_utility_pro_vector.json)
+- [recraftv4_1_utility_pro](/router-schemas/recraft/recraftv4_1_utility_pro.json)
+- [recraftv4_1_utility_vector](/router-schemas/recraft/recraftv4_1_utility_vector.json)
+- [recraftv4_1_utility](/router-schemas/recraft/recraftv4_1_utility.json)
+- [recraftv4_1_vector](/router-schemas/recraft/recraftv4_1_vector.json)
+- [recraftv4_1](/router-schemas/recraft/recraftv4_1.json)
+- [recraftv4_pro](/router-schemas/recraft/recraftv4_pro.json)
+- [recraftv4_styles_pro_vector](/router-schemas/recraft/recraftv4_styles_pro_vector.json)
+- [recraftv4_styles_pro](/router-schemas/recraft/recraftv4_styles_pro.json)
+- [recraftv4_styles_vector](/router-schemas/recraft/recraftv4_styles_vector.json)
+- [recraftv4_styles](/router-schemas/recraft/recraftv4_styles.json)
+- [recraftv4](/router-schemas/recraft/recraftv4.json)
+- [aleph2](/router-schemas/runway/aleph2.json)
+- [gen4_image](/router-schemas/runway/gen4_image.json)
+- [gen4_turbo](/router-schemas/runway/gen4_turbo.json)
+- [hunyuan-3d-part](/router-schemas/tencent/hunyuan-3d-part.json)
+- [hunyuan-3d-smart-topology](/router-schemas/tencent/hunyuan-3d-smart-topology.json)
+- [hunyuan-3d-texture-edit](/router-schemas/tencent/hunyuan-3d-texture-edit.json)
+- [hunyuan-3d-uv](/router-schemas/tencent/hunyuan-3d-uv.json)
+- [veo-2.0-generate-001](/router-schemas/veo/veo-2.0-generate-001.json)
+- [veo-3.0-fast-generate-001](/router-schemas/veo/veo-3.0-fast-generate-001.json)
+- [veo-3.0-generate-001](/router-schemas/veo/veo-3.0-generate-001.json)
+- [veo-3.1-fast-generate-001](/router-schemas/veo/veo-3.1-fast-generate-001.json)
+- [veo-3.1-generate-001](/router-schemas/veo/veo-3.1-generate-001.json)
+- [veo-3.1-lite-generate-001](/router-schemas/veo/veo-3.1-lite-generate-001.json)
+- [gemini-2.5-flash-image](/router-schemas/vertexai/gemini-2.5-flash-image.json)
+- [gemini-2.5-flash](/router-schemas/vertexai/gemini-2.5-flash.json)
+- [gemini-2.5-pro](/router-schemas/vertexai/gemini-2.5-pro.json)
+- [gemini-3-pro-image](/router-schemas/vertexai/gemini-3-pro-image.json)
+- [gemini-3.1-flash-image](/router-schemas/vertexai/gemini-3.1-flash-image.json)
+- [gemini-3.1-flash-lite-image](/router-schemas/vertexai/gemini-3.1-flash-lite-image.json)
+- [gemini-3.1-flash-lite](/router-schemas/vertexai/gemini-3.1-flash-lite.json)
+- [gemini-3.1-pro-preview](/router-schemas/vertexai/gemini-3.1-pro-preview.json)
+- [gemini-3.5-flash](/router-schemas/vertexai/gemini-3.5-flash.json)
+- [gemini-3.7-flash](/router-schemas/vertexai/gemini-3.7-flash.json)
+- [gemini-3.8-flash](/router-schemas/vertexai/gemini-3.8-flash.json)
+- [imagen-3.0-fast-generate-001](/router-schemas/vertexai/imagen-3.0-fast-generate-001.json)
+- [imagen-3.0-generate-001](/router-schemas/vertexai/imagen-3.0-generate-001.json)
+- [imagen-3.0-generate-002](/router-schemas/vertexai/imagen-3.0-generate-002.json)
+- [happyhorse-1.0-i2v](/router-schemas/wan/happyhorse-1.0-i2v.json)
+- [happyhorse-1.0-r2v](/router-schemas/wan/happyhorse-1.0-r2v.json)
+- [happyhorse-1.0-t2v](/router-schemas/wan/happyhorse-1.0-t2v.json)
+- [happyhorse-1.0-video-edit](/router-schemas/wan/happyhorse-1.0-video-edit.json)
+- [happyhorse-1.1-i2v](/router-schemas/wan/happyhorse-1.1-i2v.json)
+- [happyhorse-1.1-r2v](/router-schemas/wan/happyhorse-1.1-r2v.json)
+- [happyhorse-1.1-t2v](/router-schemas/wan/happyhorse-1.1-t2v.json)
+- [wan2.5-i2i-preview](/router-schemas/wan/wan2.5-i2i-preview.json)
+- [wan2.5-i2v-preview](/router-schemas/wan/wan2.5-i2v-preview.json)
+- [wan2.5-t2i-preview](/router-schemas/wan/wan2.5-t2i-preview.json)
+- [wan2.5-t2v-preview](/router-schemas/wan/wan2.5-t2v-preview.json)
+- [wan2.6-i2v](/router-schemas/wan/wan2.6-i2v.json)
+- [wan2.6-r2v](/router-schemas/wan/wan2.6-r2v.json)
+- [wan2.6-t2v](/router-schemas/wan/wan2.6-t2v.json)
+- [wan2.7-i2v](/router-schemas/wan/wan2.7-i2v.json)
+- [wan2.7-r2v](/router-schemas/wan/wan2.7-r2v.json)
+- [wan2.7-t2v](/router-schemas/wan/wan2.7-t2v.json)
+- [wan2.7-videoedit](/router-schemas/wan/wan2.7-videoedit.json)
+- [wan3.0-video-prime](/router-schemas/wan/wan3.0-video-prime.json)
+- [wan3.0-video](/router-schemas/wan/wan3.0-video.json)
+- [flashvsr](/router-schemas/wavespeed/flashvsr.json)
+- [seedvr2](/router-schemas/wavespeed/seedvr2.json)
+- [ultimate-image-upscaler](/router-schemas/wavespeed/ultimate-image-upscaler.json)
+- [grok-imagine-image-2.0](/router-schemas/xai/grok-imagine-image-2.0.json)
+- [grok-imagine-image-pro](/router-schemas/xai/grok-imagine-image-pro.json)
+- [grok-imagine-image-quality](/router-schemas/xai/grok-imagine-image-quality.json)
+- [grok-imagine-image](/router-schemas/xai/grok-imagine-image.json)
+- [grok-imagine-video-1.5-preview](/router-schemas/xai/grok-imagine-video-1.5-preview.json)
+- [grok-imagine-video-1.5](/router-schemas/xai/grok-imagine-video-1.5.json)
+- [grok-imagine-video](/router-schemas/xai/grok-imagine-video.json)
+
+> The links below point to documentation indexes. Follow each `/_llms/` index recursively until you reach documentation pages.
+
+## Indexes
+
+- [English / Get Started (242 pages)](https://docs.comfy.org/_llms/en/get-started.md): Documentation for English / Get Started.
+- [English / Built-in Nodes (1022 pages)](https://docs.comfy.org/_llms/en/built-in-nodes.md): Documentation for English / Built-in Nodes.
+- [English / Built-in Nodes / Nodes (1021 pages)](https://docs.comfy.org/_llms/en/built-in-nodes/nodes.md): Documentation for English / Built-in Nodes / Nodes.
+- [English / Built-in Nodes / Nodes / Model (349 pages)](https://docs.comfy.org/_llms/en/built-in-nodes/nodes/model.md): Documentation for English / Built-in Nodes / Nodes / Model.
+- [English / Built-in Nodes / Nodes / Partner (267 pages)](https://docs.comfy.org/_llms/en/built-in-nodes/nodes/partner.md): Documentation for English / Built-in Nodes / Nodes / Partner.
+- [English / Developers (295 pages)](https://docs.comfy.org/_llms/en/developers.md): Documentation for English / Developers.
+- [Chinese (1403 pages)](https://docs.comfy.org/_llms/zh.md): Documentation for Chinese.
+- [Chinese / 开始使用 (242 pages)](https://docs.comfy.org/_llms/zh/tab.md): Documentation for Chinese / 开始使用.
+- [Chinese / 内置节点 (1022 pages)](https://docs.comfy.org/_llms/zh/tab-4ef7ed40.md): Documentation for Chinese / 内置节点.
+- [Chinese / 内置节点 / 节点 (1021 pages)](https://docs.comfy.org/_llms/zh/tab-4ef7ed40/group.md): Documentation for Chinese / 内置节点 / 节点.
+- [Chinese / 内置节点 / 节点 / Model (349 pages)](https://docs.comfy.org/_llms/zh/tab-4ef7ed40/group/model.md): Documentation for Chinese / 内置节点 / 节点 / Model.
+- [Chinese / 内置节点 / 节点 / Partner (267 pages)](https://docs.comfy.org/_llms/zh/tab-4ef7ed40/group/partner.md): Documentation for Chinese / 内置节点 / 节点 / Partner.
+- [Japanese (1403 pages)](https://docs.comfy.org/_llms/ja.md): Documentation for Japanese.
+- [Japanese / はじめに (242 pages)](https://docs.comfy.org/_llms/ja/tab.md): Documentation for Japanese / はじめに.
+- [Japanese / 組み込みノード (1022 pages)](https://docs.comfy.org/_llms/ja/tab-e7325d8b.md): Documentation for Japanese / 組み込みノード.
+- [Japanese / 組み込みノード / ノード (1021 pages)](https://docs.comfy.org/_llms/ja/tab-e7325d8b/group.md): Documentation for Japanese / 組み込みノード / ノード.
+- [Japanese / 組み込みノード / ノード / Model (349 pages)](https://docs.comfy.org/_llms/ja/tab-e7325d8b/group/model.md): Documentation for Japanese / 組み込みノード / ノード / Model.
+- [Japanese / 組み込みノード / ノード / Partner (267 pages)](https://docs.comfy.org/_llms/ja/tab-e7325d8b/group/partner.md): Documentation for Japanese / 組み込みノード / ノード / Partner.
+- [Korean (1358 pages)](https://docs.comfy.org/_llms/ko.md): Documentation for Korean.
+- [Korean / 시작하기 (242 pages)](https://docs.comfy.org/_llms/ko/tab.md): Documentation for Korean / 시작하기.
+- [Korean / 내장 노드 (Built-in Nodes) (977 pages)](https://docs.comfy.org/_llms/ko/built-in-nodes.md): Documentation for Korean / 내장 노드 (Built-in Nodes).
+- [Korean / 내장 노드 (Built-in Nodes) / 노드 (976 pages)](https://docs.comfy.org/_llms/ko/built-in-nodes/group.md): Documentation for Korean / 내장 노드 (Built-in Nodes) / 노드.
+- [Korean / 내장 노드 (Built-in Nodes) / 노드 / Model (349 pages)](https://docs.comfy.org/_llms/ko/built-in-nodes/group/model.md): Documentation for Korean / 내장 노드 (Built-in Nodes) / 노드 / Model.
+- [Korean / 내장 노드 (Built-in Nodes) / 노드 / Partner (267 pages)](https://docs.comfy.org/_llms/ko/built-in-nodes/group/partner.md): Documentation for Korean / 내장 노드 (Built-in Nodes) / 노드 / Partner.

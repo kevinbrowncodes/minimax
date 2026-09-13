@@ -64,6 +64,7 @@ docs/
   backlog/    BACKLOG_NNN_*.md
   chore/      CHORE_NNN_*.md
   recon/      dated captures, measured tokens, component inventory, interaction notes
+  references/ the MiniMax H3 model card, license, prompt guides, MiniMax's and ComfyUI's H3 docs, the official workflow templates and the node sources from our ComfyUI image, with an index (CHORE_002)
 ```
 
 ## Features
