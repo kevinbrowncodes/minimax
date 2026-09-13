@@ -125,8 +125,11 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
       fail(job.id, "ComfyUI reported an execution error (see its log)");
       return;
     }
-    const video = entry.outputs.find((o) => o.filename.toLowerCase().endsWith(".mp4"));
-    const poster = entry.outputs.find((o) => o.filename.toLowerCase().endsWith(".png"));
+    // BUG_003: the save node's file, not the first mp4 — an extension's LoadVideo preview lists the source first.
+    const isMp4 = (o: { filename: string }): boolean => o.filename.toLowerCase().endsWith(".mp4");
+    const isPng = (o: { filename: string }): boolean => o.filename.toLowerCase().endsWith(".png");
+    const video = entry.byNode["save"]?.find(isMp4) ?? entry.outputs.find(isMp4);
+    const poster = entry.byNode["poster"]?.find(isPng) ?? entry.outputs.find(isPng);
     if (!video) {
       fail(job.id, "ComfyUI finished without a video output");
       return;

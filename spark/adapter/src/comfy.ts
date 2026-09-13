@@ -14,7 +14,10 @@ export interface OutputRef {
 export interface HistoryEntry {
   readonly completed: boolean;
   readonly statusStr: string | undefined;
+  /** Every file under `outputs`, whichever node wrote it. */
   readonly outputs: readonly OutputRef[];
+  /** The same files by node id (BUG_003: a LoadVideo preview lists the source before the save node's file). */
+  readonly byNode: Readonly<Record<string, readonly OutputRef[]>>;
 }
 export interface QueueState {
   readonly running: readonly string[];
@@ -108,10 +111,14 @@ export class ComfyClient {
     const entry = all[promptId];
     if (!isRecord(entry)) return undefined;
     const status = isRecord(entry["status"]) ? entry["status"] : {};
+    const rawOutputs = entry["outputs"];
+    const byNode: Record<string, readonly OutputRef[]> = {};
+    if (isRecord(rawOutputs)) for (const [node, value] of Object.entries(rawOutputs)) byNode[node] = collectOutputs(value);
     return {
       completed: status["completed"] === true,
       statusStr: typeof status["status_str"] === "string" ? status["status_str"] : undefined,
-      outputs: collectOutputs(entry["outputs"]),
+      outputs: collectOutputs(rawOutputs),
+      byNode,
     };
   }
 

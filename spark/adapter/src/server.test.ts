@@ -333,6 +333,9 @@ describe("extensions (STORY_016)", () => {
     expect(graph?.["guider"]?.inputs["conditioning"]).toEqual(["guide", 0]);
     const done = await waitFor(ext, isDone);
     expect(done["result"]).toMatchObject({ frames: 379, durationSeconds: 15.792, width: 1344, height: 768 });
+    // BUG_003: the result is the save node's file, not the LoadVideo preview of the source that ComfyUI lists first
+    expect(adapter?.store.get(ext)?.result?.video.filename).toBe(`job-${ext}_00001_.mp4`);
+    expect(adapter?.store.get(ext)?.result?.poster?.filename).toBe(`job-${ext}_poster_00001_.png`);
     // extending the extension reads the joined frames; a longer context is capped by the step being generated
     const ext2 = await create({ ...valid, durationSeconds: 10, continueFrom: ext, contextSeconds: 15 });
     expect((await status(ext2))["request"]).toMatchObject({ contextSeconds: 15, contextFed: { frames: 277, seconds: 11.542 } });

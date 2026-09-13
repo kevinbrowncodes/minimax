@@ -92,7 +92,10 @@ export async function startFakeComfy(options: FakeComfyOptions): Promise<FakeCom
     mkdirSync(path.join(options.outputDir, sub), { recursive: true });
     copyFileSync(path.join(options.fixturesDir, "fixture.mp4"), path.join(options.outputDir, sub, videoName));
     copyFileSync(path.join(options.fixturesDir, "fixture-poster.png"), path.join(options.outputDir, sub, posterName));
-    return { save: { images: [{ filename: videoName, subfolder: sub, type: "output" }] }, poster: { images: [{ filename: posterName, subfolder: sub, type: "output" }] } };
+    // An extension graph's LoadVideo previews the source, and the real ComfyUI lists it BEFORE the save node (BUG_003).
+    const source = prompt.graph["source_video"]?.inputs["file"];
+    const preview = typeof source === "string" ? { source_video: { images: [{ filename: path.basename(source.replace(/ \[output\]$/, "")), subfolder: sub, type: "output" }] } } : {};
+    return { ...preview, save: { images: [{ filename: videoName, subfolder: sub, type: "output" }] }, poster: { images: [{ filename: posterName, subfolder: sub, type: "output" }] } };
   };
   const complete = (prompt: SubmittedPrompt): void => {
     running.delete(prompt.id);
