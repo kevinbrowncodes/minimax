@@ -20,7 +20,7 @@ export default defineConfig([
   },
   {
     // CLAUDE.md §6b encoded for specs: no sleeps after a submit, no bare viewport sizes (use a device descriptor).
-    files: ["e2e/**/*.ts"],
+    files: ["e2e/**/*.ts", "e2e-trial/**/*.ts"],
     rules: {
       "react-hooks/rules-of-hooks": "off", // specs and Playwright fixtures are not React
       "no-restricted-properties": [

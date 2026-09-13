@@ -117,7 +117,14 @@ docker compose --profile dev up app-dev      # hot-reload dev server on port 300
 docker compose up -d --build app             # production build served on port 3000, restarts with the box
 ```
 
-Open `http://<the Spark's LAN address>:3000` from the Mac. `tools/gate/run.sh lint build` runs only the named steps; `--from 4` restarts after a fix. Dependencies land in `node_modules/` inside the repo tree (written by the container, gitignored); the pnpm store persists in the `minimax_pnpm-store` volume.
+Open `http://<the Spark's LAN address>:3000` from the Mac. `tools/gate/run.sh lint build` runs only the named steps; `--from 4` restarts after a fix. Dependencies land in `node_modules/` inside the repo tree (written by the container, gitignored); the pnpm store persists in the `minimax_pnpm-store` volume; the UI's history in the `minimax_app-data` volume.
+
+**A real run through the UI, driven by Playwright** (EPIC_003's trial; not part of the gate — it needs ComfyUI and the adapter up, `spark/comfyui/run.sh`):
+
+```bash
+docker compose run --rm --no-deps -T -e TRIAL_IMAGE=/work/spark/data/input/01.jpg -e TRIAL_PROMPT_FILE=/work/spark/data/input/01-prompt.txt -e TRIAL_DURATION=10 \
+  gate pnpm --filter app exec playwright test --config playwright.trial.config.ts
+```
 
 ## Running the Model
 
@@ -128,8 +135,8 @@ Open `http://<the Spark's LAN address>:3000` from the Mac. `tools/gate/run.sh li
 | Serving stack | **ComfyUI v0.35.1** in the image `minimax-spark/comfyui:v0.35.1` (base `nvidia/cuda:13.0.2-runtime-ubuntu24.04`, arm64, pinned by digest; Python 3.12.3; **PyTorch 2.11.0+cu130**; CUDA 13.0; driver 580.142). Launched with `--disable-mmap --disable-async-offload --disable-pinned-memory --cache-none`, published on 127.0.0.1:8188 only. Our job-API adapter in front of it is STORY_006. Nothing is installed on the host |
 | Model / checkpoint | **MiniMax-H3 FL2VA, `minimax_h3_fl2va_int8_convrot` (34 GB)** + text encoder `qwen3vl_32b_minimax_h3_nvfp4_awq` (16 GB) + video VAE fp16 + audio VAE fp32; Comfy-Org repackage, 52 GB in `spark/data/models` (gitignored) |
 | Licence | MiniMax H3 Community License; the Spark is outside the excluded territories |
-| Measured | 1344×768, 124 frames (5.17 s) at 24 fps, 20 steps `res_multistep`/`simple`: **17 min 21 s submit → file** (text encoder ≈ 7 s, DiT load 51 s, sampling 15 min 53 s at 47.7 s/step, VAE decode + mux 72 s). Output 1.5 MiB h264 + aac 32 kHz stereo |
-| Memory split | **Peak 66.8 GiB used** (VAE decode); sampling plateau 61 GiB = DiT 32.4 GB staged + text encoder 15 GB resident + activations; no swap. The box's other services must leave ≈ 70 GiB free: on 2026-09-12 that meant stopping `spark-primary` and `cosmos3-api` (owner's call, by name) for the run |
+| Measured | **5 s, text-to-video** (STORY_005/006): 1344×768, 124 frames at 24 fps, 20 steps `res_multistep`/`simple`: **17 min 21 s submit → file** (text encoder ≈ 7 s, DiT load 51 s, sampling ≈ 47 s/step, VAE decode + mux 72 s), 1.0–1.5 MiB h264 + aac 32 kHz stereo. **10 s, image-to-video through the UI** (EPIC_003 trial): 243 frames, first step ≈ 155 s then ≈ 100 s/step, decode ≈ 3 min, **51 min submit → ready**, 2.3 MB, 10.125 s |
+| Memory split | **Peak 64–68 GiB used** (VAE decode; 63.8 GiB for 5 s, 68.0 GiB for 10 s image-to-video); sampling plateau 61 GiB = DiT 32.4 GB staged + text encoder 15 GB resident + activations; no swap. The box's other services must leave ≈ 70 GiB free: on 2026-09-12 that meant stopping `spark-primary` (48 GB reserved by its `--gpu-memory-utilization 0.40`) and `cosmos3-api` (owner's call, by name) for each run. Coexistence needs one of them lowered — EPIC_004 → Later |
 | Adapter (STORY_006) | `spark/adapter/`, the job-API contract ([docs/contracts/job-api.md](docs/contracts/job-api.md)) in front of ComfyUI: uploads references, submits the graph, follows progress over ComfyUI's websocket (with `/history` and `/queue` polling as the backstop), cancels through `/queue` or `/interrupt`, serves results and first-frame posters from the output mount with `Range` support, persists jobs to `spark/data/adapter/jobs.json`. Zero runtime dependencies; image `minimax-spark/adapter` (267 MB); service `adapter` in `spark/comfyui/compose.yaml` |
 | Ports / env vars | ComfyUI `127.0.0.1:8188`; adapter `127.0.0.1:4020` (`ADAPTER_PORT`) and `http://adapter:4020` on the shared docker network `minimax` that the UI's `app` service joins. The UI reads `MODEL_BASE_URL` (default `http://adapter:4020`) and `MODEL_API_KEY` (= the adapter's `ADAPTER_API_KEY`, optional). Set them in `.env` (see `.env.example`) |
 

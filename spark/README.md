@@ -105,6 +105,10 @@ The measured numbers are in the story's Done note and in [README.md → Running 
 
 `cosmos3-api` and `spark-primary` were stopped by name on the owner's say-so at 14:31:51 (available memory 15 → 114 GiB, swap 13 → 3 GiB) and started again at 14:50:52 after ComfyUI was stopped. The clip took 17 min 21 s submit → file at 1344×768 · 124 frames · 20 steps with `int8_convrot`, peak 66.8 GiB used, no swap. Full numbers: the story's Done note and [README.md → Running the Model](../README.md#running-the-model); raw logs in `spark/data/logs/`, summary in `spark/data/smoke/smoke-20260912-143222-int8_convrot.txt`.
 
+## The STORY_006 and EPIC_003 runs (2026-09-12 evening)
+
+STORY_006's verification: one 5 s text-to-video job through the UI route → adapter → ComfyUI, **17 min 33 s**, peak 63.8 GiB after `spark-primary` was stopped (the first attempt found the adapter's success-before-history race; fixed and rerun). EPIC_003's trial: one **10 s image-to-video** job through the real UI (Playwright against the production container), **51 min**, peak 68.0 GiB. Both nights' stops: `cosmos3-api` (owner: not required) and `spark-primary` (owner: "for now close"), restarted afterwards with `docker start`; both were up again at 20:34.
+
 ## Rules that apply on this box
 
 - Read before you write: `nvidia-smi`, `free -g`, `df -h`, `docker ps` first, every session.

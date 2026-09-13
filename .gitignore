@@ -39,3 +39,7 @@ spark/data/
 out/
 next-env.d.ts
 *.tsbuildinfo
+
+# The one-off real trial's report and results (app/playwright.trial.config.ts)
+playwright-report-trial/
+test-results-trial/
