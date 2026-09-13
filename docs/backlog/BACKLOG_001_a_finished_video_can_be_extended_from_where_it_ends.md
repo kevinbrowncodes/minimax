@@ -1,6 +1,6 @@
 # BACKLOG_001 — A finished video can be extended from where it ends
 
-**Status:** Open (2026-09-13) · **Priority:** High — the first thing the owner asked for after the first real clip
+**Status:** Promoted to [STORY_016](../story/STORY_016_a_finished_video_can_be_extended_the_model_continues_it_from_its_last_second_and_the_longer_clip_plays_in_place.md) (2026-09-13) — kept for the record · **Priority:** High — the first thing the owner asked for after the first real clip
 
 ## Summary
 

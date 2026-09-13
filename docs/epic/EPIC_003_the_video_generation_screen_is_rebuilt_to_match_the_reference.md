@@ -16,6 +16,7 @@ Drafted 2026-09-12 from EPIC_001's component inventory, one per surface/state gr
 | 013 | [The composer and its video mode match the reference, with reference-image upload and the options the Spark supports](../story/STORY_013_the_composer_and_video_mode_match_the_reference_with_reference_image_upload.md) | Done (2026-09-12) |
 | 014 | [A submitted job becomes a task page that shows progress, plays the result, can be cancelled, and is kept in history](../story/STORY_014_a_submitted_job_becomes_a_task_page_that_shows_progress_plays_the_result_and_is_kept_in_history.md) | Done (2026-09-12) |
 | 015 | [Assets lists every finished video with a poster, a preview modal and download](../story/STORY_015_assets_lists_every_finished_video_with_a_poster_preview_and_download.md) | Done (2026-09-12) |
+| 016 | [A finished video can be extended: the model continues it from its last second, and the longer clip plays in place](../story/STORY_016_a_finished_video_can_be_extended_the_model_continues_it_from_its_last_second_and_the_longer_clip_plays_in_place.md) | Drafted (2026-09-13) — owner-requested, promoted from BACKLOG_001; not MVP scope |
 
 **Shared departures** (each story repeats the ones it touches): no agent thread, no billing, no ShowCase, out-of-MVP rows rendered inert, the session id in the path, 768P only and one model from `/api/capabilities`.
 
