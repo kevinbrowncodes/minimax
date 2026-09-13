@@ -32,8 +32,10 @@ export interface AdapterOptions {
   readonly clientId?: string;
   /** How often /history and /queue are polled for open jobs (the websocket is the fast path). */
   readonly pollIntervalMs?: number;
-  /** A job older than this is failed. */
+  /** Last-resort cap: a job ComfyUI still lists after this long is failed anyway (default 12 h; BUG_002). */
   readonly jobTimeoutMs?: number;
+  /** A job ComfyUI no longer lists (not running, not pending) and has no history for is failed after this (default 10 min; BUG_002). */
+  readonly orphanTimeoutMs?: number;
   /** Consecutive failed polls before a job is failed as unreachable. */
   readonly silenceLimit?: number;
   /** Open jobs beyond this → 503 busy. */
@@ -100,7 +102,8 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
   const comfy = new ComfyClient(options.comfyUrl, clientId);
   const store = new JobStore(options.storeFile);
   const pollIntervalMs = options.pollIntervalMs ?? 5000;
-  const jobTimeoutMs = options.jobTimeoutMs ?? 3_600_000;
+  const jobTimeoutMs = options.jobTimeoutMs ?? 12 * 3_600_000;
+  const orphanTimeoutMs = options.orphanTimeoutMs ?? 600_000;
   const silenceLimit = options.silenceLimit ?? 10;
   const maxOpenJobs = options.maxOpenJobs ?? 5;
   const outputDir = path.resolve(options.outputDir);
@@ -229,7 +232,11 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
         queue = undefined;
       }
       for (const job of open) {
-        if (Date.now() - Date.parse(job.createdAt) > jobTimeoutMs) {
+        const age = Date.now() - Date.parse(job.createdAt);
+        // BUG_002: ComfyUI's queue is the truth about time. A job it still lists is never failed for its age
+        // (only the last-resort cap); a job it no longer lists and has no history for is an orphan.
+        const listed = queue !== undefined && job.promptId !== undefined && (queue.running.includes(job.promptId) || queue.pending.includes(job.promptId));
+        if (age > jobTimeoutMs) {
           fail(job.id, `job exceeded ${String(Math.round(jobTimeoutMs / 1000))} s`);
           continue;
         }
@@ -239,8 +246,10 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
           silence.delete(job.id);
           if (entry?.completed) {
             finalize(job, entry);
-          } else if (queue && queue.running.includes(job.promptId) && job.status === "queued") {
+          } else if (queue !== undefined && listed && queue.running.includes(job.promptId) && job.status === "queued") {
             store.update(job.id, { status: "running", progress: 2 });
+          } else if (!listed && queue !== undefined && !entry && age > orphanTimeoutMs) {
+            fail(job.id, `ComfyUI no longer has this job (not running, not pending, no history after ${String(Math.round(age / 1000))} s)`);
           }
         } catch (error) {
           const count = (silence.get(job.id) ?? 0) + 1;

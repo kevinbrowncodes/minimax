@@ -5,7 +5,7 @@
  *   TRIAL_BASE_URL (http://minimax-app:3000)  TRIAL_IMAGE (/work/spark/data/input/01.jpg)
  *   TRIAL_SCRIPTS_DIR (/work/docs/scripts)   TRIAL_DURATION (10)  TRIAL_RATIO (16:9)
  *   TRIAL_OUT_DIR (/work/spark/data/smoke)    TRIAL_START_FROM (a done job id: skip segment 1 and extend it)
- *   TRIAL_STEPS (3)                           TRIAL_TIMEOUT_MS (14400000)
+ *   TRIAL_STEPS (3)                           TRIAL_TIMEOUT_MS (14400000)  TRIAL_FIRST_SCRIPT (2: the script the first extension uses)
  */
 import { copyFileSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
@@ -18,6 +18,7 @@ const RATIO = process.env["TRIAL_RATIO"] ?? "16:9";
 const OUT_DIR = process.env["TRIAL_OUT_DIR"] ?? "/work/spark/data/smoke";
 const START_FROM = process.env["TRIAL_START_FROM"];
 const STEPS = Number(process.env["TRIAL_STEPS"] ?? "3");
+const FIRST_SCRIPT = Number(process.env["TRIAL_FIRST_SCRIPT"] ?? "2");
 
 const t0 = Date.now();
 function stamper(testInfo: TestInfo) {
@@ -98,7 +99,7 @@ test("the three-script chain through the real UI, adapter and ComfyUI", async ({
     await checkAndDownload(page, currentId, "segment1", stamp);
   }
 
-  for (let n = 2; n <= STEPS; n += 1) {
+  for (let n = FIRST_SCRIPT; n <= STEPS; n += 1) {
     await page.getByTestId("result").getByRole("button", { name: /Extend/ }).click();
     await expect(page.getByTestId("continuation")).toBeVisible();
     const contextLine = (await page.getByTestId("context-line").textContent()) ?? "";

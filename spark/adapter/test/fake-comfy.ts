@@ -40,6 +40,8 @@ export interface FakeComfy {
   historyStatus: number;
   /** Complete a held prompt (behaviour "hold") as if ComfyUI had run it while nobody watched. */
   completeHeld(promptId: string): void;
+  /** Forget a held prompt entirely — gone from the queue, no history (a ComfyUI restart mid-job, BUG_002). */
+  dropHeld(promptId: string): void;
   close(): Promise<void>;
 }
 
@@ -220,6 +222,10 @@ export async function startFakeComfy(options: FakeComfyOptions): Promise<FakeCom
     completeHeld: (promptId) => {
       const prompt = prompts.find((p) => p.id === promptId);
       if (prompt) complete(prompt);
+    },
+    dropHeld: (promptId) => {
+      pending.delete(promptId);
+      running.delete(promptId);
     },
     close: async () => {
       for (const t of timers) clearTimeout(t);

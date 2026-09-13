@@ -213,13 +213,31 @@ describe("resilience", () => {
     expect((failed["error"] as { message: string }).message).toMatch(/stopped answering/);
   });
 
-  it("fails a job that exceeds the job timeout", async () => {
+  it("never fails a job ComfyUI still lists, whatever its age; orphans are failed after orphanTimeoutMs; the cap is last resort (BUG_002)", async () => {
+    // held = queued in ComfyUI's queue_pending: older than any timeout, still not failed
     await adapter?.close();
-    adapter = await startAdapter({ jobTimeoutMs: 100, storeFile: path.join(dir, "adapter", "jobs-timeout.json") });
-    fake.behaviour = "hang";
-    const id = await create();
-    const failed = await waitFor(id, (s) => s["status"] === "failed");
-    expect((failed["error"] as { message: string }).message).toMatch(/exceeded/);
+    adapter = await startAdapter({ jobTimeoutMs: 100_000, orphanTimeoutMs: 120 });
+    fake.behaviour = "hold";
+    const held = await create();
+    await sleep(400);
+    expect((await status(held))["status"]).toBe("queued");
+    // running and reporting progress past what the old one-hour default would have allowed (scaled down): still running
+    fake.behaviour = "success";
+    fake.completeHeld(fake.prompts.at(-1)?.id ?? "");
+    await waitFor(held, (s) => s["status"] === "done");
+    // an orphan: ComfyUI dropped the prompt from its queue without writing history
+    fake.behaviour = "hold";
+    const orphan = await create();
+    fake.dropHeld(fake.prompts.at(-1)?.id ?? "");
+    const failed = await waitFor(orphan, (s) => s["status"] === "failed");
+    expect(failed).toMatchObject({ error: { code: "generation_failed", message: expect.stringContaining("ComfyUI no longer has this job") as string } });
+    // the last-resort cap still applies to a job ComfyUI lists forever
+    await adapter.close();
+    adapter = await startAdapter({ jobTimeoutMs: 150, orphanTimeoutMs: 100_000 });
+    const forever = await create();
+    const capped = await waitFor(forever, (s) => s["status"] === "failed");
+    expect(capped).toMatchObject({ error: { code: "generation_failed", message: expect.stringContaining("exceeded") as string } });
+    await api(`/jobs/${forever}`, { method: "DELETE" }).catch(() => undefined);
   });
 
   it("after a restart, an open job is failed unless ComfyUI's history shows it finished", async () => {
