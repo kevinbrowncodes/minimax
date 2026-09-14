@@ -1,0 +1,2559 @@
+{
+  "date": "2026-09-14",
+  "reference": "https://agent.minimax.io/",
+  "note": "Narrow states are the same persistent context resized to 390×844 (layout only, no touch semantics). Dark states carry -dark before the @; the theme was switched through the reference's own control where one was found (manifest.theme says which) and put back at the end.",
+  "passes": [
+    {
+      "width": 1440,
+      "theme": "light"
+    },
+    {
+      "width": 1440,
+      "theme": "dark"
+    },
+    {
+      "width": 390,
+      "theme": "dark"
+    },
+    {
+      "width": 390,
+      "theme": "light"
+    }
+  ],
+  "entries": [
+    {
+      "state": "home-signed-in",
+      "width": 1440,
+      "theme": "light",
+      "file": "home-signed-in@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:30:45.928Z",
+      "reachedBy": "auto",
+      "note": "Recents populated with the 2026-09-12 sessions; More and Projects folded as found"
+    },
+    {
+      "state": "sidebar-more-expanded",
+      "width": 1440,
+      "theme": "light",
+      "file": "sidebar-more-expanded@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:30:47.199Z",
+      "reachedBy": "auto",
+      "note": "the more section unfolded"
+    },
+    {
+      "state": "sidebar-projects-expanded",
+      "width": 1440,
+      "theme": "light",
+      "file": "sidebar-projects-expanded@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:30:49.080Z",
+      "reachedBy": "auto",
+      "note": "the projects section unfolded"
+    },
+    {
+      "state": "sidebar-collapsed",
+      "width": 1440,
+      "theme": "light",
+      "file": "sidebar-collapsed@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:30:51.272Z",
+      "reachedBy": "auto",
+      "note": "after the Collapse sidebar button"
+    },
+    {
+      "state": "hover-sidebar-row",
+      "width": 1440,
+      "theme": "light",
+      "file": "hover-sidebar-row@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:30:53.329Z",
+      "reachedBy": "auto",
+      "note": "pointer over the Plugins row"
+    },
+    {
+      "state": "recents-row-menu-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "recents-row-menu-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:30:57.678Z",
+      "reachedBy": "auto",
+      "note": "a Recents row's own menu; entries never clicked"
+    },
+    {
+      "state": "promo-carousel-page-2",
+      "width": 1440,
+      "theme": "light",
+      "file": "promo-carousel-page-2@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:31:00.209Z",
+      "reachedBy": "auto",
+      "note": "the promo card's second page"
+    },
+    {
+      "state": "inbox-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "inbox-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:31:03.339Z",
+      "reachedBy": "auto",
+      "note": "sidebar footer: Inbox: nothing"
+    },
+    {
+      "state": "recents-show-more",
+      "width": 1440,
+      "theme": "light",
+      "file": "recents-show-more@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:31:06.425Z",
+      "reachedBy": "auto",
+      "note": "sidebar › Recents: Show more: nothing"
+    },
+    {
+      "state": "agents-guide-view-now",
+      "width": 1440,
+      "theme": "light",
+      "file": "agents-guide-view-now@1440.png",
+      "path": "/plugins/manage",
+      "capturedAt": "2026-09-14T16:31:09.494Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Agents guide card › View now: navigates → /plugins/manage"
+    },
+    {
+      "state": "changelog-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "changelog-open@1440.png",
+      "path": "/docs/changelog",
+      "capturedAt": "2026-09-14T16:31:16.100Z",
+      "reachedBy": "auto",
+      "note": "top bar: Changelog: opens a new tab at agent.minimax.io/docs/changelog"
+    },
+    {
+      "state": "download-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "download-open@1440.png",
+      "path": "/download",
+      "capturedAt": "2026-09-14T16:31:20.194Z",
+      "reachedBy": "auto",
+      "note": "top bar: Download: opens a new tab at agent.minimax.io/download"
+    },
+    {
+      "state": "download-desktop-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "download-desktop-open@1440.png",
+      "path": "/download",
+      "capturedAt": "2026-09-14T16:31:24.402Z",
+      "reachedBy": "auto",
+      "note": "sidebar footer: Download desktop: opens a new tab at agent.minimax.io/download"
+    },
+    {
+      "state": "page-search",
+      "width": 1440,
+      "theme": "light",
+      "file": "page-search@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:31:30.684Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Search: opens-dialog"
+    },
+    {
+      "state": "page-plugins",
+      "width": 1440,
+      "theme": "light",
+      "file": "page-plugins@1440.png",
+      "path": "/plugins",
+      "capturedAt": "2026-09-14T16:31:38.044Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Plugins: navigates → /plugins"
+    },
+    {
+      "state": "page-plugins-tab-personal",
+      "width": 1440,
+      "theme": "light",
+      "file": "page-plugins-tab-personal@1440.png",
+      "path": "/plugins",
+      "capturedAt": "2026-09-14T16:31:39.853Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Plugins: tab \"personal\""
+    },
+    {
+      "state": "page-scheduled",
+      "width": 1440,
+      "theme": "light",
+      "file": "page-scheduled@1440.png",
+      "path": "/scheduled",
+      "capturedAt": "2026-09-14T16:31:48.886Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Scheduled: navigates → /scheduled"
+    },
+    {
+      "state": "page-connect-mobile",
+      "width": 1440,
+      "theme": "light",
+      "file": "page-connect-mobile@1440.png",
+      "path": "/connect-mobile",
+      "capturedAt": "2026-09-14T16:31:58.172Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Connect Mobile: navigates → /connect-mobile"
+    },
+    {
+      "state": "page-maxhermes",
+      "width": 1440,
+      "theme": "light",
+      "file": "page-maxhermes@1440.png",
+      "path": "/max-hermes",
+      "capturedAt": "2026-09-14T16:32:08.204Z",
+      "reachedBy": "auto",
+      "note": "sidebar › More: MaxHermes: navigates → /max-hermes"
+    },
+    {
+      "state": "page-maxclaw",
+      "width": 1440,
+      "theme": "light",
+      "file": "page-maxclaw@1440.png",
+      "path": "/max-claw",
+      "capturedAt": "2026-09-14T16:32:17.234Z",
+      "reachedBy": "auto",
+      "note": "sidebar › More: MaxClaw: navigates → /max-claw"
+    },
+    {
+      "state": "page-add-new-project",
+      "width": 1440,
+      "theme": "light",
+      "file": "page-add-new-project@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:32:26.808Z",
+      "reachedBy": "auto",
+      "note": "sidebar › Projects: Add new project: nothing"
+    },
+    {
+      "state": "composer-video-mode",
+      "width": 1440,
+      "theme": "light",
+      "file": "composer-video-mode@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:32:37.540Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "model-menu-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "model-menu-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:32:39.017Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "video-params-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "video-params-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:32:41.031Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "agent-model-menu-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "agent-model-menu-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:32:43.086Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "attach-menu-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "attach-menu-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:32:45.128Z",
+      "reachedBy": "auto",
+      "note": "whatever the + control opens; a native file chooser would not be visible"
+    },
+    {
+      "state": "attach-add-to-project-submenu-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "attach-add-to-project-submenu-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:32:47.983Z",
+      "reachedBy": "auto",
+      "note": "the attach menu's submenu on hover"
+    },
+    {
+      "state": "attach-skills-submenu-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "attach-skills-submenu-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:32:51.206Z",
+      "reachedBy": "auto",
+      "note": "the attach menu's submenu on hover"
+    },
+    {
+      "state": "attach-plugins-submenu-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "attach-plugins-submenu-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:32:54.427Z",
+      "reachedBy": "auto",
+      "note": "the attach menu's submenu on hover"
+    },
+    {
+      "state": "scene-selected",
+      "width": 1440,
+      "theme": "light",
+      "file": "scene-selected@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:32:58.594Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "composer-typed",
+      "width": 1440,
+      "theme": "light",
+      "file": "composer-typed@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:33:07.223Z",
+      "reachedBy": "auto",
+      "note": "typed by the script, never sent"
+    },
+    {
+      "state": "hover-mode-chip",
+      "width": 1440,
+      "theme": "light",
+      "file": "hover-mode-chip@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:33:11.556Z",
+      "reachedBy": "auto",
+      "note": "pointer over the Document chip"
+    },
+    {
+      "state": "mode-document",
+      "width": 1440,
+      "theme": "light",
+      "file": "mode-document@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:33:17.344Z",
+      "reachedBy": "auto",
+      "note": "the composer after the mode chip"
+    },
+    {
+      "state": "mode-website",
+      "width": 1440,
+      "theme": "light",
+      "file": "mode-website@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:33:23.316Z",
+      "reachedBy": "auto",
+      "note": "the composer after the mode chip"
+    },
+    {
+      "state": "mode-image-generation",
+      "width": 1440,
+      "theme": "light",
+      "file": "mode-image-generation@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:33:29.782Z",
+      "reachedBy": "auto",
+      "note": "the composer after the mode chip"
+    },
+    {
+      "state": "mode-more-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "mode-more-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:33:36.087Z",
+      "reachedBy": "auto",
+      "note": "mode chips: More: opens-menu"
+    },
+    {
+      "state": "work-area-closed",
+      "width": 1440,
+      "theme": "light",
+      "file": "work-area-closed@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T16:33:46.286Z",
+      "reachedBy": "auto",
+      "note": "after the Work Area button: panel open → closed"
+    },
+    {
+      "state": "task-thread-top",
+      "width": 1440,
+      "theme": "light",
+      "file": "task-thread-top@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T16:33:48.948Z",
+      "reachedBy": "auto",
+      "note": "the thread scrolled to its top: the first user message and the agent's first turn"
+    },
+    {
+      "state": "task-processed-expanded",
+      "width": 1440,
+      "theme": "light",
+      "file": "task-processed-expanded@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T16:33:50.541Z",
+      "reachedBy": "auto",
+      "note": "the Processed N s row unfolded"
+    },
+    {
+      "state": "task-result-card-hover",
+      "width": 1440,
+      "theme": "light",
+      "file": "task-result-card-hover@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T16:33:52.258Z",
+      "reachedBy": "auto",
+      "note": "pointer over the result file card in the thread"
+    },
+    {
+      "state": "task-result-menu-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "task-result-menu-open@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T16:33:53.732Z",
+      "reachedBy": "auto",
+      "note": "the result card's More menu; entries never clicked"
+    },
+    {
+      "state": "task-result-preview-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "task-result-preview-open@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T16:33:57.843Z",
+      "reachedBy": "auto",
+      "note": "after Open preview on the result card"
+    },
+    {
+      "state": "assets-all",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-all@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:02.551Z",
+      "reachedBy": "auto",
+      "note": "From Agent, All"
+    },
+    {
+      "state": "assets-videos-filter",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-videos-filter@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:04.670Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "assets-video-tile-hover",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-video-tile-hover@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:05.925Z",
+      "reachedBy": "auto",
+      "note": "pointer over the video tile"
+    },
+    {
+      "state": "assets-tile-menu-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-tile-menu-open@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:07.896Z",
+      "reachedBy": "auto",
+      "note": "the tile's ⋯ menu; entries never clicked"
+    },
+    {
+      "state": "assets-video-preview",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-video-preview@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:12.042Z",
+      "reachedBy": "auto",
+      "note": "the preview modal"
+    },
+    {
+      "state": "assets-tab-from-you",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-tab-from-you@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:14.762Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "assets-tab-star",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-tab-star@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:16.862Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "assets-filter-websites",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-filter-websites@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:19.717Z",
+      "reachedBy": "auto",
+      "note": "the Websites filter"
+    },
+    {
+      "state": "assets-filter-documents",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-filter-documents@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:21.550Z",
+      "reachedBy": "auto",
+      "note": "the Documents filter"
+    },
+    {
+      "state": "assets-filter-excel",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-filter-excel@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:23.352Z",
+      "reachedBy": "auto",
+      "note": "the Excel filter"
+    },
+    {
+      "state": "assets-filter-ppt",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-filter-ppt@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:25.151Z",
+      "reachedBy": "auto",
+      "note": "the PPT filter"
+    },
+    {
+      "state": "assets-filter-images",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-filter-images@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:26.951Z",
+      "reachedBy": "auto",
+      "note": "the Images filter"
+    },
+    {
+      "state": "assets-filter-audio",
+      "width": 1440,
+      "theme": "light",
+      "file": "assets-filter-audio@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:34:28.761Z",
+      "reachedBy": "auto",
+      "note": "the Audio filter"
+    },
+    {
+      "state": "home-signed-in",
+      "width": 1440,
+      "theme": "dark",
+      "file": "home-signed-in-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:39:12.360Z",
+      "reachedBy": "auto",
+      "note": "Recents populated with the 2026-09-12 sessions; More and Projects folded as found"
+    },
+    {
+      "state": "sidebar-more-expanded",
+      "width": 1440,
+      "theme": "dark",
+      "file": "sidebar-more-expanded-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:39:13.571Z",
+      "reachedBy": "auto",
+      "note": "the more section unfolded"
+    },
+    {
+      "state": "sidebar-projects-expanded",
+      "width": 1440,
+      "theme": "dark",
+      "file": "sidebar-projects-expanded-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:39:15.457Z",
+      "reachedBy": "auto",
+      "note": "the projects section unfolded"
+    },
+    {
+      "state": "sidebar-collapsed",
+      "width": 1440,
+      "theme": "dark",
+      "file": "sidebar-collapsed-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:39:17.647Z",
+      "reachedBy": "auto",
+      "note": "after the Collapse sidebar button"
+    },
+    {
+      "state": "hover-sidebar-row",
+      "width": 1440,
+      "theme": "dark",
+      "file": "hover-sidebar-row-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:39:19.663Z",
+      "reachedBy": "auto",
+      "note": "pointer over the Plugins row"
+    },
+    {
+      "state": "recents-row-menu-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "recents-row-menu-open-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:39:24.027Z",
+      "reachedBy": "auto",
+      "note": "a Recents row's own menu; entries never clicked"
+    },
+    {
+      "state": "page-search",
+      "width": 1440,
+      "theme": "dark",
+      "file": "page-search-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:41:00.652Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Search: opens-dialog"
+    },
+    {
+      "state": "page-plugins",
+      "width": 1440,
+      "theme": "dark",
+      "file": "page-plugins-dark@1440.png",
+      "path": "/plugins",
+      "capturedAt": "2026-09-14T16:41:08.020Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Plugins: navigates → /plugins"
+    },
+    {
+      "state": "page-plugins-tab-personal",
+      "width": 1440,
+      "theme": "dark",
+      "file": "page-plugins-tab-personal-dark@1440.png",
+      "path": "/plugins",
+      "capturedAt": "2026-09-14T16:41:09.862Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Plugins: tab \"personal\""
+    },
+    {
+      "state": "page-scheduled",
+      "width": 1440,
+      "theme": "dark",
+      "file": "page-scheduled-dark@1440.png",
+      "path": "/scheduled",
+      "capturedAt": "2026-09-14T16:41:19.491Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Scheduled: navigates → /scheduled"
+    },
+    {
+      "state": "page-connect-mobile",
+      "width": 1440,
+      "theme": "dark",
+      "file": "page-connect-mobile-dark@1440.png",
+      "path": "/connect-mobile",
+      "capturedAt": "2026-09-14T16:41:27.959Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Connect Mobile: navigates → /connect-mobile"
+    },
+    {
+      "state": "page-maxhermes",
+      "width": 1440,
+      "theme": "dark",
+      "file": "page-maxhermes-dark@1440.png",
+      "path": "/max-hermes",
+      "capturedAt": "2026-09-14T16:41:36.955Z",
+      "reachedBy": "auto",
+      "note": "sidebar › More: MaxHermes: navigates → /max-hermes"
+    },
+    {
+      "state": "page-maxclaw",
+      "width": 1440,
+      "theme": "dark",
+      "file": "page-maxclaw-dark@1440.png",
+      "path": "/max-claw",
+      "capturedAt": "2026-09-14T16:41:45.874Z",
+      "reachedBy": "auto",
+      "note": "sidebar › More: MaxClaw: navigates → /max-claw"
+    },
+    {
+      "state": "page-add-new-project",
+      "width": 1440,
+      "theme": "dark",
+      "file": "page-add-new-project-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:41:55.763Z",
+      "reachedBy": "auto",
+      "note": "sidebar › Projects: Add new project: nothing"
+    },
+    {
+      "state": "composer-video-mode",
+      "width": 1440,
+      "theme": "dark",
+      "file": "composer-video-mode-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:06.074Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "model-menu-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "model-menu-open-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:07.534Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "video-params-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "video-params-open-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:09.540Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "agent-model-menu-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "agent-model-menu-open-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:11.596Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "attach-menu-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "attach-menu-open-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:13.635Z",
+      "reachedBy": "auto",
+      "note": "whatever the + control opens; a native file chooser would not be visible"
+    },
+    {
+      "state": "attach-add-to-project-submenu-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "attach-add-to-project-submenu-open-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:16.472Z",
+      "reachedBy": "auto",
+      "note": "the attach menu's submenu on hover"
+    },
+    {
+      "state": "attach-skills-submenu-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "attach-skills-submenu-open-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:19.678Z",
+      "reachedBy": "auto",
+      "note": "the attach menu's submenu on hover"
+    },
+    {
+      "state": "attach-plugins-submenu-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "attach-plugins-submenu-open-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:22.873Z",
+      "reachedBy": "auto",
+      "note": "the attach menu's submenu on hover"
+    },
+    {
+      "state": "scene-selected",
+      "width": 1440,
+      "theme": "dark",
+      "file": "scene-selected-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:27.029Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "composer-typed",
+      "width": 1440,
+      "theme": "dark",
+      "file": "composer-typed-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:35.485Z",
+      "reachedBy": "auto",
+      "note": "typed by the script, never sent"
+    },
+    {
+      "state": "hover-mode-chip",
+      "width": 1440,
+      "theme": "dark",
+      "file": "hover-mode-chip-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:40.424Z",
+      "reachedBy": "auto",
+      "note": "pointer over the Document chip"
+    },
+    {
+      "state": "mode-document",
+      "width": 1440,
+      "theme": "dark",
+      "file": "mode-document-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:45.735Z",
+      "reachedBy": "auto",
+      "note": "the composer after the mode chip"
+    },
+    {
+      "state": "mode-website",
+      "width": 1440,
+      "theme": "dark",
+      "file": "mode-website-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:52.044Z",
+      "reachedBy": "auto",
+      "note": "the composer after the mode chip"
+    },
+    {
+      "state": "mode-image-generation",
+      "width": 1440,
+      "theme": "dark",
+      "file": "mode-image-generation-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:42:58.159Z",
+      "reachedBy": "auto",
+      "note": "the composer after the mode chip"
+    },
+    {
+      "state": "mode-more-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "mode-more-open-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:43:04.487Z",
+      "reachedBy": "auto",
+      "note": "mode chips: More: opens-menu"
+    },
+    {
+      "state": "work-area-closed",
+      "width": 1440,
+      "theme": "dark",
+      "file": "work-area-closed-dark@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T16:43:14.700Z",
+      "reachedBy": "auto",
+      "note": "after the Work Area button: panel open → closed"
+    },
+    {
+      "state": "task-thread-top",
+      "width": 1440,
+      "theme": "dark",
+      "file": "task-thread-top-dark@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T16:43:17.359Z",
+      "reachedBy": "auto",
+      "note": "the thread scrolled to its top: the first user message and the agent's first turn"
+    },
+    {
+      "state": "task-processed-expanded",
+      "width": 1440,
+      "theme": "dark",
+      "file": "task-processed-expanded-dark@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T16:43:18.984Z",
+      "reachedBy": "auto",
+      "note": "the Processed N s row unfolded"
+    },
+    {
+      "state": "task-result-card-hover",
+      "width": 1440,
+      "theme": "dark",
+      "file": "task-result-card-hover-dark@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T16:43:20.670Z",
+      "reachedBy": "auto",
+      "note": "pointer over the result file card in the thread"
+    },
+    {
+      "state": "task-result-menu-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "task-result-menu-open-dark@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T16:43:22.137Z",
+      "reachedBy": "auto",
+      "note": "the result card's More menu; entries never clicked"
+    },
+    {
+      "state": "task-result-preview-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "task-result-preview-open-dark@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T16:43:26.255Z",
+      "reachedBy": "auto",
+      "note": "after Open preview on the result card"
+    },
+    {
+      "state": "assets-all",
+      "width": 1440,
+      "theme": "dark",
+      "file": "assets-all-dark@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:43:30.956Z",
+      "reachedBy": "auto",
+      "note": "From Agent, All"
+    },
+    {
+      "state": "assets-videos-filter",
+      "width": 1440,
+      "theme": "dark",
+      "file": "assets-videos-filter-dark@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:43:33.070Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "assets-video-tile-hover",
+      "width": 1440,
+      "theme": "dark",
+      "file": "assets-video-tile-hover-dark@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:43:34.293Z",
+      "reachedBy": "auto",
+      "note": "pointer over the video tile"
+    },
+    {
+      "state": "assets-tile-menu-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "assets-tile-menu-open-dark@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:43:36.239Z",
+      "reachedBy": "auto",
+      "note": "the tile's ⋯ menu; entries never clicked"
+    },
+    {
+      "state": "assets-video-preview",
+      "width": 1440,
+      "theme": "dark",
+      "file": "assets-video-preview-dark@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:43:40.395Z",
+      "reachedBy": "auto",
+      "note": "the preview modal"
+    },
+    {
+      "state": "assets-tab-from-you",
+      "width": 1440,
+      "theme": "dark",
+      "file": "assets-tab-from-you-dark@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:43:43.077Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "assets-tab-star",
+      "width": 1440,
+      "theme": "dark",
+      "file": "assets-tab-star-dark@1440.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T16:43:45.177Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "settings-general",
+      "width": 1440,
+      "theme": "dark",
+      "file": "settings-general-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:48:42.245Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "settings-account",
+      "width": 1440,
+      "theme": "dark",
+      "file": "settings-account-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:48:47.888Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "settings-usage",
+      "width": 1440,
+      "theme": "dark",
+      "file": "settings-usage-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:48:53.435Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "settings-archived-tasks",
+      "width": 1440,
+      "theme": "dark",
+      "file": "settings-archived-tasks-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:49:27.215Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "promo-carousel-page-2",
+      "width": 1440,
+      "theme": "dark",
+      "file": "promo-carousel-page-2-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:49:30.713Z",
+      "reachedBy": "auto",
+      "note": "the promo card's second page"
+    },
+    {
+      "state": "inbox-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "inbox-open-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:49:33.829Z",
+      "reachedBy": "auto",
+      "note": "sidebar footer: Inbox: nothing"
+    },
+    {
+      "state": "recents-show-more",
+      "width": 1440,
+      "theme": "dark",
+      "file": "recents-show-more-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:49:36.933Z",
+      "reachedBy": "auto",
+      "note": "sidebar › Recents: Show more: nothing"
+    },
+    {
+      "state": "changelog-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "changelog-open-dark@1440.png",
+      "path": "/docs/changelog",
+      "capturedAt": "2026-09-14T16:49:45.891Z",
+      "reachedBy": "auto",
+      "note": "top bar: Changelog: opens a new tab at agent.minimax.io/docs/changelog"
+    },
+    {
+      "state": "download-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "download-open-dark@1440.png",
+      "path": "/download",
+      "capturedAt": "2026-09-14T16:49:50.036Z",
+      "reachedBy": "auto",
+      "note": "top bar: Download: opens a new tab at agent.minimax.io/download"
+    },
+    {
+      "state": "download-desktop-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "download-desktop-open-dark@1440.png",
+      "path": "/download",
+      "capturedAt": "2026-09-14T16:49:54.177Z",
+      "reachedBy": "auto",
+      "note": "sidebar footer: Download desktop: opens a new tab at agent.minimax.io/download"
+    },
+    {
+      "state": "narrow-promo-carousel-page-2",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-promo-carousel-page-2-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T16:51:53.299Z",
+      "reachedBy": "auto",
+      "note": "the promo card's second page"
+    },
+    {
+      "state": "settings-general",
+      "width": 1440,
+      "theme": "light",
+      "file": "settings-general@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:02:03.551Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "settings-account",
+      "width": 1440,
+      "theme": "light",
+      "file": "settings-account@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:02:09.018Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "settings-usage",
+      "width": 1440,
+      "theme": "light",
+      "file": "settings-usage@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:02:14.492Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "settings-archived-tasks",
+      "width": 1440,
+      "theme": "light",
+      "file": "settings-archived-tasks@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:02:19.950Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "narrow-home-signed-in",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-home-signed-in-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:24:27.227Z",
+      "reachedBy": "auto",
+      "note": "Recents populated with the 2026-09-12 sessions; More and Projects folded as found"
+    },
+    {
+      "state": "narrow-sidebar-drawer-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-sidebar-drawer-open-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:25:30.380Z",
+      "reachedBy": "auto",
+      "note": "the drawer after its toggle"
+    },
+    {
+      "state": "narrow-recents-row-menu-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-recents-row-menu-open-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:25:36.835Z",
+      "reachedBy": "auto",
+      "note": "a Recents row's own menu; entries never clicked"
+    },
+    {
+      "state": "narrow-settings-general",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-settings-general-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:25:42.982Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "narrow-settings-account",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-settings-account-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:25:50.051Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "narrow-settings-usage",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-settings-usage-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:25:57.202Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "narrow-settings-archived-tasks",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-settings-archived-tasks-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:26:04.398Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "narrow-inbox-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-inbox-open-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:26:16.030Z",
+      "reachedBy": "auto",
+      "note": "sidebar footer: Inbox: nothing"
+    },
+    {
+      "state": "narrow-recents-show-more",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-recents-show-more-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:26:19.095Z",
+      "reachedBy": "auto",
+      "note": "sidebar › Recents: Show more: nothing"
+    },
+    {
+      "state": "narrow-download-desktop-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-download-desktop-open-dark@390.png",
+      "path": "/download",
+      "capturedAt": "2026-09-14T17:26:49.095Z",
+      "reachedBy": "auto",
+      "note": "sidebar footer: Download desktop: opens a new tab at agent.minimax.io/download"
+    },
+    {
+      "state": "narrow-page-search",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-page-search-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:27:15.253Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Search: opens-dialog"
+    },
+    {
+      "state": "narrow-page-plugins",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-page-plugins-dark@390.png",
+      "path": "/plugins",
+      "capturedAt": "2026-09-14T17:27:42.365Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Plugins: navigates → /plugins"
+    },
+    {
+      "state": "narrow-page-plugins-tab-personal",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-page-plugins-tab-personal-dark@390.png",
+      "path": "/plugins",
+      "capturedAt": "2026-09-14T17:27:44.155Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Plugins: tab \"personal\""
+    },
+    {
+      "state": "narrow-page-scheduled",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-page-scheduled-dark@390.png",
+      "path": "/scheduled",
+      "capturedAt": "2026-09-14T17:28:32.322Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Scheduled: navigates → /scheduled"
+    },
+    {
+      "state": "narrow-page-connect-mobile",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-page-connect-mobile-dark@390.png",
+      "path": "/connect-mobile",
+      "capturedAt": "2026-09-14T17:29:20.622Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Connect Mobile: navigates → /connect-mobile"
+    },
+    {
+      "state": "narrow-mode-document",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-mode-document-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:34:05.132Z",
+      "reachedBy": "auto",
+      "note": "the composer after the mode chip"
+    },
+    {
+      "state": "narrow-mode-website",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-mode-website-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:34:30.826Z",
+      "reachedBy": "auto",
+      "note": "the composer after the mode chip"
+    },
+    {
+      "state": "narrow-mode-image-generation",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-mode-image-generation-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:34:56.507Z",
+      "reachedBy": "auto",
+      "note": "the composer after the mode chip"
+    },
+    {
+      "state": "narrow-home-signed-in",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-home-signed-in@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:38:39.668Z",
+      "reachedBy": "auto",
+      "note": "Recents populated with the 2026-09-12 sessions; More and Projects folded as found"
+    },
+    {
+      "state": "narrow-sidebar-drawer-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-sidebar-drawer-open@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:39:42.965Z",
+      "reachedBy": "auto",
+      "note": "the drawer after its toggle"
+    },
+    {
+      "state": "narrow-recents-row-menu-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-recents-row-menu-open@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:39:49.516Z",
+      "reachedBy": "auto",
+      "note": "a Recents row's own menu; entries never clicked"
+    },
+    {
+      "state": "narrow-settings-general",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-settings-general@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:39:55.736Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "narrow-settings-account",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-settings-account@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:40:02.872Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "narrow-settings-usage",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-settings-usage@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:40:09.985Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "narrow-settings-archived-tasks",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-settings-archived-tasks@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:40:17.082Z",
+      "reachedBy": "auto",
+      "note": "user menu › Settings; this section"
+    },
+    {
+      "state": "narrow-inbox-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-inbox-open@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:40:28.698Z",
+      "reachedBy": "auto",
+      "note": "sidebar footer: Inbox: nothing"
+    },
+    {
+      "state": "narrow-recents-show-more",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-recents-show-more@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:40:33.346Z",
+      "reachedBy": "auto",
+      "note": "sidebar › Recents: Show more: nothing"
+    },
+    {
+      "state": "narrow-download-desktop-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-download-desktop-open@390.png",
+      "path": "/download",
+      "capturedAt": "2026-09-14T17:40:52.926Z",
+      "reachedBy": "auto",
+      "note": "sidebar footer: Download desktop: opens a new tab at agent.minimax.io/download"
+    },
+    {
+      "state": "narrow-page-search",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-page-search@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:41:19.056Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Search: opens-dialog"
+    },
+    {
+      "state": "narrow-page-plugins",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-page-plugins@390.png",
+      "path": "/plugins",
+      "capturedAt": "2026-09-14T17:41:46.198Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Plugins: navigates → /plugins"
+    },
+    {
+      "state": "narrow-page-plugins-tab-personal",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-page-plugins-tab-personal@390.png",
+      "path": "/plugins",
+      "capturedAt": "2026-09-14T17:41:47.992Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Plugins: tab \"personal\""
+    },
+    {
+      "state": "narrow-page-scheduled",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-page-scheduled@390.png",
+      "path": "/scheduled",
+      "capturedAt": "2026-09-14T17:42:36.272Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Scheduled: navigates → /scheduled"
+    },
+    {
+      "state": "narrow-page-connect-mobile",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-page-connect-mobile@390.png",
+      "path": "/connect-mobile",
+      "capturedAt": "2026-09-14T17:43:24.475Z",
+      "reachedBy": "auto",
+      "note": "sidebar: Connect Mobile: navigates → /connect-mobile"
+    },
+    {
+      "state": "narrow-mode-document",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-mode-document@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:48:08.947Z",
+      "reachedBy": "auto",
+      "note": "the composer after the mode chip"
+    },
+    {
+      "state": "narrow-mode-website",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-mode-website@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:48:34.590Z",
+      "reachedBy": "auto",
+      "note": "the composer after the mode chip"
+    },
+    {
+      "state": "narrow-mode-image-generation",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-mode-image-generation@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T17:49:00.297Z",
+      "reachedBy": "auto",
+      "note": "the composer after the mode chip"
+    },
+    {
+      "state": "task-page",
+      "width": 1440,
+      "theme": "light",
+      "file": "task-page@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T17:52:14.020Z",
+      "reachedBy": "auto",
+      "note": "a finished 2026-09-12 session reopened from Recents (/paper boat/i); Work Area panel as found"
+    },
+    {
+      "state": "work-area-deliverable-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "work-area-deliverable-open@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T17:52:17.176Z",
+      "reachedBy": "auto",
+      "note": "after clicking the file under Deliverables in the Work Area panel"
+    },
+    {
+      "state": "task-page",
+      "width": 1440,
+      "theme": "dark",
+      "file": "task-page-dark@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T17:53:07.985Z",
+      "reachedBy": "auto",
+      "note": "a finished 2026-09-12 session reopened from Recents (/paper boat/i); Work Area panel as found"
+    },
+    {
+      "state": "work-area-deliverable-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "work-area-deliverable-open-dark@1440.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T17:53:11.164Z",
+      "reachedBy": "auto",
+      "note": "after clicking the file under Deliverables in the Work Area panel"
+    },
+    {
+      "state": "narrow-changelog-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-changelog-open-dark@390.png",
+      "path": "/docs/changelog",
+      "capturedAt": "2026-09-14T17:56:30.276Z",
+      "reachedBy": "auto",
+      "note": "top bar: Changelog: opens a new tab at agent.minimax.io/docs/changelog"
+    },
+    {
+      "state": "narrow-download-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-download-open-dark@390.png",
+      "path": "/download",
+      "capturedAt": "2026-09-14T17:56:34.350Z",
+      "reachedBy": "auto",
+      "note": "top bar: Download: opens a new tab at agent.minimax.io/download"
+    },
+    {
+      "state": "narrow-page-maxhermes",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-page-maxhermes-dark@390.png",
+      "path": "/max-hermes",
+      "capturedAt": "2026-09-14T17:56:37.544Z",
+      "reachedBy": "auto",
+      "note": "sidebar › More: MaxHermes: reached by its path at 390 (the drawer cannot unfold the section)"
+    },
+    {
+      "state": "narrow-page-maxclaw",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-page-maxclaw-dark@390.png",
+      "path": "/max-claw",
+      "capturedAt": "2026-09-14T17:56:40.691Z",
+      "reachedBy": "auto",
+      "note": "sidebar › More: MaxClaw: reached by its path at 390 (the drawer cannot unfold the section)"
+    },
+    {
+      "state": "narrow-task-page",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-task-page-dark@390.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T18:00:21.916Z",
+      "reachedBy": "auto",
+      "note": "a finished 2026-09-12 session reopened from Recents (/paper boat/i); Work Area panel as found"
+    },
+    {
+      "state": "narrow-task-thread-top",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-task-thread-top-dark@390.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T18:00:23.702Z",
+      "reachedBy": "auto",
+      "note": "the thread scrolled to its top: the first user message and the agent's first turn"
+    },
+    {
+      "state": "narrow-task-processed-expanded",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-task-processed-expanded-dark@390.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T18:00:25.238Z",
+      "reachedBy": "auto",
+      "note": "the Processed N s row unfolded"
+    },
+    {
+      "state": "narrow-task-result-card-hover",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-task-result-card-hover-dark@390.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T18:00:27.021Z",
+      "reachedBy": "auto",
+      "note": "pointer over the result file card in the thread"
+    },
+    {
+      "state": "narrow-task-result-menu-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-task-result-menu-open-dark@390.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T18:00:28.454Z",
+      "reachedBy": "auto",
+      "note": "the result card's More menu; entries never clicked"
+    },
+    {
+      "state": "narrow-task-result-preview-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-task-result-preview-open-dark@390.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T18:00:32.568Z",
+      "reachedBy": "auto",
+      "note": "after Open preview on the result card"
+    },
+    {
+      "state": "narrow-changelog-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-changelog-open@390.png",
+      "path": "/docs/changelog",
+      "capturedAt": "2026-09-14T18:05:08.553Z",
+      "reachedBy": "auto",
+      "note": "top bar: Changelog: opens a new tab at agent.minimax.io/docs/changelog"
+    },
+    {
+      "state": "narrow-download-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-download-open@390.png",
+      "path": "/download",
+      "capturedAt": "2026-09-14T18:05:12.582Z",
+      "reachedBy": "auto",
+      "note": "top bar: Download: opens a new tab at agent.minimax.io/download"
+    },
+    {
+      "state": "narrow-page-maxhermes",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-page-maxhermes@390.png",
+      "path": "/max-hermes",
+      "capturedAt": "2026-09-14T18:05:15.760Z",
+      "reachedBy": "auto",
+      "note": "sidebar › More: MaxHermes: reached by its path at 390 (the drawer cannot unfold the section)"
+    },
+    {
+      "state": "narrow-page-maxclaw",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-page-maxclaw@390.png",
+      "path": "/max-claw",
+      "capturedAt": "2026-09-14T18:05:18.904Z",
+      "reachedBy": "auto",
+      "note": "sidebar › More: MaxClaw: reached by its path at 390 (the drawer cannot unfold the section)"
+    },
+    {
+      "state": "narrow-task-page",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-task-page@390.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T18:09:00.014Z",
+      "reachedBy": "auto",
+      "note": "a finished 2026-09-12 session reopened from Recents (/paper boat/i); Work Area panel as found"
+    },
+    {
+      "state": "narrow-task-thread-top",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-task-thread-top@390.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T18:09:01.814Z",
+      "reachedBy": "auto",
+      "note": "the thread scrolled to its top: the first user message and the agent's first turn"
+    },
+    {
+      "state": "narrow-task-processed-expanded",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-task-processed-expanded@390.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T18:09:03.347Z",
+      "reachedBy": "auto",
+      "note": "the Processed N s row unfolded"
+    },
+    {
+      "state": "narrow-task-result-card-hover",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-task-result-card-hover@390.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T18:09:05.165Z",
+      "reachedBy": "auto",
+      "note": "pointer over the result file card in the thread"
+    },
+    {
+      "state": "narrow-task-result-menu-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-task-result-menu-open@390.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T18:09:06.562Z",
+      "reachedBy": "auto",
+      "note": "the result card's More menu; entries never clicked"
+    },
+    {
+      "state": "narrow-task-result-preview-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-task-result-preview-open@390.png",
+      "path": "/mavis",
+      "capturedAt": "2026-09-14T18:09:10.646Z",
+      "reachedBy": "auto",
+      "note": "after Open preview on the result card"
+    },
+    {
+      "state": "narrow-assets-video-tile-hover",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-assets-video-tile-hover-dark@390.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T18:14:22.226Z",
+      "reachedBy": "auto",
+      "note": "pointer over the video tile"
+    },
+    {
+      "state": "narrow-assets-video-preview",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-assets-video-preview-dark@390.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T18:14:30.916Z",
+      "reachedBy": "auto",
+      "note": "the preview modal"
+    },
+    {
+      "state": "narrow-assets-video-tile-hover",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-assets-video-tile-hover@390.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T18:19:16.498Z",
+      "reachedBy": "auto",
+      "note": "pointer over the video tile"
+    },
+    {
+      "state": "narrow-assets-video-preview",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-assets-video-preview@390.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T18:19:25.164Z",
+      "reachedBy": "auto",
+      "note": "the preview modal"
+    },
+    {
+      "state": "narrow-composer-video-mode",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-composer-video-mode-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:24:10.440Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-model-menu-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-model-menu-open-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:24:11.847Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-agent-model-menu-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-agent-model-menu-open-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:24:15.828Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-attach-menu-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-attach-menu-open-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:24:18.699Z",
+      "reachedBy": "auto",
+      "note": "whatever the + control opens; a native file chooser would not be visible"
+    },
+    {
+      "state": "narrow-attach-add-to-project-submenu-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-attach-add-to-project-submenu-open-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:24:21.804Z",
+      "reachedBy": "auto",
+      "note": "the attach menu's submenu on hover"
+    },
+    {
+      "state": "narrow-attach-skills-submenu-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-attach-skills-submenu-open-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:24:25.336Z",
+      "reachedBy": "auto",
+      "note": "the attach menu's submenu on hover"
+    },
+    {
+      "state": "narrow-attach-plugins-submenu-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-attach-plugins-submenu-open-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:24:28.838Z",
+      "reachedBy": "auto",
+      "note": "the attach menu's submenu on hover"
+    },
+    {
+      "state": "narrow-scene-selected",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-scene-selected-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:24:33.248Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-composer-typed",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-composer-typed-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:24:41.936Z",
+      "reachedBy": "auto",
+      "note": "typed by the script, never sent"
+    },
+    {
+      "state": "narrow-video-params-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-video-params-open-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:25:14.475Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-composer-video-mode",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-composer-video-mode@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:27:09.979Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-model-menu-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-model-menu-open@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:27:11.408Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-agent-model-menu-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-agent-model-menu-open@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:27:15.421Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-attach-menu-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-attach-menu-open@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:27:18.279Z",
+      "reachedBy": "auto",
+      "note": "whatever the + control opens; a native file chooser would not be visible"
+    },
+    {
+      "state": "narrow-attach-add-to-project-submenu-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-attach-add-to-project-submenu-open@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:27:21.432Z",
+      "reachedBy": "auto",
+      "note": "the attach menu's submenu on hover"
+    },
+    {
+      "state": "narrow-attach-skills-submenu-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-attach-skills-submenu-open@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:27:24.943Z",
+      "reachedBy": "auto",
+      "note": "the attach menu's submenu on hover"
+    },
+    {
+      "state": "narrow-attach-plugins-submenu-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-attach-plugins-submenu-open@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:27:28.454Z",
+      "reachedBy": "auto",
+      "note": "the attach menu's submenu on hover"
+    },
+    {
+      "state": "narrow-scene-selected",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-scene-selected@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:27:32.900Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-composer-typed",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-composer-typed@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:27:41.393Z",
+      "reachedBy": "auto",
+      "note": "typed by the script, never sent"
+    },
+    {
+      "state": "narrow-video-params-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-video-params-open@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T18:28:13.935Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-assets-all",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-assets-all-dark@390.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T19:12:48.826Z",
+      "reachedBy": "auto",
+      "note": "From Agent, All"
+    },
+    {
+      "state": "narrow-assets-videos-filter",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-assets-videos-filter-dark@390.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T19:12:50.944Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "narrow-assets-all",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-assets-all@390.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T19:14:52.539Z",
+      "reachedBy": "auto",
+      "note": "From Agent, All"
+    },
+    {
+      "state": "narrow-assets-videos-filter",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-assets-videos-filter@390.png",
+      "path": "/assets",
+      "capturedAt": "2026-09-14T19:14:54.650Z",
+      "reachedBy": "auto"
+    },
+    {
+      "state": "user-menu-open",
+      "width": 1440,
+      "theme": "light",
+      "file": "user-menu-open@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T19:31:07.104Z",
+      "reachedBy": "auto",
+      "note": "the user chip's menu"
+    },
+    {
+      "state": "user-menu-open",
+      "width": 1440,
+      "theme": "dark",
+      "file": "user-menu-open-dark@1440.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T19:31:38.421Z",
+      "reachedBy": "auto",
+      "note": "the user chip's menu"
+    },
+    {
+      "state": "narrow-user-menu-open",
+      "width": 390,
+      "theme": "dark",
+      "file": "narrow-user-menu-open-dark@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T19:32:36.661Z",
+      "reachedBy": "auto",
+      "note": "the user chip's menu"
+    },
+    {
+      "state": "narrow-user-menu-open",
+      "width": 390,
+      "theme": "light",
+      "file": "narrow-user-menu-open@390.png",
+      "path": "/",
+      "capturedAt": "2026-09-14T19:33:58.884Z",
+      "reachedBy": "auto",
+      "note": "the user chip's menu"
+    }
+  ],
+  "clicks": [
+    {
+      "state": "inbox-open",
+      "width": 1440,
+      "theme": "light",
+      "control": "sidebar footer: Inbox",
+      "outcome": "nothing"
+    },
+    {
+      "state": "recents-show-more",
+      "width": 1440,
+      "theme": "light",
+      "control": "sidebar › Recents: Show more",
+      "outcome": "nothing"
+    },
+    {
+      "state": "agents-guide-view-now",
+      "width": 1440,
+      "theme": "light",
+      "control": "sidebar: Agents guide card › View now",
+      "outcome": "navigates",
+      "target": "/plugins/manage"
+    },
+    {
+      "state": "changelog-open",
+      "width": 1440,
+      "theme": "light",
+      "control": "top bar: Changelog",
+      "outcome": "opens-new-tab",
+      "target": "agent.minimax.io/docs/changelog"
+    },
+    {
+      "state": "download-open",
+      "width": 1440,
+      "theme": "light",
+      "control": "top bar: Download",
+      "outcome": "opens-new-tab",
+      "target": "agent.minimax.io/download"
+    },
+    {
+      "state": "download-desktop-open",
+      "width": 1440,
+      "theme": "light",
+      "control": "sidebar footer: Download desktop",
+      "outcome": "opens-new-tab",
+      "target": "agent.minimax.io/download"
+    },
+    {
+      "state": "page-search",
+      "width": 1440,
+      "theme": "light",
+      "control": "sidebar: Search",
+      "outcome": "opens-dialog"
+    },
+    {
+      "state": "page-plugins",
+      "width": 1440,
+      "theme": "light",
+      "control": "sidebar: Plugins",
+      "outcome": "navigates",
+      "target": "/plugins"
+    },
+    {
+      "state": "page-scheduled",
+      "width": 1440,
+      "theme": "light",
+      "control": "sidebar: Scheduled",
+      "outcome": "navigates",
+      "target": "/scheduled"
+    },
+    {
+      "state": "page-connect-mobile",
+      "width": 1440,
+      "theme": "light",
+      "control": "sidebar: Connect Mobile",
+      "outcome": "navigates",
+      "target": "/connect-mobile"
+    },
+    {
+      "state": "page-maxhermes",
+      "width": 1440,
+      "theme": "light",
+      "control": "sidebar › More: MaxHermes",
+      "outcome": "navigates",
+      "target": "/max-hermes"
+    },
+    {
+      "state": "page-maxclaw",
+      "width": 1440,
+      "theme": "light",
+      "control": "sidebar › More: MaxClaw",
+      "outcome": "navigates",
+      "target": "/max-claw"
+    },
+    {
+      "state": "page-add-new-project",
+      "width": 1440,
+      "theme": "light",
+      "control": "sidebar › Projects: Add new project",
+      "outcome": "nothing"
+    },
+    {
+      "state": "mode-more-open",
+      "width": 1440,
+      "theme": "light",
+      "control": "mode chips: More",
+      "outcome": "opens-menu"
+    },
+    {
+      "state": "page-search",
+      "width": 1440,
+      "theme": "dark",
+      "control": "sidebar: Search",
+      "outcome": "opens-dialog"
+    },
+    {
+      "state": "page-plugins",
+      "width": 1440,
+      "theme": "dark",
+      "control": "sidebar: Plugins",
+      "outcome": "navigates",
+      "target": "/plugins"
+    },
+    {
+      "state": "page-scheduled",
+      "width": 1440,
+      "theme": "dark",
+      "control": "sidebar: Scheduled",
+      "outcome": "navigates",
+      "target": "/scheduled"
+    },
+    {
+      "state": "page-connect-mobile",
+      "width": 1440,
+      "theme": "dark",
+      "control": "sidebar: Connect Mobile",
+      "outcome": "navigates",
+      "target": "/connect-mobile"
+    },
+    {
+      "state": "page-maxhermes",
+      "width": 1440,
+      "theme": "dark",
+      "control": "sidebar › More: MaxHermes",
+      "outcome": "navigates",
+      "target": "/max-hermes"
+    },
+    {
+      "state": "page-maxclaw",
+      "width": 1440,
+      "theme": "dark",
+      "control": "sidebar › More: MaxClaw",
+      "outcome": "navigates",
+      "target": "/max-claw"
+    },
+    {
+      "state": "page-add-new-project",
+      "width": 1440,
+      "theme": "dark",
+      "control": "sidebar › Projects: Add new project",
+      "outcome": "nothing"
+    },
+    {
+      "state": "mode-more-open",
+      "width": 1440,
+      "theme": "dark",
+      "control": "mode chips: More",
+      "outcome": "opens-menu"
+    },
+    {
+      "state": "inbox-open",
+      "width": 1440,
+      "theme": "dark",
+      "control": "sidebar footer: Inbox",
+      "outcome": "nothing"
+    },
+    {
+      "state": "recents-show-more",
+      "width": 1440,
+      "theme": "dark",
+      "control": "sidebar › Recents: Show more",
+      "outcome": "nothing"
+    },
+    {
+      "state": "changelog-open",
+      "width": 1440,
+      "theme": "dark",
+      "control": "top bar: Changelog",
+      "outcome": "opens-new-tab",
+      "target": "agent.minimax.io/docs/changelog"
+    },
+    {
+      "state": "download-open",
+      "width": 1440,
+      "theme": "dark",
+      "control": "top bar: Download",
+      "outcome": "opens-new-tab",
+      "target": "agent.minimax.io/download"
+    },
+    {
+      "state": "download-desktop-open",
+      "width": 1440,
+      "theme": "dark",
+      "control": "sidebar footer: Download desktop",
+      "outcome": "opens-new-tab",
+      "target": "agent.minimax.io/download"
+    },
+    {
+      "state": "narrow-inbox-open",
+      "width": 390,
+      "theme": "dark",
+      "control": "sidebar footer: Inbox",
+      "outcome": "nothing"
+    },
+    {
+      "state": "narrow-recents-show-more",
+      "width": 390,
+      "theme": "dark",
+      "control": "sidebar › Recents: Show more",
+      "outcome": "nothing"
+    },
+    {
+      "state": "narrow-download-desktop-open",
+      "width": 390,
+      "theme": "dark",
+      "control": "sidebar footer: Download desktop",
+      "outcome": "opens-new-tab",
+      "target": "agent.minimax.io/download"
+    },
+    {
+      "state": "narrow-page-search",
+      "width": 390,
+      "theme": "dark",
+      "control": "sidebar: Search",
+      "outcome": "opens-dialog"
+    },
+    {
+      "state": "narrow-page-plugins",
+      "width": 390,
+      "theme": "dark",
+      "control": "sidebar: Plugins",
+      "outcome": "navigates",
+      "target": "/plugins"
+    },
+    {
+      "state": "narrow-page-scheduled",
+      "width": 390,
+      "theme": "dark",
+      "control": "sidebar: Scheduled",
+      "outcome": "navigates",
+      "target": "/scheduled"
+    },
+    {
+      "state": "narrow-page-connect-mobile",
+      "width": 390,
+      "theme": "dark",
+      "control": "sidebar: Connect Mobile",
+      "outcome": "navigates",
+      "target": "/connect-mobile"
+    },
+    {
+      "state": "narrow-inbox-open",
+      "width": 390,
+      "theme": "light",
+      "control": "sidebar footer: Inbox",
+      "outcome": "nothing"
+    },
+    {
+      "state": "narrow-recents-show-more",
+      "width": 390,
+      "theme": "light",
+      "control": "sidebar › Recents: Show more",
+      "outcome": "nothing"
+    },
+    {
+      "state": "narrow-download-desktop-open",
+      "width": 390,
+      "theme": "light",
+      "control": "sidebar footer: Download desktop",
+      "outcome": "opens-new-tab",
+      "target": "agent.minimax.io/download"
+    },
+    {
+      "state": "narrow-page-search",
+      "width": 390,
+      "theme": "light",
+      "control": "sidebar: Search",
+      "outcome": "opens-dialog"
+    },
+    {
+      "state": "narrow-page-plugins",
+      "width": 390,
+      "theme": "light",
+      "control": "sidebar: Plugins",
+      "outcome": "navigates",
+      "target": "/plugins"
+    },
+    {
+      "state": "narrow-page-scheduled",
+      "width": 390,
+      "theme": "light",
+      "control": "sidebar: Scheduled",
+      "outcome": "navigates",
+      "target": "/scheduled"
+    },
+    {
+      "state": "narrow-page-connect-mobile",
+      "width": 390,
+      "theme": "light",
+      "control": "sidebar: Connect Mobile",
+      "outcome": "navigates",
+      "target": "/connect-mobile"
+    },
+    {
+      "state": "narrow-changelog-open",
+      "width": 390,
+      "theme": "dark",
+      "control": "top bar: Changelog",
+      "outcome": "opens-new-tab",
+      "target": "agent.minimax.io/docs/changelog"
+    },
+    {
+      "state": "narrow-download-open",
+      "width": 390,
+      "theme": "dark",
+      "control": "top bar: Download",
+      "outcome": "opens-new-tab",
+      "target": "agent.minimax.io/download"
+    },
+    {
+      "state": "narrow-page-maxhermes",
+      "width": 390,
+      "theme": "dark",
+      "control": "sidebar › More: MaxHermes",
+      "outcome": "navigates",
+      "target": "/max-hermes"
+    },
+    {
+      "state": "narrow-page-maxclaw",
+      "width": 390,
+      "theme": "dark",
+      "control": "sidebar › More: MaxClaw",
+      "outcome": "navigates",
+      "target": "/max-claw"
+    },
+    {
+      "state": "narrow-changelog-open",
+      "width": 390,
+      "theme": "light",
+      "control": "top bar: Changelog",
+      "outcome": "opens-new-tab",
+      "target": "agent.minimax.io/docs/changelog"
+    },
+    {
+      "state": "narrow-download-open",
+      "width": 390,
+      "theme": "light",
+      "control": "top bar: Download",
+      "outcome": "opens-new-tab",
+      "target": "agent.minimax.io/download"
+    },
+    {
+      "state": "narrow-page-maxhermes",
+      "width": 390,
+      "theme": "light",
+      "control": "sidebar › More: MaxHermes",
+      "outcome": "navigates",
+      "target": "/max-hermes"
+    },
+    {
+      "state": "narrow-page-maxclaw",
+      "width": 390,
+      "theme": "light",
+      "control": "sidebar › More: MaxClaw",
+      "outcome": "navigates",
+      "target": "/max-claw"
+    }
+  ],
+  "skipped": [
+    {
+      "state": "narrow-sidebar-more-expanded",
+      "width": 390,
+      "theme": "dark",
+      "reason": "the section is folded again in the drawer: the unfold does not survive the reload, and at 390 a tap on the header closes the drawer instead of unfolding it"
+    },
+    {
+      "state": "narrow-sidebar-projects-expanded",
+      "width": 390,
+      "theme": "dark",
+      "reason": "the section is folded again in the drawer: the unfold does not survive the reload, and at 390 a tap on the header closes the drawer instead of unfolding it"
+    },
+    {
+      "state": "narrow-agents-guide-view-now",
+      "width": 390,
+      "theme": "dark",
+      "reason": "locator.waitFor: Timeout 5000ms exceeded."
+    },
+    {
+      "state": "narrow-page-add-new-project",
+      "width": 390,
+      "theme": "dark",
+      "reason": "folded under a section the drawer cannot unfold at 390 (a header tap closes the drawer); no direct path"
+    },
+    {
+      "state": "narrow-mode-more-open",
+      "width": 390,
+      "theme": "dark",
+      "reason": "no More chip rendered at this width (the chip row shows three chips at 390)"
+    },
+    {
+      "state": "narrow-work-area-toggled",
+      "width": 390,
+      "theme": "dark",
+      "reason": "no Work area button at 390 (the panel does not exist in the narrow layout)"
+    },
+    {
+      "state": "narrow-work-area-deliverable-open",
+      "width": 390,
+      "theme": "dark",
+      "reason": "no deliverable row in the Work Area panel (narrow or panel closed)"
+    },
+    {
+      "state": "narrow-assets-tab-from-you",
+      "width": 390,
+      "theme": "dark",
+      "reason": "no From you / Star tabs rendered at 390"
+    },
+    {
+      "state": "narrow-assets-tab-star",
+      "width": 390,
+      "theme": "dark",
+      "reason": "no From you / Star tabs rendered at 390"
+    },
+    {
+      "state": "narrow-sidebar-more-expanded",
+      "width": 390,
+      "theme": "light",
+      "reason": "the section is folded again in the drawer: the unfold does not survive the reload, and at 390 a tap on the header closes the drawer instead of unfolding it"
+    },
+    {
+      "state": "narrow-sidebar-projects-expanded",
+      "width": 390,
+      "theme": "light",
+      "reason": "the section is folded again in the drawer: the unfold does not survive the reload, and at 390 a tap on the header closes the drawer instead of unfolding it"
+    },
+    {
+      "state": "narrow-agents-guide-view-now",
+      "width": 390,
+      "theme": "light",
+      "reason": "locator.waitFor: Timeout 5000ms exceeded."
+    },
+    {
+      "state": "narrow-page-add-new-project",
+      "width": 390,
+      "theme": "light",
+      "reason": "folded under a section the drawer cannot unfold at 390 (a header tap closes the drawer); no direct path"
+    },
+    {
+      "state": "narrow-mode-more-open",
+      "width": 390,
+      "theme": "light",
+      "reason": "no More chip rendered at this width (the chip row shows three chips at 390)"
+    },
+    {
+      "state": "narrow-work-area-toggled",
+      "width": 390,
+      "theme": "light",
+      "reason": "no Work area button at 390 (the panel does not exist in the narrow layout)"
+    },
+    {
+      "state": "narrow-work-area-deliverable-open",
+      "width": 390,
+      "theme": "light",
+      "reason": "no deliverable row in the Work Area panel (narrow or panel closed)"
+    },
+    {
+      "state": "narrow-assets-tab-from-you",
+      "width": 390,
+      "theme": "light",
+      "reason": "no From you / Star tabs rendered at 390"
+    },
+    {
+      "state": "narrow-assets-tab-star",
+      "width": 390,
+      "theme": "light",
+      "reason": "no From you / Star tabs rendered at 390"
+    },
+    {
+      "state": "agents-guide-view-now",
+      "width": 1440,
+      "theme": "dark",
+      "reason": "locator.waitFor: Timeout 5000ms exceeded."
+    },
+    {
+      "state": "narrow-assets-tile-menu-open",
+      "width": 390,
+      "theme": "dark",
+      "reason": "the tile's ⋯ does not appear on hover at 390"
+    },
+    {
+      "state": "narrow-promo-carousel-page-2",
+      "width": 390,
+      "theme": "light",
+      "reason": "locator.waitFor: Timeout 5000ms exceeded."
+    },
+    {
+      "state": "narrow-assets-tile-menu-open",
+      "width": 390,
+      "theme": "light",
+      "reason": "the tile's ⋯ does not appear on hover at 390"
+    }
+  ],
+  "theme": {
+    "control": "Settings › General › Appearance › \"Dark mode\" (was \"light\")",
+    "documentBefore": "<html lang=\"en\" translate=\"no\" class=\"notranslate light\" data-mavis-surface=\"web\" style=\"color-scheme: light;\"> color-scheme:light body.class=\"\"",
+    "documentAfter": "<html lang=\"en\" translate=\"no\" class=\"notranslate dark\" data-mavis-surface=\"web\" style=\"color-scheme: dark;\"> color-scheme:dark body.class=\"\"",
+    "bodyBackgroundLight": "rgb(255, 255, 255)",
+    "bodyBackgroundDark": "rgb(28, 28, 28)",
+    "originalWasDark": false,
+    "originalChoice": "light",
+    "restored": true
+  }
+}

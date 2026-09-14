@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { dateStamp } from "./capture-plan.ts";
-import { groupEndpoints, renderEndpointsMarkdown, type Endpoint } from "./interactions-model.ts";
+import { findResultPayloads, groupEndpoints, renderEndpointsMarkdown, type Endpoint } from "./interactions-model.ts";
 import type { NetworkEvent } from "./network-log.ts";
 import { OUT_DIR, RECON_ROOT } from "./config.ts";
 
@@ -13,7 +13,7 @@ import { OUT_DIR, RECON_ROOT } from "./config.ts";
  * Runs offline: no browser, no network.
  */
 
-const stamp = process.argv[2] ?? dateStamp(new Date());
+const stamp = process.argv.slice(2).find((a) => a !== "--") ?? dateStamp(new Date()); // run.sh passes "--" first
 const rawDir = path.join(OUT_DIR, stamp);
 const docsDir = path.join(RECON_ROOT, "..", "docs", "recon", stamp);
 
@@ -49,6 +49,13 @@ md.push("## Response shapes (first JSON body seen per endpoint, combined)", "");
 for (const e of combined) {
   if (e.responseShape === undefined) continue;
   md.push(`### ${e.method} ${e.host}\`${e.path}\``, "", "```json", JSON.stringify(e.responseShape, null, 1), "```", "");
+}
+const results = findResultPayloads(all);
+md.push("## Responses that carry a result file (STORY_018)", "");
+if (!results.length) md.push("None seen in these logs.", "");
+for (const r of results) {
+  const signals = [...r.keys.map((k) => `key \`${k}\``), ...r.markup.map((t) => `markup \`<${t}>\``)].join(", ");
+  md.push(`### ${r.method} ${r.host}\`${r.path}\` — ×${r.count}, first at ${r.at} — ${signals}`, "", "```json", JSON.stringify(r.shape, null, 1), "```", "");
 }
 writeFileSync(path.join(docsDir, "endpoints.md"), md.join("\n"));
 console.log(`Wrote docs/recon/${stamp}/endpoints.{json,md}: ${combined.length} endpoints from ${files.length} log(s), ${all.length} events.`);

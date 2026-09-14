@@ -26,15 +26,22 @@ export type GenerateDeps = {
   model: CaptureModel;
   mode: CaptureMode;
   session: RegExp;
+  /** Runs on the finished task page after the result controls are captured (STORY_018: the Work Area beside a finished thread). */
+  afterResult?: () => Promise<void>;
+  /** How long to wait for a result before giving up; the 2026-09-12 bound was 20 minutes and the agent never posted one in time. */
+  maxWaitMs?: number;
 };
 
 const PROMPTS = [
-  "A small paper boat drifting across a rain puddle in soft morning light, gentle ripples, camera slowly pushing in.",
+  "A lighthouse on a rocky shore at dusk, waves breaking slowly against the rocks, the beam sweeping through thin fog.",
   "A single candle on a wooden table, the flame swaying in a light draft, warm light on the grain, slow tilt up.",
 ];
 
+/** The Recents row the 2026-09-14 generation is expected under, for a later revisit (the agent titles the session from the prompt). */
+export const GENERATION_SESSION = /lighthouse/i;
+
 const POLL_MS = 10_000;
-const MAX_WAIT_MS = 20 * 60_000;
+const DEFAULT_MAX_WAIT_MS = 20 * 60_000;
 
 function log(deps: GenerateDeps, line: string): void {
   console.log(`  ${line}`);
@@ -165,7 +172,7 @@ async function waitForResult(deps: GenerateDeps, label: string, startedAt: numbe
       kept.push(mark);
       await deps.shot(frameState(mark), `${label}, ${elapsed} s after Send`);
     }
-    if (Date.now() - startedAt > MAX_WAIT_MS) return { outcome: "timeout", elapsedSeconds: elapsed };
+    if (Date.now() - startedAt > (deps.maxWaitMs ?? DEFAULT_MAX_WAIT_MS)) return { outcome: "timeout", elapsedSeconds: elapsed };
     tick += 1;
     if (tick % 6 === 0) log(deps, `still generating after ${elapsed} s`);
     await page.waitForTimeout(POLL_MS);
@@ -319,6 +326,7 @@ async function revisit(deps: GenerateDeps): Promise<void> {
     if (video) {
       await deps.shot("task-done", "the reopened session with the result video present");
       await captureResultControls(deps);
+      await deps.afterResult?.();
     } else {
       await deps.shot("task-revisited-pending", "the reopened session, no video element yet");
       log(deps, "no video in the reopened session yet");
@@ -374,6 +382,7 @@ export async function runGenerations(deps: GenerateDeps, approved: number): Prom
       await page_settle(deps.page);
       await deps.shot("task-done", `result visible ${result.elapsedSeconds} s after Send`);
       await captureResultControls(deps);
+      await deps.afterResult?.();
       firstOk = true;
     } else {
       await deps.shot(result.outcome === "failed" ? "task-failed" : "task-timeout", `${result.outcome} after ${result.elapsedSeconds} s`);

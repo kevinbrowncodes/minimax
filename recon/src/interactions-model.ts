@@ -85,3 +85,69 @@ export function renderEndpointsMarkdown(endpoints: Endpoint[]): string {
   }
   return lines.join("\n");
 }
+
+export type ResultPayload = { method: string; host: string; path: string; at: string; keys: string[]; markup: string[]; count: number; shape: unknown };
+
+/** Key names that carry a result file's address or listing (observed 2026-09-14: the drive listing and the download-url call). */
+const RESULT_KEY = /^(download_url|cdn_url|video_url|file_url|media_url|front_page_screenshot)$/i;
+/** Tags the assistant's Markdown uses to hand a file to the thread (observed 2026-09-14: the result card). */
+const RESULT_MARKUP = /<(deliver-assets|media)\b/g;
+/** Configuration and profile endpoints name download links for the desktop apps; they are not results. */
+const NOT_RESULT_PATH = /\/(config|user|profile|setting)s?\//i;
+
+/** Result-file keys anywhere in a JSON value, and the result markup tags in any string in it, depth-limited. */
+export function resultSignals(value: unknown, depth = 0, maxDepth = 6): { keys: string[]; markup: string[] } {
+  const keys = new Set<string>();
+  const markup = new Set<string>();
+  const walk = (v: unknown, d: number) => {
+    if (d >= maxDepth || v === null) return;
+    if (typeof v === "string") {
+      for (const m of v.matchAll(RESULT_MARKUP)) if (m[1]) markup.add(m[1]);
+      return;
+    }
+    if (Array.isArray(v)) {
+      for (const x of v.slice(0, 8)) walk(x, d + 1);
+      return;
+    }
+    if (typeof v === "object") {
+      for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+        if (RESULT_KEY.test(k)) keys.add(k);
+        walk(x, d + 1);
+      }
+    }
+  };
+  walk(value, depth);
+  return { keys: Array.from(keys), markup: Array.from(markup) };
+}
+
+/** @deprecated kept for the 2026-09-14 tests' first draft; `resultSignals` is the reducer. */
+export function resultKeys(value: unknown): string[] {
+  return resultSignals(value).keys;
+}
+
+/**
+ * STORY_018: the API responses that carry a finished generation — a JSON body naming a result file's address, or an
+ * assistant message whose Markdown holds the deliver-assets / media markup the thread renders as the file card —
+ * grouped by endpoint with the first body's shape (values redacted through `shapeOf`), earliest first. Configuration
+ * and profile endpoints are left out: they carry desktop-app download links, not results.
+ */
+export function findResultPayloads(events: NetworkEvent[]): ResultPayload[] {
+  const map = new Map<string, ResultPayload>();
+  for (const ev of events) {
+    if (ev.kind !== "response" || !isApiEvent(ev) || ev.body === undefined) continue;
+    const path = placeholderIds(ev.path);
+    if (NOT_RESULT_PATH.test(path)) continue;
+    const { keys, markup } = resultSignals(ev.body);
+    if (!keys.length && !markup.length) continue;
+    const key = `${ev.method} ${ev.host}${path}`;
+    const existing = map.get(key);
+    if (existing) {
+      existing.count += 1;
+      for (const k of keys) if (!existing.keys.includes(k)) existing.keys.push(k);
+      for (const t of markup) if (!existing.markup.includes(t)) existing.markup.push(t);
+      continue;
+    }
+    map.set(key, { method: ev.method, host: ev.host, path, at: ev.at, keys, markup, count: 1, shape: shapeOf(ev.body, 0, 6) });
+  }
+  return Array.from(map.values()).sort((a, b) => a.at.localeCompare(b.at));
+}

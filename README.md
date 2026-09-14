@@ -174,10 +174,16 @@ recon/login.sh                       # sign in once (CHORE_005). With a display 
                                      # for the few minutes of the login: on another machine open chrome://inspect/#devices → Configure… →
                                      # add 192.168.1.33:9222 (the IP, not the name) → inspect the agent.minimax.io target → sign in
 recon/run.sh check                   # prints session: signed-in | signed-out | unknown (exit 0 / 1 / 2)
-recon/run.sh capture [--generate N]  # dated screenshots into docs/recon/<date>/ and the raw network log into recon/out/<date>/
-recon/run.sh tokens <date>           # measured tokens → docs/recon/<date>/tokens.md + tokens.json
-recon/run.sh interactions <date>     # the network notes → docs/recon/<date>/interactions.md + endpoints.md
+recon/run.sh capture                 # every surface, light and dark, 1440 and 390 (STORY_018) → docs/recon/<date>/ + recon/out/<date>/
+       [--theme light|dark|both] [--width 1440|390|both]   # a subset of the four passes; the manifest merges over the day's
+       [--only <regex>]              # only the steps whose state name matches (a re-run after a fix)
+       [--restore-to light|dark|system]   # what to put the reference's Appearance setting back to at the end
+       [--generate N [--wait-minutes M]] [--revisit --session <regex>]   # the generation path instead (credits!)
+recon/run.sh tokens [--theme …]      # measured tokens, both themes, hover/focus, the pages, Settings → docs/recon/<date>/tokens.{md,json}
+recon/run.sh interactions <date>     # the network reduction → docs/recon/<date>/endpoints.{md,json}; interactions.md is written by hand
 ```
+
+The capture switches the reference's theme through its own control (user menu › Settings › General › Appearance) and puts it back at the end; if a run is interrupted, `recon/run.sh capture --theme light --width 1440 --only '^$' --restore-to light` restores it.
 
 The session lives in `recon/.profile/` and raw captures in `recon/out/`; both are gitignored. Generations on the reference cost the owner credits: the count is agreed before a capture and written in the notes. The scripts never type credentials, never read cookies, and stop and ask when the session has expired.
 

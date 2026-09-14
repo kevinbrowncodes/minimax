@@ -5,7 +5,7 @@
   "scripts": {
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r --if-present lint",
-    "test": "pnpm --filter app --filter stub-generation-server --filter gate --filter adapter test",
+    "test": "pnpm --filter app --filter stub-generation-server --filter gate --filter adapter --filter recon test",
     "build": "pnpm --filter app build",
     "start": "pnpm --filter app start",
     "recon:login": "pnpm --filter recon login",

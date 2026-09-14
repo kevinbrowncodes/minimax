@@ -6,6 +6,7 @@ import {
   palette,
   parseCssVariables,
   parseMediaBreakpoints,
+  parseThemedCssVariables,
   renderTokensMarkdown,
   spacingScale,
   typeScale,
@@ -30,6 +31,39 @@ describe("parseCssVariables", () => {
   });
   it("ignores custom properties declared on other selectors", () => {
     expect(parseCssVariables(`.dark{--bg:#000}`)).toEqual({});
+  });
+});
+
+describe("parseThemedCssVariables (STORY_018)", () => {
+  it("returns the light and dark scopes separately with the same names and different values", () => {
+    const css = `:root{--bg:#fff;--fg:#000;--radius:8px}[data-theme="dark"]{--bg:#111;--fg:#eee}`;
+    const t = parseThemedCssVariables(css);
+    expect(t.light).toEqual({ "--bg": "#fff", "--fg": "#000", "--radius": "8px" });
+    expect(t.dark).toEqual({ "--bg": "#111", "--fg": "#eee" });
+    expect(t.darkScopes).toEqual(['[data-theme="dark"]']);
+  });
+  it("reads a root block inside a prefers-color-scheme dark media query as dark, and names the scope", () => {
+    const css = `:root{--bg:#fff}@media (prefers-color-scheme: dark){:root{--bg:#000}.card{--x:1}}`;
+    const t = parseThemedCssVariables(css);
+    expect(t.light).toEqual({ "--bg": "#fff" });
+    expect(t.dark).toEqual({ "--bg": "#000" });
+    expect(t.darkScopes).toEqual(["@media (prefers-color-scheme: dark) :root"]);
+  });
+  it("accepts html.dark, :root.dark, .theme-dark and html[data-mode=dark] as dark scopes but not an unrelated class", () => {
+    const css = `html.dark{--a:1}:root.dark{--b:2}.theme-dark{--c:3}html[data-mode=dark]{--d:4}.dark-pop-card{--e:5}.sidebar{--f:6}`;
+    const t = parseThemedCssVariables(css);
+    expect(t.dark).toEqual({ "--a": "1", "--b": "2", "--c": "3", "--d": "4" });
+    expect(t.light).toEqual({});
+  });
+  it("keeps the first declaration within each theme and strips comments", () => {
+    const css = `/* :root{--bg:#bad} */:root{--bg:#fff}html{--bg:#eee}.dark{--bg:#000}html.dark{--bg:#111}`;
+    const t = parseThemedCssVariables(css);
+    expect(t.light["--bg"]).toBe("#fff");
+    expect(t.dark["--bg"]).toBe("#000");
+  });
+  it("is what parseCssVariables reads for light, so the 2026-09-12 reading is unchanged", () => {
+    const css = `:root{--bg:#fff}.dark{--bg:#000}`;
+    expect(parseCssVariables(css)).toEqual(parseThemedCssVariables(css).light);
   });
 });
 
@@ -103,5 +137,41 @@ describe("buildTokens and renderTokensMarkdown", () => {
     expect(md).toContain("640px");
     expect(md).toContain("not found: locator timed out");
     expect(tokens.motion[0]?.duration).toBe("0.15s");
+    expect(tokens.paletteDark).toEqual([]);
+    expect(md).not.toContain("## Palette (dark)");
+  });
+  it("stores a dark reading beside the light one without overwriting it, and prints both (STORY_018)", () => {
+    const light = m("body", { color: "rgb(0, 0, 0)", backgroundColor: "rgb(255, 255, 255)", fontSize: "16px", fontWeight: "400", lineHeight: "24px", fontFamily: "Inter" });
+    const dark: Measurement = { ...light, theme: "dark", styles: { ...light.styles, color: "rgb(255, 255, 255)", backgroundColor: "rgb(24, 24, 27)" } };
+    const tokens = buildTokens({
+      date: "2026-09-14",
+      reference: "https://agent.minimax.io/",
+      bodyFontFamily: "ui-sans-serif",
+      bodyBackground: "rgb(255, 255, 255)",
+      fonts: [],
+      cssVariables: { "--bg": "#fff", "--radius": "8px" },
+      cssVariablesDark: { "--bg": "#181818" },
+      darkScopes: ['[data-theme="dark"]'],
+      computedVariables: { light: { "--bg": "#fff", "--radius": "8px" }, dark: { "--bg": "#181818", "--radius": "8px" } },
+      themeMechanism: { control: "Appearance › Dark", documentBefore: "html", documentAfter: 'html[data-theme="dark"]', bodyBackgroundLight: "rgb(255, 255, 255)", bodyBackgroundDark: "rgb(24, 24, 27)" },
+      cssBreakpoints: [],
+      observed: [],
+      elements: [light, dark],
+    });
+    expect(tokens.palette.map((p) => p.value)).toEqual(["rgb(0, 0, 0)", "rgb(255, 255, 255)"]);
+    expect(tokens.paletteDark.map((p) => p.value)).toEqual(["rgb(24, 24, 27)", "rgb(255, 255, 255)"]);
+    expect(tokens.elements).toHaveLength(2);
+    expect(tokens.cssVariables["--bg"]).toBe("#fff");
+    expect(tokens.cssVariablesDark["--bg"]).toBe("#181818");
+    const md = renderTokensMarkdown(tokens);
+    expect(md).toContain("## Theme switch");
+    expect(md).toContain("Control: Appearance › Dark");
+    expect(md).toContain("## Palette (dark)");
+    expect(md).toContain("| `--bg` | `#fff` | `#181818` |");
+    expect(md).toContain("| `--radius` | `8px` | `—` |");
+    expect(md).toContain("## Computed custom properties that differ between the themes");
+    expect(md).not.toContain("| `--radius` | `8px` | `8px` |");
+    expect(md).toContain("| body | home | 1440 | dark | ");
+    expect(md).toContain("| body | home | 1440 | light | ");
   });
 });

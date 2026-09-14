@@ -2,15 +2,16 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { Locator, Page } from "playwright";
 import { dismissAnnouncement, openReference, readSessionSignals, waitForHome } from "./browser.ts";
-import { NARROW, WIDE, dateStamp } from "./capture-plan.ts";
+import { NARROW, WIDE, dateStamp, parseSessionArgFrom, parseThemeArg, type Theme } from "./capture-plan.ts";
 import { OUT_DIR, RECON_ROOT, REFERENCE_URL, VIEWPORT } from "./config.ts";
 import { classifySession } from "./session.ts";
+import { closeSettings, emptyThemeRecord, openSettings, pageIsDark, restoreAppearance, setTheme } from "./theme.ts";
 import {
   boxesEqual,
   buildTokens,
   isMissing,
-  parseCssVariables,
   parseMediaBreakpoints,
+  parseThemedCssVariables,
   renderTokensMarkdown,
   type Box,
   type FontFace,
@@ -20,11 +21,16 @@ import {
 } from "./tokens-model.ts";
 
 /**
- * STORY_003: measures the reference's design tokens from computed styles in
- * our own browser. Never clicks Send, never types. Writes tokens.json and
- * tokens.md to docs/recon/<date>/ and the raw stylesheets to recon/out/<date>/css/.
+ * STORY_003, extended by STORY_018: measures the reference's design tokens from computed styles in our own browser, in
+ * the light theme and then the dark one — every custom property per theme scope from the stylesheets and computed live
+ * on the root, every element in both themes, the hover and focus states of the main controls, the pages behind the
+ * sidebar, and a finished task page. Never clicks Send, never types. Writes tokens.json and tokens.md to
+ * docs/recon/<date>/ and the raw stylesheets to recon/out/<date>/css/.
  */
 
+const args = process.argv.slice(2);
+const themes = parseThemeArg(args);
+const taskSession = parseSessionArgFrom(args);
 const stamp = dateStamp(new Date());
 const DOCS_DIR = path.join(RECON_ROOT, "..", "docs", "recon", stamp);
 const RAW_CSS_DIR = path.join(OUT_DIR, stamp, "css");
@@ -82,7 +88,9 @@ const INSTALL = `(() => {
 })();`;
 
 let currentWidth: number = WIDE;
+let currentTheme: Theme = "light";
 const elements: (Measurement | MissingMeasurement)[] = [];
+const themeRecord = emptyThemeRecord();
 
 async function install(page: Page): Promise<void> {
   await page.evaluate(INSTALL);
@@ -114,14 +122,32 @@ async function measure(page: Page, name: string, state: string, locator: Locator
       return node ? api.measure(node) : null;
     }, rule ?? null);
     if (!raw) {
-      elements.push({ name, state, width, missing: rule ? "no ancestor matched the rule" : "measure API missing" });
+      elements.push({ name, state, width, theme: currentTheme, missing: rule ? "no ancestor matched the rule" : "measure API missing" });
       return;
     }
-    elements.push({ name, state, width, ...raw, text: mask(raw.text) });
+    elements.push({ name, state, width, theme: currentTheme, ...raw, text: mask(raw.text) });
   } catch (error: unknown) {
     const reason = (error instanceof Error ? error.message : String(error)).split("\n")[0] ?? "unknown";
-    elements.push({ name, state, width, missing: reason });
+    elements.push({ name, state, width, theme: currentTheme, missing: reason });
   }
+}
+
+/** The same element under the pointer, then with keyboard focus (STORY_018): `<name>:hover` and `<name>:focus`. */
+async function measureHoverFocus(page: Page, name: string, state: string, locator: Locator, rule?: AncestorRule): Promise<void> {
+  const target = locator.first();
+  if (!(await target.isVisible().catch(() => false))) {
+    elements.push({ name: `${name}:hover`, state, width: currentWidth, theme: currentTheme, missing: "not visible" });
+    return;
+  }
+  await target.hover({ timeout: 5_000 }).catch(() => undefined);
+  await page.waitForTimeout(350);
+  await measure(page, `${name}:hover`, state, locator, rule);
+  await page.mouse.move(currentWidth / 2, 5);
+  await target.focus({ timeout: 5_000 }).catch(() => undefined);
+  await page.waitForTimeout(250);
+  await measure(page, `${name}:focus`, state, locator, rule);
+  await page.keyboard.press("Escape").catch(() => undefined);
+  await page.mouse.move(currentWidth / 2, 5);
 }
 
 async function gotoHome(page: Page): Promise<void> {
@@ -171,8 +197,8 @@ async function measureHome(page: Page): Promise<void> {
   await measure(page, "mode-chip-video", s, page.getByRole("button", { name: /video generation/i }));
   await measure(page, "mode-chip", s, page.getByRole("button", { name: /^document$/i }));
   await measure(page, "top-download-button", s, page.getByRole("button", { name: /^download$/i }));
-  await measure(page, "promo-card", s, page.getByRole("button", { name: /^download desktop$/i }).nth(1), { maxWidth: 320, minHeight: 200, visual: true });
-  await measure(page, "primary-button", s, page.getByRole("button", { name: /^download desktop$/i }).nth(1));
+  await measure(page, "promo-card", s, page.getByText(/h3 takes the stage|new minimax desktop/i).first(), { maxWidth: 320, minHeight: 200, visual: true });
+  await measure(page, "primary-button", s, page.getByRole("button", { name: /^subscribe$/i }).or(page.getByRole("button", { name: /^download desktop$/i }).nth(1)).first());
 }
 
 async function measureVideoMode(page: Page): Promise<void> {
@@ -201,9 +227,10 @@ async function measureVideoMode(page: Page): Promise<void> {
   await modelButton(page).click({ timeout: 10_000 });
   await page.waitForTimeout(700);
   const m = "model-open";
-  await measure(page, "menu", m, page.getByText(/^hailuo-2\.3$/i), { maxWidth: 500, minHeight: 60, visual: true });
-  await measure(page, "menu-item", m, page.getByText(/^hailuo-2\.3$/i));
-  await measure(page, "menu-item-selected", m, page.getByText(/^minimax-h3\.0$/i));
+  // Entries observed 2026-09-14 as menuitemradio: MiniMax-H3 (checked), MiniMax-H3-Max, MiniMax-H2.3 (2026-09-12: "MiniMax-H3.0", "Hailuo-2.3").
+  await measure(page, "menu", m, page.getByRole("menu").first());
+  await measure(page, "menu-item", m, page.getByRole("menuitemradio", { name: /h2\.3|hailuo/i }));
+  await measure(page, "menu-item-selected", m, page.getByRole("menuitemradio", { checked: true }));
   await escape(page);
 }
 
@@ -221,6 +248,137 @@ async function measureAssets(page: Page): Promise<void> {
   await measure(page, "empty-title", s, page.getByText(/no assets yet/i));
   await measure(page, "empty-subtitle", s, page.getByText(/files generated by ai/i));
   await measure(page, "empty-cta", s, page.getByRole("button", { name: /^new task$/i }).last());
+  await page.getByRole("button", { name: /^videos$/i }).first().click({ timeout: 10_000 }).catch(() => undefined);
+  await page.waitForTimeout(1_200);
+  await measure(page, "asset-tile", s, page.getByRole("button", { name: /^preview .*\.mp4$/i }), { maxWidth: 320, minWidth: 200, minHeight: 150 });
+  await measure(page, "asset-tile-name", s, page.getByText(/\.mp4$/i).first());
+}
+
+const SIDEBAR_PAGES: { state: string; name: RegExp; section?: RegExp }[] = [
+  { state: "page-search", name: /^search$/i },
+  { state: "page-plugins", name: /^plugins$/i },
+  { state: "page-scheduled", name: /^scheduled$/i },
+  { state: "page-connect-mobile", name: /^connect mobile$/i },
+  { state: "page-maxhermes", name: /^maxhermes$/i, section: /^more$/i },
+  { state: "page-maxclaw", name: /^maxclaw$/i, section: /^more$/i },
+];
+
+/** A generic reading of whatever a sidebar destination renders: the page, its headings, tabs, first controls, inputs and a card. */
+async function measurePage(page: Page, state: string): Promise<void> {
+  const main = page.locator("main").first();
+  const scope = (await main.isVisible().catch(() => false)) ? main : page.locator("body");
+  await measure(page, "page", state, scope);
+  await measure(page, "page-heading", state, scope.locator("h1, h2").first());
+  await measure(page, "page-subheading", state, scope.locator("h3").first());
+  await measure(page, "page-tab-active", state, scope.getByRole("tab", { selected: true }).first());
+  await measure(page, "page-tab", state, scope.getByRole("tab", { selected: false }).first());
+  await measure(page, "page-input", state, scope.locator("input, textarea").first());
+  await measure(page, "page-primary-button", state, scope.getByRole("button").filter({ hasText: /\S/ }).first());
+  await measure(page, "page-card", state, scope.locator("h3, h4, img").first(), { maxWidth: 700, minWidth: 160, minHeight: 60, visual: true });
+  await measure(page, "page-body-text", state, scope.locator("p").first());
+}
+
+async function measurePages(page: Page): Promise<void> {
+  for (const p of SIDEBAR_PAGES) {
+    await gotoHome(page);
+    if (p.section) {
+      const header = page.getByRole("button", { name: p.section }).first();
+      if ((await header.getAttribute("aria-expanded").catch(() => null)) === "false") {
+        await header.click({ timeout: 5_000 }).catch(() => undefined);
+        await page.waitForTimeout(500);
+      }
+    }
+    const item = page.getByRole("button", { name: p.name }).or(page.getByRole("link", { name: p.name })).first();
+    if (!(await item.isVisible().catch(() => false))) {
+      elements.push({ name: "page", state: p.state, width: currentWidth, theme: currentTheme, missing: "sidebar item not visible" });
+      continue;
+    }
+    const before = page.url();
+    await item.click({ timeout: 10_000 }).catch(() => undefined);
+    await page.waitForTimeout(1_800);
+    if (page.url() === before && !(await page.getByRole("dialog").first().isVisible().catch(() => false))) {
+      elements.push({ name: "page", state: p.state, width: currentWidth, theme: currentTheme, missing: "click neither navigated nor opened a dialog" });
+      continue;
+    }
+    await install(page);
+    await measurePage(page, p.state);
+    await page.keyboard.press("Escape").catch(() => undefined);
+  }
+}
+
+/** The finished 2026-09-12 session reopened from Recents: thread, result card, Work Area panel, docked composer. */
+async function measureTaskPage(page: Page): Promise<void> {
+  await gotoHome(page);
+  const row = page.getByRole("button", { name: taskSession }).first();
+  if (!(await row.isVisible().catch(() => false))) {
+    elements.push({ name: "thread", state: "task", width: currentWidth, theme: currentTheme, missing: `no Recents row matching ${taskSession}` });
+    return;
+  }
+  await row.click({ timeout: 10_000 });
+  await page.waitForTimeout(3_000);
+  await install(page);
+  const s = "task";
+  await measure(page, "top-bar-title", s, page.getByText(taskSession).nth(1));
+  await measure(page, "work-area-button", s, page.getByRole("button", { name: /work ?area/i }));
+  await measure(page, "user-bubble", s, page.getByRole("button", { name: /^view all$/i }).last(), { maxWidth: 800, minWidth: 300, minHeight: 60, visual: true });
+  await measure(page, "processed-row", s, page.getByRole("button", { name: /^processed \d+s$/i }).last());
+  await measure(page, "result-card", s, page.getByRole("button", { name: /\.mp4$/i }).first(), { maxWidth: 800, minWidth: 400, minHeight: 60, visual: true });
+  await measure(page, "result-file-name", s, page.getByRole("button", { name: /\.mp4$/i }).first());
+  await measure(page, "result-open-preview", s, page.getByRole("button", { name: /^open preview$/i }).first());
+  await measure(page, "message-actions", s, page.getByRole("button", { name: /^like$/i }).last());
+  await measure(page, "jump-button", s, page.getByRole("button", { name: /jump to top|jump to start/i }));
+  await measure(page, "credits-notice", s, page.getByText(/fewer than .* credits remain/i), { maxWidth: 900, minWidth: 400, minHeight: 40, visual: true });
+  await measure(page, "credits-buy", s, page.getByRole("button", { name: /^buy credits$/i }));
+  await measure(page, "credits-subscribe", s, page.getByRole("button", { name: /^subscribe$/i }));
+  await measure(page, "composer-docked", s, editor(page), COMPOSER);
+  await measure(page, "footer-disclaimer", s, page.getByText(/can make mistakes/i));
+  await measure(page, "work-area-panel", s, page.getByRole("button", { name: /^progress$/i }).first(), { maxWidth: 420, minWidth: 200, minHeight: 200 });
+  await measure(page, "work-area-section", s, page.getByRole("button", { name: /^progress$/i }).first());
+  await measure(page, "work-area-deliverable", s, page.getByRole("button", { name: /\.mp4$/i }).last());
+  await measureHoverFocus(page, "result-open-preview", s, page.getByRole("button", { name: /^open preview$/i }).first());
+}
+
+/** User menu › Settings (observed 2026-09-14): the modal, its section nav, the Appearance cards and the Preferences switches. */
+async function measureSettings(page: Page): Promise<void> {
+  await gotoHome(page);
+  if (!(await openSettings(page))) {
+    elements.push({ name: "settings-modal", state: "settings", width: currentWidth, theme: currentTheme, missing: "Settings did not open" });
+    return;
+  }
+  await install(page);
+  const s = "settings";
+  await measure(page, "settings-modal", s, page.getByRole("button", { name: /^archived tasks$/i }), { maxWidth: 1200, minWidth: 800, minHeight: 400, visual: true });
+  await measure(page, "settings-nav-active", s, page.getByRole("button", { name: /^general$/i }).first());
+  await measure(page, "settings-nav-item", s, page.getByRole("button", { name: /^account$/i }).first());
+  await measure(page, "settings-title", s, page.getByRole("heading", { name: /^general$/i }));
+  await measure(page, "settings-section-heading", s, page.getByRole("heading", { name: /^appearance$/i }).or(page.getByText(/^appearance$/i)));
+  await measure(page, "appearance-option-label", s, page.getByText(/^dark mode$/i));
+  // The preview card sits before its label inside the option; the option container itself is what a click selects.
+  await measure(page, "appearance-option", s, page.getByText(/^system$/i), { maxWidth: 260, minWidth: 150, minHeight: 120 });
+  await measure(page, "appearance-card-selected", s, page.getByText(currentTheme === "dark" ? /^dark mode$/i : /^light mode$/i).locator("xpath=./preceding-sibling::*[1]"));
+  await measure(page, "appearance-card", s, page.getByText(/^system$/i).locator("xpath=./preceding-sibling::*[1]"));
+  await measure(page, "preference-row", s, page.getByText(/^help improve our services$/i), { maxWidth: 800, minWidth: 400, minHeight: 40, visual: true });
+  await measure(page, "preference-switch", s, page.getByRole("switch").first());
+  await measure(page, "preference-description", s, page.getByText(/allow your content to help improve/i));
+  await closeSettings(page).catch(() => undefined);
+}
+
+async function measureHoverSet(page: Page): Promise<void> {
+  await gotoHome(page);
+  const s = "home";
+  await measureHoverFocus(page, "sidebar-item", s, page.getByRole("button", { name: /^plugins$/i }));
+  await measureHoverFocus(page, "mode-chip", s, page.getByRole("button", { name: /^document$/i }));
+  await measureHoverFocus(page, "primary-button", s, page.getByRole("button", { name: /^download$/i }).first());
+  await measureHoverFocus(page, "send-button", s, page.getByRole("button", { name: /send message/i }));
+  await measureHoverFocus(page, "sidebar-user-chip", s, page.getByText(/^(MiniMax\d{4,}|Owner)$/), { maxWidth: 300, minHeight: 28, minWidth: 100 });
+  await measureHoverFocus(page, "top-download-button", s, page.getByRole("button", { name: /^download$/i }));
+  await page.goto(`${REFERENCE_URL}assets`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await page.waitForTimeout(2_500);
+  await install(page);
+  await page.getByRole("button", { name: /^videos$/i }).first().click({ timeout: 10_000 }).catch(() => undefined);
+  await page.waitForTimeout(1_200);
+  await measureHoverFocus(page, "asset-tile", "assets", page.getByRole("button", { name: /^preview .*\.mp4$/i }), { maxWidth: 320, minWidth: 200, minHeight: 150 });
+  await measureHoverFocus(page, "filter", "assets", page.getByRole("button", { name: /^images$/i }));
 }
 
 async function measureNarrow(page: Page): Promise<void> {
@@ -285,22 +443,47 @@ async function readFontsAndBody(page: Page): Promise<{ fonts: FontFace[]; bodyFo
   });
 }
 
-async function readStylesheets(page: Page): Promise<{ cssVariables: Record<string, string>; cssBreakpoints: number[]; files: number }> {
+async function readStylesheets(page: Page): Promise<{ cssVariables: Record<string, string>; cssVariablesDark: Record<string, string>; darkScopes: string[]; cssBreakpoints: number[]; files: number }> {
+  // Linked sheets and inline <style> blocks both count: a framework may inject the themed variables inline.
   const hrefs = await page.locator("link[rel=stylesheet]").evaluateAll((links) => links.map((l) => (l as HTMLLinkElement).href));
+  const inline = await page.locator("style").evaluateAll((nodes) => nodes.map((n) => n.textContent ?? ""));
   mkdirSync(RAW_CSS_DIR, { recursive: true });
   const cssVariables: Record<string, string> = {};
+  const cssVariablesDark: Record<string, string> = {};
+  const darkScopes = new Set<string>();
   const breakpoints = new Set<number>();
   let files = 0;
+  const absorb = (css: string) => {
+    const themed = parseThemedCssVariables(css);
+    for (const [k, v] of Object.entries(themed.light)) if (!(k in cssVariables)) cssVariables[k] = v;
+    for (const [k, v] of Object.entries(themed.dark)) if (!(k in cssVariablesDark)) cssVariablesDark[k] = v;
+    for (const scope of themed.darkScopes) darkScopes.add(scope);
+    for (const b of parseMediaBreakpoints(css)) breakpoints.add(b);
+  };
   for (const href of hrefs) {
     const response = await page.request.get(href).catch(() => null);
     if (!response || !response.ok()) continue;
     const css = await response.text();
     files += 1;
     writeFileSync(path.join(RAW_CSS_DIR, `${files}.css`), css);
-    for (const [k, v] of Object.entries(parseCssVariables(css))) if (!(k in cssVariables)) cssVariables[k] = v;
-    for (const b of parseMediaBreakpoints(css)) breakpoints.add(b);
+    absorb(css);
   }
-  return { cssVariables, cssBreakpoints: Array.from(breakpoints).sort((a, b) => a - b), files };
+  inline.forEach((css, i) => {
+    if (!css.trim()) return;
+    writeFileSync(path.join(RAW_CSS_DIR, `inline-${i + 1}.css`), css);
+    absorb(css);
+  });
+  return { cssVariables, cssVariablesDark, darkScopes: Array.from(darkScopes), cssBreakpoints: Array.from(breakpoints).sort((a, b) => a - b), files: files + inline.filter((c) => c.trim()).length };
+}
+
+/** Every named custom property's computed value on the root, in the theme the page is in now. */
+async function readComputedVariables(page: Page, names: string[]): Promise<Record<string, string>> {
+  return page.evaluate((list: string[]) => {
+    const cs = getComputedStyle(document.documentElement);
+    const out: Record<string, string> = {};
+    for (const n of list) out[n] = cs.getPropertyValue(n).trim();
+    return out;
+  }, names);
 }
 
 async function main(): Promise<number> {
@@ -313,16 +496,39 @@ async function main(): Promise<number> {
       console.error(`session: ${state} — run pnpm recon:login first.`);
       return 1;
     }
-    console.log(`Measuring tokens into docs/recon/${stamp}/`);
-    const { fonts, bodyFontFamily, bodyBackground } = await readFontsAndBody(page);
+    console.log(`Measuring tokens into docs/recon/${stamp}/ (themes: ${themes.join(", ")})`);
+    const originalDark = await pageIsDark(page);
+    themeRecord.originalWasDark = originalDark;
+    const { fonts, bodyFontFamily, bodyBackground: bodyBg } = await readFontsAndBody(page);
     const sheets = await readStylesheets(page);
-    console.log(`  ${sheets.files} stylesheet(s): ${Object.keys(sheets.cssVariables).length} custom properties, ${sheets.cssBreakpoints.length} media widths`);
-    await measureHome(page);
-    if (await enterVideoMode(page)) await measureVideoMode(page);
-    await measureAssets(page);
-    await measureNarrow(page);
-    console.log("  observing layout across widths:");
-    const observed = await observeLayout(page);
+    console.log(`  ${sheets.files} stylesheet(s): ${Object.keys(sheets.cssVariables).length} light custom properties, ${Object.keys(sheets.cssVariablesDark).length} dark (${sheets.darkScopes.join(", ") || "no dark scope"}), ${sheets.cssBreakpoints.length} media widths`);
+    const names = Array.from(new Set([...Object.keys(sheets.cssVariables), ...Object.keys(sheets.cssVariablesDark)]));
+    const computed: { light: Record<string, string>; dark: Record<string, string> } = { light: {}, dark: {} };
+    let observed: LayoutSignals[] = [];
+    for (const theme of themes) {
+      await gotoHome(page);
+      currentTheme = await setTheme(page, theme, themeRecord, (line) => console.log(`  ${line}`));
+      await gotoHome(page);
+      computed[theme] = await readComputedVariables(page, names);
+      console.log(`— ${theme}: ${Object.keys(computed[theme]).length} computed custom properties on the root`);
+      await measureHome(page);
+      if (await enterVideoMode(page)) await measureVideoMode(page);
+      await measureAssets(page);
+      await measureSettings(page);
+      await measureHoverSet(page);
+      await measurePages(page);
+      await measureTaskPage(page);
+      await measureNarrow(page);
+      if (theme === themes[0]) {
+        console.log("  observing layout across widths:");
+        observed = await observeLayout(page);
+      }
+    }
+    if (originalDark !== null) {
+      await gotoHome(page);
+      themeRecord.restored = await restoreAppearance(page, themeRecord).catch(() => false);
+    }
+    const bodyBackground = bodyBg;
     const familiesUsed = new Map<string, number>();
     for (const e of elements) {
       if (isMissing(e)) continue;
@@ -336,6 +542,7 @@ async function main(): Promise<number> {
       ...(loaded.has("SourceSerif") ? ["Source Serif is loaded (SIL Open Font License, usable as-is) but was not the first family on any measured element."] : []),
       "KaTeX faces come from the maths renderer and are not part of the product's own type system.",
       "The body stack is a system sans-serif stack, so no substitute font is needed for the clone: the same stack renders the same on the owner's Mac.",
+      ...(themes.length > 1 ? [`Both themes measured; the reference was found in ${themeRecord.originalWasDark ? "dark" : "light"} and ${themeRecord.restored ? "put back" : "NOT put back — check the user menu"}.`] : []),
     ];
     const tokens = buildTokens({
       date: stamp,
@@ -345,6 +552,12 @@ async function main(): Promise<number> {
       fonts,
       notes,
       cssVariables: sheets.cssVariables,
+      cssVariablesDark: sheets.cssVariablesDark,
+      darkScopes: sheets.darkScopes,
+      ...(themes.length > 1 ? { computedVariables: computed } : {}),
+      ...(themeRecord.control || themeRecord.documentAfter
+        ? { themeMechanism: { control: themeRecord.control, documentBefore: themeRecord.documentBefore, documentAfter: themeRecord.documentAfter, bodyBackgroundLight: themeRecord.bodyBackgroundLight, bodyBackgroundDark: themeRecord.bodyBackgroundDark } }
+        : {}),
       cssBreakpoints: sheets.cssBreakpoints,
       observed,
       elements,

@@ -1,0 +1,2931 @@
+{
+  "date": "2026-09-14",
+  "files": [
+    "network.jsonl"
+  ],
+  "combined": [
+    {
+      "method": "POST",
+      "host": "agent.minimax.io",
+      "path": "/matrix/api/v1/commerce/get_membership_info",
+      "count": 346,
+      "statuses": {
+        "200": 346
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 2.4,
+      "responseShape": {
+        "plan_type": "number",
+        "plan_name": "string",
+        "next_plan_name": "string",
+        "will_renewal": "boolean",
+        "expires_at": "number",
+        "total_remains_credit": "number",
+        "pending_credit": "number",
+        "purchase_source": "number",
+        "can_upgrade": "boolean",
+        "is_pro_builder": "boolean",
+        "daily_login_gift_credit_remaining": "number",
+        "is_migrated_to_op": "boolean",
+        "op_group_id": "string",
+        "has_token_plan": "boolean",
+        "opcredit_balance": "number",
+        "upgrade_action": "string"
+      }
+    },
+    {
+      "method": "POST",
+      "host": "agent.minimax.io",
+      "path": "/matrix/api/v1/user/get_user_extra_info",
+      "count": 346,
+      "statuses": {
+        "200": 346
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 2.3,
+      "responseShape": {
+        "user_extra": {},
+        "workspaces": [
+          {
+            "workspace_id": "number",
+            "workspace_name": "string",
+            "workspace_type": "number",
+            "status": "number",
+            "selected": "boolean",
+            "personal_plan_type": "number",
+            "total_remains_credit": "number",
+            "op_group_id": "string",
+            "member_num": "number",
+            "opcredit_balance": "number",
+            "is_migrated_to_op": "boolean",
+            "has_token_plan": "boolean",
+            "upgrade_action": "string"
+          }
+        ],
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/v1/api/config/web/common_config",
+      "count": 321,
+      "statuses": {
+        "200": 321
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 2.6,
+      "responseShape": {
+        "data": {
+          "agent_web_home_placeholder_carousel": {
+            "en": [
+              "…"
+            ],
+            "enabled": "boolean",
+            "zh": [
+              "…"
+            ]
+          },
+          "agent_web_operation_banners": {
+            "floating": {
+              "banners": "…",
+              "carousel": "…",
+              "enabled": "…",
+              "frequency_cap": "…",
+              "login_required": "…",
+              "platforms": "…",
+              "update_time": "…"
+            },
+            "session": {
+              "banners": "…",
+              "enabled": "…",
+              "end_time": "…",
+              "start_time": "…",
+              "update_time": "…"
+            }
+          },
+          "agent_web_scene_tabs_config_new": {
+            "en": [
+              "…"
+            ],
+            "zh": [
+              "…"
+            ]
+          },
+          "h3_video_type_config": {
+            "h3_video_type_config": {
+              "defaults": "…",
+              "models": "…",
+              "plugin_name": "…"
+            }
+          }
+        },
+        "statusInfo": {
+          "code": "number",
+          "httpCode": "number",
+          "message": "string",
+          "serviceTime": "number",
+          "requestID": "string",
+          "debugInfo": "string",
+          "serverAlert": "number"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/config",
+      "count": 314,
+      "statuses": {
+        "200": 314
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 2.4,
+      "responseShape": {
+        "models": [
+          {
+            "display_name": "string",
+            "context_limit": "number",
+            "supported_variants": [
+              "…"
+            ],
+            "thinking_config": {
+              "mode": "…",
+              "default_value": "…"
+            },
+            "provider_id": "string",
+            "model_id": "string"
+          }
+        ],
+        "onboarding": {
+          "completed": "boolean"
+        },
+        "base_resp": {
+          "status_msg": "string",
+          "status_code": "number"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "host": "agent.minimax.io",
+      "path": "/matrix/api/v1/bot/list",
+      "count": 292,
+      "statuses": {
+        "200": 292
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 2.8,
+      "responseShape": {
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/signin/status",
+      "count": 190,
+      "statuses": {
+        "200": 190
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 6.4,
+      "responseShape": {
+        "data": {
+          "scene": "number",
+          "days": [
+            {
+              "day_no": "…",
+              "points": "…",
+              "status": "…",
+              "is_today": "…"
+            }
+          ]
+        },
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "platform.minimax.io",
+      "path": "/backend/account/token_plan_credit",
+      "count": 186,
+      "statuses": {
+        "200": 186
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 6.5,
+      "responseShape": {
+        "total_credits": "number",
+        "used_credits": "number",
+        "remaining_credits": "number",
+        "api_key": "string",
+        "balance_breakdown": {
+          "total_balance": "number",
+          "buckets": []
+        },
+        "token_plan_credit_fallback_enabled": "boolean",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/notifications",
+      "count": 177,
+      "statuses": {
+        "200": 177
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 7.8,
+      "responseShape": {
+        "items": [],
+        "has_more": "boolean",
+        "unread_count": "number",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/cron",
+      "count": 174,
+      "statuses": {
+        "200": 174
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 7.5,
+      "responseShape": {
+        "tasks": [],
+        "count": "number",
+        "has_more": "boolean",
+        "next_cursor": "string",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/manifest.json",
+      "count": 170,
+      "statuses": {
+        "200": 170
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 7.8,
+      "responseShape": {
+        "name": "string",
+        "short_name": "string",
+        "description": "string",
+        "display": "string",
+        "start_url": "string",
+        "background_color": "string",
+        "theme_color": "string",
+        "icons": [
+          {
+            "src": "string",
+            "type": "string",
+            "sizes": "string"
+          }
+        ],
+        "handle_links": "string",
+        "related_applications": [
+          {
+            "platform": "string",
+            "id": "string",
+            "url": "string"
+          }
+        ],
+        "prefer_related_applications": "boolean"
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/plugins/enabled",
+      "count": 168,
+      "statuses": {
+        "200": 168
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 7.6,
+      "responseShape": {
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        },
+        "plugins": [
+          {
+            "name": "string",
+            "display_name": "string",
+            "icon_url": "string"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/project",
+      "count": 168,
+      "statuses": {
+        "200": 168
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 7.9,
+      "responseShape": {
+        "has_more": "boolean",
+        "next_cursor": "string",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/channel",
+      "count": 167,
+      "statuses": {
+        "200": 167
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 7.9,
+      "responseShape": {
+        "base_resp": {
+          "status_msg": "string",
+          "status_code": "number"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/agent",
+      "count": 162,
+      "statuses": {
+        "200": 162
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 8.2,
+      "responseShape": {
+        "agents": [
+          {
+            "name": "string",
+            "root_session_id": "string",
+            "created_at": "number",
+            "updated_at": "number",
+            "avatar": "string",
+            "display_name": "string",
+            "agent_role": "string",
+            "creation_source": "number",
+            "description": "string"
+          }
+        ],
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/skill",
+      "count": 162,
+      "statuses": {
+        "200": 162
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 7.5,
+      "responseShape": {
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        },
+        "skills": [
+          {
+            "updated_at": "number",
+            "location_uri": "string",
+            "enabled": "boolean",
+            "name": "string",
+            "description": "string",
+            "scope": "number",
+            "source_type": "number",
+            "created_at": "number"
+          }
+        ],
+        "has_more": "boolean"
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/matrix/api/v1/user/profile",
+      "count": 157,
+      "statuses": {
+        "200": 157
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 8.2,
+      "responseShape": {
+        "user_id": "string",
+        "user_name": "string",
+        "email": "string",
+        "avatar_url": "string",
+        "agent_register_time": "number",
+        "default_avatar_url": "string",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/preferences/pinned-items-order",
+      "count": 157,
+      "statuses": {
+        "200": 157
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 8.3,
+      "responseShape": {
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/sidebar/session/tree",
+      "count": 157,
+      "statuses": {
+        "200": 157
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 8.3,
+      "responseShape": {
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        },
+        "sessions": [
+          {
+            "session": {
+              "model": "…",
+              "session_id": "…",
+              "session_type": "…",
+              "parent_session_id": "…",
+              "archived": "…",
+              "status": "…",
+              "team_mode": "…",
+              "agent_name": "…",
+              "title": "…",
+              "created_at": "…",
+              "updated_at": "…"
+            }
+          }
+        ],
+        "has_more": "boolean",
+        "next_cursor": "string"
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/v1/api/user/info",
+      "count": 157,
+      "statuses": {
+        "200": 157
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 8.3,
+      "responseShape": {
+        "data": {
+          "userInfo": {
+            "name": "string",
+            "avatar": "string",
+            "userID": "string",
+            "phone": "string",
+            "vipInfo": {
+              "type": "…",
+              "expireTime": "…"
+            },
+            "avatarInfo": {
+              "small": "…",
+              "medium": "…",
+              "large": "…",
+              "oversize": "…"
+            },
+            "description": "string",
+            "realUserID": "string",
+            "extra": {},
+            "email": "string",
+            "retentionDays": "number",
+            "canAffiliate": "boolean",
+            "createTime": "number",
+            "subUserAvatar": "string",
+            "subUserName": "string",
+            "subUserSocialMediaUrl": "string"
+          },
+          "relation": "number"
+        },
+        "statusInfo": {
+          "code": "number",
+          "httpCode": "number",
+          "message": "string",
+          "serviceTime": "number",
+          "requestID": "string",
+          "debugInfo": "string",
+          "serverAlert": "number"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "host": "agent.minimax.io",
+      "path": "/v1/api/user/renewal",
+      "count": 157,
+      "statuses": {
+        "200": 157
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 8.3,
+      "responseShape": {
+        "data": {
+          "token": "string",
+          "status": "string"
+        },
+        "statusInfo": {
+          "code": "number",
+          "httpCode": "number",
+          "message": "string",
+          "serviceTime": "number",
+          "requestID": "string",
+          "debugInfo": "string",
+          "serverAlert": "number"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/channel/connections",
+      "count": 154,
+      "statuses": {
+        "200": 154
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 6.1,
+      "responseShape": {
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/drive/file",
+      "count": 30,
+      "statuses": {
+        "200": 30
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 2.1,
+      "responseShape": {
+        "total": "number",
+        "has_more": "boolean",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        },
+        "nodes": [
+          {
+            "node_id": "string",
+            "parent_id": "string",
+            "child_count": "number",
+            "node_type": "number",
+            "file_ext": "string",
+            "cdn_url": "string",
+            "source": "number",
+            "session_id": "string",
+            "front_page_screenshot": "string",
+            "category": "string",
+            "is_favorited": "boolean",
+            "created_at": "number",
+            "updated_at": "number",
+            "name": "string",
+            "mime_type": "string",
+            "size_bytes": "number"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/matrix/api/v1/user/get_data_contribution_setting",
+      "count": 17,
+      "statuses": {
+        "200": 17
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 41,
+      "responseShape": {
+        "data_contribution_enabled": "boolean",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/matrix/api/v1/user/get_water_mark_setting",
+      "count": 17,
+      "statuses": {
+        "200": 17
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 41,
+      "responseShape": {
+        "water_mark_enabled": "boolean",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/marketplace/plugins/video-creater",
+      "count": 16,
+      "statuses": {
+        "200": 16
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 20.6,
+      "responseShape": {
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        },
+        "plugin": {
+          "example_queries": [
+            "string"
+          ],
+          "summary": {
+            "enabled": "boolean",
+            "name": "string",
+            "version": "string",
+            "display_name": "string",
+            "author": "string",
+            "icon_url": "string",
+            "capabilities": {
+              "app_count": "…",
+              "mcp_server_count": "…",
+              "skill_count": "…",
+              "hook_count": "…"
+            },
+            "category": "number",
+            "installation_policy": "number",
+            "description": "string",
+            "install_exists": "boolean"
+          },
+          "apps": [],
+          "mcp_servers": [],
+          "skills": [
+            {
+              "name": "…",
+              "description": "…",
+              "content": "…"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/session/:id",
+      "count": 15,
+      "statuses": {
+        "200": 15
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 36.8,
+      "responseShape": {
+        "session": {
+          "session_id": "string",
+          "agent_name": "string",
+          "session_type": "number",
+          "title": "string",
+          "status": {
+            "status_type": "number",
+            "message": "string"
+          },
+          "created_at": "number",
+          "team_mode": "boolean",
+          "parent_session_id": "string",
+          "archived": "boolean",
+          "updated_at": "number"
+        },
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/session/:id/queue",
+      "count": 15,
+      "statuses": {
+        "200": 15
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 36.8,
+      "responseShape": {
+        "base_resp": {
+          "status_msg": "string",
+          "status_code": "number"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "matrix-internal.oss-us-east-1.aliyuncs.com",
+      "path": "/Mavis/:id/files/:id/:id.mp4",
+      "count": 12,
+      "statuses": {
+        "206": 12
+      },
+      "contentTypes": [
+        "video/mp4"
+      ],
+      "medianGapSeconds": 0.2
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/session/:id/input-summaries",
+      "count": 11,
+      "statuses": {
+        "200": 11
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 59.8,
+      "responseShape": {
+        "has_more": "boolean",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/marketplace/plugins",
+      "count": 8,
+      "statuses": {
+        "200": 8
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 3,
+      "responseShape": {
+        "skill_next_cursor": "string",
+        "plugin_total": "number",
+        "has_more": "boolean",
+        "skill_has_more": "boolean",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        },
+        "plugins": [
+          {
+            "description": "string",
+            "icon_url": "string",
+            "install_exists": "boolean",
+            "name": "string",
+            "author": "string",
+            "capabilities": {
+              "app_count": "…",
+              "mcp_server_count": "…",
+              "skill_count": "…",
+              "hook_count": "…"
+            },
+            "enabled": "boolean",
+            "category": "number",
+            "installation_policy": "number",
+            "version": "string",
+            "display_name": "string"
+          }
+        ],
+        "next_cursor": "string",
+        "marketplace_skills": [
+          {
+            "created_at": "number",
+            "updated_at": "number",
+            "category": "number",
+            "display_name": "string",
+            "content": "string",
+            "source_url": "string",
+            "source_type": "number",
+            "added": "boolean",
+            "id": "number",
+            "name": "string",
+            "description": "string",
+            "creator_info": {
+              "avatar_url": "…",
+              "user_id": "…",
+              "user_name": "…"
+            },
+            "use_count": "number"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "host": "platform.minimax.io",
+      "path": "/public/api/openplatform/charge/combo/products",
+      "count": 7,
+      "statuses": {
+        "200": 7
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 73.6,
+      "responseShape": {
+        "cycle_resource_packages": [
+          {
+            "title": "string",
+            "price_data": {
+              "price_tag": "…",
+              "original_price_tag": "…",
+              "unit": "…",
+              "renew_price_tag": "…"
+            },
+            "instruction": "string",
+            "button_text": "string",
+            "credit_benefit": [
+              "…"
+            ],
+            "feature_title": "string",
+            "feature_benefit": [
+              "…"
+            ],
+            "currency": "string",
+            "combo_id": "string",
+            "combo_type": "number",
+            "cycle_type": "number",
+            "price_desc": "string",
+            "visible": "boolean",
+            "end_time": "number"
+          }
+        ],
+        "current_subscribe": {
+          "button_text": "string",
+          "current_subscribe_title": "string",
+          "current_subscribe_price": "string",
+          "current_subscribe_credit": "number",
+          "current_subscribe_end_time": "string",
+          "current_subscribe_combo_type": "number",
+          "curr_subscribe_combo_id": "string",
+          "current_subscribe_cycle_type": "number",
+          "current_credit_reload_time": "string",
+          "next_subscribe_title": "string",
+          "renewal_date": "string",
+          "next_subscribe_combo_type": "number",
+          "renewal_state": "number",
+          "nxt_subscribe_combo_id": "string",
+          "next_subscribe_cycle_type": "number",
+          "purchase_source": "number"
+        },
+        "invoice_info": {
+          "invoice_amount": "string"
+        },
+        "voice_slot_info": {
+          "voice_slot_total": "number",
+          "voice_slot_used": "number"
+        },
+        "credit_info": {
+          "total_credit": "string"
+        },
+        "current_combo_card": {
+          "title": "string",
+          "price_data": "null",
+          "instruction": "string",
+          "button_text": "string",
+          "credit_benefit": "null",
+          "feature_title": "string",
+          "feature_benefit": "null",
+          "currency": "string",
+          "combo_id": "string",
+          "combo_type": "number",
+          "cycle_type": "number"
+        },
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "platform.minimax.io",
+      "path": "/setting/get_app_settings",
+      "count": 7,
+      "statuses": {
+        "200": 7
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 73.6,
+      "responseShape": {
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        },
+        "data": {
+          "zh": {
+            "subscribeTags": {
+              "Month": "…",
+              "Year": "…"
+            },
+            "comboTypeTipsMap": {
+              "24": "…",
+              "25": "…",
+              "26": "…",
+              "101002": "…",
+              "101003": "…",
+              "101004": "…"
+            },
+            "content": {
+              "title": "…",
+              "description": "…",
+              "heroBanner": "…",
+              "links": "…",
+              "notice": "…",
+              "actions": "…"
+            },
+            "apiPricing": {
+              "currencySymbol": "…",
+              "main": "…",
+              "topUp": "…",
+              "text": "…",
+              "multimodal": "…",
+              "audio": "…",
+              "label": "…",
+              "tab": "…",
+              "unit": "…",
+              "column": "…",
+              "disclaimer": "…",
+              "docs": "…",
+              "m3": "…",
+              "videoRows": "…",
+              "videoTables": "…",
+              "audioRows": "…"
+            },
+            "serviceNotice": {
+              "markdown": "…"
+            },
+            "comparison": {
+              "pricePlus": "…",
+              "priceMax": "…",
+              "priceUltra": "…",
+              "rows": "…"
+            },
+            "components": [
+              "…"
+            ]
+          },
+          "en": {
+            "subscribeTags": {
+              "Month": "…",
+              "Year": "…"
+            },
+            "comboTypeTipsMap": {
+              "24": "…",
+              "25": "…",
+              "26": "…",
+              "101002": "…",
+              "101003": "…",
+              "101004": "…"
+            },
+            "content": {
+              "title": "…",
+              "description": "…",
+              "heroBanner": "…",
+              "links": "…",
+              "notice": "…",
+              "actions": "…"
+            },
+            "apiPricing": {
+              "currencySymbol": "…",
+              "main": "…",
+              "topUp": "…",
+              "text": "…",
+              "multimodal": "…",
+              "audio": "…",
+              "label": "…",
+              "tab": "…",
+              "unit": "…",
+              "column": "…",
+              "disclaimer": "…",
+              "docs": "…",
+              "m3": "…",
+              "videoTables": "…",
+              "videoRows": "…",
+              "audioRows": "…"
+            },
+            "serviceNotice": {
+              "markdown": "…"
+            },
+            "comparison": {
+              "pricePlus": "…",
+              "priceMax": "…",
+              "priceUltra": "…",
+              "rows": "…"
+            },
+            "components": [
+              "…"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/session/:id/message",
+      "count": 5,
+      "statuses": {
+        "200": 5
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 497.9,
+      "responseShape": {
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        },
+        "next_cursor": "string",
+        "last_msg_id": "string",
+        "has_more": "boolean"
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/docs/cli/quick-start",
+      "count": 4,
+      "statuses": {
+        "200": 4
+      },
+      "contentTypes": [
+        "text/x-component"
+      ],
+      "medianGapSeconds": 476.9
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/docs/code/welcome",
+      "count": 4,
+      "statuses": {
+        "200": 4
+      },
+      "contentTypes": [
+        "text/x-component"
+      ],
+      "medianGapSeconds": 477
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/docs/techblog",
+      "count": 4,
+      "statuses": {
+        "200": 4
+      },
+      "contentTypes": [
+        "text/x-component"
+      ],
+      "medianGapSeconds": 476.9
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/drive/file/:id",
+      "count": 4,
+      "statuses": {
+        "404": 4
+      },
+      "contentTypes": [
+        "text/plain"
+      ],
+      "medianGapSeconds": 568.5
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/session/search",
+      "count": 4,
+      "statuses": {
+        "200": 4
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 570,
+      "responseShape": {
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        },
+        "sessions": [
+          {
+            "team_mode": "boolean",
+            "agent_name": "string",
+            "session_type": "number",
+            "title": "string",
+            "updated_at": "number",
+            "session_id": "string",
+            "parent_session_id": "string",
+            "archived": "boolean",
+            "status": {
+              "message": "…",
+              "status_type": "…"
+            },
+            "created_at": "number",
+            "model": {
+              "variant": "…",
+              "supported_variants": "…",
+              "reasoning": "…",
+              "provider_id": "…",
+              "model_id": "…"
+            }
+          }
+        ],
+        "has_more": "boolean"
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/session/archived-items",
+      "count": 3,
+      "statuses": {
+        "200": 3
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 445.7,
+      "responseShape": {
+        "has_more": "boolean",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/drive/file/:id/download-url",
+      "count": 2,
+      "statuses": {
+        "200": 2
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": 568.4,
+      "responseShape": {
+        "download_url": "string",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/agent/config/get",
+      "count": 1,
+      "statuses": {
+        "200": 1
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": null,
+      "responseShape": {
+        "config": {
+          "effective_for_new_subsession": {
+            "display_name": "string",
+            "description": "string",
+            "system_prompt": "string",
+            "permission_policy": {
+              "type": "…"
+            }
+          },
+          "name": "string",
+          "meta": {
+            "revision": "string",
+            "owner_kind": "string",
+            "persistence": "string",
+            "applies_to": "string",
+            "editable_fields": [
+              "…"
+            ],
+            "supported_actions": [
+              "…"
+            ],
+            "supported_tool_capabilities": [
+              "…"
+            ],
+            "model_fallback": "string"
+          },
+          "configured": {
+            "display_name": "string",
+            "description": "string",
+            "system_prompt": "string",
+            "permission_policy": {
+              "type": "…"
+            }
+          }
+        },
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/agent/legacy-history-notice/get",
+      "count": 1,
+      "statuses": {
+        "200": 1
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": null,
+      "responseShape": {
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/channel/connections/prepare",
+      "count": 1,
+      "statuses": {
+        "200": 1
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": null,
+      "responseShape": {
+        "connection": {
+          "channel": "string",
+          "agent_name": "string",
+          "state": "string",
+          "created_at": "number",
+          "updated_at": "number",
+          "connection_id": "string"
+        },
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/connectors/connected/list",
+      "count": 1,
+      "statuses": {
+        "200": 1
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": null,
+      "responseShape": {
+        "apps": [],
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "host": "agent.minimax.io",
+      "path": "/minimax-cloud/api/v1/plugins/installed",
+      "count": 1,
+      "statuses": {
+        "200": 1
+      },
+      "contentTypes": [
+        "application/json"
+      ],
+      "medianGapSeconds": null,
+      "responseShape": {
+        "plugins": [
+          {
+            "category": "number",
+            "version": "string",
+            "display_name": "string",
+            "capabilities": {
+              "app_count": "…",
+              "mcp_server_count": "…",
+              "skill_count": "…",
+              "hook_count": "…"
+            },
+            "installation_policy": "number",
+            "name": "string",
+            "description": "string",
+            "author": "string",
+            "icon_url": "string",
+            "source": "number",
+            "enabled": "boolean"
+          }
+        ],
+        "has_more": "boolean",
+        "base_resp": {
+          "status_code": "number",
+          "status_msg": "string"
+        }
+      }
+    }
+  ],
+  "perFile": [
+    {
+      "file": "network.jsonl",
+      "endpoints": [
+        {
+          "method": "POST",
+          "host": "agent.minimax.io",
+          "path": "/matrix/api/v1/commerce/get_membership_info",
+          "count": 346,
+          "statuses": {
+            "200": 346
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 2.4,
+          "responseShape": {
+            "plan_type": "number",
+            "plan_name": "string",
+            "next_plan_name": "string",
+            "will_renewal": "boolean",
+            "expires_at": "number",
+            "total_remains_credit": "number",
+            "pending_credit": "number",
+            "purchase_source": "number",
+            "can_upgrade": "boolean",
+            "is_pro_builder": "boolean",
+            "daily_login_gift_credit_remaining": "number",
+            "is_migrated_to_op": "boolean",
+            "op_group_id": "string",
+            "has_token_plan": "boolean",
+            "opcredit_balance": "number",
+            "upgrade_action": "string"
+          }
+        },
+        {
+          "method": "POST",
+          "host": "agent.minimax.io",
+          "path": "/matrix/api/v1/user/get_user_extra_info",
+          "count": 346,
+          "statuses": {
+            "200": 346
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 2.3,
+          "responseShape": {
+            "user_extra": {},
+            "workspaces": [
+              {
+                "workspace_id": "number",
+                "workspace_name": "string",
+                "workspace_type": "number",
+                "status": "number",
+                "selected": "boolean",
+                "personal_plan_type": "number",
+                "total_remains_credit": "number",
+                "op_group_id": "string",
+                "member_num": "number",
+                "opcredit_balance": "number",
+                "is_migrated_to_op": "boolean",
+                "has_token_plan": "boolean",
+                "upgrade_action": "string"
+              }
+            ],
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/v1/api/config/web/common_config",
+          "count": 321,
+          "statuses": {
+            "200": 321
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 2.6,
+          "responseShape": {
+            "data": {
+              "agent_web_home_placeholder_carousel": {
+                "en": [
+                  "…"
+                ],
+                "enabled": "boolean",
+                "zh": [
+                  "…"
+                ]
+              },
+              "agent_web_operation_banners": {
+                "floating": {
+                  "banners": "…",
+                  "carousel": "…",
+                  "enabled": "…",
+                  "frequency_cap": "…",
+                  "login_required": "…",
+                  "platforms": "…",
+                  "update_time": "…"
+                },
+                "session": {
+                  "banners": "…",
+                  "enabled": "…",
+                  "end_time": "…",
+                  "start_time": "…",
+                  "update_time": "…"
+                }
+              },
+              "agent_web_scene_tabs_config_new": {
+                "en": [
+                  "…"
+                ],
+                "zh": [
+                  "…"
+                ]
+              },
+              "h3_video_type_config": {
+                "h3_video_type_config": {
+                  "defaults": "…",
+                  "models": "…",
+                  "plugin_name": "…"
+                }
+              }
+            },
+            "statusInfo": {
+              "code": "number",
+              "httpCode": "number",
+              "message": "string",
+              "serviceTime": "number",
+              "requestID": "string",
+              "debugInfo": "string",
+              "serverAlert": "number"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/config",
+          "count": 314,
+          "statuses": {
+            "200": 314
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 2.4,
+          "responseShape": {
+            "models": [
+              {
+                "display_name": "string",
+                "context_limit": "number",
+                "supported_variants": [
+                  "…"
+                ],
+                "thinking_config": {
+                  "mode": "…",
+                  "default_value": "…"
+                },
+                "provider_id": "string",
+                "model_id": "string"
+              }
+            ],
+            "onboarding": {
+              "completed": "boolean"
+            },
+            "base_resp": {
+              "status_msg": "string",
+              "status_code": "number"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "host": "agent.minimax.io",
+          "path": "/matrix/api/v1/bot/list",
+          "count": 292,
+          "statuses": {
+            "200": 292
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 2.8,
+          "responseShape": {
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/signin/status",
+          "count": 190,
+          "statuses": {
+            "200": 190
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 6.4,
+          "responseShape": {
+            "data": {
+              "scene": "number",
+              "days": [
+                {
+                  "day_no": "…",
+                  "points": "…",
+                  "status": "…",
+                  "is_today": "…"
+                }
+              ]
+            },
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "platform.minimax.io",
+          "path": "/backend/account/token_plan_credit",
+          "count": 186,
+          "statuses": {
+            "200": 186
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 6.5,
+          "responseShape": {
+            "total_credits": "number",
+            "used_credits": "number",
+            "remaining_credits": "number",
+            "api_key": "string",
+            "balance_breakdown": {
+              "total_balance": "number",
+              "buckets": []
+            },
+            "token_plan_credit_fallback_enabled": "boolean",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/notifications",
+          "count": 177,
+          "statuses": {
+            "200": 177
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 7.8,
+          "responseShape": {
+            "items": [],
+            "has_more": "boolean",
+            "unread_count": "number",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/cron",
+          "count": 174,
+          "statuses": {
+            "200": 174
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 7.5,
+          "responseShape": {
+            "tasks": [],
+            "count": "number",
+            "has_more": "boolean",
+            "next_cursor": "string",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/manifest.json",
+          "count": 170,
+          "statuses": {
+            "200": 170
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 7.8,
+          "responseShape": {
+            "name": "string",
+            "short_name": "string",
+            "description": "string",
+            "display": "string",
+            "start_url": "string",
+            "background_color": "string",
+            "theme_color": "string",
+            "icons": [
+              {
+                "src": "string",
+                "type": "string",
+                "sizes": "string"
+              }
+            ],
+            "handle_links": "string",
+            "related_applications": [
+              {
+                "platform": "string",
+                "id": "string",
+                "url": "string"
+              }
+            ],
+            "prefer_related_applications": "boolean"
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/plugins/enabled",
+          "count": 168,
+          "statuses": {
+            "200": 168
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 7.6,
+          "responseShape": {
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            },
+            "plugins": [
+              {
+                "name": "string",
+                "display_name": "string",
+                "icon_url": "string"
+              }
+            ]
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/project",
+          "count": 168,
+          "statuses": {
+            "200": 168
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 7.9,
+          "responseShape": {
+            "has_more": "boolean",
+            "next_cursor": "string",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/channel",
+          "count": 167,
+          "statuses": {
+            "200": 167
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 7.9,
+          "responseShape": {
+            "base_resp": {
+              "status_msg": "string",
+              "status_code": "number"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/agent",
+          "count": 162,
+          "statuses": {
+            "200": 162
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 8.2,
+          "responseShape": {
+            "agents": [
+              {
+                "name": "string",
+                "root_session_id": "string",
+                "created_at": "number",
+                "updated_at": "number",
+                "avatar": "string",
+                "display_name": "string",
+                "agent_role": "string",
+                "creation_source": "number",
+                "description": "string"
+              }
+            ],
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/skill",
+          "count": 162,
+          "statuses": {
+            "200": 162
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 7.5,
+          "responseShape": {
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            },
+            "skills": [
+              {
+                "updated_at": "number",
+                "location_uri": "string",
+                "enabled": "boolean",
+                "name": "string",
+                "description": "string",
+                "scope": "number",
+                "source_type": "number",
+                "created_at": "number"
+              }
+            ],
+            "has_more": "boolean"
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/matrix/api/v1/user/profile",
+          "count": 157,
+          "statuses": {
+            "200": 157
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 8.2,
+          "responseShape": {
+            "user_id": "string",
+            "user_name": "string",
+            "email": "string",
+            "avatar_url": "string",
+            "agent_register_time": "number",
+            "default_avatar_url": "string",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/preferences/pinned-items-order",
+          "count": 157,
+          "statuses": {
+            "200": 157
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 8.3,
+          "responseShape": {
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/sidebar/session/tree",
+          "count": 157,
+          "statuses": {
+            "200": 157
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 8.3,
+          "responseShape": {
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            },
+            "sessions": [
+              {
+                "session": {
+                  "model": "…",
+                  "session_id": "…",
+                  "session_type": "…",
+                  "parent_session_id": "…",
+                  "archived": "…",
+                  "status": "…",
+                  "team_mode": "…",
+                  "agent_name": "…",
+                  "title": "…",
+                  "created_at": "…",
+                  "updated_at": "…"
+                }
+              }
+            ],
+            "has_more": "boolean",
+            "next_cursor": "string"
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/v1/api/user/info",
+          "count": 157,
+          "statuses": {
+            "200": 157
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 8.3,
+          "responseShape": {
+            "data": {
+              "userInfo": {
+                "name": "string",
+                "avatar": "string",
+                "userID": "string",
+                "phone": "string",
+                "vipInfo": {
+                  "type": "…",
+                  "expireTime": "…"
+                },
+                "avatarInfo": {
+                  "small": "…",
+                  "medium": "…",
+                  "large": "…",
+                  "oversize": "…"
+                },
+                "description": "string",
+                "realUserID": "string",
+                "extra": {},
+                "email": "string",
+                "retentionDays": "number",
+                "canAffiliate": "boolean",
+                "createTime": "number",
+                "subUserAvatar": "string",
+                "subUserName": "string",
+                "subUserSocialMediaUrl": "string"
+              },
+              "relation": "number"
+            },
+            "statusInfo": {
+              "code": "number",
+              "httpCode": "number",
+              "message": "string",
+              "serviceTime": "number",
+              "requestID": "string",
+              "debugInfo": "string",
+              "serverAlert": "number"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "host": "agent.minimax.io",
+          "path": "/v1/api/user/renewal",
+          "count": 157,
+          "statuses": {
+            "200": 157
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 8.3,
+          "responseShape": {
+            "data": {
+              "token": "string",
+              "status": "string"
+            },
+            "statusInfo": {
+              "code": "number",
+              "httpCode": "number",
+              "message": "string",
+              "serviceTime": "number",
+              "requestID": "string",
+              "debugInfo": "string",
+              "serverAlert": "number"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/channel/connections",
+          "count": 154,
+          "statuses": {
+            "200": 154
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 6.1,
+          "responseShape": {
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/drive/file",
+          "count": 30,
+          "statuses": {
+            "200": 30
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 2.1,
+          "responseShape": {
+            "total": "number",
+            "has_more": "boolean",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            },
+            "nodes": [
+              {
+                "node_id": "string",
+                "parent_id": "string",
+                "child_count": "number",
+                "node_type": "number",
+                "file_ext": "string",
+                "cdn_url": "string",
+                "source": "number",
+                "session_id": "string",
+                "front_page_screenshot": "string",
+                "category": "string",
+                "is_favorited": "boolean",
+                "created_at": "number",
+                "updated_at": "number",
+                "name": "string",
+                "mime_type": "string",
+                "size_bytes": "number"
+              }
+            ]
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/matrix/api/v1/user/get_data_contribution_setting",
+          "count": 17,
+          "statuses": {
+            "200": 17
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 41,
+          "responseShape": {
+            "data_contribution_enabled": "boolean",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/matrix/api/v1/user/get_water_mark_setting",
+          "count": 17,
+          "statuses": {
+            "200": 17
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 41,
+          "responseShape": {
+            "water_mark_enabled": "boolean",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/marketplace/plugins/video-creater",
+          "count": 16,
+          "statuses": {
+            "200": 16
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 20.6,
+          "responseShape": {
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            },
+            "plugin": {
+              "example_queries": [
+                "string"
+              ],
+              "summary": {
+                "enabled": "boolean",
+                "name": "string",
+                "version": "string",
+                "display_name": "string",
+                "author": "string",
+                "icon_url": "string",
+                "capabilities": {
+                  "app_count": "…",
+                  "mcp_server_count": "…",
+                  "skill_count": "…",
+                  "hook_count": "…"
+                },
+                "category": "number",
+                "installation_policy": "number",
+                "description": "string",
+                "install_exists": "boolean"
+              },
+              "apps": [],
+              "mcp_servers": [],
+              "skills": [
+                {
+                  "name": "…",
+                  "description": "…",
+                  "content": "…"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/session/:id",
+          "count": 15,
+          "statuses": {
+            "200": 15
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 36.8,
+          "responseShape": {
+            "session": {
+              "session_id": "string",
+              "agent_name": "string",
+              "session_type": "number",
+              "title": "string",
+              "status": {
+                "status_type": "number",
+                "message": "string"
+              },
+              "created_at": "number",
+              "team_mode": "boolean",
+              "parent_session_id": "string",
+              "archived": "boolean",
+              "updated_at": "number"
+            },
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/session/:id/queue",
+          "count": 15,
+          "statuses": {
+            "200": 15
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 36.8,
+          "responseShape": {
+            "base_resp": {
+              "status_msg": "string",
+              "status_code": "number"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "matrix-internal.oss-us-east-1.aliyuncs.com",
+          "path": "/Mavis/:id/files/:id/:id.mp4",
+          "count": 12,
+          "statuses": {
+            "206": 12
+          },
+          "contentTypes": [
+            "video/mp4"
+          ],
+          "medianGapSeconds": 0.2
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/session/:id/input-summaries",
+          "count": 11,
+          "statuses": {
+            "200": 11
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 59.8,
+          "responseShape": {
+            "has_more": "boolean",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/marketplace/plugins",
+          "count": 8,
+          "statuses": {
+            "200": 8
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 3,
+          "responseShape": {
+            "skill_next_cursor": "string",
+            "plugin_total": "number",
+            "has_more": "boolean",
+            "skill_has_more": "boolean",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            },
+            "plugins": [
+              {
+                "description": "string",
+                "icon_url": "string",
+                "install_exists": "boolean",
+                "name": "string",
+                "author": "string",
+                "capabilities": {
+                  "app_count": "…",
+                  "mcp_server_count": "…",
+                  "skill_count": "…",
+                  "hook_count": "…"
+                },
+                "enabled": "boolean",
+                "category": "number",
+                "installation_policy": "number",
+                "version": "string",
+                "display_name": "string"
+              }
+            ],
+            "next_cursor": "string",
+            "marketplace_skills": [
+              {
+                "created_at": "number",
+                "updated_at": "number",
+                "category": "number",
+                "display_name": "string",
+                "content": "string",
+                "source_url": "string",
+                "source_type": "number",
+                "added": "boolean",
+                "id": "number",
+                "name": "string",
+                "description": "string",
+                "creator_info": {
+                  "avatar_url": "…",
+                  "user_id": "…",
+                  "user_name": "…"
+                },
+                "use_count": "number"
+              }
+            ]
+          }
+        },
+        {
+          "method": "GET",
+          "host": "platform.minimax.io",
+          "path": "/public/api/openplatform/charge/combo/products",
+          "count": 7,
+          "statuses": {
+            "200": 7
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 73.6,
+          "responseShape": {
+            "cycle_resource_packages": [
+              {
+                "title": "string",
+                "price_data": {
+                  "price_tag": "…",
+                  "original_price_tag": "…",
+                  "unit": "…",
+                  "renew_price_tag": "…"
+                },
+                "instruction": "string",
+                "button_text": "string",
+                "credit_benefit": [
+                  "…"
+                ],
+                "feature_title": "string",
+                "feature_benefit": [
+                  "…"
+                ],
+                "currency": "string",
+                "combo_id": "string",
+                "combo_type": "number",
+                "cycle_type": "number",
+                "price_desc": "string",
+                "visible": "boolean",
+                "end_time": "number"
+              }
+            ],
+            "current_subscribe": {
+              "button_text": "string",
+              "current_subscribe_title": "string",
+              "current_subscribe_price": "string",
+              "current_subscribe_credit": "number",
+              "current_subscribe_end_time": "string",
+              "current_subscribe_combo_type": "number",
+              "curr_subscribe_combo_id": "string",
+              "current_subscribe_cycle_type": "number",
+              "current_credit_reload_time": "string",
+              "next_subscribe_title": "string",
+              "renewal_date": "string",
+              "next_subscribe_combo_type": "number",
+              "renewal_state": "number",
+              "nxt_subscribe_combo_id": "string",
+              "next_subscribe_cycle_type": "number",
+              "purchase_source": "number"
+            },
+            "invoice_info": {
+              "invoice_amount": "string"
+            },
+            "voice_slot_info": {
+              "voice_slot_total": "number",
+              "voice_slot_used": "number"
+            },
+            "credit_info": {
+              "total_credit": "string"
+            },
+            "current_combo_card": {
+              "title": "string",
+              "price_data": "null",
+              "instruction": "string",
+              "button_text": "string",
+              "credit_benefit": "null",
+              "feature_title": "string",
+              "feature_benefit": "null",
+              "currency": "string",
+              "combo_id": "string",
+              "combo_type": "number",
+              "cycle_type": "number"
+            },
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "platform.minimax.io",
+          "path": "/setting/get_app_settings",
+          "count": 7,
+          "statuses": {
+            "200": 7
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 73.6,
+          "responseShape": {
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            },
+            "data": {
+              "zh": {
+                "subscribeTags": {
+                  "Month": "…",
+                  "Year": "…"
+                },
+                "comboTypeTipsMap": {
+                  "24": "…",
+                  "25": "…",
+                  "26": "…",
+                  "101002": "…",
+                  "101003": "…",
+                  "101004": "…"
+                },
+                "content": {
+                  "title": "…",
+                  "description": "…",
+                  "heroBanner": "…",
+                  "links": "…",
+                  "notice": "…",
+                  "actions": "…"
+                },
+                "apiPricing": {
+                  "currencySymbol": "…",
+                  "main": "…",
+                  "topUp": "…",
+                  "text": "…",
+                  "multimodal": "…",
+                  "audio": "…",
+                  "label": "…",
+                  "tab": "…",
+                  "unit": "…",
+                  "column": "…",
+                  "disclaimer": "…",
+                  "docs": "…",
+                  "m3": "…",
+                  "videoRows": "…",
+                  "videoTables": "…",
+                  "audioRows": "…"
+                },
+                "serviceNotice": {
+                  "markdown": "…"
+                },
+                "comparison": {
+                  "pricePlus": "…",
+                  "priceMax": "…",
+                  "priceUltra": "…",
+                  "rows": "…"
+                },
+                "components": [
+                  "…"
+                ]
+              },
+              "en": {
+                "subscribeTags": {
+                  "Month": "…",
+                  "Year": "…"
+                },
+                "comboTypeTipsMap": {
+                  "24": "…",
+                  "25": "…",
+                  "26": "…",
+                  "101002": "…",
+                  "101003": "…",
+                  "101004": "…"
+                },
+                "content": {
+                  "title": "…",
+                  "description": "…",
+                  "heroBanner": "…",
+                  "links": "…",
+                  "notice": "…",
+                  "actions": "…"
+                },
+                "apiPricing": {
+                  "currencySymbol": "…",
+                  "main": "…",
+                  "topUp": "…",
+                  "text": "…",
+                  "multimodal": "…",
+                  "audio": "…",
+                  "label": "…",
+                  "tab": "…",
+                  "unit": "…",
+                  "column": "…",
+                  "disclaimer": "…",
+                  "docs": "…",
+                  "m3": "…",
+                  "videoTables": "…",
+                  "videoRows": "…",
+                  "audioRows": "…"
+                },
+                "serviceNotice": {
+                  "markdown": "…"
+                },
+                "comparison": {
+                  "pricePlus": "…",
+                  "priceMax": "…",
+                  "priceUltra": "…",
+                  "rows": "…"
+                },
+                "components": [
+                  "…"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/session/:id/message",
+          "count": 5,
+          "statuses": {
+            "200": 5
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 497.9,
+          "responseShape": {
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            },
+            "next_cursor": "string",
+            "last_msg_id": "string",
+            "has_more": "boolean"
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/docs/cli/quick-start",
+          "count": 4,
+          "statuses": {
+            "200": 4
+          },
+          "contentTypes": [
+            "text/x-component"
+          ],
+          "medianGapSeconds": 476.9
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/docs/code/welcome",
+          "count": 4,
+          "statuses": {
+            "200": 4
+          },
+          "contentTypes": [
+            "text/x-component"
+          ],
+          "medianGapSeconds": 477
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/docs/techblog",
+          "count": 4,
+          "statuses": {
+            "200": 4
+          },
+          "contentTypes": [
+            "text/x-component"
+          ],
+          "medianGapSeconds": 476.9
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/drive/file/:id",
+          "count": 4,
+          "statuses": {
+            "404": 4
+          },
+          "contentTypes": [
+            "text/plain"
+          ],
+          "medianGapSeconds": 568.5
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/session/search",
+          "count": 4,
+          "statuses": {
+            "200": 4
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 570,
+          "responseShape": {
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            },
+            "sessions": [
+              {
+                "team_mode": "boolean",
+                "agent_name": "string",
+                "session_type": "number",
+                "title": "string",
+                "updated_at": "number",
+                "session_id": "string",
+                "parent_session_id": "string",
+                "archived": "boolean",
+                "status": {
+                  "message": "…",
+                  "status_type": "…"
+                },
+                "created_at": "number",
+                "model": {
+                  "variant": "…",
+                  "supported_variants": "…",
+                  "reasoning": "…",
+                  "provider_id": "…",
+                  "model_id": "…"
+                }
+              }
+            ],
+            "has_more": "boolean"
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/session/archived-items",
+          "count": 3,
+          "statuses": {
+            "200": 3
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 445.7,
+          "responseShape": {
+            "has_more": "boolean",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/drive/file/:id/download-url",
+          "count": 2,
+          "statuses": {
+            "200": 2
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": 568.4,
+          "responseShape": {
+            "download_url": "string",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/agent/config/get",
+          "count": 1,
+          "statuses": {
+            "200": 1
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": null,
+          "responseShape": {
+            "config": {
+              "effective_for_new_subsession": {
+                "display_name": "string",
+                "description": "string",
+                "system_prompt": "string",
+                "permission_policy": {
+                  "type": "…"
+                }
+              },
+              "name": "string",
+              "meta": {
+                "revision": "string",
+                "owner_kind": "string",
+                "persistence": "string",
+                "applies_to": "string",
+                "editable_fields": [
+                  "…"
+                ],
+                "supported_actions": [
+                  "…"
+                ],
+                "supported_tool_capabilities": [
+                  "…"
+                ],
+                "model_fallback": "string"
+              },
+              "configured": {
+                "display_name": "string",
+                "description": "string",
+                "system_prompt": "string",
+                "permission_policy": {
+                  "type": "…"
+                }
+              }
+            },
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/agent/legacy-history-notice/get",
+          "count": 1,
+          "statuses": {
+            "200": 1
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": null,
+          "responseShape": {
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/channel/connections/prepare",
+          "count": 1,
+          "statuses": {
+            "200": 1
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": null,
+          "responseShape": {
+            "connection": {
+              "channel": "string",
+              "agent_name": "string",
+              "state": "string",
+              "created_at": "number",
+              "updated_at": "number",
+              "connection_id": "string"
+            },
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/connectors/connected/list",
+          "count": 1,
+          "statuses": {
+            "200": 1
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": null,
+          "responseShape": {
+            "apps": [],
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "host": "agent.minimax.io",
+          "path": "/minimax-cloud/api/v1/plugins/installed",
+          "count": 1,
+          "statuses": {
+            "200": 1
+          },
+          "contentTypes": [
+            "application/json"
+          ],
+          "medianGapSeconds": null,
+          "responseShape": {
+            "plugins": [
+              {
+                "category": "number",
+                "version": "string",
+                "display_name": "string",
+                "capabilities": {
+                  "app_count": "…",
+                  "mcp_server_count": "…",
+                  "skill_count": "…",
+                  "hook_count": "…"
+                },
+                "installation_policy": "number",
+                "name": "string",
+                "description": "string",
+                "author": "string",
+                "icon_url": "string",
+                "source": "number",
+                "enabled": "boolean"
+              }
+            ],
+            "has_more": "boolean",
+            "base_resp": {
+              "status_code": "number",
+              "status_msg": "string"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
