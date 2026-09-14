@@ -27,8 +27,16 @@ export interface ExtendSource {
   readonly model: string;
   readonly posterUrl: string;
 }
+/** The composer's modes: text (the plain composer), video (ours), and the reference's three other chips, looks only (STORY_022). */
+export type ComposerMode = "text" | "video" | "document" | "website" | "image";
+export const LOOK_ONLY_MODES: readonly { readonly id: Exclude<ComposerMode, "text" | "video">; readonly label: string }[] = [
+  { id: "document", label: "Document" },
+  { id: "website", label: "Website" },
+  { id: "image", label: "Image Generation" },
+];
+
 export interface ComposerState {
-  readonly mode: "text" | "video";
+  readonly mode: ComposerMode;
   readonly text: string;
   readonly images: readonly ComposerImage[];
   readonly capabilities: Capabilities | undefined;
@@ -50,6 +58,9 @@ export type ComposerAction =
   | { readonly type: "text"; readonly text: string }
   | { readonly type: "enter-video-mode" }
   | { readonly type: "leave-video-mode" }
+  | { readonly type: "enter-mode"; readonly mode: Exclude<ComposerMode, "text" | "video"> }
+  | { readonly type: "scene"; readonly prompt: string; readonly ratio: string; readonly resolution: string; readonly durationSeconds: number }
+  | { readonly type: "clear-scene" }
   | { readonly type: "add-images"; readonly images: readonly ComposerImage[] }
   | { readonly type: "remove-image"; readonly id: string }
   | { readonly type: "model"; readonly model: string }
@@ -129,6 +140,23 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
       return state.mode === "video" ? state : { ...state, mode: "video", error: undefined };
     case "leave-video-mode":
       return state.mode === "text" ? state : { ...state, mode: "text", images: [], extend: undefined, error: undefined };
+    case "enter-mode":
+      return { ...state, mode: action.mode, images: [], extend: undefined, error: undefined };
+    case "scene": {
+      // A Showcase card: the prompt after the tag, the parameters where the Spark allows them (the capabilities clamp).
+      const caps = state.capabilities;
+      return {
+        ...state,
+        mode: "video",
+        text: action.prompt,
+        ratio: caps ? (caps.ratios.includes(action.ratio) ? action.ratio : state.ratio) : action.ratio,
+        resolution: caps ? (caps.resolutions.includes(action.resolution) ? action.resolution : state.resolution) : action.resolution,
+        durationSeconds: clampDuration(action.durationSeconds, caps, undefined),
+        error: undefined,
+      };
+    }
+    case "clear-scene":
+      return { ...state, text: "", images: [], error: undefined };
     case "extend-from": {
       const ext = extensionOf(state.capabilities);
       const overlapFrames = ext.overlapFrames.default;
@@ -196,7 +224,12 @@ export function overlapOptions(state: ComposerState): readonly { readonly frames
   return extensionOf(state.capabilities).overlapFrames.options.map((frames) => ({ frames, label: `${overlapSeconds(frames)} s` }));
 }
 export function canSend(state: ComposerState): boolean {
+  if (isLookOnlyMode(state.mode)) return false;
   return state.text.trim().length > 0 && !state.submitting && (state.mode !== "video" || state.capabilities !== undefined);
+}
+/** Document, Website and Image Generation are rendered as the reference renders them and go nowhere (STORY_022). */
+export function isLookOnlyMode(mode: ComposerMode): mode is Exclude<ComposerMode, "text" | "video"> {
+  return mode === "document" || mode === "website" || mode === "image";
 }
 /** "16:9 768P 5s" — the Video parameters button's label (video-params-open@1440); "+10s" while extending. */
 export function paramsLabel(state: ComposerState): string {

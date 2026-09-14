@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Capabilities } from "./job-api";
-import { canSend, durationOptions, initialComposer, isModelEnabled, isResolutionEnabled, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ComposerState, type ExtendSource } from "./composer-state";
+import { canSend, durationOptions, initialComposer, isLookOnlyMode, isModelEnabled, isResolutionEnabled, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ComposerState, type ExtendSource } from "./composer-state";
 
 const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 } };
 const img = (id: string, type = "image/png", size = 1000): ComposerImage => ({ id, file: new File(["x"], `${id}.png`, { type }), url: "", name: `${id}.png`, type, size });
@@ -143,5 +143,38 @@ describe("extend mode (STORY_016, STORY_017)", () => {
     // capabilities that arrive while extending keep the source's values and clamp into the server's ranges
     const late = reduceComposer(reduceComposer(initialComposer(), { type: "extend-from", source }), { type: "capabilities", capabilities: extCaps });
     expect(late).toMatchObject({ extend: source, ratio: "9:16", model: "minimax-h3", durationSeconds: 10, overlapFrames: 39 });
+  });
+});
+
+describe("the reference's other modes and the Showcase (STORY_022)", () => {
+  it("enter-mode switches to a look-only mode where nothing can be sent; leave-video-mode returns to text", () => {
+    let state = reduceComposer(initialComposer(), { type: "text", text: "hello" });
+    state = reduceComposer(state, { type: "enter-mode", mode: "document" });
+    expect(state.mode).toBe("document");
+    expect(isLookOnlyMode(state.mode)).toBe(true);
+    expect(canSend(state)).toBe(false);
+    state = reduceComposer(state, { type: "leave-video-mode" });
+    expect(state.mode).toBe("text");
+    expect(canSend(state)).toBe(true);
+    expect(isLookOnlyMode("video")).toBe(false);
+  });
+
+  it("a scene types the prompt, enters video mode and takes the parameters the Spark allows; clear-scene empties", () => {
+    const narrowCaps: Capabilities = { ...caps, ratios: ["16:9", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 5, max: 10, step: 1 } };
+    let state = reduceComposer(initialComposer(), { type: "capabilities", capabilities: narrowCaps });
+    state = reduceComposer(state, { type: "scene", prompt: "A neon street", ratio: "9:16", resolution: "2K", durationSeconds: 15 });
+    expect(state.mode).toBe("video");
+    expect(state.text).toBe("A neon street");
+    expect(state.ratio).toBe("9:16");
+    expect(state.resolution).toBe("768P"); // 2K is not offered by these capabilities
+    expect(state.durationSeconds).toBe(10); // clamped to the Spark's maximum
+    state = reduceComposer(state, { type: "clear-scene" });
+    expect(state.text).toBe("");
+    expect(state.mode).toBe("video");
+  });
+
+  it("without capabilities a scene's parameters are taken as given", () => {
+    const state = reduceComposer(initialComposer(), { type: "scene", prompt: "p", ratio: "21:9", resolution: "2K", durationSeconds: 8 });
+    expect([state.ratio, state.resolution, state.durationSeconds]).toEqual(["21:9", "2K", 8]);
   });
 });

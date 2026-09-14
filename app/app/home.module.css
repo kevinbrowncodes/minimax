@@ -3,7 +3,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: clamp(96px, 22vh, 190px) var(--spacing_16) var(--spacing_64);
+  /* home-signed-in@1440: the heading's top at y 231 = 175 px under the top bar at 900 tall; scales down on shorter screens (STORY_022). */
+  padding: clamp(72px, 19.4vh, 175px) var(--spacing_16) var(--spacing_64);
 }
 .heading {
   margin: 0 0 var(--spacing_32);

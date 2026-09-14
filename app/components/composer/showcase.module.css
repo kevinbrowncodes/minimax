@@ -1,0 +1,127 @@
+/* Showcase — composer-video-mode@1440 (title at 494,577; cards 169×128 at 12 px gaps; captions 12 px), narrow: two columns of 175×155 (STORY_022). */
+.showcase {
+  width: 100%;
+  max-width: var(--composer_width);
+  padding: 0 var(--spacing_12);
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  margin-bottom: var(--spacing_12);
+}
+.title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: var(--line_height_20);
+  color: var(--text_default_secondary);
+}
+.dismiss {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--icon_default_tertiary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.dismiss:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 169px);
+  gap: var(--spacing_12);
+}
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_8);
+}
+.thumb {
+  display: block;
+  width: 100%;
+  height: 128px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius_12);
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+}
+.thumbMark {
+  position: absolute;
+  inset: auto 12px 12px auto;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius_full);
+  background: #ffffffcc;
+}
+.card:hover .thumb {
+  filter: brightness(0.94);
+}
+.preview {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius_8);
+  background: #0a0a0a80;
+  color: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.card:hover .preview,
+.card:focus-within .preview {
+  display: inline-flex;
+}
+.caption {
+  font-size: 12px;
+  line-height: var(--line_height_16);
+  color: var(--text_default_primary);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Our drawn thumbnails (the reference's are its content). */
+.art_neon { background: linear-gradient(160deg, #1b1a3a, #5a1e7a 55%, #ff4fd8); }
+.art_product { background: radial-gradient(circle at 50% 40%, #f5f5f5 0 22%, #d9d9d9 23% 45%, #2b2b2b 46%); }
+.art_nature { background: linear-gradient(180deg, #ffe9b0, #7cb56b 55%, #1f4d2b); }
+.art_portrait { background: linear-gradient(200deg, #f3d3b0, #b56a4a 60%, #3a2a2a); }
+.art_report { background: linear-gradient(180deg, #fbe3d2, #f7c9a8); }
+.art_table { background: repeating-linear-gradient(180deg, #ffffff 0 12px, #eef3fb 12px 24px); }
+.art_analysis { background: linear-gradient(180deg, #e8f0ff, #c7d7f5); }
+.art_chart { background: linear-gradient(180deg, #ffffff 60%, #1f5e6b 60% 72%, #ffffff 72% 78%, #3aa1b0 78% 92%, #ffffff 92%); }
+.art_shop { background: linear-gradient(135deg, #fff7e6, #ffd9a1); }
+.art_landing { background: linear-gradient(160deg, #101010, #3b3b3b); }
+.art_space { background: radial-gradient(circle at 70% 30%, #6a7dff 0 12%, #0b1030 13%); }
+.art_portfolio { background: linear-gradient(90deg, #f2f2f2 0 50%, #d9d9d9 50%); }
+.art_painting { background: linear-gradient(135deg, #f6d365, #fda085 50%, #7f7fd5); }
+.art_fashion { background: linear-gradient(180deg, #e9e2da, #8c7b70); }
+.art_wildlife { background: linear-gradient(180deg, #ffffff, #cfe3f5 60%, #eaf2fa); }
+.art_noir { background: linear-gradient(135deg, #0a0a0a, #4a4a4a 60%, #0a0a0a); }
+@media (max-width: 899px) {
+  .showcase {
+    padding: 0;
+  }
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .thumb {
+    height: 155px;
+  }
+  .dismiss,
+  .preview {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

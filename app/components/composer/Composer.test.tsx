@@ -177,3 +177,72 @@ describe("Composer — extend mode (STORY_016, STORY_017)", () => {
     expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled();
   });
 });
+
+describe("Composer — the reference's menus, modes and Showcase (STORY_022)", () => {
+  it("the + menu lists the reference's entries with submenus; Add files or photos opens the reference chooser in video mode", async () => {
+    await renderReady();
+    const input = screen.getByTestId("reference-input");
+    const clickInput = vi.spyOn(input as HTMLInputElement, "click").mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
+    const menu = screen.getByRole("menu", { name: "Add attachment" });
+    const labels = Array.from(menu.querySelectorAll('[role="menuitem"]')).map((el) => el.getAttribute("aria-label") ?? el.textContent.trim());
+    expect(labels).toEqual(["Add files or photos", "Add to project", "Skills", "Plugins", "Environment variables"]);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
+    const skills = screen.getByRole("menu", { name: "Skills" });
+    expect(skills).toHaveTextContent("No skills installed");
+    expect(screen.getByRole("menuitem", { name: "Manage skills" })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Plugins" }));
+    expect(screen.getByRole("menuitem", { name: "video-creator" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Add files or photos" }));
+    expect(clickInput).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("menu", { name: "Add attachment" })).not.toBeInTheDocument();
+  });
+
+  it("the More chip and MiniMax-M3 open their menus, every entry inert; Escape closes", () => {
+    const fetchImpl = fetchWith(() => json({}, 500));
+    render(<Composer fetchImpl={fetchImpl} />);
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    const more = screen.getByRole("menu", { name: "More modes" });
+    expect(Array.from(more.querySelectorAll('[role="menuitem"]')).map((el) => el.getAttribute("aria-label"))).toEqual(["Spreadsheet", "AI PPT", "Research Report", "Education", "Scheduled Tasks"]);
+    act(() => {
+      screen.getByRole("menuitem", { name: "AI PPT" }).click();
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("Not part of MiniMax Local");
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("menu", { name: "More modes" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "MiniMax-M3" }));
+    const agent = screen.getByRole("menu", { name: "Agent model" });
+    expect(agent).toHaveTextContent("MiniMax-M2.7 HighSpeed");
+    expect(screen.getByRole("switch", { name: "Thinking" })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("Document switches the composer into a look-only mode: chips hidden, the pill in the bar, its Showcase, Send inert; the pill leaves", () => {
+    const fetchImpl = fetchWith(() => json({}, 500));
+    render(<Composer fetchImpl={fetchImpl} />);
+    fireEvent.click(screen.getByRole("button", { name: "Document" }));
+    expect(screen.queryByRole("group", { name: "Modes" })).not.toBeInTheDocument();
+    const pill = screen.getByRole("button", { name: "Document: leave this mode" });
+    expect(screen.getByTestId("showcase")).toHaveTextContent("Regulation Overview Report");
+    act(() => {
+      screen.getByRole("button", { name: "Regulation Overview Report" }).click();
+    });
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent("Not part of MiniMax Local");
+    fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "write me a report" } });
+    expect(screen.getByRole("button", { name: "Send message" })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(pill);
+    expect(screen.getByRole("group", { name: "Modes" })).toBeInTheDocument();
+    expect(screen.queryByTestId("showcase")).not.toBeInTheDocument();
+  });
+
+  it("a video Showcase card types its prompt and sets its parameters; Clear selected scene empties and hides the row", async () => {
+    await renderReady();
+    expect(screen.queryByRole("group", { name: "Modes" })).not.toBeInTheDocument(); // chips hide once a mode is on
+    fireEvent.click(screen.getByRole("button", { name: "Forest Dawn Fly-through" }));
+    expect(screen.getByRole("textbox", { name: "Message" })).toHaveDisplayValue(/drone glides/);
+    expect(screen.getByRole("button", { name: /^Video parameters: 21:9 768P 8s$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send message" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Clear selected scene" }));
+    expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("");
+    expect(screen.queryByTestId("showcase")).not.toBeInTheDocument();
+  });
+});

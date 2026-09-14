@@ -435,3 +435,28 @@
   color: var(--text_default_tertiary);
   margin: var(--spacing_4) 0 0;
 }
+
+/* STORY_022: a look-only mode's pill in the bottom bar (mode-document@1440), the inert Send there, and the + as a real button. */
+.modePill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_6);
+  height: 32px;
+  padding: 0 var(--spacing_8);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--text_default_primary);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  cursor: pointer;
+}
+.modePill:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.sendInert {
+  background: var(--bg_interaction_primary_inactive);
+}
+.iconButton:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}

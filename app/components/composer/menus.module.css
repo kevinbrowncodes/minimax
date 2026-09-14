@@ -1,0 +1,121 @@
+/* The composer's menus (STORY_022): attach-menu-open@1440 (190 px, 32 px entries), its submenus (8 px right), mode-more-open@1440
+   (181 px, 36 px entries), agent-model-menu-open@1440 (218 px). */
+.menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 190px;
+  padding: var(--spacing_4);
+  background: var(--bg_default_tertiary);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_12);
+  box-shadow: 0 4px 24px var(--shadow_default);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  color: var(--text_default_primary);
+}
+.moreMenu {
+  width: 181px;
+}
+.agentMenu {
+  left: auto;
+  right: 0;
+  width: 218px;
+}
+.entryWrap {
+  position: relative;
+}
+.submenu {
+  top: 0;
+  left: calc(100% + 8px);
+}
+.submenuWide {
+  width: 270px;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  width: 100%;
+  height: 32px;
+  padding: 0 var(--spacing_8);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--text_default_primary);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.item:hover,
+.itemOpen {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.itemTall {
+  height: 36px;
+}
+.itemStatic {
+  cursor: default;
+}
+.itemStatic:hover {
+  background: transparent;
+}
+.icon {
+  display: inline-flex;
+  color: var(--icon_default_secondary);
+}
+.label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chevron {
+  display: inline-flex;
+  color: var(--icon_default_tertiary);
+}
+.check {
+  display: inline-flex;
+  width: 16px;
+  justify-content: center;
+  color: var(--icon_default_primary);
+}
+.separator {
+  height: 1px;
+  margin: var(--spacing_4) 0;
+  background: var(--border_default);
+}
+.note {
+  display: block;
+  padding: var(--spacing_6) var(--spacing_8);
+  font-size: 12px;
+  color: var(--text_default_tertiary);
+}
+.switch {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  width: 32px;
+  height: 16px;
+  padding: 2px;
+  border-radius: var(--radius_full);
+  background: var(--border_accent);
+}
+.switchKnob {
+  display: block;
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  border-radius: var(--radius_full);
+  background: var(--gray_0);
+}
+@media (max-width: 899px) {
+  .item {
+    min-height: 44px;
+  }
+  .submenu {
+    top: 100%;
+    left: 0;
+  }
+}

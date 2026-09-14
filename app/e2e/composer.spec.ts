@@ -65,3 +65,56 @@ test.describe("composer and video mode (STORY_013)", () => {
     await expect(page.getByRole("alert").filter({ hasText: "only generates videos" })).toBeVisible();
   });
 });
+
+test.describe("the home and composer match the reference (STORY_022)", () => {
+  test("desktop: the heading and the composer card sit where the capture has them", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "positions are the 1440 × 900 capture's");
+    await page.goto("/");
+    const heading = await page.getByRole("heading", { name: "MiniMax makes your work easier" }).boundingBox();
+    const card = await page.getByTestId("composer").boundingBox();
+    // home-signed-in@1440: heading top 231, card top 302 (tokens.md › Elements); ± 2 px.
+    expect(Math.abs((heading?.y ?? 0) - 231)).toBeLessThanOrEqual(2);
+    expect(Math.abs((card?.y ?? 0) - 302)).toBeLessThanOrEqual(2);
+  });
+
+  test("a Showcase card fills the prompt with its parameters and Send delivers them to the server", async ({ page, stubApi }) => {
+    await page.goto("/?script=done-after-1-poll");
+    await page.getByRole("button", { name: /Video generation/ }).click();
+    await expect(page.getByRole("group", { name: "Modes" })).toBeHidden(); // the chips give way to the Showcase, as on the reference
+    await page.getByRole("button", { name: "Forest Dawn Fly-through" }).click();
+    await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue(/drone glides/);
+    await expect(page.getByRole("button", { name: /^Video parameters: 21:9 768P 8s$/ })).toBeVisible();
+    const created = page.waitForResponse((r) => r.url().includes("/api/jobs") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Send message" }).click();
+    const { id } = (await (await created).json()) as { id: string };
+    await expect(page).toHaveURL(new RegExp(`/task/${id}$`));
+    const received = await stubApi.received(id);
+    expect(received.request).toMatchObject({ ratio: "21:9", durationSeconds: 8 });
+    expect(received.request.prompt).toContain("drone glides");
+    const status = await page.request.get(`/api/jobs/${id}`);
+    expect(((await status.json()) as { status: string }).status).toBe("done");
+  });
+
+  test("Document mode shows the pill and its Showcase, Send shows the notice, the pill leaves the mode", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Document" }).click();
+    await expect(page.getByRole("group", { name: "Modes" })).toBeHidden();
+    await expect(page.getByTestId("showcase")).toContainText("Regulation Overview Report");
+    await page.getByRole("textbox", { name: "Message" }).fill("write a report");
+    await page.getByRole("button", { name: "Send message" }).click({ force: true });
+    await expect(page.getByRole("status")).toHaveText(/video generation only/);
+    await expect(page).toHaveURL(/\/$/);
+    await page.getByRole("button", { name: "Document: leave this mode" }).click();
+    await expect(page.getByRole("group", { name: "Modes" })).toBeVisible();
+  });
+
+  test("the + menu's Add files or photos opens the reference chooser in video mode", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /Video generation/ }).click();
+    await page.getByRole("button", { name: "Add attachment" }).click();
+    await expect(page.getByRole("menu", { name: "Add attachment" })).toBeVisible();
+    const chooser = page.waitForEvent("filechooser");
+    await page.getByRole("menuitem", { name: "Add files or photos" }).click();
+    expect((await chooser).isMultiple()).toBe(true);
+  });
+});

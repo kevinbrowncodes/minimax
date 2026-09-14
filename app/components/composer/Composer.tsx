@@ -1,13 +1,17 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
-import { canSend, durationOptions, initialComposer, isModelEnabled, isResolutionEnabled, overlapOptions, paramsLabel, reduceComposer, REFERENCE_MODELS, REFERENCE_RATIOS, REFERENCE_RESOLUTIONS, type ComposerImage, type ExtendSource } from "@/lib/composer-state";
+import { canSend, durationOptions, initialComposer, isLookOnlyMode, isModelEnabled, isResolutionEnabled, LOOK_ONLY_MODES, overlapOptions, paramsLabel, reduceComposer, REFERENCE_MODELS, REFERENCE_RATIOS, REFERENCE_RESOLUTIONS, type ComposerImage, type ExtendSource } from "@/lib/composer-state";
+import type { Scene } from "@/lib/showcase";
 import { cx } from "@/lib/cx";
 import { overlapSeconds } from "@/lib/extend";
 import type { Capabilities } from "@/lib/job-api";
 import { submitJob } from "@/lib/submit-job";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
 import { Inert } from "@/components/shell/Inert";
+import { IconDocument } from "@/components/shell/icons";
+import { AgentModelMenu, AttachMenu, ModeMenu } from "./ComposerMenus";
+import { Showcase } from "./Showcase";
 import styles from "./composer.module.css";
 
 const PLACEHOLDER = "Enter message... (use / for commands)";
@@ -44,7 +48,8 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const docked = variant === "docked";
   const textarea = useRef<HTMLTextAreaElement>(null);
   const [state, dispatch] = useReducer(reduceComposer, docked, (startInVideoMode) => (startInVideoMode ? reduceComposer(initialComposer(), { type: "enter-video-mode" }) : initialComposer()));
-  const [popover, setPopover] = useState<"params" | "model" | undefined>(undefined);
+  const [popover, setPopover] = useState<"params" | "model" | "attach" | "more" | "agent" | undefined>(undefined);
+  const [showcaseDismissed, setShowcaseDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const urls = useRef(new Map<string, string>());
@@ -154,6 +159,8 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   };
 
   const video = state.mode === "video";
+  const lookOnly = isLookOnlyMode(state.mode);
+  const modeLabel = LOOK_ONLY_MODES.find((m) => m.id === state.mode)?.label ?? "";
   const caps = state.capabilities;
   const extending = state.extend;
 
@@ -221,7 +228,15 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
           />
         </div>
         <div className={styles.bar}>
-          <Inert label="Add attachment" className={styles.iconButton}>+</Inert>
+          <span style={{ position: "relative" }} data-popover="attach">
+            <button type="button" className={styles.iconButton} aria-label="Add attachment" aria-haspopup="menu" aria-expanded={popover === "attach"} onClick={() => { setPopover(popover === "attach" ? undefined : "attach"); }}>+</button>
+            {popover === "attach" ? <AttachMenu onAddFiles={video && !extending ? () => fileInput.current?.click() : undefined} onClose={() => { setPopover(undefined); }} /> : null}
+          </span>
+          {lookOnly ? (
+            <button type="button" className={styles.modePill} aria-label={`${modeLabel}: leave this mode`} onClick={() => { dispatch({ type: "leave-video-mode" }); }}>
+              <IconDocument /> {modeLabel}
+            </button>
+          ) : null}
           {video ? (
             <>
               <span style={{ position: "relative" }} data-popover="model">
@@ -302,8 +317,15 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
             </>
           ) : null}
           <div className={styles.barRight}>
-            <Inert label="MiniMax-M3" className={styles.inertModel} align="end">MiniMax-M3 <span aria-hidden="true">⌄</span></Inert>
-            {stop ? (
+            <span style={{ position: "relative" }} data-popover="agent">
+              <button type="button" className={styles.inertModel} aria-label="MiniMax-M3" aria-haspopup="menu" aria-expanded={popover === "agent"} onClick={() => { setPopover(popover === "agent" ? undefined : "agent"); }}>MiniMax-M3 <span aria-hidden="true">⌄</span></button>
+              {popover === "agent" ? <AgentModelMenu /> : null}
+            </span>
+            {lookOnly ? (
+              <Inert label="Send message" className={cx(styles.send, styles.sendInert)} align="end">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </Inert>
+            ) : stop ? (
               <button type="button" className={styles.send} aria-label="Stop generation" disabled={stop.pending} onClick={stop.onStop}>
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" /></svg>
               </button>
@@ -321,16 +343,29 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
         </div>
       ) : null}
       {state.capabilitiesError ? <div className={styles.error} role="alert">{state.capabilitiesError}</div> : null}
-      {docked ? null : (
-      <div className={styles.chips} role="group" aria-label="Modes">
-        <button type="button" className={cx(styles.chip, video && styles.chipActive)} aria-pressed={video} onClick={() => { dispatch({ type: video ? "leave-video-mode" : "enter-video-mode" }); }}>
-          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="9" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="m10.5 7 4-2v6l-4-2z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
-          Video generation <span className={styles.h3}>H3</span>
-        </button>
-        {["Document", "Website", "Image Generation", "More"].map((label) => (
-          <Inert key={label} label={label} className={cx(styles.chip, styles.chipInert)}>{label}</Inert>
-        ))}
-      </div>
+      {docked || state.mode !== "text" ? null : (
+        <div className={styles.chips} role="group" aria-label="Modes">
+          <button type="button" className={styles.chip} onClick={() => { dispatch({ type: "enter-video-mode" }); }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="9" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="m10.5 7 4-2v6l-4-2z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
+            Video generation <span className={styles.h3}>H3</span>
+          </button>
+          {LOOK_ONLY_MODES.map((m) => (
+            <button key={m.id} type="button" className={styles.chip} onClick={() => { dispatch({ type: "enter-mode", mode: m.id }); }}>
+              <IconDocument /> {m.label}
+            </button>
+          ))}
+          <span style={{ position: "relative" }} data-popover="more">
+            <button type="button" className={styles.chip} aria-haspopup="menu" aria-expanded={popover === "more"} onClick={() => { setPopover(popover === "more" ? undefined : "more"); }}>More</button>
+            {popover === "more" ? <ModeMenu /> : null}
+          </span>
+        </div>
+      )}
+      {docked || state.mode === "text" || showcaseDismissed || extending ? null : (
+        <Showcase
+          mode={state.mode}
+          onScene={video ? (scene: Scene) => { dispatch({ type: "scene", prompt: scene.prompt, ratio: scene.ratio, resolution: scene.resolution, durationSeconds: scene.durationSeconds }); textarea.current?.focus(); } : undefined}
+          onDismiss={() => { dispatch({ type: "clear-scene" }); setShowcaseDismissed(true); }}
+        />
       )}
     </div>
   );
