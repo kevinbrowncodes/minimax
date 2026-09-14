@@ -40,6 +40,10 @@ until curl -fsS "$COMFY_URL/system_stats" > /dev/null 2>&1; do
 done
 
 log "ComfyUI ready after ~${waited}s at $COMFY_URL"
+# CHORE_007: a custom-node pack that fails to import is silently absent from /object_info; assert the pinned one loaded.
+curl -fsS "$COMFY_URL/object_info/ImageBatchExtendWithOverlap" | jq -e 'has("ImageBatchExtendWithOverlap")' > /dev/null 2>&1 \
+  || die "ComfyUI-KJNodes did not load (ImageBatchExtendWithOverlap is missing from /object_info) — see docker logs $COMFY_CONTAINER"
+log "custom nodes: ComfyUI-KJNodes loaded"
 ADAPTER_URL="http://127.0.0.1:${ADAPTER_PORT:-4020}"
 waited=0
 until curl -fsS "$ADAPTER_URL/health" > /dev/null 2>&1; do

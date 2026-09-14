@@ -41,6 +41,19 @@ RUN git clone --quiet --depth 1 --branch "${COMFYUI_TAG}" "${COMFYUI_REPO}" /com
  && /comfy/venv/bin/pip install --quiet -r /comfy/ComfyUI/requirements.txt \
  && /comfy/venv/bin/pip install --quiet "huggingface_hub[cli]"
 
+# CHORE_007: kijai's ComfyUI-KJNodes (GPL-3.0, as ComfyUI) at a pinned commit, so reference workflows that use its
+# Get/Set wiring, ImageBatchExtendWithOverlap, CreateFadeMaskAdvanced and MiniMax memory patches run as published
+# (the PR #15375 author's masked-extension example is STORY_020's control run). Its SageAttention nodes need a package
+# this image does not carry; the workflows that use them bypass those nodes. Fetched shallow at the commit, .git dropped.
+ARG KJNODES_REPO=https://github.com/kijai/ComfyUI-KJNodes.git
+ARG KJNODES_COMMIT=d3cfe21625e5170126ce06fbfcfe1d88108688c3
+RUN mkdir -p /comfy/ComfyUI/custom_nodes/ComfyUI-KJNodes \
+ && cd /comfy/ComfyUI/custom_nodes/ComfyUI-KJNodes \
+ && git init --quiet && git remote add origin "${KJNODES_REPO}" \
+ && git fetch --quiet --depth 1 origin "${KJNODES_COMMIT}" && git checkout --quiet FETCH_HEAD \
+ && rm -rf .git \
+ && /comfy/venv/bin/pip install --quiet -r requirements.txt
+
 COPY --chown=comfy:comfy h3.sh container/ /comfy/bin/
 RUN chmod +x /comfy/bin/*.sh && mkdir -p /comfy/templates /comfy/ComfyUI/models /comfy/ComfyUI/output
 
