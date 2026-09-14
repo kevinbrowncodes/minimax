@@ -168,9 +168,11 @@ When a floor fails, `tools/gate/run.sh` prints the files with the most uncovered
 Recon captures the reference (agent.minimax.io) through the owner's own signed-in session, from the Spark, in the gate container — nothing is installed on the host ([CLAUDE.md → §3e](CLAUDE.md#3e-how-recon-is-recorded), [§4b](CLAUDE.md#4b-recon-with-playwright)).
 
 ```bash
-recon/login.sh                       # the Spark has no display (CHORE_005): Chromium runs headless with its DevTools port on the LAN
-                                     # for the few minutes of the login; on the Mac open chrome://inspect/#devices → Configure… →
-                                     # add 192.168.1.33:9222 (the IP, not the name) → inspect the agent.minimax.io target → sign in with GitHub
+recon/login.sh                       # sign in once (CHORE_005). With a display reachable (DISPLAY set — the desktop session, seen through
+                                     # NoMachine or at the console) a headed Chromium window opens on it: sign in there with GitHub.
+                                     # With no display (or RECON_LOGIN=remote) Chromium runs headless with its DevTools port on the LAN
+                                     # for the few minutes of the login: on another machine open chrome://inspect/#devices → Configure… →
+                                     # add 192.168.1.33:9222 (the IP, not the name) → inspect the agent.minimax.io target → sign in
 recon/run.sh check                   # prints session: signed-in | signed-out | unknown (exit 0 / 1 / 2)
 recon/run.sh capture [--generate N]  # dated screenshots into docs/recon/<date>/ and the raw network log into recon/out/<date>/
 recon/run.sh tokens <date>           # measured tokens → docs/recon/<date>/tokens.md + tokens.json
