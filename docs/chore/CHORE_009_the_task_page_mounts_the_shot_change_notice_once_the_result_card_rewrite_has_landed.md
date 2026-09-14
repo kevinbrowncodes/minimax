@@ -1,6 +1,6 @@
 # CHORE_009 — The task page mounts the shot-change notice once the result-card rewrite has landed
 
-**Status:** Open (2026-09-14)
+**Status:** Done (2026-09-14) — landed with STORY_023's commit
 **Created:** 2026-09-14, from STORY_020
 
 ## Summary
@@ -13,11 +13,15 @@ One component, one owner at a time. The owner sees the shot changes tonight in t
 
 ## Changes
 
-- [ ] `TaskPage.tsx`: `<CutNotice cuts={job.result.cuts} onRetry={retry} busy={busy === "retry"} />` above the player in the done result; the existing `retry()` already re-posts the request without a seed (an extension keeps `continueFrom` and the overlap).
-- [ ] `TaskPage.test.tsx`: the notice appears for a done entry with `cuts`, not for `[]` or an entry without the field; its Retry posts without `seed` and navigates to the new task.
-- [ ] `e2e/task.spec.ts`: stub script `done-with-cut` → the notice reads "The shot changed at 00:11" → Retry → the POST has no `seed` → the new task page → its terminal status awaited.
-- [ ] Flip STORY_020's two UI acceptance boxes.
+- [x] `TaskPage.tsx`: `<CutNotice cuts={job.result.cuts} onRetry={retry} busy={busy === "retry"} />` above the player in the done result; the existing `retry()` already re-posts the request without a seed (an extension keeps `continueFrom` and the overlap).
+- [x] `TaskPage.test.tsx`: the notice appears for a done entry with `cuts`, not for `[]` or an entry without the field; its Retry posts without `seed` and navigates to the new task.
+- [x] `e2e/task.spec.ts`: stub script `done-with-cut` → the notice reads "The shot changed at 00:11" → Retry → the POST has no `seed` → the new task page → its terminal status awaited.
+- [x] Flip STORY_020's two UI acceptance boxes.
 
 ## Testing
 
 - **Unit** (`TaskPage.test.tsx`), **e2e** (`task.spec.ts`) as above; **integration: not applicable** (no route changes — `result.cuts` is relayed as part of the result already).
+
+## Done (2026-09-14)
+
+Mounted in STORY_023's rewritten task page at the top of the done result (above the "Done —" line and the file card): `<CutNotice cuts={job.result.cuts} onRetry={() => void retry()} busy={busy === "retry"} />`. `TaskPage.test.tsx` covers one / several / none / absent and the seedless Retry; `task.spec.ts` runs `done-with-cut` at both widths (the notice reads "The shot changed at 00:11", Retry's POST carries no `seed`, the new task reaches done). STORY_020's two UI boxes are flipped.

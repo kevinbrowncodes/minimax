@@ -1,31 +1,47 @@
-/* Task page — task-submitted@1440, task-generating-*@1440, task-rejected-insufficient-credits@1440 (Progress panel),
-   task-request-failed@1440; tokens.md (STORY_014) */
+/* Task page — task-page@1440 / -dark, task-thread-top@1440, task-processed-expanded@1440, task-result-card-hover@1440,
+   task-result-menu-open@1440, task-result-preview-open@1440, work-area-closed@1440, work-area-deliverable-open@1440,
+   narrow-task-page@390, narrow-task-result-preview-open@390; tokens.md › Elements › task (STORY_023; the Progress
+   list from task-generating-*@1440 and task-rejected-insufficient-credits@1440, STORY_014). */
+/* The page fills the viewport under the top bar; the thread scrolls inside it while the docked composer stays put
+   (task-page@1440); the Work Area card sits at the right; the preview pane covers the right 590 px. */
 .page {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 250px;
-  gap: var(--spacing_24);
-  padding: 0 var(--spacing_24) var(--spacing_24);
-  min-height: calc(100vh - var(--topbar_height));
+  display: flex;
+  align-items: stretch;
+  height: calc(100vh - var(--topbar_height));
 }
-.thread {
+.main {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+}
+/* task-result-preview-open@1440: the 590 px pane takes the right; the thread centres in what is left (510 wide) */
+.pagePreview {
+  padding-right: 590px;
+}
+.thread {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--spacing_40);
 }
 .column {
   width: 100%;
-  max-width: 740px;
+  max-width: 736px;
   margin: 0 auto;
+  padding-bottom: var(--spacing_24);
   display: flex;
   flex-direction: column;
   gap: var(--spacing_24);
-  flex: 1;
 }
+/* user-bubble@1440: right-aligned, 537 max, padding 11 16, radius 16 */
 .bubble {
   align-self: flex-end;
-  max-width: 600px;
-  padding: var(--spacing_12) var(--spacing_16);
-  border-radius: var(--radius_12);
+  max-width: 537px;
+  padding: 11px var(--spacing_16);
+  border-radius: var(--radius_16);
   background: var(--bg_grouped_tertiary);
   font-size: 16px;
   line-height: var(--line_height_26);
@@ -73,40 +89,203 @@
   0%, 100% { opacity: 0.35; }
   50% { opacity: 1; }
 }
+/* processed-row@1440: "Processed 20s ›" 14 px tertiary, 28 px tall, a hairline under it */
+.processedWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_4);
+  margin-bottom: calc(-1 * var(--spacing_4));
+}
+.processed {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_4);
+  height: 28px;
+  padding: var(--spacing_4) 0;
+  border: 0;
+  background: transparent;
+  color: var(--text_default_tertiary);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  cursor: pointer;
+}
+.processed:hover {
+  color: var(--text_default_secondary);
+}
+.processedChevron {
+  display: inline-block;
+  transition: transform var(--duration_fast) var(--ease_standard);
+}
+.processedChevronOpen {
+  transform: rotate(90deg);
+}
+.processedSteps {
+  padding: var(--spacing_8) 0 var(--spacing_12);
+}
+.divider {
+  height: 1px;
+  background: var(--border_default);
+}
 .result {
   display: flex;
   flex-direction: column;
   gap: var(--spacing_12);
 }
-.video {
-  width: 100%;
-  max-width: 740px;
-  aspect-ratio: 16 / 9;
-  background: var(--gray_1000);
-  border-radius: var(--radius_12);
-  display: block;
+.agentLine {
+  margin: 0;
+  font-size: 16px;
+  line-height: var(--line_height_26);
+  color: var(--text_default_primary);
 }
-.summary {
-  font-size: 13px;
+/* result-card@1440: 736 × 79, padding 16, radius 12; a 40 px play tile; Open preview 139 × 30; More 32 × 32 */
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  padding: var(--spacing_16);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_12);
+  background: var(--bg_default_primary_elevated);
+}
+.cardIcon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius_8);
+  background: var(--bg_grouped_tertiary_elevated);
+  color: var(--icon_default_secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.cardName {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text_default_primary);
+}
+.cardFile {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  line-height: var(--line_height_26);
+}
+.cardType {
+  font-size: 12px;
+  line-height: var(--line_height_16);
   color: var(--text_default_secondary);
 }
+.cardActions {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_8);
+}
+.openPreview {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_6);
+  height: 30px;
+  padding: 0 var(--spacing_12) 0 var(--spacing_8);
+  border: 0;
+  border-right: 1px solid var(--border_default);
+  border-radius: var(--radius_8) 0 0 var(--radius_8);
+  background: transparent;
+  color: var(--text_default_primary);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  cursor: pointer;
+  transition: background var(--duration_fast) var(--ease_standard);
+}
+.openPreview:hover,
+.cardMore:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.cardMore {
+  width: 32px;
+  height: 30px;
+  border: 0;
+  border-radius: 0 var(--radius_8) var(--radius_8) 0;
+  background: transparent;
+  color: var(--icon_default_secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+/* task-result-menu-open@1440: 180 wide, 36 px entries; fixed under the More button (the page sets top / right) */
+.cardMenu {
+  position: fixed;
+  z-index: 25;
+  width: 180px;
+  padding: var(--spacing_4);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_12);
+  background: var(--bg_default_primary_elevated);
+  box-shadow: var(--shadow_default) 0 4px 16px 0;
+  display: flex;
+  flex-direction: column;
+}
+.cardMenuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  height: 36px;
+  padding: 0 var(--spacing_8);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--text_default_primary);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+}
+.cardMenuItem:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+/* message-actions@1440: 26 × 26 icon buttons, radius 8, tertiary; the time 13 px */
 .actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing_16);
+  gap: var(--spacing_6);
   font-size: 13px;
-  color: var(--text_default_secondary);
+  color: var(--text_default_tertiary);
 }
-.actionLink {
+.action {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--icon_default_tertiary);
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing_4);
-  color: var(--text_default_primary);
+  justify-content: center;
   cursor: pointer;
-  border: 0;
-  background: transparent;
-  padding: var(--spacing_4) 0;
-  font-size: 13px;
+  transition: background var(--duration_fast) var(--ease_standard);
+}
+.action:hover {
+  background: var(--bg_interaction_tertiary_hover);
+  color: var(--icon_default_secondary);
+}
+.time {
+  margin-left: var(--spacing_6);
 }
 .failure {
   display: flex;
@@ -126,46 +305,303 @@
   font-weight: 500;
   cursor: pointer;
 }
+/* the docked stack: credits notice, composer, disclaimer (task-page@1440: 768 wide, centred); the jump button floats above it */
 .docked {
-  margin-top: auto;
-  padding-top: var(--spacing_24);
+  position: relative;
+  flex: none;
+  padding: var(--spacing_12) var(--spacing_24) var(--spacing_4);
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: var(--spacing_12);
+}
+/* jump-button@1440: 36 round, white, 1 px border, centred 12 px above the notice */
+.jump {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_full);
+  background: var(--bg_default_primary_elevated);
+  color: var(--icon_default_primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow_default) 0 2px 8px 0;
+}
+.jumpArrow {
+  display: inline-block;
+  transition: transform var(--duration_fast) var(--ease_standard);
+}
+.jumpArrowDown {
+  transform: rotate(180deg);
+}
+/* credits-notice@1440: 768 × 50, padding 8 16, radius 16, the same 20 px glow as the composer */
+.credits {
+  width: 100%;
+  max-width: 768px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  padding: var(--spacing_8) var(--spacing_16);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_16);
+  background: var(--bg_default_tertiary);
+  box-shadow: rgba(10, 10, 10, 0.08) 0 0 20px 0;
+  font-size: 13px;
+  line-height: var(--line_height_20);
+  color: var(--text_default_primary);
+}
+.creditsIcon {
+  flex: none;
+  display: inline-flex;
+  color: var(--icon_default_secondary);
+}
+.creditsText {
+  flex: 1;
+  min-width: 0;
+}
+.creditsActions {
+  display: inline-flex;
+  align-items: center;
   gap: var(--spacing_8);
 }
+.creditsSecondary,
+.creditsPrimary {
+  height: 32px;
+  padding: 0 var(--spacing_12);
+  border: 0;
+  border-radius: var(--radius_8);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.creditsSecondary {
+  background: var(--bg_interaction_tertiary_hover);
+  color: var(--text_default_primary);
+}
+.creditsPrimary {
+  background: var(--bg_interaction_primary_default);
+  color: var(--text_label_primary_default);
+}
+.creditsClose {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--icon_default_tertiary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.creditsClose:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+/* footer-disclaimer@1440: 10 px tertiary, centred */
 .footer {
-  font-size: 11px;
+  margin: 0;
+  font-size: 10px;
   line-height: 14px;
   color: var(--text_default_tertiary);
   text-align: center;
 }
+/* preview pane (task-result-preview-open@1440): 590 at the right, full height, head 56, the video 556 wide centred */
+.preview {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 590px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border_default);
+  background: var(--bg_default_secondary);
+}
+.previewHead {
+  flex: none;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  padding: 0 var(--spacing_16);
+  border-bottom: 1px solid var(--border_default);
+  background: var(--bg_default_primary_elevated);
+}
+.previewTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  color: var(--text_default_secondary);
+}
+.previewDivider {
+  width: 1px;
+  height: 16px;
+  background: var(--border_default);
+}
+.previewFile {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  color: var(--text_default_primary);
+}
+.previewActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_4);
+}
+.previewDownload {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_6);
+  height: 30px;
+  padding: 0 var(--spacing_8) 0 var(--spacing_12);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_8);
+  background: var(--bg_default_primary_elevated);
+  color: var(--text_default_primary);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  text-decoration: none;
+  cursor: pointer;
+}
+.previewDownload:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.previewIcon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--icon_default_tertiary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.previewIcon:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.previewBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing_16);
+}
+.video {
+  width: 100%;
+  max-width: 556px;
+  aspect-ratio: 16 / 9;
+  background: var(--gray_1000);
+  border-radius: var(--radius_12);
+  display: block;
+}
+/* work-area-panel@1440: 324 wide incl. padding 24 24 32 → a 276 card 12 px from the right edge (the thread centres in the
+   rest: 338 + 736 → centre 706), sections 262 × 28, rows 262 × 30; the card stays put while the thread scrolls */
+.panelCol {
+  flex: none;
+  width: 288px;
+  padding-right: 12px;
+}
 .panel {
-  align-self: start;
   position: sticky;
-  top: var(--spacing_16);
+  top: 0;
+  width: 276px;
+  padding: var(--spacing_4) 6px var(--spacing_8);
   border: 1px solid var(--border_default);
   border-radius: var(--radius_12);
-  padding: var(--spacing_12) var(--spacing_16);
-  background: var(--bg_default_tertiary);
+  background: var(--bg_default_primary_elevated);
+  display: flex;
+  flex-direction: column;
+}
+.panelSection {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing_4) 0;
+}
+.panelSection + .panelSection {
+  border-top: 1px solid var(--border_default);
 }
 .panelHead {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 14px;
+  height: 28px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--text_default_secondary);
+  font-size: 13px;
   font-weight: 500;
   line-height: var(--line_height_20);
-  margin-bottom: var(--spacing_8);
+  cursor: pointer;
+  text-align: left;
+}
+.panelChevron {
+  display: inline-flex;
+  color: var(--icon_default_tertiary);
+  transition: transform var(--duration_fast) var(--ease_standard);
+}
+.panelChevronClosed {
+  transform: rotate(-90deg);
 }
 .panelHint {
+  margin: 0;
+  padding: 0 6px var(--spacing_4);
+  font-size: 12px;
+  line-height: var(--line_height_16);
+  color: var(--text_default_tertiary);
+}
+.deliverable {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_6);
+  height: 30px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--radius_10);
+  background: transparent;
+  color: var(--text_default_primary);
   font-size: 13px;
-  color: var(--text_default_secondary);
+  line-height: var(--line_height_20);
+  text-align: left;
+  cursor: pointer;
+}
+.deliverable:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.deliverableName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .steps {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 6px;
   display: flex;
   flex-direction: column;
   gap: var(--spacing_8);
@@ -223,24 +659,74 @@
   background: var(--bg_interaction_primary_default);
   transition: width 0.3s ease;
 }
+/* narrow-task-page@390: no panel; Open preview full width and no More; the preview is a sheet; the notice stacks */
 @media (max-width: 899px) {
-  .page {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 0 var(--spacing_16) var(--spacing_16);
-  }
-  .panel {
-    position: static;
-    order: 2;
+  .page,
+  .pagePreview {
+    padding-right: 0;
   }
   .thread {
-    order: 1;
+    padding: 0 var(--spacing_16);
+  }
+  .docked {
+    padding: var(--spacing_12) var(--spacing_16) var(--spacing_4);
+  }
+  .panelCol {
+    display: none;
   }
   .bubble {
     max-width: 100%;
   }
-  .retry,
-  .actionLink {
+  /* narrow-task-result-menu-open@390: the card wraps — the name row, then Open preview + ▾ on a full-width row */
+  .card {
+    flex-wrap: wrap;
+  }
+  .cardActions {
+    flex: 1 0 100%;
+  }
+  .openPreview {
+    flex: 1;
+    justify-content: center;
     min-height: 44px;
+  }
+  .cardMore {
+    width: 44px;
+    height: 44px;
+  }
+  .action,
+  .retry,
+  .processed,
+  .creditsClose,
+  .previewIcon,
+  .deliverable,
+  .cardMenuItem {
+    min-height: 44px;
+  }
+  .action {
+    width: 44px;
+  }
+  /* narrow-task-page@390: the notice wraps — ⓘ text × on the first row, the buttons right-aligned under it */
+  .credits {
+    height: auto;
+    flex-wrap: wrap;
+  }
+  .creditsActions {
+    order: 3;
+    flex: 1 0 100%;
+    justify-content: flex-end;
+  }
+  .creditsSecondary,
+  .creditsPrimary {
+    min-height: 44px;
+  }
+  /* departure: the reference squeezes the thread to ≈ 150 px beside a 238 px pane at 390; ours covers the page */
+  .pagePreview {
+    padding-right: 0;
+  }
+  .preview {
+    left: 0;
+    width: auto;
+    border-left: 0;
   }
 }
 

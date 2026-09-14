@@ -1,8 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState, type ReactNode } from "react";
 import { Composer } from "@/components/composer/Composer";
+import { Inert } from "@/components/shell/Inert";
+import { useShell } from "@/components/shell/ShellContext";
+import { IconChevronDown, IconClose, IconCopy, IconDocument, IconDownload, IconInfo, IconMore } from "@/components/shell/icons";
 import { fileNameFor } from "@/lib/assets-filter";
 import type { ExtendSource } from "@/lib/composer-state";
 import { cx } from "@/lib/cx";
@@ -10,7 +13,10 @@ import type { HistoryEntry } from "@/lib/history-store";
 import type { JobStatusResponse, Overlap } from "@/lib/job-api";
 import { initialJob, isTerminal, reduceJob, type JobSnapshot } from "@/lib/job-status";
 import { PollAbortedError, pollUntilTerminal } from "@/lib/polling";
-import { indicatorFor, stepsFor } from "@/lib/todo-steps";
+import { useNarrow } from "@/lib/use-narrow";
+import { formatDoneAt, processedSeconds, resultLine } from "@/lib/task-view";
+import { indicatorFor, stepsFor, type Step } from "@/lib/todo-steps";
+import { CutNotice } from "./CutNotice";
 import styles from "./task.module.css";
 
 export interface TaskPageProps {
@@ -26,20 +32,79 @@ function fromEntry(entry: HistoryEntry): JobSnapshot {
   return reduceJob(base, { type: "status", response: { id: entry.id, status: entry.status, progress: entry.progress, ...(entry.error ? { error: entry.error } : {}), ...(entry.result ? { result: entry.result } : {}) } });
 }
 
-function formatBytes(bytes: number): string {
-  return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${String(Math.round(bytes / 1024))} KB`;
+const IconEye = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden="true"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" /><circle cx="8" cy="8" r="2" /></svg>
+);
+const IconPlay = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true"><circle cx="10" cy="10" r="8" /><path d="m8 7 5 3-5 3z" fill="currentColor" stroke="none" /></svg>
+);
+const IconThumb = ({ down = false }: { readonly down?: boolean }) => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" aria-hidden="true" style={down ? { transform: "rotate(180deg)" } : undefined}><path d="M4.5 7.5v6h-2v-6zM4.5 7.5l3-5a1.5 1.5 0 0 1 1.5 1.5v2.5h3.4a1.2 1.2 0 0 1 1.2 1.4l-.9 4.6a1.2 1.2 0 0 1-1.2 1H4.5" /></svg>
+);
+
+/** The Progress list (Work Area › Progress, and the unfolded Processed row): the reference's numbered steps with ticks. */
+function StepList({ steps, job }: { readonly steps: readonly Step[]; readonly job: JobSnapshot }) {
+  return (
+    <ol className={styles.steps}>
+      {steps.map((step, index) => (
+        <li key={step.label} className={cx(styles.step, step.state === "done" && styles.stepDone, step.state === "active" && styles.stepActive, step.state === "failed" && styles.stepFailed)} data-step-state={step.state}>
+          <span className={styles.stepMark} aria-hidden="true">{step.state === "done" ? "✓" : step.state === "failed" ? "!" : String(index + 1)}</span>
+          <span>
+            <span className={styles.stepLabel}>{step.label}</span>
+            {step.detail ? <span className={styles.stepDetail}>{step.detail}</span> : null}
+            {step.state === "active" && job.status === "running" ? (
+              <span className={styles.bar} role="progressbar" aria-valuenow={job.progress} aria-valuemin={0} aria-valuemax={100} aria-label="Generation progress">
+                <span className={styles.barFill} style={{ width: `${String(job.progress)}%` }} />
+              </span>
+            ) : null}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
 }
 
-/** The task page (STORY_014): the thread, the Progress panel, the docked composer; polling drives it to a terminal state. */
+/** A folding section of the Work Area panel (task-page@1440: "Progress ⌄", "Deliverables ⌄"). */
+function PanelSection({ title, children }: { readonly title: string; readonly children: ReactNode }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className={styles.panelSection}>
+      <button type="button" className={styles.panelHead} aria-expanded={open} onClick={() => { setOpen((o) => !o); }}>
+        <span>{title}</span>
+        <span className={cx(styles.panelChevron, !open && styles.panelChevronClosed)} aria-hidden="true"><IconChevronDown /></span>
+      </button>
+      {open ? children : null}
+    </div>
+  );
+}
+
+/**
+ * The task page (STORY_014): the thread and the docked composer; polling drives it to a terminal state. STORY_023 gives
+ * it the reference's shape: the result as a file card with a preview pane, the Work Area panel (Progress +
+ * Deliverables) the top bar toggles, the Processed row, the message actions, the credits notice and the disclaimer.
+ */
 export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPageProps) {
   const router = useRouter();
   const doFetch = fetchImpl ?? fetch;
+  const { workAreaOpen, previewOpen, openPreview, closePreview } = useShell();
+  const narrow = useNarrow();
   const [job, dispatch] = useReducer(reduceJob, entry, fromEntry);
   const [busy, setBusy] = useState<"stop" | "retry" | undefined>(undefined);
   const [copied, setCopied] = useState(false);
   const [extending, setExtending] = useState(extendOnOpen && entry.status === "done");
   const [overlap, setOverlap] = useState<Overlap | undefined>(entry.overlap);
+  // The card's menu is fixed to the viewport (anchored under the More button) so the thread's scroller does not clip it.
+  const [cardMenu, setCardMenu] = useState<{ readonly top: number; readonly right: number } | undefined>(undefined);
+  const cardMenuOpen = cardMenu !== undefined;
+  const closeCardMenu = useCallback(() => {
+    setCardMenu(undefined);
+  }, []);
+  const [processedOpen, setProcessedOpen] = useState(false);
+  const [creditsDismissed, setCreditsDismissed] = useState(false);
+  const [atBottom, setAtBottom] = useState(true);
+  const [overflows, setOverflows] = useState(false);
   const opened = useRef(false);
+  const threadRef = useRef<HTMLElement>(null);
 
   // Mark the entry opened once (the sidebar's unread dot). StrictMode runs effects twice; the ref makes it once.
   useEffect(() => {
@@ -65,6 +130,9 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
       onUpdate: (response) => {
         dispatch({ type: "status", response });
         if (response.request?.overlap) setOverlap(response.request.overlap);
+        // The preview pane opens by itself when a job finishes while the page is open (STORY_023's one departure):
+        // a watched job still ends in a playing video. A finished job reopened from history waits for Open preview.
+        if (response.status === "done" && response.result) openPreview();
       },
     }).catch((error: unknown) => {
       if (!(error instanceof PollAbortedError)) dispatch({ type: "status", response: { id: entry.id, status: "failed", progress: job.progress, error: { code: "unreachable", message: error instanceof Error ? error.message : String(error) } } });
@@ -117,6 +185,55 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
   };
 
   const running = job.status === "queued" || job.status === "running";
+
+  useEffect(() => {
+    if (!cardMenuOpen && !previewOpen) return undefined;
+    const onKey = (event: globalThis.KeyboardEvent): void => {
+      if (event.key === "Escape") {
+        closeCardMenu();
+        closePreview();
+      }
+    };
+    const onClick = (event: MouseEvent): void => {
+      if (cardMenuOpen && !(event.target instanceof Element && event.target.closest("[data-card-menu]"))) closeCardMenu();
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onClick);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onClick);
+    };
+  }, [cardMenuOpen, previewOpen, closePreview, closeCardMenu]);
+
+  // The jump button shows once the thread overflows its scroller; its arrow follows the scroll position.
+  const measureScroll = useCallback(() => {
+    const el = threadRef.current;
+    if (!el) return;
+    setOverflows(el.scrollHeight > el.clientHeight + 8);
+    setAtBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 8);
+  }, []);
+  useEffect(() => {
+    const el = threadRef.current;
+    if (!el) return undefined;
+    // the ResizeObserver fires once on observe and again as the thread grows; scroll and resize keep the arrow right
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measureScroll) : undefined;
+    observer?.observe(el);
+    for (const child of Array.from(el.children)) observer?.observe(child);
+    const frame = observer ? undefined : requestAnimationFrame(measureScroll);
+    el.addEventListener("scroll", measureScroll);
+    window.addEventListener("resize", measureScroll);
+    return () => {
+      observer?.disconnect();
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      el.removeEventListener("scroll", measureScroll);
+      window.removeEventListener("resize", measureScroll);
+    };
+  }, [measureScroll]);
+  const jump = (): void => {
+    const el = threadRef.current;
+    if (!el) return;
+    el.scrollTo({ top: atBottom ? 0 : el.scrollHeight, behavior: "smooth" });
+  };
   const steps = stepsFor(job);
   const resultPath = `/api/jobs/${encodeURIComponent(entry.id)}/result`;
   const posterPath = `/api/jobs/${encodeURIComponent(entry.id)}/poster`;
@@ -125,95 +242,171 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
       ? { id: entry.id, title: entry.title, durationSeconds: job.result.durationSeconds, ratio: entry.params.ratio, resolution: entry.params.resolution, model: entry.params.model, posterUrl: posterPath }
       : undefined;
 
+  const done = job.status === "done" && job.result;
+  const fileName = fileNameFor(entry);
+  const doneAt = entry.finishedAt ?? entry.createdAt;
+  const showPanel = workAreaOpen && !previewOpen && !narrow; // narrow-task-page@390: no panel
+
   return (
-    <div className={styles.page}>
-      <section className={styles.thread} aria-label="Task">
-        <div className={styles.column}>
-          <div className={styles.bubble} data-testid="user-message">
-            <span className={styles.mention}>@video-creator</span> {entry.prompt}
-            {entry.referenceImages > 0 ? <div className={styles.refs}>{String(entry.referenceImages)} reference image{entry.referenceImages > 1 ? "s" : ""} attached</div> : null}
-            {entry.continuesFrom ? (
-              <span className={styles.continues} data-testid="continues">
-                Continues <Link href={`/task/${encodeURIComponent(entry.continuesFrom.id)}`}>{entry.continuesFrom.title}</Link>
-                {entry.continuesFrom.durationSeconds === undefined ? "" : ` · ${entry.continuesFrom.durationSeconds.toFixed(1)} s`}
-                {overlap ? ` · carried its last ${overlap.seconds.toFixed(1)} s` : ""}
-              </span>
+    <div className={cx(styles.page, previewOpen && styles.pagePreview)}>
+      <div className={styles.main}>
+        <section className={styles.thread} aria-label="Task" ref={threadRef} onScroll={closeCardMenu}>
+          <div className={styles.column}>
+            <div className={styles.bubble} data-testid="user-message">
+              <span className={styles.mention}>@video-creator</span> {entry.prompt}
+              {entry.referenceImages > 0 ? <div className={styles.refs}>{String(entry.referenceImages)} reference image{entry.referenceImages > 1 ? "s" : ""} attached</div> : null}
+              {entry.continuesFrom ? (
+                <span className={styles.continues} data-testid="continues">
+                  Continues <Link href={`/task/${encodeURIComponent(entry.continuesFrom.id)}`}>{entry.continuesFrom.title}</Link>
+                  {entry.continuesFrom.durationSeconds === undefined ? "" : ` · ${entry.continuesFrom.durationSeconds.toFixed(1)} s`}
+                  {overlap ? ` · carried its last ${overlap.seconds.toFixed(1)} s` : ""}
+                </span>
+              ) : null}
+            </div>
+
+            {running ? (
+              <div className={styles.indicator} role="status" aria-live="polite" data-testid="indicator">
+                <span className={styles.avatar} aria-hidden="true">M</span>
+                <span className={styles.pulse} aria-hidden="true" />
+                <span>{indicatorFor(job)}</span>
+              </div>
+            ) : (
+              <div className={styles.processedWrap}>
+                <button type="button" className={styles.processed} aria-expanded={processedOpen} onClick={() => { setProcessedOpen((o) => !o); }}>
+                  Processed {String(processedSeconds(entry, new Date()))}s <span className={cx(styles.processedChevron, processedOpen && styles.processedChevronOpen)} aria-hidden="true">›</span>
+                </button>
+                {processedOpen ? <div className={styles.processedSteps}><StepList steps={steps} job={job} /></div> : null}
+                <div className={styles.divider} />
+              </div>
+            )}
+
+            {done ? (
+              <div className={styles.result} data-testid="result">
+                {/* STORY_020 / CHORE_009: the server measured a shot change; Retry re-posts the request with a new seed */}
+                <CutNotice cuts={job.result.cuts} onRetry={() => void retry()} busy={busy === "retry"} />
+                <p className={styles.agentLine} role="status" data-testid="indicator">{resultLine(job)}</p>
+                <div className={styles.card} data-testid="result-card">
+                  <span className={styles.cardIcon} aria-hidden="true"><IconPlay /></span>
+                  <button type="button" className={styles.cardName} onClick={openPreview}>
+                    <span className={styles.cardFile}>{fileName}</span>
+                    <span className={styles.cardType}>MP4</span>
+                  </button>
+                  <span className={styles.cardActions} data-card-menu>
+                    <button type="button" className={styles.openPreview} onClick={openPreview}><IconEye /> Open preview</button>
+                    <button
+                      type="button"
+                      className={styles.cardMore}
+                      aria-label="More"
+                      aria-haspopup="menu"
+                      aria-expanded={cardMenuOpen}
+                      onClick={(event) => {
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        setCardMenu(cardMenu ? undefined : { top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                      }}
+                    >
+                      <IconChevronDown />
+                    </button>
+                    {cardMenu ? (
+                      <div className={styles.cardMenu} role="menu" aria-label="Result actions" style={{ top: cardMenu.top, right: cardMenu.right }}>
+                        <button type="button" role="menuitem" className={styles.cardMenuItem} onClick={() => { closeCardMenu(); openPreview(); }}><IconEye /> Open preview</button>
+                        <a role="menuitem" className={styles.cardMenuItem} href={`${resultPath}?download`} download={fileName} onClick={() => { closeCardMenu(); }}><IconDownload /> Download</a>
+                        <button type="button" role="menuitem" className={styles.cardMenuItem} onClick={() => { closeCardMenu(); closePreview(); setExtending(true); }}>⤴ Extend</button>
+                      </div>
+                    ) : null}
+                  </span>
+                </div>
+                <div className={styles.actions}>
+                  <button type="button" className={styles.action} aria-label={copied ? "Copied" : "Copy prompt"} title={copied ? "Copied" : "Copy prompt"} onClick={() => void copyPrompt()}><IconCopy /></button>
+                  <Inert label="Like" className={styles.action}><IconThumb /></Inert>
+                  <Inert label="Dislike" className={styles.action}><IconThumb down /></Inert>
+                  <span className={styles.time}>{formatDoneAt(doneAt)}</span>
+                </div>
+              </div>
+            ) : null}
+
+            {job.status === "failed" ? (
+              <div className={styles.failure} role="alert">
+                <span aria-hidden="true">ⓘ</span>
+                <span>
+                  {job.error?.code === "moderated" ? "The prompt was refused on content grounds" : `${indicatorFor(job)}${job.error?.message ? ` — ${job.error.message}` : ""}`}
+                </span>
+                {job.error?.code === "moderated" ? null : (
+                  <button type="button" className={styles.retry} onClick={() => void retry()} disabled={busy === "retry"}>
+                    Retry{entry.referenceImages > 0 ? " (without the reference images)" : ""}
+                  </button>
+                )}
+              </div>
+            ) : null}
+
+            {job.status === "cancelled" ? (
+              <div className={styles.failure} role="alert">
+                <span aria-hidden="true">ⓘ</span>
+                <span>Cancelled at {String(job.progress)} %</span>
+              </div>
             ) : null}
           </div>
+        </section>
 
-          <div className={styles.indicator} role="status" aria-live="polite" data-testid="indicator">
-            <span className={styles.avatar} aria-hidden="true">M</span>
-            {running ? <span className={styles.pulse} aria-hidden="true" /> : null}
-            <span>{indicatorFor(job)}</span>
-          </div>
-
-          {job.status === "done" && job.result ? (
-            <div className={styles.result} data-testid="result">
-              <video className={styles.video} controls playsInline preload="metadata" poster={posterPath} src={resultPath} data-testid="result-video">
-                <track kind="captions" />
-              </video>
-              <div className={styles.summary}>
-                {job.result.durationSeconds.toFixed(1)} s · {String(job.result.width)}×{String(job.result.height)} · {formatBytes(job.result.sizeBytes)}
-              </div>
-              <div className={styles.actions}>
-                <a className={styles.actionLink} href={`${resultPath}?download`} download={fileNameFor(entry)}>⤓ Download</a>
-                <button type="button" className={styles.actionLink} onClick={() => void copyPrompt()}>⧉ {copied ? "Copied" : "Copy prompt"}</button>
-                <button type="button" className={styles.actionLink} onClick={() => { setExtending(true); }} aria-pressed={extending}>⤴ Extend</button>
-                <span>{new Date(entry.finishedAt ?? entry.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-              </div>
-            </div>
+        <div className={styles.docked}>
+          {overflows ? (
+            <button type="button" className={styles.jump} aria-label={atBottom ? "Click to jump to start of answer, double-click to jump to top" : "Click to jump to bottom"} onClick={jump} onDoubleClick={() => { threadRef.current?.scrollTo({ top: 0 }); }}>
+              <span className={cx(styles.jumpArrow, !atBottom && styles.jumpArrowDown)} aria-hidden="true">↑</span>
+            </button>
           ) : null}
-
-          {job.status === "failed" ? (
-            <div className={styles.failure} role="alert">
-              <span aria-hidden="true">ⓘ</span>
-              <span>
-                {job.error?.code === "moderated" ? "The prompt was refused on content grounds" : `${indicatorFor(job)}${job.error?.message ? ` — ${job.error.message}` : ""}`}
+          {creditsDismissed ? null : (
+            <div className={styles.credits} data-testid="credits-notice">
+              <span className={styles.creditsIcon} aria-hidden="true"><IconInfo /></span>
+              <span className={styles.creditsText}>Fewer than 1,000 Credits remain.</span>
+              <span className={styles.creditsActions}>
+                <Inert label="Buy Credits" className={styles.creditsSecondary} align="end">Buy Credits</Inert>
+                <Inert label="Subscribe" className={styles.creditsPrimary} align="end">Subscribe</Inert>
               </span>
-              {job.error?.code === "moderated" ? null : (
-                <button type="button" className={styles.retry} onClick={() => void retry()} disabled={busy === "retry"}>
-                  Retry{entry.referenceImages > 0 ? " (without the reference images)" : ""}
+              <button type="button" className={styles.creditsClose} aria-label="Dismiss usage notice" onClick={() => { setCreditsDismissed(true); }}><IconClose /></button>
+            </div>
+          )}
+          <Composer variant="docked" fetchImpl={fetchImpl} stop={running ? { pending: busy === "stop", onStop: () => void stop() } : undefined} extend={extendSource} onStopExtending={() => { setExtending(false); }} />
+          <p className={styles.footer}>MiniMax Agent is AI and can make mistakes</p>
+        </div>
+      </div>
+
+      {previewOpen && done ? (
+        <aside className={styles.preview} aria-label="Preview" data-testid="preview-pane">
+          <div className={styles.previewHead}>
+            <span className={styles.previewTitle}><IconEye /> Preview</span>
+            <span className={styles.previewDivider} aria-hidden="true" />
+            <span className={styles.previewFile}>{fileName}</span>
+            <span className={styles.previewActions}>
+              <a className={styles.previewDownload} href={`${resultPath}?download`} download={fileName}><IconDownload /> Download <IconChevronDown /></a>
+              <Inert label="More" className={styles.previewIcon} align="end"><IconMore /></Inert>
+              <button type="button" className={styles.previewIcon} aria-label="Close" onClick={closePreview}><IconClose /></button>
+            </span>
+          </div>
+          <div className={styles.previewBody}>
+            <video className={styles.video} controls playsInline preload="metadata" poster={posterPath} src={resultPath} data-testid="result-video">
+              <track kind="captions" />
+            </video>
+          </div>
+        </aside>
+      ) : null}
+
+      {showPanel ? (
+        <div className={styles.panelCol}>
+          <aside className={styles.panel} aria-label="Work Area" data-testid="work-area">
+            <PanelSection title="Progress">
+              {steps.length === 0 ? <p className={styles.panelHint}>Track progress on longer tasks.</p> : <StepList steps={steps} job={job} />}
+            </PanelSection>
+            <PanelSection title="Deliverables">
+              {done ? (
+                <button type="button" className={styles.deliverable} onClick={openPreview}>
+                  <IconDocument /> <span className={styles.deliverableName}>{fileName}</span>
                 </button>
+              ) : (
+                <p className={styles.panelHint}>Files the task produces will appear here.</p>
               )}
-            </div>
-          ) : null}
-
-          {job.status === "cancelled" ? (
-            <div className={styles.failure} role="alert">
-              <span aria-hidden="true">ⓘ</span>
-              <span>Cancelled at {String(job.progress)} %</span>
-            </div>
-          ) : null}
-
-          <div className={styles.docked}>
-            <Composer variant="docked" fetchImpl={fetchImpl} stop={running ? { pending: busy === "stop", onStop: () => void stop() } : undefined} extend={extendSource} onStopExtending={() => { setExtending(false); }} />
-            <p className={styles.footer}>MiniMax Local generates on your Spark</p>
-          </div>
+            </PanelSection>
+          </aside>
         </div>
-      </section>
-
-      <aside className={styles.panel} aria-label="Progress">
-        <div className={styles.panelHead}>
-          <span>Progress</span>
-          <span aria-hidden="true">⌄</span>
-        </div>
-        <ol className={styles.steps}>
-          {steps.map((step, index) => (
-            <li key={step.label} className={cx(styles.step, step.state === "done" && styles.stepDone, step.state === "active" && styles.stepActive, step.state === "failed" && styles.stepFailed)} data-step-state={step.state}>
-              <span className={styles.stepMark} aria-hidden="true">{step.state === "done" ? "✓" : step.state === "failed" ? "!" : String(index + 1)}</span>
-              <span>
-                <span className={styles.stepLabel}>{step.label}</span>
-                {step.detail ? <span className={styles.stepDetail}>{step.detail}</span> : null}
-                {step.state === "active" && job.status === "running" ? (
-                  <span className={styles.bar} role="progressbar" aria-valuenow={job.progress} aria-valuemin={0} aria-valuemax={100} aria-label="Generation progress">
-                    <span className={styles.barFill} style={{ width: `${String(job.progress)}%` }} />
-                  </span>
-                ) : null}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </aside>
+      ) : null}
     </div>
   );
 }

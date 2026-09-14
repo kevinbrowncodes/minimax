@@ -167,7 +167,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   return (
     <div className={styles.wrap}>
       <div
-        className={cx(styles.card, dragging && styles.cardDrop)}
+        className={cx(styles.card, docked && styles.cardDocked, dragging && styles.cardDrop)}
         onDragOver={(event) => {
           if (video && !extending) {
             event.preventDefault();

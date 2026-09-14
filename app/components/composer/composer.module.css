@@ -20,6 +20,28 @@
   gap: var(--spacing_12);
   position: relative;
 }
+/* The task page's docked composer (composer-docked@1440, STORY_023): 768 wide, radius 14, padding 12, the reference's 20 px glow. */
+.wrap:has(.cardDocked) {
+  max-width: 768px;
+}
+.cardDocked {
+  border-radius: 14px;
+  padding: var(--spacing_12);
+  box-shadow: rgba(10, 10, 10, 0.08) 0 0 20px 0;
+}
+/* the docked composer sits at the bottom of the viewport, so its popovers and menus open upward (submenus and the
+   narrow sheets keep their own placement) */
+.cardDocked .popover,
+.cardDocked .menu:not([class*="submenu"]):not([class*="agentMenu"]) {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+@media (min-width: 900px) {
+  .cardDocked .menu[class*="agentMenu"] {
+    top: auto;
+    bottom: calc(100% + 8px);
+  }
+}
 .cardDrop {
   outline: 2px dashed var(--border_accent);
   outline-offset: -8px;

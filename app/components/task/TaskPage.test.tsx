@@ -1,6 +1,7 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { StrictMode } from "react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { StrictMode, type ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ShellContext, ShellStateProvider } from "@/components/shell/ShellContext";
 import type { HistoryEntry } from "@/lib/history-store";
 import { TaskPage } from "./TaskPage";
 
@@ -35,8 +36,12 @@ function fetchScript(statuses: readonly { status: string; progress: number; resu
   return { fetchImpl: vi.fn(impl), calls, posts, polls: () => polls };
 }
 
+/** The page under the state the Shell provides (STORY_023): the Work Area panel open, the preview pane closed. */
+const shell = (page: ReactElement) => <ShellStateProvider scope="/task/j1">{page}</ShellStateProvider>;
+
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-09-12T18:00:20Z"));
 });
 afterEach(() => {
   cleanup();
@@ -47,7 +52,7 @@ afterEach(() => {
 describe("TaskPage", () => {
   it("polls a queued job under StrictMode, re-renders each response and stops at the terminal one", async () => {
     const script = fetchScript([{ status: "running", progress: 33 }, { status: "running", progress: 66 }, { status: "done", progress: 100, result: { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 2, width: 320, height: 180, sizeBytes: 40157 } }]);
-    render(<StrictMode><TaskPage entry={entry()} fetchImpl={script.fetchImpl} /></StrictMode>);
+    render(shell(<StrictMode><TaskPage entry={entry()} fetchImpl={script.fetchImpl} /></StrictMode>));
     expect(screen.getByTestId("indicator")).toHaveTextContent("Queued…");
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
@@ -60,13 +65,17 @@ describe("TaskPage", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5000);
     });
-    expect(screen.getByTestId("indicator")).toHaveTextContent("Your video is ready");
-    expect(screen.getByTestId("result-video")).toHaveAttribute("src", "/api/jobs/j1/result");
+    expect(screen.getByTestId("indicator")).toHaveTextContent("Done — 2.0 s · 320×180 · 39 KB");
+    // the pane opened by itself when the job finished on the page (STORY_023's departure), the video inside it
+    expect(within(screen.getByTestId("preview-pane")).getByTestId("result-video")).toHaveAttribute("src", "/api/jobs/j1/result");
     const pollsAtDone = script.polls();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(30_000);
     });
     expect(script.polls()).toBe(pollsAtDone);
+    // the Work Area panel yields to the pane; Close brings it back with its Progress list
+    expect(screen.queryByText("Validate the request")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.getAllByText("Validate the request")).toHaveLength(1);
     expect(script.calls.filter((c) => c.startsWith("PATCH /api/history/j1"))).toHaveLength(1);
   });
@@ -89,10 +98,13 @@ describe("TaskPage", () => {
 
   it("a done entry renders the video and does not poll; a failed one offers Retry; moderated does not", async () => {
     const done = fetchScript([]);
-    render(<TaskPage entry={entry({ status: "done", progress: 100, result: { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 5.2, width: 1344, height: 768, sizeBytes: 1_581_571 } })} fetchImpl={done.fetchImpl} />);
-    expect(screen.getByTestId("result-video")).toHaveAttribute("poster", "/api/jobs/j1/poster");
-    expect(screen.getByRole("link", { name: /Download/ })).toHaveAttribute("download", "A boat.mp4");
-    expect(screen.getByRole("link", { name: /Download/ })).toHaveAttribute("href", "/api/jobs/j1/result?download"); // BUG_004
+    render(shell(<TaskPage entry={entry({ status: "done", progress: 100, result: { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 5.2, width: 1344, height: 768, sizeBytes: 1_581_571 } })} fetchImpl={done.fetchImpl} />));
+    // reopened from history: the card, not the player (task-page@1440); Download lives in the card's More menu
+    expect(screen.getByTestId("result-card")).toHaveTextContent("A boat.mp4MP4");
+    expect(screen.queryByTestId("result-video")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    expect(screen.getByRole("menuitem", { name: /Download/ })).toHaveAttribute("download", "A boat.mp4");
+    expect(screen.getByRole("menuitem", { name: /Download/ })).toHaveAttribute("href", "/api/jobs/j1/result?download"); // BUG_004
     expect(screen.getByText(/1344×768/)).toBeInTheDocument();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(10_000);
@@ -109,13 +121,56 @@ describe("TaskPage", () => {
   });
 });
 
+describe("TaskPage — the shot-change notice (STORY_020, mounted by CHORE_009)", () => {
+  const result = (cuts?: readonly { frame: number; seconds: number }[]) => ({ url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 12.25, width: 1344, height: 768, sizeBytes: 1000, ...(cuts ? { cuts } : {}) });
+
+  it("names the time of one change, lists several, and shows nothing for [] or an older server without the field", () => {
+    render(shell(<TaskPage entry={entry({ status: "done", progress: 100, result: result([{ frame: 270, seconds: 11.25 }]) })} fetchImpl={fetchScript([]).fetchImpl} />));
+    expect(screen.getByTestId("cut-notice")).toHaveTextContent("The shot changed at 00:11");
+    expect(screen.getByTestId("cut-notice")).toHaveAttribute("role", "status");
+    expect(screen.getByTestId("result-card")).toBeInTheDocument();
+    cleanup();
+    render(shell(<TaskPage entry={entry({ status: "done", progress: 100, result: result([{ frame: 142, seconds: 5.92 }, { frame: 270, seconds: 11.25 }, { frame: 521, seconds: 21.71 }]) })} fetchImpl={fetchScript([]).fetchImpl} />));
+    expect(screen.getByTestId("cut-notice")).toHaveTextContent("The shot changed at 00:05, 00:11 and 00:21");
+    cleanup();
+    render(shell(<TaskPage entry={entry({ status: "done", progress: 100, result: result([]) })} fetchImpl={fetchScript([]).fetchImpl} />));
+    expect(screen.queryByTestId("cut-notice")).not.toBeInTheDocument();
+    cleanup();
+    render(shell(<TaskPage entry={entry({ status: "done", progress: 100, result: result() })} fetchImpl={fetchScript([]).fetchImpl} />));
+    expect(screen.queryByTestId("cut-notice")).not.toBeInTheDocument();
+  });
+
+  it("its Retry re-posts the request without a seed (an extension keeps continueFrom and the overlap) and opens the new task", async () => {
+    const script = fetchScript([]);
+    render(
+      shell(
+        <TaskPage
+          entry={entry({ status: "done", progress: 100, result: result([{ frame: 270, seconds: 11.25 }]), params: { ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", overlapFrames: 39 }, continuesFrom: { id: "src", title: "The source", durationSeconds: 10.1 } })}
+          fetchImpl={script.fetchImpl}
+        />,
+      ),
+    );
+    await act(async () => {
+      fireEvent.click(within(screen.getByTestId("cut-notice")).getByRole("button", { name: "Retry" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(script.posts).toHaveLength(1);
+    const body = JSON.parse(script.posts[0] ?? "{}") as Record<string, unknown>;
+    expect(body).toMatchObject({ prompt: "A boat", continueFrom: "src", overlapFrames: 39, durationSeconds: 10 });
+    expect(body).not.toHaveProperty("seed");
+    expect(push).toHaveBeenCalledWith("/task/j9");
+  });
+});
+
 describe("TaskPage — extend (STORY_016, STORY_017)", () => {
   const result = { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", frames: 56, durationSeconds: 2, width: 320, height: 180, sizeBytes: 1 };
 
   it("Extend puts the docked composer in extend mode and Stop extending leaves it; ?extend opens extending", () => {
     render(<TaskPage entry={entry({ status: "done", progress: 100, result })} fetchImpl={fetchScript([]).fetchImpl} />);
     expect(screen.queryByTestId("continuation")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Extend/ }));
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: /Extend/ }));
     expect(screen.getByTestId("continuation")).toHaveTextContent("Continues · 2.0 s");
     expect(screen.getByTestId("overlap-line")).toHaveTextContent("carries its last 1.6 s into the new clip");
     expect(screen.getByPlaceholderText("Describe what happens next…")).toHaveFocus();
@@ -128,7 +183,7 @@ describe("TaskPage — extend (STORY_016, STORY_017)", () => {
     // not done: ?extend is ignored and there is no Extend action
     render(<TaskPage entry={entry({ status: "failed", progress: 0, error: { code: "generation_failed", message: "x" } })} extendOnOpen fetchImpl={fetchScript([]).fetchImpl} />);
     expect(screen.queryByTestId("continuation")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Extend/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "More" })).not.toBeInTheDocument();
   });
 
   it("an extension's bubble names its source and what was carried, from history or from the first status", async () => {
@@ -147,7 +202,7 @@ describe("TaskPage — extend (STORY_016, STORY_017)", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(3000);
     });
-    expect(screen.getByTestId("indicator")).toHaveTextContent("Your video is ready");
+    expect(screen.getByTestId("indicator")).toHaveTextContent("Done — 2.0 s");
   });
 
   it("Retry of a failed extension re-posts continueFrom and the requested overlap", async () => {
@@ -161,5 +216,94 @@ describe("TaskPage — extend (STORY_016, STORY_017)", () => {
     expect(script.posts).toHaveLength(1);
     expect(JSON.parse(script.posts[0] ?? "{}")).toEqual({ prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", overlapFrames: 22, continueFrom: "src" });
     expect(push).toHaveBeenCalledWith("/task/j9");
+  });
+});
+
+describe("TaskPage — the reference's task page (STORY_023)", () => {
+  const result = { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 5.2, width: 1344, height: 768, sizeBytes: 1_581_571 };
+  const done = () => entry({ status: "done", progress: 100, result, finishedAt: "2026-09-12T18:00:20Z" });
+
+  it("Open preview opens the pane with the playable video; Close, Escape and a Deliverables row drive it", () => {
+    render(shell(<TaskPage entry={done()} fetchImpl={fetchScript([]).fetchImpl} />));
+    expect(screen.queryByTestId("preview-pane")).not.toBeInTheDocument();
+    expect(screen.getByTestId("work-area")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open preview" }));
+    const pane = screen.getByTestId("preview-pane");
+    expect(within(pane).getByTestId("result-video")).toHaveAttribute("poster", "/api/jobs/j1/poster");
+    expect(within(pane).getByText("A boat.mp4")).toBeInTheDocument();
+    expect(within(pane).getByRole("link", { name: /Download/ })).toHaveAttribute("href", "/api/jobs/j1/result?download");
+    expect(screen.queryByTestId("work-area")).not.toBeInTheDocument(); // the panel yields to the pane
+    fireEvent.click(within(pane).getByRole("button", { name: "Close" }));
+    expect(screen.queryByTestId("preview-pane")).not.toBeInTheDocument();
+    expect(screen.getByTestId("work-area")).toBeInTheDocument();
+    fireEvent.click(within(screen.getByTestId("work-area")).getByRole("button", { name: "A boat.mp4" }));
+    expect(screen.getByTestId("preview-pane")).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("preview-pane")).not.toBeInTheDocument();
+  });
+
+  it("the card's More menu offers Open preview, Download and Extend, and closes on Escape", () => {
+    render(shell(<TaskPage entry={done()} fetchImpl={fetchScript([]).fetchImpl} />));
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    const menu = screen.getByRole("menu", { name: "Result actions" });
+    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent.trim())).toEqual(["Open preview", "Download", "⤴ Extend"]);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    fireEvent.click(within(screen.getByRole("menu")).getByRole("menuitem", { name: "Open preview" }));
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.getByTestId("preview-pane")).toBeInTheDocument();
+  });
+
+  it("Copy copies the prompt, Like and Dislike are inert, the time is the finish time", async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(shell(<TaskPage entry={done()} fetchImpl={fetchScript([]).fetchImpl} />));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Copy prompt" }));
+      await Promise.resolve();
+    });
+    expect(writeText).toHaveBeenCalledWith("A boat");
+    expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Like" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: "Dislike" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText(/^Sep 12, \d\d:\d\d$/)).toBeInTheDocument();
+  });
+
+  it("the Processed row shows the seconds the job took and unfolds the steps", () => {
+    render(shell(<TaskPage entry={done()} fetchImpl={fetchScript([]).fetchImpl} />));
+    const row = screen.getByRole("button", { name: /^Processed 20s/ });
+    expect(row).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getAllByText("Validate the request")).toHaveLength(1); // the Work Area panel's list only
+    fireEvent.click(row);
+    expect(row).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getAllByText("Validate the request")).toHaveLength(2);
+  });
+
+  it("the credits notice is inert and dismisses; the disclaimer is the reference's sentence", () => {
+    render(shell(<TaskPage entry={done()} fetchImpl={fetchScript([]).fetchImpl} />));
+    const notice = screen.getByTestId("credits-notice");
+    expect(notice).toHaveTextContent("Fewer than 1,000 Credits remain.");
+    expect(within(notice).getByRole("button", { name: "Subscribe" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(notice).getByRole("button", { name: "Buy Credits" })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(within(notice).getByRole("button", { name: "Dismiss usage notice" }));
+    expect(screen.queryByTestId("credits-notice")).not.toBeInTheDocument();
+    expect(screen.getByText("MiniMax Agent is AI and can make mistakes")).toBeInTheDocument();
+  });
+
+  it("the Work Area panel lists the deliverable once done, folds, and hides when the Shell says so", () => {
+    render(shell(<TaskPage entry={done()} fetchImpl={fetchScript([]).fetchImpl} />));
+    const panel = screen.getByTestId("work-area");
+    expect(within(panel).getByRole("button", { name: "Deliverables" })).toHaveAttribute("aria-expanded", "true");
+    expect(within(panel).getByRole("button", { name: "A boat.mp4" })).toBeInTheDocument();
+    fireEvent.click(within(panel).getByRole("button", { name: "Deliverables" }));
+    expect(within(panel).queryByRole("button", { name: "A boat.mp4" })).not.toBeInTheDocument();
+    cleanup();
+    render(
+      <ShellContext.Provider value={{ workAreaOpen: false, toggleWorkArea: () => undefined, previewOpen: false, openPreview: () => undefined, closePreview: () => undefined }}>
+        <TaskPage entry={done()} fetchImpl={fetchScript([]).fetchImpl} />
+      </ShellContext.Provider>,
+    );
+    expect(screen.queryByTestId("work-area")).not.toBeInTheDocument();
   });
 });

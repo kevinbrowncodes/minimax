@@ -23,7 +23,10 @@ async function finishOne(page: import("@playwright/test").Page, prompt: string):
 test.describe("extend a finished video (STORY_016, STORY_017)", () => {
   test("Extend continues a finished clip: the tile says what the new clip starts from, Send creates an extension, the result plays and can be extended again", async ({ page, stubApi }) => {
     const id1 = await finishOne(page, "The first clip");
-    await page.getByRole("button", { name: /Extend/ }).click();
+    // the pane opened with the finished job (STORY_023) — at 390 it covers the page — so close it; Extend lives in the card's More menu
+    await page.getByTestId("preview-pane").getByRole("button", { name: "Close" }).click();
+    await page.getByTestId("result-card").getByRole("button", { name: "More" }).click();
+    await page.getByRole("menuitem", { name: /Extend/ }).click();
     await settled(page);
     await expect(page.getByTestId("continuation")).toContainText("Continues · 2.0 s");
     await expect(page.getByTestId("overlap-line")).toHaveText("carries its last 1.6 s into the new clip");
@@ -51,7 +54,10 @@ test.describe("extend a finished video (STORY_016, STORY_017)", () => {
     expect((await terminal).status).toBe("done");
     await expect(page.getByTestId("continues")).toContainText("carried its last 0.9 s");
     await expectPlayable(page.getByTestId("result-video"), `/api/jobs/${id2}/result`);
-    await expect(page.getByTestId("result").getByRole("button", { name: /Extend/ })).toBeVisible();
+    await page.getByTestId("preview-pane").getByRole("button", { name: "Close" }).click();
+    await page.getByTestId("result-card").getByRole("button", { name: "More" }).click();
+    await expect(page.getByRole("menuitem", { name: /Extend/ })).toBeVisible();
+    await page.keyboard.press("Escape");
     const received = await stubApi.received(id2);
     expect(received.request).toMatchObject({ prompt: "and then he bows", continueFrom: id1, durationSeconds: 10, overlapFrames: 22 });
   });

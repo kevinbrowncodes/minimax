@@ -11,6 +11,7 @@ import { Inert } from "./Inert";
 import { PromoCard } from "./PromoCard";
 import { SearchDialog } from "./SearchDialog";
 import { SettingsDialog } from "./SettingsDialog";
+import { ShellStateProvider, useShell } from "./ShellContext";
 import { Sidebar } from "./Sidebar";
 import { IconDocument, IconDownload, IconExpand, IconWorkArea } from "./icons";
 import styles from "./shell.module.css";
@@ -38,11 +39,22 @@ function prefsReducer(prefs: ShellPrefs, action: ShellPrefsAction): ShellPrefs {
 /**
  * The frame every page sits in: sidebar (a 52 px rail when collapsed, a drawer below 900 px), top bar, content.
  * STORY_012; Recents from history (STORY_014); the theme and the inert notice (STORY_019); the folding sections, the
- * Recents menu, the Inbox, the Search / Create project dialogs and the promo card (STORY_021).
+ * Recents menu, the Inbox, the Search / Create project dialogs and the promo card (STORY_021); the Work area toggle
+ * shared with the task page through ShellContext (STORY_023).
  */
 export function Shell({ children, confirmImpl }: ShellProps) {
   const pathname = usePathname();
+  return (
+    <ShellStateProvider scope={pathname}>
+      <ShellFrame confirmImpl={confirmImpl}>{children}</ShellFrame>
+    </ShellStateProvider>
+  );
+}
+
+function ShellFrame({ children, confirmImpl }: ShellProps) {
+  const pathname = usePathname();
   const router = useRouter();
+  const { workAreaOpen, toggleWorkArea } = useShell();
   const narrow = useNarrow();
   const [prefs, dispatchPrefs] = useReducer(prefsReducer, DEFAULT_SHELL_PREFS, () => (typeof window === "undefined" ? DEFAULT_SHELL_PREFS : readShellPrefs(safeStorage())));
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -162,7 +174,12 @@ export function Shell({ children, confirmImpl }: ShellProps) {
                 <Inert label="Download" className={styles.secondaryButton} align="end"><IconDownload /> Download</Inert>
               </>
             ) : null}
-            {bar.kind === "task" ? <Inert label="Work Area" className={styles.iconButton} align="end"><IconWorkArea /></Inert> : null}
+            {bar.kind === "task" && !narrow ? (
+              // work-area-button@1440: shows / hides the task page's Work Area panel (STORY_023); the reference has none at 390
+              <button type="button" className={styles.iconButton} aria-label="Work area" title="Work area" aria-pressed={workAreaOpen} onClick={toggleWorkArea}>
+                <IconWorkArea />
+              </button>
+            ) : null}
           </div>
         </header>
         <div className={styles.content}>{children}</div>
