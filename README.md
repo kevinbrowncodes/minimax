@@ -43,7 +43,7 @@ The UI and the adapter are always up; **ComfyUI is started per session**, becaus
 | 5 s text-to-video | ≈ 17 min | 64 GiB |
 | 10 s from a reference image | ≈ 50 min | 71 GiB |
 | +10 s extension of a 10 s clip (STORY_017, 1.6 s overlap) | ≈ 67 min | 89 GiB |
-| +10 s extension of a 20 s clip | measuring (the 2026-09-14 chain); the 2026-09-13 reference route took 2 h 15 min at 97 GiB | — |
+| +10 s extension of a 20 s clip (STORY_017, 1.6 s overlap) | ≈ 71 min | 87 GiB |
 
 The Spark has 121 GiB in total, so a generation needs the box mostly to itself: stop other memory-hungry containers first, by name, and start them again afterwards.
 
