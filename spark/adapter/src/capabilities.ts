@@ -1,19 +1,22 @@
-/** What the Spark can do (STORY_006, STORY_016): one source for the contract's /capabilities and for request validation. */
+/** What the Spark can do (STORY_006, STORY_017): one source for the contract's /capabilities and for request validation. */
+import { DEFAULT_OVERLAP, MAX_FRAMES, OVERLAP_OPTIONS, extensionLength, maxAddedSeconds, seconds } from "./grid.ts";
+
 export const CAPABILITIES = {
   models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }],
   ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
   resolutions: ["768P"],
   durationsSeconds: { min: 4, max: 15, step: 1 },
   referenceImages: { max: 2 },
-  /** Extending a finished video (STORY_016): seconds added per step, seconds of the source watched, the longest source. */
-  extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, contextSeconds: { min: 2, max: 15, default: 5 }, maxSourceSeconds: 30 },
+  /** Extending a finished video (STORY_017): seconds added per step, the overlap that becomes the new clip's head, the limits. */
+  extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30 },
 } as const;
 export type Ratio = (typeof CAPABILITIES.ratios)[number];
 
 export const IMAGE_TYPES: ReadonlySet<string> = new Set(["image/png", "image/jpeg", "image/webp"]);
 export const MAX_PROMPT_CHARS = 2000;
 
-export interface ContextFed {
+/** What was carried from the source into the new clip's own first frames. */
+export interface Overlap {
   readonly frames: number;
   readonly seconds: number;
 }
@@ -26,10 +29,10 @@ export interface JobRequest {
   readonly referenceImages: number;
   /** STORY_016: the finished job this one continues; durationSeconds is then the seconds added. */
   readonly continueFrom?: string;
-  /** STORY_016: seconds of the source's end the model should watch (as requested). */
-  readonly contextSeconds?: number;
-  /** STORY_016: what the server actually fed (set by the server once the source is resolved). */
-  readonly contextFed?: ContextFed;
+  /** STORY_017: the source's last N frames carried into the new clip (as requested). */
+  readonly overlapFrames?: number;
+  /** STORY_017: what the server carried (set once the source is resolved). */
+  readonly overlap?: Overlap;
   /** The noise seed; given by the caller for like-for-like runs, otherwise drawn by the server and echoed. */
   readonly seed?: number;
 }
@@ -59,6 +62,9 @@ function integer(value: unknown): number | undefined {
   const n = typeof value === "string" && value.trim() !== "" ? Number(value) : value;
   return typeof n === "number" && Number.isInteger(n) ? n : undefined;
 }
+function blank(value: unknown): boolean {
+  return value === undefined || value === null || value === "";
+}
 
 export function validateRequest(fields: Readonly<Record<string, unknown>>, uploads: readonly UploadLike[]): JobRequest {
   const prompt = fields["prompt"];
@@ -74,10 +80,21 @@ export function validateRequest(fields: Readonly<Record<string, unknown>>, uploa
   if (resolution !== "768P") throw new ValidationError("unsupported_option", "resolution", `resolution ${resolution} is not offered by the Spark (768P only: the 2K upscaler is not open-sourced)`);
 
   const rawContinue = fields["continueFrom"];
-  if (rawContinue !== undefined && rawContinue !== null && rawContinue !== "" && (typeof rawContinue !== "string" || rawContinue.trim() === "")) {
-    throw new ValidationError("validation", "continueFrom", "continueFrom must be a job id");
-  }
+  if (!blank(rawContinue) && (typeof rawContinue !== "string" || rawContinue.trim() === "")) throw new ValidationError("validation", "continueFrom", "continueFrom must be a job id");
   const continueFrom = typeof rawContinue === "string" && rawContinue.trim() !== "" ? rawContinue.trim() : undefined;
+  if (!blank(fields["contextSeconds"])) throw new ValidationError("validation", "contextSeconds", "contextSeconds is gone (contract v1.2): send overlapFrames (22, 39 or 56)");
+
+  let overlapFrames: number | undefined;
+  if (continueFrom !== undefined) {
+    const { options, default: fallback } = CAPABILITIES.extension.overlapFrames;
+    const raw = fields["overlapFrames"];
+    if (blank(raw)) overlapFrames = fallback;
+    else {
+      const n = integer(raw);
+      if (n === undefined || !options.includes(n)) throw new ValidationError("unsupported_option", "overlapFrames", `overlapFrames must be one of ${options.join(", ")}`);
+      overlapFrames = n;
+    }
+  }
 
   const rawDuration = fields["durationSeconds"];
   const durationSeconds = typeof rawDuration === "string" ? Number(rawDuration) : rawDuration;
@@ -87,27 +104,19 @@ export function validateRequest(fields: Readonly<Record<string, unknown>>, uploa
     const what = continueFrom === undefined ? "durationSeconds" : "an extension's durationSeconds (the seconds added)";
     throw new ValidationError("unsupported_option", "durationSeconds", `${what} must be between ${String(range.min)} and ${String(range.max)}`);
   }
+  if (overlapFrames !== undefined && extensionLength(durationSeconds, overlapFrames) > MAX_FRAMES) {
+    throw new ValidationError("unsupported_option", "durationSeconds", `with an overlap of ${String(seconds(overlapFrames))} s the most that can be added is ${String(maxAddedSeconds(overlapFrames))} s (the model generates at most ${String(MAX_FRAMES)} frames at once)`);
+  }
 
   const rawModel = fields["model"];
   const model = rawModel === undefined || rawModel === "" ? "minimax-h3" : rawModel;
   if (model !== "minimax-h3") throw new ValidationError("unsupported_option", "model", `model ${typeof model === "string" ? model : typeof model} is not offered by the Spark`);
 
-  let contextSeconds: number | undefined;
-  if (continueFrom !== undefined) {
-    const { min, max, default: fallback } = CAPABILITIES.extension.contextSeconds;
-    const raw = fields["contextSeconds"];
-    if (raw === undefined || raw === null || raw === "") contextSeconds = fallback;
-    else {
-      const n = integer(raw);
-      if (n === undefined || n < min || n > max) throw new ValidationError("unsupported_option", "contextSeconds", `contextSeconds must be a whole number between ${String(min)} and ${String(max)}`);
-      contextSeconds = n;
-    }
-    if (uploads.length > 0) throw new ValidationError("validation", "referenceImage", "an extension takes no reference images: the video being extended is the reference");
-  }
+  if (continueFrom !== undefined && uploads.length > 0) throw new ValidationError("validation", "referenceImage", "an extension takes no reference images: the video being extended is the reference");
 
   let seed: number | undefined;
   const rawSeed = fields["seed"];
-  if (rawSeed !== undefined && rawSeed !== null && rawSeed !== "") {
+  if (!blank(rawSeed)) {
     const n = integer(rawSeed);
     if (n === undefined || n < 0 || n > 0xffffffff) throw new ValidationError("validation", "seed", "seed must be a whole number between 0 and 4294967295");
     seed = n;
@@ -126,7 +135,7 @@ export function validateRequest(fields: Readonly<Record<string, unknown>>, uploa
     model: "minimax-h3",
     referenceImages: uploads.length,
     ...(continueFrom === undefined ? {} : { continueFrom }),
-    ...(contextSeconds === undefined ? {} : { contextSeconds }),
+    ...(overlapFrames === undefined ? {} : { overlapFrames }),
     ...(seed === undefined ? {} : { seed }),
   };
 }

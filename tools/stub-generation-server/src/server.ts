@@ -9,18 +9,18 @@ import type { AddressInfo } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
-import { ANCHOR_FRAMES, contextFrames, extensionLength, lengthForSeconds, seconds } from "./extension.ts";
+import { DEFAULT_OVERLAP, MAX_FRAMES, OVERLAP_OPTIONS, extensionLength, lengthForSeconds, maxAddedSeconds, seconds } from "./extension.ts";
 import { DEFAULT_SCRIPT, isScriptName, isTerminal, stepFor, type JobError, type JobStatus, type ScriptName } from "./scripts.ts";
 
-export const VERSION = "1.1.0";
+export const VERSION = "1.2.0";
 export const CAPABILITIES = {
   models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }],
   ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
   resolutions: ["768P"],
   durationsSeconds: { min: 4, max: 15, step: 1 },
   referenceImages: { max: 2 },
-  /** Extending a finished video (STORY_016), the same numbers as the adapter's. */
-  extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, contextSeconds: { min: 2, max: 15, default: 5 }, maxSourceSeconds: 30 },
+  /** Extending a finished video (STORY_017), the same numbers as the adapter's. */
+  extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30 },
 } as const;
 const IMAGE_TYPES: ReadonlySet<string> = new Set(["image/png", "image/jpeg", "image/webp"]);
 const MAX_PROMPT = 2000;
@@ -34,8 +34,8 @@ export interface JobRequest {
   readonly referenceImages: number;
   /** STORY_016: the finished job this one continues; durationSeconds is then the seconds added. */
   readonly continueFrom?: string;
-  readonly contextSeconds?: number;
-  readonly contextFed?: { readonly frames: number; readonly seconds: number };
+  readonly overlapFrames?: number;
+  readonly overlap?: { readonly frames: number; readonly seconds: number };
   readonly seed?: number;
 }
 export interface ReceivedUpload {
@@ -187,15 +187,20 @@ function validateRequest(fields: Record<string, unknown>, uploads: readonly Mult
   if (typeof model !== "string") throw new HttpError(400, "validation", "model must be a string", "model");
   if (!CAPABILITIES.models.some((m) => m.id === model)) throw new HttpError(400, "unsupported_option", `model ${model} is not offered by this server`, "model");
 
-  let contextSeconds: number | undefined;
+  const rawContext = fields["contextSeconds"];
+  if (rawContext !== undefined && rawContext !== null && rawContext !== "") throw new HttpError(400, "validation", "contextSeconds is gone (contract v1.2): send overlapFrames (22, 39 or 56)", "contextSeconds");
+  let overlapFrames: number | undefined;
   if (continueFrom !== undefined) {
-    const range = CAPABILITIES.extension.contextSeconds;
-    const raw = fields["contextSeconds"];
-    if (raw === undefined || raw === null || raw === "") contextSeconds = range.default;
+    const { options, default: fallback } = CAPABILITIES.extension.overlapFrames;
+    const raw = fields["overlapFrames"];
+    if (raw === undefined || raw === null || raw === "") overlapFrames = fallback;
     else {
       const n = integerOf(raw);
-      if (n === undefined || n < range.min || n > range.max) throw new HttpError(400, "unsupported_option", `contextSeconds must be a whole number between ${String(range.min)} and ${String(range.max)}`, "contextSeconds");
-      contextSeconds = n;
+      if (n === undefined || !options.includes(n)) throw new HttpError(400, "unsupported_option", `overlapFrames must be one of ${options.join(", ")}`, "overlapFrames");
+      overlapFrames = n;
+    }
+    if (extensionLength(durationSeconds, overlapFrames) > MAX_FRAMES) {
+      throw new HttpError(400, "unsupported_option", `with an overlap of ${String(seconds(overlapFrames))} s the most that can be added is ${String(maxAddedSeconds(overlapFrames))} s`, "durationSeconds");
     }
     if (uploads.length > 0) throw new HttpError(400, "validation", "an extension takes no reference images: the video being extended is the reference", "referenceImage");
   }
@@ -220,7 +225,7 @@ function validateRequest(fields: Record<string, unknown>, uploads: readonly Mult
     model,
     referenceImages: uploads.length,
     ...(continueFrom === undefined ? {} : { continueFrom }),
-    ...(contextSeconds === undefined ? {} : { contextSeconds }),
+    ...(overlapFrames === undefined ? {} : { overlapFrames }),
     ...(seed === undefined ? {} : { seed }),
   };
 }
@@ -325,10 +330,10 @@ export function createStubServer(options: StubOptions = {}): StubServer {
       for (const field of ["ratio", "resolution", "model"] as const) {
         if (request[field] !== source.request[field]) throw new HttpError(400, "validation", `an extension keeps the source's ${field} (${source.request[field]})`, field);
       }
-      const segment = extensionLength(request.durationSeconds);
-      const fed = contextFrames(source.frames, segment, request.contextSeconds ?? CAPABILITIES.extension.contextSeconds.default);
-      request = { ...request, contextFed: { frames: fed, seconds: seconds(fed) } };
-      frames = source.frames + segment - ANCHOR_FRAMES;
+      const overlap = request.overlapFrames ?? CAPABILITIES.extension.overlapFrames.default;
+      if (overlap > source.frames) throw new HttpError(400, "validation", `the video has ${String(source.frames)} frames; an overlap of ${String(overlap)} does not fit`, "overlapFrames");
+      request = { ...request, overlap: { frames: overlap, seconds: seconds(overlap) } };
+      frames = source.frames + extensionLength(request.durationSeconds, overlap) - overlap;
     }
     request = { ...request, seed: request.seed ?? Math.floor(Math.random() * 2 ** 32) };
     const now = new Date().toISOString();

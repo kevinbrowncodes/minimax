@@ -102,7 +102,7 @@ test("the three-script chain through the real UI, adapter and ComfyUI", async ({
   for (let n = FIRST_SCRIPT; n <= STEPS; n += 1) {
     await page.getByTestId("result").getByRole("button", { name: /Extend/ }).click();
     await expect(page.getByTestId("continuation")).toBeVisible();
-    const contextLine = (await page.getByTestId("context-line").textContent()) ?? "";
+    const contextLine = (await page.getByTestId("overlap-line").textContent()) ?? "";
     stamp(`extend with script${String(n)}: ${contextLine.trim()}; parameters "${await page.getByRole("button", { name: /^Video parameters:/ }).getAttribute("aria-label") ?? ""}"`);
     await page.getByRole("textbox", { name: "Message" }).fill(script(n));
     await page.screenshot({ path: path.join(testInfo.outputDir, `${String(n)}-extend-ready.png`), fullPage: true });

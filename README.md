@@ -22,7 +22,7 @@
 
 ### Extend a finished video
 
-On a finished video, press **⤴ Extend** (on the result card, or **Extend** in an Assets tile's ⋯ menu). The composer then shows the clip being continued and how many seconds of it the model will watch, the duration means seconds **added** (+10 s by default), and **Send** returns the source and its continuation as one clip — which can be extended again. Details and the measured behaviour: [STORY_016](docs/story/STORY_016_a_finished_video_can_be_extended_the_model_continues_it_from_its_last_second_and_the_longer_clip_plays_in_place.md).
+On a finished video, press **⤴ Extend** (on the result card, or **Extend** in an Assets tile's ⋯ menu). The composer then shows the clip being continued and the **overlap** — the last 0.9 / 1.6 / 2.3 s of it that become the new clip's own first frames, so the scene carries on rather than cutting — the duration means seconds **added** (+10 s by default), and **Send** returns the source and its continuation as one clip, which can be extended again. How it works and why: [STORY_017](docs/story/STORY_017_extending_a_video_keeps_the_scene_because_the_new_frames_are_generated_as_part_of_the_same_clip.md).
 
 ### The GPU half has to be running
 
@@ -33,6 +33,7 @@ The UI and the adapter are always up; **ComfyUI is started per session**, becaus
 | `spark/comfyui/run.sh` | Starts ComfyUI (GPU) and the adapter, and waits until both answer |
 | `spark/comfyui/stop.sh` | Stops ComfyUI; the adapter stays up, so the UI keeps working up to Send |
 | `spark/comfyui/verify.sh` | Proves the real chain — adapter, UI, validation — in seconds, without touching the GPU |
+| `spark/comfyui/seam-check.sh <clip> <frame>` | Measures an extension's seam (the frame-to-frame change at the join against the footage's own), without the GPU |
 | `docker ps` | Expect `minimax-app`, `minimax-adapter`, and `minimax-comfyui` while generating |
 
 ### What a run costs (measured on the Spark)
@@ -52,7 +53,6 @@ The Spark has 121 GiB in total, so a generation needs the box mostly to itself: 
 | --- | --- | --- |
 | "The Spark's adapter is not reachable" under the composer | the adapter container is down | `spark/comfyui/run.sh` |
 | Send answers "ComfyUI is not running on the Spark" | the GPU half is stopped — everything else is fine | `spark/comfyui/run.sh` |
-| Send answers "the Ref2VA checkpoint is not on the Spark" | the extension checkpoint was never fetched | `spark/comfyui/fetch-h3.sh` (34 GB) |
 | A job sits at "Queued…" for a minute or two | ComfyUI is loading a 34 GB checkpoint, or another job is ahead | wait; `docker logs -f minimax-comfyui` shows it |
 | "The Spark is busy" | the open-job limit is reached | let the running job finish |
 
@@ -198,7 +198,7 @@ docker compose run --rm --no-deps -T -e TRIAL_IMAGE=/work/spark/data/input/01.jp
 | Item | Value (STORY_005, 2026-09-12) |
 | --- | --- |
 | Serving stack | **ComfyUI v0.35.1** in the image `minimax-spark/comfyui:v0.35.1` (base `nvidia/cuda:13.0.2-runtime-ubuntu24.04`, arm64, pinned by digest; Python 3.12.3; **PyTorch 2.11.0+cu130**; CUDA 13.0; driver 580.142). Launched with `--disable-mmap --disable-async-offload --disable-pinned-memory --cache-none`, published on 127.0.0.1:8188 only. Our job-API adapter in front of it is STORY_006. Nothing is installed on the host |
-| Model / checkpoint | **MiniMax-H3 FL2VA, `minimax_h3_fl2va_int8_convrot` (34 GB)** for fresh jobs and **Ref2VA, `minimax_h3_ref2va_int8_convrot` (34 GB)** for extensions (STORY_016; ComfyUI swaps the DiT between the two kinds of job) + text encoder `qwen3vl_32b_minimax_h3_nvfp4_awq` (16 GB) + video VAE fp16 + audio VAE fp32; Comfy-Org repackage, 52 GB in `spark/data/models` (gitignored) |
+| Model / checkpoint | **MiniMax-H3 FL2VA, `minimax_h3_fl2va_int8_convrot` (34 GB)** for fresh jobs **and extensions** (STORY_017: an extension is the same clip continued on FL2VA, no checkpoint swap); `minimax_h3_ref2va_int8_convrot` (34 GB) is fetched and on disk for a future subject-reference story, unused today + text encoder `qwen3vl_32b_minimax_h3_nvfp4_awq` (16 GB) + video VAE fp16 + audio VAE fp32; Comfy-Org repackage, 52 GB in `spark/data/models` (gitignored) |
 | Licence | MiniMax H3 Community License; the Spark is outside the excluded territories |
 | Measured | **5 s, text-to-video** (STORY_005/006): 1344×768, 124 frames at 24 fps, 20 steps `res_multistep`/`simple`: **17 min 21 s submit → file** (text encoder ≈ 7 s, DiT load 51 s, sampling ≈ 47 s/step, VAE decode + mux 72 s), 1.0–1.5 MiB h264 + aac 32 kHz stereo. **10 s, image-to-video through the UI** (EPIC_003 trial): 243 frames, first step ≈ 155 s then ≈ 100 s/step, decode ≈ 3 min, **51 min submit → ready**, 2.3 MB, 10.125 s | **Extending a clip (STORY_016, 2026-09-13, Ref2VA, +10 s with a 5.2 s context):** 2 h 12 min and 2 h 17 min per step (≈ 6.4 min per sampling step against ≈ 2.4 for a fresh FL2VA clip — the reference clip rides through every step); a fresh 10 s image-to-video clip the same morning: 49.9 min. The owner's three-script chain came out as 753 frames = 31.375 s.
 | Memory split | **Peak 64–68 GiB used** (VAE decode; 63.8 GiB for 5 s, 68.0 GiB for 10 s image-to-video); sampling plateau 61 GiB = DiT 32.4 GB staged + text encoder 15 GB resident + activations; no swap. The box's other services must leave ≈ 70 GiB free: on 2026-09-12 that meant stopping `spark-primary` (48 GB reserved by its `--gpu-memory-utilization 0.40`) and `cosmos3-api` (owner's call, by name) for each run. Coexistence needs one of them lowered — EPIC_004 → Later | **Extensions (2026-09-13):** peak 87.8 GiB for +10 s on a 10 s source, **96.7 GiB** for +10 s on a 20.75 s source (the join holds the whole source as frames: ≈ 12.4 MB per 1344×768 frame) — the reason `maxSourceSeconds` is 30. Swap stayed at 3.3 GiB.

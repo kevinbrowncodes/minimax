@@ -186,7 +186,7 @@ describe("contract: validation, capabilities, health, hooks", () => {
   });
 });
 
-describe("contract v1.1: extensions (STORY_016)", () => {
+describe("contract v1.2: extensions (STORY_017)", () => {
   const finished = async (): Promise<string> => {
     const id = await create("done-after-1-poll");
     await status(id);
@@ -194,26 +194,25 @@ describe("contract v1.1: extensions (STORY_016)", () => {
   };
   const errorOf = async (res: Response) => ((await res.json()) as { error: { code: string; field?: string } }).error;
 
-  it("accepts continueFrom on a done job, defaults the context, echoes what it fed and the seed, and keeps the fixture as the result", async () => {
+  it("accepts continueFrom on a done job, defaults the overlap to 39 frames, echoes it and the seed, and keeps the fixture as the result", async () => {
     const src = await finished();
     const res = await json("/jobs?script=done-after-1-poll", { ...valid, durationSeconds: 10, continueFrom: src });
     expect(res.status).toBe(202);
     const { id } = (await res.json()) as { id: string };
     const s = await status(id);
-    // the fixture is 2.0 s = 56 frames: every context choice sees all of it
-    expect(s["request"]).toMatchObject({ continueFrom: src, durationSeconds: 10, contextSeconds: 5, contextFed: { frames: 56, seconds: 2.333 } });
+    expect(s["request"]).toMatchObject({ continueFrom: src, durationSeconds: 10, overlapFrames: 39, overlap: { frames: 39, seconds: 1.625 } });
     expect(Number.isInteger((s["request"] as { seed: number }).seed)).toBe(true);
     expect(s["result"]).toMatchObject({ durationSeconds: 2, frames: 56, width: 320, height: 180 });
     const received = (await (await api(`/__stub/jobs/${id}/received`)).json()) as { request: Record<string, unknown> };
-    expect(received.request).toMatchObject({ continueFrom: src, contextSeconds: 5 });
-    // extending the extension: the joined frames (56 + 277 - 22 = 311) feed the next arithmetic; a given seed and context are echoed
-    const again = await json("/jobs?script=done-after-1-poll", { ...valid, durationSeconds: 10, continueFrom: id, contextSeconds: 15, seed: 7 });
+    expect(received.request).toMatchObject({ continueFrom: src, overlapFrames: 39 });
+    // extending the extension: the joined frames (56 + 294 - 39 = 311) feed the next arithmetic; a given overlap and seed are echoed
+    const again = await json("/jobs?script=done-after-1-poll", { ...valid, durationSeconds: 10, continueFrom: id, overlapFrames: 56, seed: 7 });
     expect(again.status).toBe(202);
     const s2 = await status(((await again.json()) as { id: string }).id);
-    expect(s2["request"]).toMatchObject({ contextSeconds: 15, contextFed: { frames: 277, seconds: 11.542 }, seed: 7 });
+    expect(s2["request"]).toMatchObject({ overlapFrames: 56, overlap: { frames: 56, seconds: 2.333 }, seed: 7 });
   });
 
-  it("refuses an unknown or unfinished source, a mismatched ratio, an upload, an out-of-range step or context, and a bad seed", async () => {
+  it("refuses an unknown or unfinished source, a mismatched ratio, an upload, an out-of-range step, a bad overlap, the old contextSeconds and a bad seed", async () => {
     const src = await finished();
     const running = await create("cancel-midway");
     const cases: [Record<string, unknown>, string, string][] = [
@@ -221,7 +220,9 @@ describe("contract v1.1: extensions (STORY_016)", () => {
       [{ ...valid, durationSeconds: 10, continueFrom: running }, "validation", "continueFrom"],
       [{ ...valid, durationSeconds: 10, continueFrom: src, ratio: "9:16" }, "validation", "ratio"],
       [{ ...valid, durationSeconds: 15, continueFrom: src }, "unsupported_option", "durationSeconds"],
-      [{ ...valid, durationSeconds: 10, continueFrom: src, contextSeconds: 16 }, "unsupported_option", "contextSeconds"],
+      [{ ...valid, durationSeconds: 14, continueFrom: src, overlapFrames: 39 }, "unsupported_option", "durationSeconds"],
+      [{ ...valid, durationSeconds: 10, continueFrom: src, overlapFrames: 30 }, "unsupported_option", "overlapFrames"],
+      [{ ...valid, durationSeconds: 10, continueFrom: src, contextSeconds: 5 }, "validation", "contextSeconds"],
       [{ ...valid, seed: -1 }, "validation", "seed"],
     ];
     for (const [body, code, field] of cases) {
@@ -236,7 +237,7 @@ describe("contract v1.1: extensions (STORY_016)", () => {
     expect(withImage.status).toBe(400);
     expect(await errorOf(withImage)).toMatchObject({ code: "validation", field: "referenceImage" });
     await api(`/jobs/${running}`, { method: "DELETE" });
-    expect(CAPABILITIES.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, contextSeconds: { min: 2, max: 15, default: 5 }, maxSourceSeconds: 30 });
+    expect(CAPABILITIES.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 });
     expect((await (await api("/capabilities")).json()) as Record<string, unknown>).toMatchObject({ extension: CAPABILITIES.extension });
   });
 });

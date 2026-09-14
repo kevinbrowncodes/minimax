@@ -12,7 +12,7 @@ export function buildJobRequest(state: ComposerState): { readonly url: string; r
     durationSeconds: state.durationSeconds,
     model: state.model,
     // STORY_016: an extension names its source and the context; it never carries images.
-    ...(state.extend ? { continueFrom: state.extend.id, contextSeconds: state.contextSeconds } : {}),
+    ...(state.extend ? { continueFrom: state.extend.id, overlapFrames: state.overlapFrames } : {}),
   };
   // A `?script=` on the page URL is forwarded so the e2e lane can choose the stub's outcome; the adapter ignores it.
   const script = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("script");

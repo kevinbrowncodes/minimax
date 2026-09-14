@@ -20,7 +20,7 @@ export interface StubJob {
 export interface Received {
   readonly id: string;
   readonly script: string;
-  readonly request: { readonly prompt: string; readonly referenceImages: number; readonly durationSeconds: number; readonly continueFrom?: string; readonly contextSeconds?: number };
+  readonly request: { readonly prompt: string; readonly referenceImages: number; readonly durationSeconds: number; readonly continueFrom?: string; readonly overlapFrames?: number };
   readonly uploads: readonly { readonly filename: string; readonly contentType: string; readonly size: number; readonly sha256: string }[];
 }
 

@@ -6,7 +6,8 @@ export interface JobError {
   readonly code: string;
   readonly message: string;
 }
-export interface ContextFed {
+/** What an extension carried from its source into the new clip's own first frames (v1.2). */
+export interface Overlap {
   readonly frames: number;
   readonly seconds: number;
 }
@@ -27,10 +28,10 @@ export interface JobRequest {
   readonly durationSeconds: number;
   readonly model: string;
   readonly referenceImages: number;
-  /** v1.1 (STORY_016): set on an extension. */
+  /** v1.1/v1.2 (STORY_016/017): set on an extension. */
   readonly continueFrom?: string;
-  readonly contextSeconds?: number;
-  readonly contextFed?: ContextFed;
+  readonly overlapFrames?: number;
+  readonly overlap?: Overlap;
   readonly seed?: number;
 }
 export interface JobStatusResponse {
@@ -59,7 +60,8 @@ export interface Capabilities {
 }
 export interface ExtensionCapabilities {
   readonly durationsSeconds: { readonly min: number; readonly max: number; readonly step: number; readonly default: number };
-  readonly contextSeconds: { readonly min: number; readonly max: number; readonly default: number };
+  readonly overlapFrames: { readonly options: readonly number[]; readonly default: number };
+  readonly maxFrames: number;
   readonly maxSourceSeconds: number;
 }
 export interface ApiError {

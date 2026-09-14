@@ -109,7 +109,7 @@ describe("TaskPage", () => {
   });
 });
 
-describe("TaskPage — extend (STORY_016)", () => {
+describe("TaskPage — extend (STORY_016, STORY_017)", () => {
   const result = { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", frames: 56, durationSeconds: 2, width: 320, height: 180, sizeBytes: 1 };
 
   it("Extend puts the docked composer in extend mode and Stop extending leaves it; ?extend opens extending", () => {
@@ -117,7 +117,7 @@ describe("TaskPage — extend (STORY_016)", () => {
     expect(screen.queryByTestId("continuation")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Extend/ }));
     expect(screen.getByTestId("continuation")).toHaveTextContent("Continues · 2.0 s");
-    expect(screen.getByTestId("context-line")).toHaveTextContent("the model watches the last 2.3 s");
+    expect(screen.getByTestId("overlap-line")).toHaveTextContent("carries its last 1.6 s into the new clip");
     expect(screen.getByPlaceholderText("Describe what happens next…")).toHaveFocus();
     fireEvent.click(screen.getByRole("button", { name: "Stop extending" }));
     expect(screen.queryByTestId("continuation")).not.toBeInTheDocument();
@@ -131,35 +131,35 @@ describe("TaskPage — extend (STORY_016)", () => {
     expect(screen.queryByRole("button", { name: /Extend/ })).not.toBeInTheDocument();
   });
 
-  it("an extension's bubble names its source and what the model watched, from history or from the first status", async () => {
-    render(<TaskPage entry={entry({ status: "done", progress: 100, result, continuesFrom: { id: "src", title: "The first clip", durationSeconds: 10.125 }, contextFed: { frames: 124, seconds: 5.167 } })} fetchImpl={fetchScript([]).fetchImpl} />);
-    expect(screen.getByTestId("continues")).toHaveTextContent("Continues The first clip · 10.1 s · watched its last 5.2 s");
+  it("an extension's bubble names its source and what was carried, from history or from the first status", async () => {
+    render(<TaskPage entry={entry({ status: "done", progress: 100, result, continuesFrom: { id: "src", title: "The first clip", durationSeconds: 10.125 }, overlap: { frames: 39, seconds: 1.625 } })} fetchImpl={fetchScript([]).fetchImpl} />);
+    expect(screen.getByTestId("continues")).toHaveTextContent("Continues The first clip · 10.1 s · carried its last 1.6 s");
     expect(screen.getByRole("link", { name: "The first clip" })).toHaveAttribute("href", "/task/src");
     cleanup();
-    const script = fetchScript([{ status: "running", progress: 10, request: { prompt: "p", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", referenceImages: 0, continueFrom: "src", contextFed: { frames: 56, seconds: 2.333 } } }, { status: "done", progress: 100, result }]);
+    const script = fetchScript([{ status: "running", progress: 10, request: { prompt: "p", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", referenceImages: 0, continueFrom: "src", overlap: { frames: 22, seconds: 0.917 } } }, { status: "done", progress: 100, result }]);
     render(<StrictMode><TaskPage entry={entry({ continuesFrom: { id: "src", title: "The first clip" } })} fetchImpl={script.fetchImpl} /></StrictMode>);
     expect(screen.getByTestId("continues")).toHaveTextContent("Continues The first clip");
-    expect(screen.getByTestId("continues")).not.toHaveTextContent("watched");
+    expect(screen.getByTestId("continues")).not.toHaveTextContent("carried");
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
-    expect(screen.getByTestId("continues")).toHaveTextContent("watched its last 2.3 s");
+    expect(screen.getByTestId("continues")).toHaveTextContent("carried its last 0.9 s");
     await act(async () => {
       await vi.advanceTimersByTimeAsync(3000);
     });
     expect(screen.getByTestId("indicator")).toHaveTextContent("Your video is ready");
   });
 
-  it("Retry of a failed extension re-posts continueFrom and the requested context", async () => {
+  it("Retry of a failed extension re-posts continueFrom and the requested overlap", async () => {
     const script = fetchScript([]);
-    render(<TaskPage entry={entry({ status: "failed", progress: 40, error: { code: "generation_failed", message: "boom" }, params: { ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", contextSeconds: 10 }, continuesFrom: { id: "src", title: "The first clip" } })} fetchImpl={script.fetchImpl} />);
+    render(<TaskPage entry={entry({ status: "failed", progress: 40, error: { code: "generation_failed", message: "boom" }, params: { ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", overlapFrames: 22 }, continuesFrom: { id: "src", title: "The first clip" } })} fetchImpl={script.fetchImpl} />);
     await act(async () => {
       screen.getByRole("button", { name: /Retry/ }).click();
       await Promise.resolve();
       await Promise.resolve();
     });
     expect(script.posts).toHaveLength(1);
-    expect(JSON.parse(script.posts[0] ?? "{}")).toEqual({ prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", contextSeconds: 10, continueFrom: "src" });
+    expect(JSON.parse(script.posts[0] ?? "{}")).toEqual({ prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", overlapFrames: 22, continueFrom: "src" });
     expect(push).toHaveBeenCalledWith("/task/j9");
   });
 });

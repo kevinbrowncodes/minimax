@@ -58,11 +58,11 @@ describe("JobStore", () => {
 });
 
 describe("JobStore — STORY_016 fields", () => {
-  it("round-trips result.frames, request.contextFed and request.seed through the file", () => {
+  it("round-trips result.frames, request.overlap and request.seed through the file", () => {
     const dir = mkdtempSync(path.join(tmpdir(), "adapter-store-"));
     const file = path.join(dir, "jobs.json");
     const store = new JobStore(file);
-    const request = { prompt: "p", ratio: "16:9" as const, resolution: "768P" as const, durationSeconds: 10, model: "minimax-h3" as const, referenceImages: 0, continueFrom: "src", contextSeconds: 5, contextFed: { frames: 124, seconds: 5.167 }, seed: 9 };
+    const request = { prompt: "p", ratio: "16:9" as const, resolution: "768P" as const, durationSeconds: 10, model: "minimax-h3" as const, referenceImages: 0, continueFrom: "src", overlapFrames: 39, overlap: { frames: 39, seconds: 1.625 }, seed: 9 };
     store.create("e", request);
     store.update("e", { status: "done", result: { video: { filename: "v.mp4", subfolder: "video" }, mimeType: "video/mp4", frames: 379, durationSeconds: 15.792, width: 1344, height: 768, sizeBytes: 1 } });
     const again = new JobStore(file).get("e");

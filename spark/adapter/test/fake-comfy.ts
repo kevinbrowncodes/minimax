@@ -45,7 +45,8 @@ export interface FakeComfy {
   close(): Promise<void>;
 }
 
-const REQUIRED = ["UNETLoader", "CLIPLoader", "VAELoader", "MiniMaxH3ImageToVideo", "RandomNoise", "BasicGuider", "KSamplerSelect", "BasicScheduler", "SamplerCustomAdvanced", "VAEDecode", "VAEDecodeAudio", "CreateVideo", "SaveVideo", "LoadImage", "ImageFromBatch", "SaveImage", "LoadVideo", "GetVideoComponents", "MiniMaxH3ReferenceToVideo", "MiniMaxH3AddGuide", "ImageBatch", "TrimAudioDuration", "AudioConcat"];
+const REQUIRED = ["UNETLoader", "CLIPLoader", "VAELoader", "MiniMaxH3ImageToVideo", "RandomNoise", "BasicGuider", "KSamplerSelect", "BasicScheduler", "SamplerCustomAdvanced", "VAEDecode", "VAEDecodeAudio", "CreateVideo", "SaveVideo", "LoadImage", "ImageFromBatch", "SaveImage", "LoadVideo", "GetVideoComponents", "MiniMaxH3ReferenceToVideo", "MiniMaxH3AddGuide", "ImageBatch", "TrimAudioDuration", "AudioConcat",
+  "VAEEncode", "VAEEncodeAudio", "EmptyMiniMaxH3LatentAV", "LTXVSeparateAVLatent", "LTXVConcatAVLatent", "ReplaceVideoLatentFrames", "LatentCut", "LatentConcat", "SolidMask", "MaskToImage", "RepeatImageBatch", "ImageToMask", "MaskComposite", "SetLatentNoiseMask"];
 export const FAKE_UNETS = ["minimax_h3_fl2va_int8_convrot.safetensors", "minimax_h3_ref2va_int8_convrot.safetensors"];
 
 function readBody(req: IncomingMessage): Promise<Buffer> {

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { JobRequest } from "./capabilities.ts";
-import { ANCHOR_FRAMES, FPS, REQUIRED_CLASSES, SIZES, buildGraph, contextFrames, extensionLength, gridDown, lengthForSeconds, ref2vaFileFor, sizeFor, templateUnet, type Graph } from "./mapping.ts";
+import { DEFAULT_OVERLAP, FPS, MAX_FRAMES, OVERLAP_OPTIONS, REQUIRED_CLASSES, SIZES, audioTicks, buildGraph, extensionLength, gridDown, latentFrames, lengthForSeconds, maxAddedSeconds, ref2vaFileFor, sizeFor, templateUnet, type Graph } from "./mapping.ts";
 
 const template = JSON.parse(readFileSync(path.resolve(import.meta.dirname, "../../comfyui/h3_t2v_prompt.json"), "utf8")) as Graph;
 const request: JobRequest = { prompt: "A paper boat", ratio: "16:9", resolution: "768P", durationSeconds: 5, model: "minimax-h3", referenceImages: 0 };
@@ -65,65 +65,79 @@ describe("buildGraph", () => {
   });
 });
 
-describe("extension arithmetic (STORY_016)", () => {
-  it("extensionLength adds at least the requested seconds after the 22-frame anchor, snapped up to the grid", () => {
-    const expected: Record<number, number> = { 4: 124, 5: 158, 6: 175, 8: 226, 10: 277, 12: 311, 14: 362 };
-    for (const [added, frames] of Object.entries(expected)) {
-      const n = extensionLength(Number(added));
-      expect(n).toBe(frames);
-      expect((n - 5) % 17).toBe(0);
-      expect(n - ANCHOR_FRAMES).toBeGreaterThanOrEqual(Number(added) * FPS);
-    }
-    expect(ANCHOR_FRAMES).toBe(22);
+describe("extension arithmetic (STORY_017)", () => {
+  it("latent frames, audio ticks, segment lengths and the most that fits the model's ceiling, per overlap", () => {
+    expect([22, 39, 56].map(latentFrames)).toEqual([7, 12, 17]);
+    expect([22, 39, 56].map(audioTicks)).toEqual([37, 65, 93]);
+    expect([124, 294, 362].map(latentFrames)).toEqual([37, 87, 107]);
+    expect([124, 294].map(audioTicks)).toEqual([207, 490]);
+    expect([4, 10, 13].map((s) => extensionLength(s, 39))).toEqual([141, 294, 362]);
+    expect(extensionLength(14, 39)).toBe(379);
+    expect([22, 39, 56].map((o) => maxAddedSeconds(o))).toEqual([14, 13, 12]);
+    for (const o of OVERLAP_OPTIONS) for (let s = 4; s <= maxAddedSeconds(o); s += 1) expect((extensionLength(s, o) - 5) % 17).toBe(0);
+    expect(DEFAULT_OVERLAP).toBe(39);
+    expect(MAX_FRAMES).toBe(362);
+    expect([5, 48, 124, 243, 360, 362].map(gridDown)).toEqual([5, 39, 124, 243, 345, 362]);
   });
 
-  it("gridDown and contextFrames reproduce the story's table and never exceed the model's 362", () => {
-    expect([gridDown(5), gridDown(21), gridDown(22), gridDown(48), gridDown(124), gridDown(243), gridDown(360), gridDown(362), gridDown(1000)]).toEqual([5, 5, 22, 39, 124, 243, 345, 362, 991]);
-    // the owner's 10 s clip (243 frames) at +10 s (segment 277), context 2 / 5 / 10 / 15
-    expect([2, 5, 10, 15].map((c) => contextFrames(243, 277, c))).toEqual([56, 124, 243, 243]);
-    // a 30 s source (723 frames) at +10 s
-    expect([2, 5, 10, 15].map((c) => contextFrames(723, 277, c))).toEqual([56, 124, 243, 277]);
-    // the step caps the context: +4 s (124) and +14 s (362)
-    expect(contextFrames(243, 124, 15)).toBe(124);
-    expect(contextFrames(723, 362, 15)).toBe(362);
-    for (let src = 107; src <= 1445; src += 17) for (const seg of [124, 277, 362]) for (const c of [2, 5, 10, 15]) expect(contextFrames(src, seg, c)).toBeLessThanOrEqual(362);
-  });
-
-  it("names the Ref2VA checkpoint from the template's FL2VA file", () => {
+  it("names the Ref2VA checkpoint from the template's FL2VA file (reported by health, no longer used by extensions)", () => {
     expect(templateUnet(template)).toBe("minimax_h3_fl2va_int8_convrot.safetensors");
     expect(ref2vaFileFor("minimax_h3_fl2va_int8_convrot.safetensors")).toBe("minimax_h3_ref2va_int8_convrot.safetensors");
-    expect(ref2vaFileFor("minimax_h3_fl2va_pruned_bf16.safetensors")).toBe("minimax_h3_ref2va_pruned_bf16.safetensors");
-    for (const c of ["LoadVideo", "GetVideoComponents", "MiniMaxH3ReferenceToVideo", "MiniMaxH3AddGuide", "ImageBatch", "TrimAudioDuration", "AudioConcat"]) expect(REQUIRED_CLASSES).toContain(c);
+    for (const c of ["LoadVideo", "GetVideoComponents", "VAEEncode", "VAEEncodeAudio", "EmptyMiniMaxH3LatentAV", "LTXVSeparateAVLatent", "LTXVConcatAVLatent", "ReplaceVideoLatentFrames", "LatentCut", "LatentConcat", "SolidMask", "MaskToImage", "RepeatImageBatch", "ImageToMask", "MaskComposite", "SetLatentNoiseMask", "ImageBatch", "TrimAudioDuration", "AudioConcat"]) expect(REQUIRED_CLASSES).toContain(c);
+    expect(REQUIRED_CLASSES).not.toContain("MiniMaxH3ReferenceToVideo");
+    expect(REQUIRED_CLASSES).not.toContain("MiniMaxH3AddGuide");
   });
 
-  it("builds the extension graph: Ref2VA, the source's tail as the reference, the anchored seam, the in-graph join", () => {
-    const req: JobRequest = { ...request, durationSeconds: 10, continueFrom: "src", contextSeconds: 5 };
-    const graph = buildGraph(template, req, [], { seed: 3, filenamePrefix: "video/job-2", continuation: { file: "video/job-src_00001_.mp4", frames: 243, contextFrames: 124, prompt: "WRAPPED" } });
-    expect(graph["unet"]?.inputs["unet_name"]).toBe("minimax_h3_ref2va_int8_convrot.safetensors");
+  it("builds the extension graph: the source's last 39 frames become the new clip's own masked head on FL2VA, then the join", () => {
+    const req: JobRequest = { ...request, durationSeconds: 10, continueFrom: "src", overlapFrames: 39 };
+    const graph = buildGraph(template, req, [], { seed: 3, filenamePrefix: "video/job-2", continuation: { file: "video/job-src_00001_.mp4", frames: 243, overlapFrames: 39, prompt: "WRAPPED" } });
+    expect(graph["unet"]?.inputs["unet_name"]).toBe("minimax_h3_fl2va_int8_convrot.safetensors");
+    // the tail
     expect(graph["source_video"]).toEqual({ class_type: "LoadVideo", inputs: { file: "video/job-src_00001_.mp4 [output]" } });
     expect(graph["source_parts"]).toEqual({ class_type: "GetVideoComponents", inputs: { video: ["source_video", 0] } });
-    expect(graph["context_frames"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: 119, length: 124 } });
-    expect(graph["context_audio"]).toEqual({ class_type: "TrimAudioDuration", inputs: { audio: ["source_parts", 1], start_index: 4.958, duration: 5.167 } });
-    expect(graph["last_frame_ref"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: 242, length: 1 } });
-    expect(graph["anchor_frames"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: 221, length: 22 } });
-    expect(graph["anchor_audio"]).toEqual({ class_type: "TrimAudioDuration", inputs: { audio: ["source_parts", 1], start_index: 9.208, duration: 0.917 } });
-    expect(graph["cond"]).toEqual({
-      class_type: "MiniMaxH3ReferenceToVideo",
-      inputs: { clip: ["clip", 0], vae: ["vae_video", 0], audio_vae: ["vae_audio", 0], prompt: "WRAPPED", width: 1344, height: 768, length: 277, ref_image_size: "match", "ref_images.ref_image_0": ["last_frame_ref", 0], "ref_videos.ref_video_0": ["context_frames", 0], "ref_video_audios.ref_video_audio_0": ["context_audio", 0] },
-    });
-    expect(graph["guide"]).toEqual({ class_type: "MiniMaxH3AddGuide", inputs: { positive: ["cond", 0], vae: ["vae_video", 0], audio_vae: ["vae_audio", 0], latent: ["cond", 1], image: ["anchor_frames", 0], audio: ["anchor_audio", 0], frame_idx: 0 } });
-    expect(graph["guider"]?.inputs).toMatchObject({ conditioning: ["guide", 0], model: ["unet", 0] });
-    expect(graph["sample"]?.inputs).toMatchObject({ latent_image: ["cond", 1] });
-    expect(graph["new_frames"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["decode_video", 0], batch_index: 22, length: 255 } });
-    expect(graph["new_audio"]).toEqual({ class_type: "TrimAudioDuration", inputs: { audio: ["decode_audio", 0], start_index: 0.917, duration: 10.625 } });
+    expect(graph["tail_frames"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: 204, length: 39 } });
+    expect(graph["tail_latent"]).toEqual({ class_type: "VAEEncode", inputs: { pixels: ["tail_frames", 0], vae: ["vae_video", 0] } });
+    expect(graph["tail_audio"]).toEqual({ class_type: "TrimAudioDuration", inputs: { audio: ["source_parts", 1], start_index: 8.5, duration: 1.625 } });
+    expect(graph["tail_audio_latent_raw"]).toEqual({ class_type: "VAEEncodeAudio", inputs: { audio: ["tail_audio", 0], vae: ["vae_audio", 0] } });
+    expect(graph["tail_audio_latent"]).toEqual({ class_type: "LatentCut", inputs: { samples: ["tail_audio_latent_raw", 0], dim: "x", index: 0, amount: 65 } });
+    // the canvas with the tail as its head
+    expect(graph["canvas"]).toEqual({ class_type: "EmptyMiniMaxH3LatentAV", inputs: { width: 1344, height: 768, length: 294 } });
+    expect(graph["canvas_parts"]).toEqual({ class_type: "LTXVSeparateAVLatent", inputs: { av_latent: ["canvas", 0] } });
+    expect(graph["video_latent"]).toEqual({ class_type: "ReplaceVideoLatentFrames", inputs: { destination: ["canvas_parts", 0], source: ["tail_latent", 0], index: 0 } });
+    expect(graph["audio_rest"]).toEqual({ class_type: "LatentCut", inputs: { samples: ["canvas_parts", 1], dim: "x", index: 65, amount: 425 } });
+    expect(graph["audio_latent"]).toEqual({ class_type: "LatentConcat", inputs: { samples1: ["tail_audio_latent", 0], samples2: ["audio_rest", 0], dim: "x" } });
+    // the masks: 0 keeps the head (12 latent frames, 65 audio ticks), 1 generates the rest (75 frames, 425 ticks)
+    expect(graph["mask_keep"]).toEqual({ class_type: "SolidMask", inputs: { value: 0, width: 84, height: 48 } });
+    expect(graph["mask_new"]).toEqual({ class_type: "SolidMask", inputs: { value: 1, width: 84, height: 48 } });
+    expect(graph["mask_keep_batch"]).toEqual({ class_type: "RepeatImageBatch", inputs: { image: ["mask_keep_img", 0], amount: 12 } });
+    expect(graph["mask_new_batch"]).toEqual({ class_type: "RepeatImageBatch", inputs: { image: ["mask_new_img", 0], amount: 75 } });
+    expect(graph["mask_video_img"]).toEqual({ class_type: "ImageBatch", inputs: { image1: ["mask_keep_batch", 0], image2: ["mask_new_batch", 0] } });
+    expect(graph["mask_video"]).toEqual({ class_type: "ImageToMask", inputs: { image: ["mask_video_img", 0], channel: "red" } });
+    expect(graph["video_masked"]).toEqual({ class_type: "SetLatentNoiseMask", inputs: { samples: ["video_latent", 0], mask: ["mask_video", 0] } });
+    expect(graph["amask_base"]).toEqual({ class_type: "SolidMask", inputs: { value: 0, width: 490, height: 2 } });
+    expect(graph["amask_new"]).toEqual({ class_type: "SolidMask", inputs: { value: 1, width: 425, height: 2 } });
+    expect(graph["amask"]).toEqual({ class_type: "MaskComposite", inputs: { destination: ["amask_base", 0], source: ["amask_new", 0], x: 65, y: 0, operation: "add" } });
+    expect(graph["audio_masked"]).toEqual({ class_type: "SetLatentNoiseMask", inputs: { samples: ["audio_latent", 0], mask: ["amask", 0] } });
+    expect(graph["latent"]).toEqual({ class_type: "LTXVConcatAVLatent", inputs: { video_latent: ["video_masked", 0], audio_latent: ["audio_masked", 0] } });
+    expect(graph["sample"]?.inputs).toMatchObject({ latent_image: ["latent", 0], noise: ["noise", 0], guider: ["guider", 0] });
+    // text conditioning only, on the FL2VA node, no anchors and no references
+    expect(graph["cond"]).toEqual({ class_type: "MiniMaxH3ImageToVideo", inputs: { clip: ["clip", 0], vae: ["vae_video", 0], prompt: "WRAPPED", width: 1344, height: 768, length: 294 } });
+    expect(graph["guider"]?.inputs).toMatchObject({ conditioning: ["cond", 0], model: ["unet", 0] });
+    expect(graph["guide"]).toBeUndefined();
+    expect(graph["last_frame_ref"]).toBeUndefined();
+    expect(Object.values(graph).some((n) => n.class_type === "MiniMaxH3ReferenceToVideo" || n.class_type === "MiniMaxH3AddGuide")).toBe(false);
+    // the join: the source's own frames and sound, then the new frames after the overlap
+    expect(graph["new_frames"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["decode_video", 0], batch_index: 39, length: 255 } });
+    expect(graph["new_audio"]).toEqual({ class_type: "TrimAudioDuration", inputs: { audio: ["decode_audio", 0], start_index: 1.625, duration: 10.625 } });
     expect(graph["joined_frames"]).toEqual({ class_type: "ImageBatch", inputs: { image1: ["source_parts", 0], image2: ["new_frames", 0] } });
     expect(graph["joined_audio"]).toEqual({ class_type: "AudioConcat", inputs: { audio1: ["source_parts", 1], audio2: ["new_audio", 0], direction: "after" } });
     expect(graph["video"]?.inputs).toMatchObject({ images: ["joined_frames", 0], audio: ["joined_audio", 0], fps: 24 });
     expect(graph["poster_frame"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["joined_frames", 0], batch_index: 0, length: 1 } });
     expect(graph["noise"]?.inputs).toMatchObject({ noise_seed: 3 });
     expect(graph["save"]?.inputs).toMatchObject({ filename_prefix: "video/job-2" });
-    expect(graph["first_frame"]).toBeUndefined();
-    // a context that does not fit the source is a programming error, not a graph
-    expect(() => buildGraph(template, req, [], { continuation: { file: "x.mp4", frames: 100, contextFrames: 124, prompt: "" } })).toThrow(/does not fit/);
+    // what cannot be built is refused, not guessed
+    expect(() => buildGraph(template, req, [], { continuation: { file: "x.mp4", frames: 243, overlapFrames: 30, prompt: "" } })).toThrow(/not one of/);
+    expect(() => buildGraph(template, req, [], { continuation: { file: "x.mp4", frames: 20, overlapFrames: 39, prompt: "" } })).toThrow(/does not fit/);
+    expect(() => buildGraph(template, { ...req, durationSeconds: 14 }, [], { continuation: { file: "x.mp4", frames: 243, overlapFrames: 39, prompt: "" } })).toThrow(/exceed/);
   });
 });

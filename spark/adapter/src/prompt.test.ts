@@ -1,34 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { FULL_REFERENCE_MARKER, continuationPrompt, isFullReferencePrompt } from "./prompt.ts";
+import { BASE_FORMAT_MARKER, continuationPrompt, isBaseFormatPrompt } from "./prompt.ts";
 
-const SECTIONS = ["subject_definitions:", "summary:", "retention_analysis:", "detailed_description:", "overall_soundscape:", "non_diegetic_music:"];
-
-describe("continuationPrompt (STORY_016)", () => {
-  it("wraps the prose in MiniMax's six full-reference sections, in order, as a video continuation", () => {
-    const text = continuationPrompt("He steps his left foot back and holds the angle.", 5.167);
-    const positions = SECTIONS.map((s) => text.indexOf(s));
-    expect(positions.every((p) => p >= 0)).toBe(true);
-    expect([...positions].sort((a, b) => a - b)).toEqual(positions);
-    expect(text).toContain("<Subject 1> is everything visible in <Picture 1>");
-    expect(text).toContain("<Picture 1> is the last frame of <Video 1> and the first frame of [Shot 1].");
-    expect(text).toContain("<Video 1> is the last 5.2 seconds of the source video");
-    expect(text).toContain("<Audio 1> is the synchronized soundtrack of <Video 1>");
-    expect(text).toContain("summary:\n[video continuation + keyframe completion + audio reference] The target video is a single continuous shot that begins from <Picture 1>");
-    expect(text).toContain("<Subject 1> (appears in [Shot 1]): fully_preserved - ");
-    expect(text).toContain("<Picture 1> ([Shot 1] first frame): fully_preserved - ");
-    expect(text).toContain("<Video 1> (continuation source): fully_preserved - ");
-    expect(text).toContain("<Audio 1>: reference - ");
-    expect(text).toContain("one continuous shot with no cut and no transition");
-    expect(text).toContain("[Shot 1] The shot begins from <Picture 1>. He steps his left foot back and holds the angle.");
-    expect(text.indexOf("[Shot 1] The shot begins")).toBeGreaterThan(text.indexOf("detailed_description:"));
-    expect(text).toMatch(/overall_soundscape: .*<Audio 1>/);
+describe("continuationPrompt (STORY_017)", () => {
+  it("wraps the prose in MiniMax's base format: one continuous shot, the soundscape, the music", () => {
+    const text = continuationPrompt("  He steps his left foot back and holds the angle.  ");
+    const [first, blank1, sound, blank2, music] = text.split("\n");
+    expect(first).toBe("integrated_multimodal_description: [Shot 1] Live-action, one continuous shot; the camera does not move. The person, the set, the props and the lighting already in frame stay exactly as they are and the action continues without a cut. He steps his left foot back and holds the angle.");
+    expect(blank1).toBe("");
+    expect(sound).toMatch(/^overall_soundscape: The ambience already in the clip continues unchanged/);
+    expect(blank2).toBe("");
+    expect(music).toMatch(/^non_diegetic_music: None/);
+    expect(text).not.toMatch(/<Video 1>|<Picture 1>|subject_definitions/);
   });
 
-  it("passes the owner's own full-reference prompt through byte for byte", () => {
-    const own = `${FULL_REFERENCE_MARKER}\n<Video 1> is my source.\n\nsummary:\n[video continuation] mine`;
-    expect(continuationPrompt(own, 5)).toBe(own);
-    expect(continuationPrompt(`  \n${own}`, 5)).toBe(`  \n${own}`);
-    expect(isFullReferencePrompt("A plain prompt")).toBe(false);
-    expect(isFullReferencePrompt("\n subject_definitions:\n")).toBe(true);
+  it("passes the owner's own base-format prompt through byte for byte", () => {
+    const own = `${BASE_FORMAT_MARKER} [Shot 1] mine\n\noverall_soundscape: rain\n\nnon_diegetic_music: none`;
+    expect(continuationPrompt(own)).toBe(own);
+    expect(continuationPrompt(`  \n${own}`)).toBe(`  \n${own}`);
+    expect(isBaseFormatPrompt("A plain prompt")).toBe(false);
+    expect(isBaseFormatPrompt("\n integrated_multimodal_description: x")).toBe(true);
   });
 });

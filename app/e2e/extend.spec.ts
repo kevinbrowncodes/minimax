@@ -20,22 +20,23 @@ async function finishOne(page: import("@playwright/test").Page, prompt: string):
   return page.url().split("/task/")[1] ?? "";
 }
 
-test.describe("extend a finished video (STORY_016)", () => {
-  test("Extend continues a finished clip: the tile says what the model watches, Send creates an extension, the result plays and can be extended again", async ({ page, stubApi }) => {
+test.describe("extend a finished video (STORY_016, STORY_017)", () => {
+  test("Extend continues a finished clip: the tile says what the new clip starts from, Send creates an extension, the result plays and can be extended again", async ({ page, stubApi }) => {
     const id1 = await finishOne(page, "The first clip");
     await page.getByRole("button", { name: /Extend/ }).click();
     await settled(page);
     await expect(page.getByTestId("continuation")).toContainText("Continues · 2.0 s");
-    // the stub's fixture is 2.0 s (56 frames): every context choice watches all of it
-    await expect(page.getByTestId("context-line")).toHaveText("the model watches the last 2.3 s");
+    await expect(page.getByTestId("overlap-line")).toHaveText("carries its last 1.6 s into the new clip");
     await expect(page.getByRole("button", { name: "Add reference image" })).toBeHidden();
     await expect(page.getByRole("button", { name: "Video parameters: 16:9 768P +10s" })).toBeVisible();
     await page.getByRole("button", { name: /^Video parameters:/ }).click();
     await settled(page);
     await expect(page.getByRole("radio", { name: "9:16" })).toBeDisabled();
-    await expect(page.getByRole("radio", { name: "last 5s" })).toHaveAttribute("aria-checked", "true");
-    await page.getByRole("radio", { name: "last 2s" }).click();
-    await expect(page.getByTestId("context-line")).toHaveText("the model watches the last 2.3 s");
+    await expect(page.getByRole("radio", { name: "1.6 s" })).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("radio", { name: "+14s" })).toBeHidden(); // the 39-frame overlap leaves room for 13 s
+    await page.getByRole("radio", { name: "0.9 s" }).click();
+    await expect(page.getByTestId("overlap-line")).toHaveText("carries its last 0.9 s into the new clip");
+    await expect(page.getByRole("radio", { name: "+14s" })).toBeVisible();
     await page.keyboard.press("Escape");
     await page.getByRole("textbox", { name: "Message" }).fill("and then he bows");
     // Registered before the click (CLAUDE.md §6b); the new task polls with the stub's default script. The URL still
@@ -48,11 +49,11 @@ test.describe("extend a finished video (STORY_016)", () => {
     await expect(page).toHaveURL(new RegExp(`/task/${id2}$`));
     await expect(page.getByTestId("continues")).toContainText("Continues The first clip · 2.0 s");
     expect((await terminal).status).toBe("done");
-    await expect(page.getByTestId("continues")).toContainText("watched its last 2.3 s");
+    await expect(page.getByTestId("continues")).toContainText("carried its last 0.9 s");
     await expectPlayable(page.getByTestId("result-video"), `/api/jobs/${id2}/result`);
     await expect(page.getByTestId("result").getByRole("button", { name: /Extend/ })).toBeVisible();
     const received = await stubApi.received(id2);
-    expect(received.request).toMatchObject({ prompt: "and then he bows", continueFrom: id1, durationSeconds: 10, contextSeconds: 2 });
+    expect(received.request).toMatchObject({ prompt: "and then he bows", continueFrom: id1, durationSeconds: 10, overlapFrames: 22 });
   });
 
   test("Assets offers Extend, which opens the task extending; Stop extending restores the composer without creating a job", async ({ page, stubApi }) => {
@@ -87,6 +88,6 @@ test.describe("extend a finished video (STORY_016)", () => {
     const { id: id3 } = (await (await retriedCreate).json()) as { id: string };
     await expect(page).toHaveURL(new RegExp(`/task/${id3}$`));
     expect((await retried).status).toBe("done");
-    expect((await stubApi.received(id3)).request).toMatchObject({ continueFrom: id1, contextSeconds: 5, prompt: "fail me" });
+    expect((await stubApi.received(id3)).request).toMatchObject({ continueFrom: id1, overlapFrames: 39, prompt: "fail me" });
   });
 });

@@ -1,6 +1,6 @@
 # Job API contract — create → status → result
 
-**Version 1.1 (2026-09-13; v1 2026-09-12).** v1.1 adds extending a finished video (`continueFrom`, `contextSeconds`, `capabilities.extension`, STORY_016) and an optional `seed`. This is the one protocol the UI speaks to a generation server. Two servers implement it: the **stub** (`tools/stub-generation-server/`, STORY_008 — scripted outcomes for the test gate) and the **adapter** on the Spark in front of ComfyUI (`spark/adapter/`, STORY_006). The UI reaches either only through its own API routes (STORY_009), which read the base URL from `MODEL_BASE_URL`. A change to this document is a story on both sides.
+**Version 1.2 (2026-09-14; v1.1 2026-09-13; v1 2026-09-12).** v1.1 added extending a finished video (`continueFrom`, `capabilities.extension`, STORY_016) and an optional `seed`; v1.2 replaces `contextSeconds` with `overlapFrames` (STORY_017: the source's last frames become the new clip's own first frames). This is the one protocol the UI speaks to a generation server. Two servers implement it: the **stub** (`tools/stub-generation-server/`, STORY_008 — scripted outcomes for the test gate) and the **adapter** on the Spark in front of ComfyUI (`spark/adapter/`, STORY_006). The UI reaches either only through its own API routes (STORY_009), which read the base URL from `MODEL_BASE_URL`. A change to this document is a story on both sides.
 
 ## Conventions
 
@@ -30,9 +30,9 @@ or `multipart/form-data` with the same fields as text parts plus **0–2** `refe
 | `model` | one of `capabilities.models[].id`; optional, defaults to the first |
 | `seed` | integer 0–4294967295; optional. The noise seed, for like-for-like runs; the server draws one when absent and echoes the one used |
 | `continueFrom` | id of a job of **this** server whose status is `done`; optional. Makes the job an **extension** (v1.1): the result is the source video followed by a continuation |
-| `contextSeconds` | integer within `capabilities.extension.contextSeconds`; optional, only with `continueFrom`; defaults to its `default`. How many seconds of the source's end the model watches |
+| `overlapFrames` | one of `capabilities.extension.overlapFrames.options`; optional, only with `continueFrom`; defaults to its `default`. How many of the source's last frames become the new clip's own first frames (v1.2; `contextSeconds` from v1.1 is refused with `400 validation`) |
 
-**Extensions (v1.1).** With `continueFrom`: `durationSeconds` is the number of seconds **added** and must lie within `capabilities.extension.durationsSeconds`; `ratio`, `resolution` and `model` must equal the source's; no `referenceImage` part may be sent; the source must not be longer than `capabilities.extension.maxSourceSeconds`. The server feeds the model the source's last `contextFed` (see the status) — the requested seconds snapped to the model's frame grid and cut down to what the source has and to the length being generated — anchors the seam, and joins the source and the new segment into one clip; `result.durationSeconds` is the joined length, and an extension can be extended again.
+**Extensions (v1.2).** With `continueFrom`: `durationSeconds` is the number of seconds **added** and must lie within `capabilities.extension.durationsSeconds`, and the overlap plus the seconds added must fit the model's `capabilities.extension.maxFrames` in one generation (with the default 39-frame overlap the most is 13 s); `ratio`, `resolution` and `model` must equal the source's; no `referenceImage` part may be sent; the source must not be longer than `capabilities.extension.maxSourceSeconds`. The server makes the source's last `overlapFrames` frames (and their sound) the first frames of the clip it generates, protected from change, generates the rest as the same clip, and joins the source and the new frames after the overlap into one clip; `result.durationSeconds` is the joined length, and an extension can be extended again.
 
 Response `202`:
 
@@ -59,7 +59,7 @@ Response `200`:
 }
 ```
 
-`request` echoes what was accepted, `seed` included. For an extension it also carries `continueFrom`, `contextSeconds` (as requested) and `contextFed: { frames, seconds }` (what the server actually fed the model). `result.frames` is the clip's length on the 24 fps grid (an extension's is the source's plus the new frames).
+`request` echoes what was accepted, `seed` included. For an extension it also carries `continueFrom`, `overlapFrames` (as requested or defaulted) and `overlap: { frames, seconds }` (what the server carried into the new clip). `result.frames` is the clip's length on the 24 fps grid (an extension's is the source's plus the new frames).
 
 `error` is present only when `status` is `failed` (`code` is `moderated` for a prompt or image the server refused on content grounds, `generation_failed` otherwise). `result` is present only when `status` is `done`; `url` and `posterUrl` are paths relative to the base URL. Unknown id → `404 not_found`.
 
@@ -84,11 +84,11 @@ Response `202 { "id": "…", "status": "cancelled", "progress": <last> }`. The s
   "resolutions": ["768P"],
   "durationsSeconds": { "min": 4, "max": 15, "step": 1 },
   "referenceImages": { "max": 2 },
-  "extension": { "durationsSeconds": { "min": 4, "max": 14, "step": 1, "default": 10 }, "contextSeconds": { "min": 2, "max": 15, "default": 5 }, "maxSourceSeconds": 30 }
+  "extension": { "durationsSeconds": { "min": 4, "max": 14, "step": 1, "default": 10 }, "overlapFrames": { "options": [22, 39, 56], "default": 39 }, "maxFrames": 362, "maxSourceSeconds": 30 }
 }
 ```
 
-`extension` (v1.1) says how a finished video can be extended: the seconds added per step (its `max` keeps one generation inside the model's trained 362 frames), the seconds of the source the model watches, and the longest source the server joins.
+`extension` (v1.2) says how a finished video can be extended: the seconds added per step, the overlaps on offer (the source's last frames that become the new clip's head — 0.9 / 1.6 / 2.3 s), the model's per-generation frame ceiling (`maxFrames`, which with a given overlap caps the seconds one step can add), and the longest source the server joins.
 
 The UI renders its option controls from this and greys out what is absent (for example the reference's `2K`, which the Spark cannot produce — [interactions.md §5](../recon/2026-09-12/interactions.md)).
 

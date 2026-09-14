@@ -21,13 +21,13 @@ describe("buildJobRequest", () => {
   });
 });
 
-describe("buildJobRequest in extend mode (STORY_016)", () => {
-  it("always sends JSON with continueFrom and contextSeconds, even after images were attached", () => {
+describe("buildJobRequest in extend mode (STORY_017)", () => {
+  it("always sends JSON with continueFrom and overlapFrames, even after images were attached", () => {
     const withImage = reduceComposer(typed(), { type: "add-images", images: [img] });
-    const extending = reduceComposer(reduceComposer(withImage, { type: "extend-from", source: { id: "src", title: "t", durationSeconds: 2, ratio: "16:9", resolution: "768P", model: "minimax-h3", posterUrl: "/p" } }), { type: "context", contextSeconds: 10 });
+    const extending = reduceComposer(reduceComposer(withImage, { type: "extend-from", source: { id: "src", title: "t", durationSeconds: 2, ratio: "16:9", resolution: "768P", model: "minimax-h3", posterUrl: "/p" } }), { type: "overlap", overlapFrames: 22 });
     const req = buildJobRequest(extending);
     expect(req.url).toBe("/api/jobs");
-    expect(req.init.body).toBe(JSON.stringify({ prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", continueFrom: "src", contextSeconds: 10 }));
+    expect(req.init.body).toBe(JSON.stringify({ prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", continueFrom: "src", overlapFrames: 22 }));
   });
 });
 

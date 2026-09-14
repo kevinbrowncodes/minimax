@@ -7,7 +7,7 @@ import { Composer } from "./Composer";
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
-const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 }, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, contextSeconds: { min: 2, max: 15, default: 5 }, maxSourceSeconds: 30 } };
+const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 }, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 } };
 const source: ExtendSource = { id: "src", title: "The first clip", durationSeconds: 2, ratio: "16:9", resolution: "768P", model: "minimax-h3", posterUrl: "/api/jobs/src/poster" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
@@ -120,8 +120,8 @@ describe("Composer", () => {
   });
 });
 
-describe("Composer — extend mode (STORY_016)", () => {
-  it("shows the continuation tile and what the model watches, locks ratio/resolution/model, offers +Ns and Context, and Send posts continueFrom", async () => {
+describe("Composer — extend mode (STORY_016, STORY_017)", () => {
+  it("shows the continuation tile and the overlap, locks ratio/resolution/model, offers +Ns and Overlap, and Send posts continueFrom and overlapFrames", async () => {
     let captured: RequestInit | undefined;
     const fetchImpl = fetchWith((init) => {
       captured = init;
@@ -132,7 +132,7 @@ describe("Composer — extend mode (STORY_016)", () => {
       expect(screen.getByRole("button", { name: /^Video parameters:/ })).toBeEnabled();
     });
     expect(screen.getByTestId("continuation")).toHaveTextContent("Continues · 2.0 s");
-    expect(screen.getByTestId("context-line")).toHaveTextContent("the model watches the last 2.3 s");
+    expect(screen.getByTestId("overlap-line")).toHaveTextContent("carries its last 1.6 s into the new clip");
     expect(screen.queryByRole("button", { name: "Add reference image" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Model:/ })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Video parameters: 16:9 768P +10s" })).toBeInTheDocument();
@@ -143,11 +143,12 @@ describe("Composer — extend mode (STORY_016)", () => {
     expect(screen.getByRole("radio", { name: "768P" })).toBeDisabled();
     expect(screen.getByText("fixed by the video being extended")).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "+10s" })).toHaveAttribute("aria-checked", "true");
-    expect(screen.queryByRole("radio", { name: "+15s" })).not.toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "last 5s" })).toHaveAttribute("aria-checked", "true");
-    fireEvent.click(screen.getByRole("radio", { name: "max" }));
-    expect(screen.getByRole("radio", { name: "max" })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByTestId("context-line")).toHaveTextContent("2.3 s"); // a 2 s source: all of it, whatever the choice
+    expect(screen.queryByRole("radio", { name: "+14s" })).not.toBeInTheDocument(); // 39 frames of overlap leave room for 13 s
+    expect(screen.getByRole("radio", { name: "1.6 s" })).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(screen.getByRole("radio", { name: "0.9 s" }));
+    expect(screen.getByRole("radio", { name: "0.9 s" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByTestId("overlap-line")).toHaveTextContent("carries its last 0.9 s into the new clip");
+    expect(screen.getByRole("radio", { name: "+14s" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: "+4s" }));
     expect(screen.getByRole("button", { name: "Video parameters: 16:9 768P +4s" })).toBeInTheDocument();
     fireEvent.keyDown(window, { key: "Escape" });
@@ -159,7 +160,7 @@ describe("Composer — extend mode (STORY_016)", () => {
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith("/task/j2");
     });
-    expect(captured?.body).toBe(JSON.stringify({ prompt: "and then he bows", ratio: "16:9", resolution: "768P", durationSeconds: 4, model: "minimax-h3", continueFrom: "src", contextSeconds: 15 }));
+    expect(captured?.body).toBe(JSON.stringify({ prompt: "and then he bows", ratio: "16:9", resolution: "768P", durationSeconds: 4, model: "minimax-h3", continueFrom: "src", overlapFrames: 22 }));
   });
 
   it("Stop extending restores the normal composer and tells the page", async () => {

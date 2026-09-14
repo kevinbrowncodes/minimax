@@ -1,9 +1,9 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
-import { canSend, contextOptions, durationOptions, initialComposer, isModelEnabled, isResolutionEnabled, paramsLabel, reduceComposer, REFERENCE_MODELS, REFERENCE_RATIOS, REFERENCE_RESOLUTIONS, type ComposerImage, type ExtendSource } from "@/lib/composer-state";
+import { canSend, durationOptions, initialComposer, isModelEnabled, isResolutionEnabled, overlapOptions, paramsLabel, reduceComposer, REFERENCE_MODELS, REFERENCE_RATIOS, REFERENCE_RESOLUTIONS, type ComposerImage, type ExtendSource } from "@/lib/composer-state";
 import { cx } from "@/lib/cx";
-import { contextFedSeconds } from "@/lib/extend";
+import { overlapSeconds } from "@/lib/extend";
 import type { Capabilities } from "@/lib/job-api";
 import { submitJob } from "@/lib/submit-job";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
@@ -179,7 +179,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
             <img className={styles.continuationPoster} src={extending.posterUrl} alt="" />
             <div className={styles.continuationText}>
               <span className={styles.continuationTitle}>Continues · {extending.durationSeconds.toFixed(1)} s</span>
-              <span data-testid="context-line">the model watches the last {contextFedSeconds(extending.durationSeconds, state.durationSeconds, state.contextSeconds).toFixed(1)} s</span>
+              <span data-testid="overlap-line">carries its last {overlapSeconds(state.overlapFrames)} s into the new clip</span>
             </div>
             <button type="button" className={styles.continuationRemove} aria-label="Stop extending" onClick={stopExtending}>×</button>
           </div>
@@ -290,10 +290,10 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                     </div>
                     {extending ? (
                       <>
-                        <span className={styles.sectionLabel}>Context (what the model watches)</span>
-                        <div className={styles.track} role="radiogroup" aria-label="Context">
-                          {contextOptions(state).map((option) => (
-                            <button key={option.seconds} type="button" role="radio" aria-checked={state.contextSeconds === option.seconds} className={cx(styles.segment, state.contextSeconds === option.seconds && styles.segmentSelected)} onClick={() => { dispatch({ type: "context", contextSeconds: option.seconds }); }}>
+                        <span className={styles.sectionLabel}>Overlap (what the new clip starts from)</span>
+                        <div className={styles.track} role="radiogroup" aria-label="Overlap">
+                          {overlapOptions(state).map((option) => (
+                            <button key={option.frames} type="button" role="radio" aria-checked={state.overlapFrames === option.frames} className={cx(styles.segment, state.overlapFrames === option.frames && styles.segmentSelected)} onClick={() => { dispatch({ type: "overlap", overlapFrames: option.frames }); }}>
                               {option.label}
                             </button>
                           ))}

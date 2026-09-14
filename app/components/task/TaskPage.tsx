@@ -7,7 +7,7 @@ import { fileNameFor } from "@/lib/assets-filter";
 import type { ExtendSource } from "@/lib/composer-state";
 import { cx } from "@/lib/cx";
 import type { HistoryEntry } from "@/lib/history-store";
-import type { ContextFed, JobStatusResponse } from "@/lib/job-api";
+import type { JobStatusResponse, Overlap } from "@/lib/job-api";
 import { initialJob, isTerminal, reduceJob, type JobSnapshot } from "@/lib/job-status";
 import { PollAbortedError, pollUntilTerminal } from "@/lib/polling";
 import { indicatorFor, stepsFor } from "@/lib/todo-steps";
@@ -38,7 +38,7 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
   const [busy, setBusy] = useState<"stop" | "retry" | undefined>(undefined);
   const [copied, setCopied] = useState(false);
   const [extending, setExtending] = useState(extendOnOpen && entry.status === "done");
-  const [contextFed, setContextFed] = useState<ContextFed | undefined>(entry.contextFed);
+  const [overlap, setOverlap] = useState<Overlap | undefined>(entry.overlap);
   const opened = useRef(false);
 
   // Mark the entry opened once (the sidebar's unread dot). StrictMode runs effects twice; the ref makes it once.
@@ -64,7 +64,7 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
       signal: controller.signal,
       onUpdate: (response) => {
         dispatch({ type: "status", response });
-        if (response.request?.contextFed) setContextFed(response.request.contextFed);
+        if (response.request?.overlap) setOverlap(response.request.overlap);
       },
     }).catch((error: unknown) => {
       if (!(error instanceof PollAbortedError)) dispatch({ type: "status", response: { id: entry.id, status: "failed", progress: job.progress, error: { code: "unreachable", message: error instanceof Error ? error.message : String(error) } } });
@@ -136,7 +136,7 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
               <span className={styles.continues} data-testid="continues">
                 Continues <Link href={`/task/${encodeURIComponent(entry.continuesFrom.id)}`}>{entry.continuesFrom.title}</Link>
                 {entry.continuesFrom.durationSeconds === undefined ? "" : ` · ${entry.continuesFrom.durationSeconds.toFixed(1)} s`}
-                {contextFed ? ` · watched its last ${contextFed.seconds.toFixed(1)} s` : ""}
+                {overlap ? ` · carried its last ${overlap.seconds.toFixed(1)} s` : ""}
               </span>
             ) : null}
           </div>

@@ -182,29 +182,34 @@ describe("config, auth and errors", () => {
   });
 });
 
-describe("extensions (STORY_016)", () => {
-  it("records continuesFrom with the source's title and length, relays the stub's echo, records what was fed, and the stub receives the request", async () => {
+describe("extensions (STORY_016, STORY_017)", () => {
+  it("records continuesFrom with the source's title and length, relays the stub's echo, records what was carried, and the stub receives the request", async () => {
     const src = await create("done-after-1-poll");
     await status(src);
-    const res = await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, durationSeconds: 10, continueFrom: src, contextSeconds: 2 }));
+    const res = await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, durationSeconds: 10, continueFrom: src, overlapFrames: 22 }));
     expect(res.status).toBe(202);
     const { id } = (await res.json()) as CreateJobResponse;
     const entry = historyStore().get(id);
-    expect(entry).toMatchObject({ continuesFrom: { id: src, title: "A small paper boat", durationSeconds: 2 }, params: { durationSeconds: 10, contextSeconds: 2 } });
-    expect(entry?.contextFed).toBeUndefined();
+    expect(entry).toMatchObject({ continuesFrom: { id: src, title: "A small paper boat", durationSeconds: 2 }, params: { durationSeconds: 10, overlapFrames: 22 } });
+    expect(entry?.overlap).toBeUndefined();
     const s = await status(id);
-    expect(s.request).toMatchObject({ continueFrom: src, contextSeconds: 2, contextFed: { frames: 56, seconds: 2.333 } });
-    expect(historyStore().get(id)?.contextFed).toEqual({ frames: 56, seconds: 2.333 });
-    expect((await stubReceived(id)).request).toMatchObject({ continueFrom: src, contextSeconds: 2, durationSeconds: 10 });
+    expect(s.request).toMatchObject({ continueFrom: src, overlapFrames: 22, overlap: { frames: 22, seconds: 0.917 } });
+    expect(historyStore().get(id)?.overlap).toEqual({ frames: 22, seconds: 0.917 });
+    expect((await stubReceived(id)).request).toMatchObject({ continueFrom: src, overlapFrames: 22, durationSeconds: 10 });
   });
 
-  it("a refused continueFrom relays the stub's 400 and writes no history entry; capabilities relay the extension limits", async () => {
+  it("a refused continueFrom relays the stub's 400 and writes no history entry; the old contextSeconds is refused; capabilities relay the extension limits", async () => {
     const before = historyStore().list().length;
     const res = await createJob(jsonRequest("/api/jobs", { ...valid, durationSeconds: 10, continueFrom: "nope" }));
     expect(res.status).toBe(400);
     expect(((await res.json()) as ApiError).error).toMatchObject({ code: "validation", field: "continueFrom" });
-    expect(historyStore().list().length).toBe(before);
+    const src = await create("done-after-1-poll");
+    await status(src);
+    const old = await createJob(jsonRequest("/api/jobs", { ...valid, durationSeconds: 10, continueFrom: src, contextSeconds: 5 }));
+    expect(old.status).toBe(400);
+    expect(((await old.json()) as ApiError).error).toMatchObject({ code: "validation", field: "contextSeconds" });
+    expect(historyStore().list().length).toBe(before + 1);
     const caps = (await (await getCapabilities()).json()) as Capabilities;
-    expect(caps.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, contextSeconds: { min: 2, max: 15, default: 5 }, maxSourceSeconds: 30 });
+    expect(caps.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 });
   });
 });

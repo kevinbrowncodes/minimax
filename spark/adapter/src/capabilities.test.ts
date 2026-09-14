@@ -46,26 +46,31 @@ describe("validateRequest", () => {
   });
 });
 
-describe("extensions (STORY_016)", () => {
-  it("parses continueFrom, contextSeconds and seed, defaulting the context and ignoring it outside an extension", () => {
+describe("extensions (STORY_017)", () => {
+  it("parses continueFrom, overlapFrames and seed, defaulting the overlap and ignoring it outside an extension", () => {
     const ext = validateRequest({ ...valid, continueFrom: "abc", durationSeconds: 10 }, []);
-    expect(ext).toMatchObject({ continueFrom: "abc", durationSeconds: 10, contextSeconds: 5 });
+    expect(ext).toMatchObject({ continueFrom: "abc", durationSeconds: 10, overlapFrames: 39 });
     expect(ext).not.toHaveProperty("seed");
-    const strings = validateRequest({ ...valid, continueFrom: " abc ", durationSeconds: "10", contextSeconds: "10", seed: "42" }, []);
-    expect(strings).toMatchObject({ continueFrom: "abc", contextSeconds: 10, seed: 42 });
-    const plain = validateRequest({ ...valid, contextSeconds: 10, seed: 7, continueFrom: "" }, []);
+    const strings = validateRequest({ ...valid, continueFrom: " abc ", durationSeconds: "10", overlapFrames: "56", seed: "42" }, []);
+    expect(strings).toMatchObject({ continueFrom: "abc", overlapFrames: 56, seed: 42 });
+    const plain = validateRequest({ ...valid, overlapFrames: 22, seed: 7, continueFrom: "" }, []);
     expect(plain).not.toHaveProperty("continueFrom");
-    expect(plain).not.toHaveProperty("contextSeconds");
+    expect(plain).not.toHaveProperty("overlapFrames");
     expect(plain.seed).toBe(7);
+    // the most a step can add depends on the overlap (the model's 362-frame ceiling)
+    expect(validateRequest({ ...valid, continueFrom: "abc", durationSeconds: 14, overlapFrames: 22 }, []).durationSeconds).toBe(14);
+    expect(validateRequest({ ...valid, continueFrom: "abc", durationSeconds: 13, overlapFrames: 39 }, []).durationSeconds).toBe(13);
   });
 
-  it("refuses the extension range, a bad context, a bad seed, a non-string continueFrom and a reference image", () => {
+  it("refuses the extension range, a bad overlap, the old contextSeconds, a bad seed, a non-string continueFrom and a reference image", () => {
     const cases: [Record<string, unknown>, string, string][] = [
       [{ ...valid, continueFrom: "abc", durationSeconds: 15 }, "unsupported_option", "durationSeconds"],
       [{ ...valid, continueFrom: "abc", durationSeconds: 3 }, "unsupported_option", "durationSeconds"],
-      [{ ...valid, continueFrom: "abc", contextSeconds: 1 }, "unsupported_option", "contextSeconds"],
-      [{ ...valid, continueFrom: "abc", contextSeconds: 16 }, "unsupported_option", "contextSeconds"],
-      [{ ...valid, continueFrom: "abc", contextSeconds: 2.5 }, "unsupported_option", "contextSeconds"],
+      [{ ...valid, continueFrom: "abc", durationSeconds: 14, overlapFrames: 39 }, "unsupported_option", "durationSeconds"],
+      [{ ...valid, continueFrom: "abc", durationSeconds: 13, overlapFrames: 56 }, "unsupported_option", "durationSeconds"],
+      [{ ...valid, continueFrom: "abc", overlapFrames: 30 }, "unsupported_option", "overlapFrames"],
+      [{ ...valid, continueFrom: "abc", overlapFrames: 2.5 }, "unsupported_option", "overlapFrames"],
+      [{ ...valid, continueFrom: "abc", contextSeconds: 5 }, "validation", "contextSeconds"],
       [{ ...valid, continueFrom: 12 }, "validation", "continueFrom"],
       [{ ...valid, seed: -1 }, "validation", "seed"],
       [{ ...valid, seed: "x" }, "validation", "seed"],
@@ -80,10 +85,12 @@ describe("extensions (STORY_016)", () => {
       }
       expect(caught, JSON.stringify(fields)).toMatchObject({ status: 400, code, field });
     }
+    expect(() => validateRequest({ ...valid, continueFrom: "abc", durationSeconds: 14, overlapFrames: 39 }, [])).toThrow(/the most that can be added is 13 s/);
+    expect(() => validateRequest({ ...valid, continueFrom: "abc", contextSeconds: 5 }, [])).toThrow(/overlapFrames/);
     expect(() => validateRequest({ ...valid, continueFrom: "abc" }, [{ field: "referenceImage", contentType: "image/png", size: 1 }])).toThrow(/takes no reference images/);
   });
 
   it("publishes the extension capabilities", () => {
-    expect(CAPABILITIES.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, contextSeconds: { min: 2, max: 15, default: 5 }, maxSourceSeconds: 30 });
+    expect(CAPABILITIES.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 });
   });
 });

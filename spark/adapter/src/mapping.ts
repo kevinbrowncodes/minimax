@@ -1,11 +1,14 @@
 /**
- * Pure mapping from a job request onto MiniMax-H3's grid and ComfyUI's API graph (STORY_006, STORY_016). The graph
+ * Pure mapping from a job request onto MiniMax-H3's grid and ComfyUI's API graph (STORY_006, STORY_017). The graph
  * template is spark/comfyui/h3_t2v_prompt.json (the one STORY_005 rendered with); this module fills prompt, size,
  * length, seed, wires reference images to first_frame / last_frame, adds a first-frame SaveImage for the poster, and —
- * for an extension — rebuilds the conditioning on the Ref2VA checkpoint with the source's tail as the reference,
- * anchors the seam, and joins source and segment into one clip (docs/story/STORY_016).
+ * for an extension — makes the source's last frames the new clip's own first frames, protected by the noise mask
+ * (native masked continuation, docs/story/STORY_017), then joins source and segment into one clip.
  */
 import type { JobRequest, Ratio } from "./capabilities.ts";
+import { FPS, MAX_FRAMES, OVERLAP_OPTIONS, audioTicks, extensionLength, latentFrames, lengthForSeconds, seconds } from "./grid.ts";
+
+export { AUDIO_LATENT_FPS, DEFAULT_OVERLAP, FPS, MAX_FRAMES, OVERLAP_OPTIONS, audioTicks, extensionLength, gridDown, latentFrames, lengthForSeconds, maxAddedSeconds, seconds } from "./grid.ts";
 
 /** 768 on the short side, both sides multiples of 32 — what the model was measured at (STORY_005). */
 export const SIZES: Readonly<Record<Ratio, { readonly width: number; readonly height: number }>> = {
@@ -16,31 +19,6 @@ export const SIZES: Readonly<Record<Ratio, { readonly width: number; readonly he
   "3:4": { width: 768, height: 1024 },
   "9:16": { width: 768, height: 1344 },
 };
-export const FPS = 24;
-/** The seam anchor: the source's last 22 frames (the smallest 17k+5 clip with motion in it) pinned at frame 0 of the segment, then cut at the join. */
-export const ANCHOR_FRAMES = 22;
-
-/** Frame count on the model's 17k+5 grid, the rule of the official template and spark/comfyui/h3.sh. */
-export function lengthForSeconds(seconds: number): number {
-  const n = Math.max(5, Math.round(seconds * FPS));
-  return n + ((((5 - (n % 17)) % 17) + 17) % 17);
-}
-
-/** The largest 17k+5 count that is ≤ n (n ≥ 5) — how ComfyUI cuts a reference or guide clip down to the grid. */
-export function gridDown(n: number): number {
-  const m = Math.max(5, Math.floor(n));
-  return m - ((m - 5) % 17);
-}
-
-/** Frames generated for an extension: at least the requested seconds are new after the anchor is cut, snapped up. */
-export function extensionLength(addedSeconds: number): number {
-  return lengthForSeconds(addedSeconds + ANCHOR_FRAMES / FPS);
-}
-
-/** Frames of the source's end the model watches: the requested seconds on the grid, cut down to the source and to the segment. */
-export function contextFrames(sourceFrames: number, segmentFrames: number, contextSeconds: number): number {
-  return gridDown(Math.min(sourceFrames, segmentFrames, lengthForSeconds(contextSeconds)));
-}
 
 export function sizeFor(ratio: Ratio): { width: number; height: number } {
   return SIZES[ratio];
@@ -56,15 +34,15 @@ export interface UploadedImage {
   /** The name ComfyUI's /upload/image returned; LoadImage takes it as its `image` input. */
   readonly name: string;
 }
-/** An extension's source (STORY_016): the finished clip in ComfyUI's output directory and what to feed from it. */
+/** An extension's source (STORY_017): the finished clip in ComfyUI's output directory and how much of it becomes the new clip's head. */
 export interface Continuation {
   /** "<subfolder>/<filename>" under ComfyUI's output directory (LoadVideo reads it as "<file> [output]"). */
   readonly file: string;
   /** Frames in the source clip. */
   readonly frames: number;
-  /** Frames of the source's end fed as the reference (see contextFrames). */
-  readonly contextFrames: number;
-  /** The full-reference prompt (prompt.ts continuationPrompt) the Ref2VA node gets instead of the prose. */
+  /** The source's last N frames carried into the new clip as its own first frames (one of OVERLAP_OPTIONS). */
+  readonly overlapFrames: number;
+  /** The prompt in MiniMax's base format (prompt.ts continuationPrompt). */
   readonly prompt: string;
 }
 export interface GraphOptions {
@@ -77,21 +55,20 @@ const NEEDED_NODES = ["unet", "clip", "vae_video", "vae_audio", "cond", "noise",
 /** Node classes the graphs rely on; verified against /object_info at start (server.ts). */
 export const REQUIRED_CLASSES: readonly string[] = [
   "UNETLoader", "CLIPLoader", "VAELoader", "MiniMaxH3ImageToVideo", "RandomNoise", "BasicGuider", "KSamplerSelect", "BasicScheduler", "SamplerCustomAdvanced", "VAEDecode", "VAEDecodeAudio", "CreateVideo", "SaveVideo", "LoadImage", "ImageFromBatch", "SaveImage",
-  // STORY_016 extensions
-  "LoadVideo", "GetVideoComponents", "MiniMaxH3ReferenceToVideo", "MiniMaxH3AddGuide", "ImageBatch", "TrimAudioDuration", "AudioConcat",
+  // STORY_017 extensions: the source's tail as the new clip's own head, protected by the noise mask, joined in-graph
+  "LoadVideo", "GetVideoComponents", "VAEEncode", "VAEEncodeAudio", "EmptyMiniMaxH3LatentAV", "LTXVSeparateAVLatent", "LTXVConcatAVLatent", "ReplaceVideoLatentFrames", "LatentCut", "LatentConcat",
+  "SolidMask", "MaskToImage", "RepeatImageBatch", "ImageToMask", "MaskComposite", "SetLatentNoiseMask", "ImageBatch", "TrimAudioDuration", "AudioConcat",
 ];
 
-/** The Ref2VA checkpoint for the template's FL2VA file at the same precision (Comfy-Org names them alike). */
+/** The Ref2VA checkpoint for the template's FL2VA file at the same precision (reported by health; not used by extensions since STORY_017). */
 export function ref2vaFileFor(fl2vaFile: string): string {
   return fl2vaFile.replace("fl2va", "ref2va");
 }
-/** The FL2VA checkpoint the template loads (the adapter's start-up check needs both names). */
+/** The FL2VA checkpoint the template loads. */
 export function templateUnet(template: Graph): string {
   const name = template["unet"]?.inputs["unet_name"];
   return typeof name === "string" ? name : "";
 }
-
-const seconds = (frames: number): number => Math.round((frames / FPS) * 1000) / 1000;
 
 export function buildGraph(template: Graph, request: JobRequest, images: readonly UploadedImage[], options: GraphOptions = {}): Graph {
   for (const id of NEEDED_NODES) if (!(id in template)) throw new Error(`graph template has no "${id}" node`);
@@ -102,9 +79,8 @@ export function buildGraph(template: Graph, request: JobRequest, images: readonl
   const noise = graph["noise"];
   const video = graph["video"];
   const save = graph["save"];
-  const unet = graph["unet"];
-  const guider = graph["guider"];
-  if (!cond || !noise || !video || !save || !unet || !guider) throw new Error("graph template is missing nodes");
+  const sample = graph["sample"];
+  if (!cond || !noise || !video || !save || !sample) throw new Error("graph template is missing nodes");
   noise.inputs["noise_seed"] = options.seed ?? Math.floor(Math.random() * 2 ** 32);
   video.inputs["fps"] = FPS;
   const prefix = options.filenamePrefix ?? "video/MiniMax_H3";
@@ -131,42 +107,60 @@ export function buildGraph(template: Graph, request: JobRequest, images: readonl
     return graph;
   }
 
-  // --- an extension (STORY_016): Ref2VA, the source's tail as <Video 1>/<Audio 1>, the seam anchored, the join in-graph
-  const segment = extensionLength(request.durationSeconds);
-  const { frames: sourceFrames, contextFrames: ctx } = continuation;
-  if (ctx < 5 || ctx > sourceFrames || ANCHOR_FRAMES > sourceFrames) throw new Error(`continuation context ${String(ctx)} does not fit a ${String(sourceFrames)}-frame source`);
-  unet.inputs["unet_name"] = ref2vaFileFor(templateUnet(template));
+  // --- an extension (STORY_017): native masked continuation on the FL2VA checkpoint the template loads ------------
+  const S = continuation.frames;
+  const O = continuation.overlapFrames;
+  if (!OVERLAP_OPTIONS.includes(O)) throw new Error(`overlap ${String(O)} is not one of ${OVERLAP_OPTIONS.join("/")}`);
+  if (O > S) throw new Error(`an overlap of ${String(O)} frames does not fit a ${String(S)}-frame source`);
+  const L = extensionLength(request.durationSeconds, O);
+  if (L > MAX_FRAMES) throw new Error(`${String(L)} frames exceed the model's ${String(MAX_FRAMES)}`);
+  const latW = width / 16;
+  const latH = height / 16;
+  const lO = latentFrames(O);
+  const lL = latentFrames(L);
+  const aO = audioTicks(O);
+  const aL = audioTicks(L);
+
+  // The source's tail: pixels and sound of its last O frames, encoded by the model's own VAEs.
   graph["source_video"] = { class_type: "LoadVideo", inputs: { file: `${continuation.file} [output]` } };
   graph["source_parts"] = { class_type: "GetVideoComponents", inputs: { video: ["source_video", 0] } };
-  graph["context_frames"] = { class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: sourceFrames - ctx, length: ctx } };
-  graph["context_audio"] = { class_type: "TrimAudioDuration", inputs: { audio: ["source_parts", 1], start_index: seconds(sourceFrames - ctx), duration: seconds(ctx) } };
-  // CHORE_003: the source's last frame is also <Picture 1>, the shot's first frame in MiniMax's own vocabulary, so the set stays.
-  graph["last_frame_ref"] = { class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: sourceFrames - 1, length: 1 } };
-  graph["anchor_frames"] = { class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: sourceFrames - ANCHOR_FRAMES, length: ANCHOR_FRAMES } };
-  graph["anchor_audio"] = { class_type: "TrimAudioDuration", inputs: { audio: ["source_parts", 1], start_index: seconds(sourceFrames - ANCHOR_FRAMES), duration: seconds(ANCHOR_FRAMES) } };
-  graph["cond"] = {
-    class_type: "MiniMaxH3ReferenceToVideo",
-    inputs: {
-      clip: ["clip", 0],
-      vae: ["vae_video", 0],
-      audio_vae: ["vae_audio", 0],
-      prompt: continuation.prompt,
-      width,
-      height,
-      length: segment,
-      ref_image_size: "match",
-      "ref_images.ref_image_0": ["last_frame_ref", 0],
-      "ref_videos.ref_video_0": ["context_frames", 0],
-      "ref_video_audios.ref_video_audio_0": ["context_audio", 0],
-    },
-  };
-  graph["guide"] = {
-    class_type: "MiniMaxH3AddGuide",
-    inputs: { positive: ["cond", 0], vae: ["vae_video", 0], audio_vae: ["vae_audio", 0], latent: ["cond", 1], image: ["anchor_frames", 0], audio: ["anchor_audio", 0], frame_idx: 0 },
-  };
-  guider.inputs["conditioning"] = ["guide", 0];
-  graph["new_frames"] = { class_type: "ImageFromBatch", inputs: { image: ["decode_video", 0], batch_index: ANCHOR_FRAMES, length: segment - ANCHOR_FRAMES } };
-  graph["new_audio"] = { class_type: "TrimAudioDuration", inputs: { audio: ["decode_audio", 0], start_index: seconds(ANCHOR_FRAMES), duration: seconds(segment - ANCHOR_FRAMES) } };
+  graph["tail_frames"] = { class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: S - O, length: O } };
+  graph["tail_latent"] = { class_type: "VAEEncode", inputs: { pixels: ["tail_frames", 0], vae: ["vae_video", 0] } };
+  graph["tail_audio"] = { class_type: "TrimAudioDuration", inputs: { audio: ["source_parts", 1], start_index: seconds(S - O), duration: seconds(O) } };
+  graph["tail_audio_latent_raw"] = { class_type: "VAEEncodeAudio", inputs: { audio: ["tail_audio", 0], vae: ["vae_audio", 0] } };
+  graph["tail_audio_latent"] = { class_type: "LatentCut", inputs: { samples: ["tail_audio_latent_raw", 0], dim: "x", index: 0, amount: aO } };
+  // The canvas: an empty AV latent of the whole new clip, with the tail written over its first frames.
+  graph["canvas"] = { class_type: "EmptyMiniMaxH3LatentAV", inputs: { width, height, length: L } };
+  graph["canvas_parts"] = { class_type: "LTXVSeparateAVLatent", inputs: { av_latent: ["canvas", 0] } };
+  graph["video_latent"] = { class_type: "ReplaceVideoLatentFrames", inputs: { destination: ["canvas_parts", 0], source: ["tail_latent", 0], index: 0 } };
+  graph["audio_rest"] = { class_type: "LatentCut", inputs: { samples: ["canvas_parts", 1], dim: "x", index: aO, amount: aL - aO } };
+  graph["audio_latent"] = { class_type: "LatentConcat", inputs: { samples1: ["tail_audio_latent", 0], samples2: ["audio_rest", 0], dim: "x" } };
+  // The masks: 0 keeps the tail's rows as they are, 1 lets the model generate the rest (ComfyUI PR #15375).
+  graph["mask_keep"] = { class_type: "SolidMask", inputs: { value: 0, width: latW, height: latH } };
+  graph["mask_new"] = { class_type: "SolidMask", inputs: { value: 1, width: latW, height: latH } };
+  graph["mask_keep_img"] = { class_type: "MaskToImage", inputs: { mask: ["mask_keep", 0] } };
+  graph["mask_new_img"] = { class_type: "MaskToImage", inputs: { mask: ["mask_new", 0] } };
+  graph["mask_keep_batch"] = { class_type: "RepeatImageBatch", inputs: { image: ["mask_keep_img", 0], amount: lO } };
+  graph["mask_new_batch"] = { class_type: "RepeatImageBatch", inputs: { image: ["mask_new_img", 0], amount: lL - lO } };
+  graph["mask_video_img"] = { class_type: "ImageBatch", inputs: { image1: ["mask_keep_batch", 0], image2: ["mask_new_batch", 0] } };
+  graph["mask_video"] = { class_type: "ImageToMask", inputs: { image: ["mask_video_img", 0], channel: "red" } };
+  graph["video_masked"] = { class_type: "SetLatentNoiseMask", inputs: { samples: ["video_latent", 0], mask: ["mask_video", 0] } };
+  graph["amask_base"] = { class_type: "SolidMask", inputs: { value: 0, width: aL, height: 2 } };
+  graph["amask_new"] = { class_type: "SolidMask", inputs: { value: 1, width: aL - aO, height: 2 } };
+  graph["amask"] = { class_type: "MaskComposite", inputs: { destination: ["amask_base", 0], source: ["amask_new", 0], x: aO, y: 0, operation: "add" } };
+  graph["audio_masked"] = { class_type: "SetLatentNoiseMask", inputs: { samples: ["audio_latent", 0], mask: ["amask", 0] } };
+  graph["latent"] = { class_type: "LTXVConcatAVLatent", inputs: { video_latent: ["video_masked", 0], audio_latent: ["audio_masked", 0] } };
+  // Text conditioning only (FL2VA's base format); the node's own empty latent is not used.
+  cond.inputs["prompt"] = continuation.prompt;
+  cond.inputs["width"] = width;
+  cond.inputs["height"] = height;
+  cond.inputs["length"] = L;
+  delete cond.inputs["first_frame"];
+  delete cond.inputs["last_frame"];
+  sample.inputs["latent_image"] = ["latent", 0];
+  // The join: the source's own frames and sound, then the new frames after the overlap.
+  graph["new_frames"] = { class_type: "ImageFromBatch", inputs: { image: ["decode_video", 0], batch_index: O, length: L - O } };
+  graph["new_audio"] = { class_type: "TrimAudioDuration", inputs: { audio: ["decode_audio", 0], start_index: seconds(O), duration: seconds(L - O) } };
   graph["joined_frames"] = { class_type: "ImageBatch", inputs: { image1: ["source_parts", 0], image2: ["new_frames", 0] } };
   graph["joined_audio"] = { class_type: "AudioConcat", inputs: { audio1: ["source_parts", 1], audio2: ["new_audio", 0], direction: "after" } };
   video.inputs["images"] = ["joined_frames", 0];

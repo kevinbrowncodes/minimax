@@ -11,16 +11,16 @@ interface Fields {
   readonly resolution: string;
   readonly durationSeconds: number;
   readonly model: string;
-  /** STORY_016: an extension's source and requested context. */
+  /** STORY_016/017: an extension's source and requested overlap. */
   readonly continueFrom?: string;
-  readonly contextSeconds?: number;
+  readonly overlapFrames?: number;
 }
 
 function fieldsFrom(source: Record<string, unknown>): Fields {
   const str = (v: unknown): string => (typeof v === "string" ? v : "");
   const num = (v: unknown): number => (typeof v === "number" ? v : Number(str(v)));
   const continueFrom = str(source["continueFrom"]).trim();
-  const context = source["contextSeconds"];
+  const overlap = source["overlapFrames"];
   return {
     prompt: str(source["prompt"]),
     ratio: str(source["ratio"]),
@@ -28,7 +28,7 @@ function fieldsFrom(source: Record<string, unknown>): Fields {
     durationSeconds: num(source["durationSeconds"]),
     model: str(source["model"]) || "minimax-h3",
     ...(continueFrom === "" ? {} : { continueFrom }),
-    ...(continueFrom !== "" && context !== undefined && context !== null && context !== "" ? { contextSeconds: num(context) } : {}),
+    ...(continueFrom !== "" && overlap !== undefined && overlap !== null && overlap !== "" ? { overlapFrames: num(overlap) } : {}),
   };
 }
 
@@ -43,7 +43,7 @@ async function accepted(response: Response, fields: Fields, referenceImages: num
   store.create({
     id: body.id,
     prompt: fields.prompt,
-    params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model, ...(fields.contextSeconds === undefined ? {} : { contextSeconds: fields.contextSeconds }) },
+    params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model, ...(fields.overlapFrames === undefined ? {} : { overlapFrames: fields.overlapFrames }) },
     referenceImages,
     ...(continuesFrom ? { continuesFrom } : {}),
   });

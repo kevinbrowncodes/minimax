@@ -1,41 +1,23 @@
 /**
- * MiniMax's full-reference prompt for a continuation (STORY_016, CHORE_003): the owner's prose wrapped in the six
- * sections the Ref2VA checkpoint was trained on — docs/references/prompt-guides/VIDEO_PROMPT_WRITING_GUIDE_ref_en.txt.
- * The source's last frame is <Picture 1> (the shot's first frame, so the set stays), its tail is <Video 1>, its
- * soundtrack <Audio 1>; the task type is `[video continuation + keyframe completion + audio reference]`. A prompt that
- * already starts with `subject_definitions:` is the owner's own full-reference text and goes through unchanged.
+ * The prompt for a continuation (STORY_017): the owner's prose in MiniMax's base format for the FL2VA checkpoint —
+ * docs/references/prompt-guides/VIDEO_PROMPT_WRITING_GUIDE_base_en.txt (one `[Shot 1]`, the soundscape, the music). The
+ * scene itself is not described: it is in the clip's own first frames (the masked prefix), which the model continues.
+ * A prompt that already starts with `integrated_multimodal_description:` is the owner's own base-format text and goes
+ * through unchanged.
  */
-export const FULL_REFERENCE_MARKER = "subject_definitions:";
+export const BASE_FORMAT_MARKER = "integrated_multimodal_description:";
 
-export function isFullReferencePrompt(prompt: string): boolean {
-  return prompt.trimStart().startsWith(FULL_REFERENCE_MARKER);
+export function isBaseFormatPrompt(prompt: string): boolean {
+  return prompt.trimStart().startsWith(BASE_FORMAT_MARKER);
 }
 
-export function continuationPrompt(prose: string, contextFedSeconds: number): string {
-  if (isFullReferencePrompt(prose)) return prose;
-  const seconds = contextFedSeconds.toFixed(1);
+export function continuationPrompt(prose: string): string {
+  if (isBaseFormatPrompt(prose)) return prose;
   return [
-    "subject_definitions:",
-    "<Subject 1> is everything visible in <Picture 1>: the person, the set behind and around them, the props, the floor and the lighting, exactly as they stand at the end of <Video 1>.",
-    "<Picture 1> is the last frame of <Video 1> and the first frame of [Shot 1].",
-    `<Video 1> is the last ${seconds} seconds of the source video that the target video continues from; its subject, environment, lighting, framing and camera position at its final frame are the target video's starting state.`,
-    "<Audio 1> is the synchronized soundtrack of <Video 1>, referenced for the continuity of its ambience and sound texture.",
+    `${BASE_FORMAT_MARKER} [Shot 1] Live-action, one continuous shot; the camera does not move. The person, the set, the props and the lighting already in frame stay exactly as they are and the action continues without a cut. ${prose.trim()}`,
     "",
-    "summary:",
-    "[video continuation + keyframe completion + audio reference] The target video is a single continuous shot that begins from <Picture 1> and continues directly from the end of <Video 1>: the same <Subject 1>, the same set, the same framing, lighting and camera position, with no cut and no transition; it develops as the detailed description specifies, and its sound continues the ambience of <Audio 1>.",
+    "overall_soundscape: The ambience already in the clip continues unchanged throughout, together with the sounds the description above specifies.",
     "",
-    "retention_analysis:",
-    "<Subject 1> (appears in [Shot 1]): fully_preserved - the person's identity and appearance, the set, the props, the floor and the lighting are retained throughout.",
-    "<Picture 1> ([Shot 1] first frame): fully_preserved - the target video starts exactly from this frame.",
-    "<Video 1> (continuation source): fully_preserved - the subject's identity and appearance, the environment, the lighting, the framing and the camera position at the end of <Video 1> continue unchanged into the target video.",
-    "<Audio 1>: reference - the target video's ambience continues the character of <Audio 1> without copying the signal.",
-    "",
-    "detailed_description:",
-    "The target video is one continuous shot with no cut and no transition; the camera does not move. It continues directly from the last frame of <Video 1>, keeping its style, framing, lighting, set and camera position; <Subject 1> stays exactly as in <Picture 1>.",
-    `[Shot 1] The shot begins from <Picture 1>. ${prose.trim()}`,
-    "",
-    "overall_soundscape: The ambience of <Audio 1> continues throughout the target video, together with the sounds the description above specifies.",
-    "",
-    "non_diegetic_music: Only what the description above asks for; none otherwise.",
+    "non_diegetic_music: None, unless the description above asks for music.",
   ].join("\n");
 }

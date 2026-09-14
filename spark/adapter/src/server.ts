@@ -11,12 +11,12 @@ import path from "node:path";
 import { CAPABILITIES, ValidationError, validateRequest, type JobRequest } from "./capabilities.ts";
 import { ComfyClient, ComfyEvents, ComfyError, type HistoryEntry } from "./comfy.ts";
 import { JobStore, isTerminal, type Job } from "./job-store.ts";
-import { ANCHOR_FRAMES, FPS, REQUIRED_CLASSES, buildGraph, contextFrames, extensionLength, lengthForSeconds, ref2vaFileFor, sizeFor, templateUnet, type Continuation, type Graph, type UploadedImage } from "./mapping.ts";
+import { FPS, REQUIRED_CLASSES, buildGraph, extensionLength, lengthForSeconds, ref2vaFileFor, seconds, sizeFor, templateUnet, type Continuation, type Graph, type UploadedImage } from "./mapping.ts";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
 import { interpret, type ComfyEvent } from "./progress.ts";
 import { continuationPrompt } from "./prompt.ts";
 
-export const VERSION = "1.1.0";
+export const VERSION = "1.2.0";
 
 export interface AdapterOptions {
   /** ComfyUI's base URL, e.g. http://comfyui:8188. */
@@ -165,12 +165,13 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
 
   /** Frames a finished job has: recorded, or (records older than STORY_016, never extensions) derived from the request. */
   const sourceFramesOf = (source: Job): number => source.result?.frames ?? lengthForSeconds(source.request.durationSeconds);
-  /** Frames the job's result has: a fresh clip's length, or the source's plus the segment minus the anchor (STORY_016). */
+  /** Frames the job's result has: a fresh clip's length, or the source's plus the new frames after the overlap (STORY_017). */
   const framesOf = (job: Job): number => {
     if (job.request.continueFrom === undefined) return lengthForSeconds(job.request.durationSeconds);
     const source = store.get(job.request.continueFrom);
     const sourceFrames = source ? sourceFramesOf(source) : 0;
-    return sourceFrames + extensionLength(job.request.durationSeconds) - ANCHOR_FRAMES;
+    const overlap = job.request.overlap?.frames ?? CAPABILITIES.extension.overlapFrames.default;
+    return sourceFrames + extensionLength(job.request.durationSeconds, overlap) - overlap;
   };
 
   const finalizeWithRetries = async (job: Job, promptId: string): Promise<void> => {
@@ -433,17 +434,15 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
       for (const field of ["ratio", "resolution", "model"] as const) {
         if (request[field] !== source.request[field]) throw new HttpError(400, "validation", `an extension keeps the source's ${field} (${source.request[field]})`, field);
       }
-      const segment = extensionLength(request.durationSeconds);
-      const ctx = contextFrames(sourceFrames, segment, request.contextSeconds ?? CAPABILITIES.extension.contextSeconds.default);
-      const ctxSeconds = Math.round((ctx / FPS) * 1000) / 1000;
-      request = { ...request, contextFed: { frames: ctx, seconds: ctxSeconds } };
+      const overlap = request.overlapFrames ?? CAPABILITIES.extension.overlapFrames.default;
+      if (overlap > sourceFrames) throw new HttpError(400, "validation", `the video has ${String(sourceFrames)} frames; an overlap of ${String(overlap)} does not fit`, "overlapFrames");
+      request = { ...request, overlap: { frames: overlap, seconds: seconds(overlap) } };
       const file = source.result.video.subfolder ? `${source.result.video.subfolder}/${source.result.video.filename}` : source.result.video.filename;
-      continuation = { file, frames: sourceFrames, contextFrames: ctx, prompt: continuationPrompt(request.prompt, ctxSeconds) };
+      continuation = { file, frames: sourceFrames, overlapFrames: overlap, prompt: continuationPrompt(request.prompt) };
     }
     if (store.open().length >= maxOpenJobs) throw new HttpError(503, "busy", `the Spark already has ${String(maxOpenJobs)} jobs open; try again later`);
     if (!comfyReachable && !(await checkComfy())) throw new HttpError(503, "busy", NOT_RUNNING);
     if (!nodesVerified) throw new HttpError(503, "busy", nodeError ?? NOT_RUNNING);
-    if (continuation && checkpoints?.ref2va === false) throw new HttpError(503, "busy", `the Ref2VA checkpoint (${REF2VA}) is not on the Spark — fetch it with spark/comfyui/fetch-h3.sh`);
 
     const id = randomUUID();
     const seed = request.seed ?? Math.floor(Math.random() * 2 ** 32);
@@ -457,7 +456,7 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
         images.push({ name: uploaded.subfolder ? `${uploaded.subfolder}/${uploaded.name}` : uploaded.name });
       }
       const graph = buildGraph(options.graphTemplate, request, images, { filenamePrefix: `video/job-${id}`, seed, ...(continuation ? { continuation } : {}) });
-      if (continuation) log(`job ${id} continues ${continuation.file}: ${String(continuation.contextFrames)} reference frames, prompt:\n${continuation.prompt}`);
+      if (continuation) log(`job ${id} continues ${continuation.file}: its last ${String(continuation.overlapFrames)} frames become the new clip's head, ${String(extensionLength(request.durationSeconds, continuation.overlapFrames))} frames generated, prompt:\n${continuation.prompt}`);
       promptId = await comfy.submit(graph);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
