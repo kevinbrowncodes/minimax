@@ -234,6 +234,11 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
     if (!el) return;
     el.scrollTo({ top: atBottom ? 0 : el.scrollHeight, behavior: "smooth" });
   };
+  // The thread opens at its end and follows the job there (task-page@1440 shows the result, not the top of a long prompt).
+  useEffect(() => {
+    const el = threadRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [job.status]);
   const steps = stepsFor(job);
   const resultPath = `/api/jobs/${encodeURIComponent(entry.id)}/result`;
   const posterPath = `/api/jobs/${encodeURIComponent(entry.id)}/poster`;
