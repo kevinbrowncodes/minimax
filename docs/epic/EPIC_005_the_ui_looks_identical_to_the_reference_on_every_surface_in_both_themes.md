@@ -25,7 +25,7 @@ Recon first, then one rebuild story per surface, each drafted after the capture 
 
 | # | Story | Status |
 | --- | --- | --- |
-| 018 | [The reference's dark mode and the surfaces never captured are recorded, from the Spark](../story/STORY_018_the_references_dark_mode_and_the_surfaces_never_captured_are_recorded_from_the_spark.md) — the second capture: every surface a signed-in user sees, both themes, both widths, every menu open, one generation watched to completion | Drafted (2026-09-14); needs the owner's sign-in through `recon/login.sh` (CHORE_005) |
+| 018 | [The reference's dark mode and the surfaces never captured are recorded, from the Spark](../story/STORY_018_the_references_dark_mode_and_the_surfaces_never_captured_are_recorded_from_the_spark.md) — the second capture: every surface a signed-in user sees, both themes, both widths, every menu open, one generation watched to completion | Drafted (2026-09-14), redrafted the same day to the full-surface capture (every sidebar destination, every composer mode, every menu, the settings tabs, hover states, per-scope dark tokens) after the owner's review; needs the owner's sign-in through `recon/login.sh` (CHORE_005) — `recon/run.sh check` read `signed-out` on 2026-09-14 |
 | 019 | [The UI has the reference's dark mode, and every control either works or says why not](../story/STORY_019_the_ui_has_the_references_dark_mode_and_every_control_either_works_or_says_why_not.md) — the dark token set and the inert-control notice, the two things the owner named | Drafted (2026-09-14); designed from 018's capture |
 | 020+ | One rebuild story per surface group, drafted from 018's inventory diff: the shell (sidebar sections, top bar, user menu), the home (composer, chips, ShowCase), the task page (thread, progress panel, result card), Assets (tabs, chips, tiles, menus, modal), and the pages behind every sidebar item (Search, Plugins, Scheduled, Connect Mobile, Projects, Agent Team, the Work Area) rendered as the reference renders them and inert | To draft after 018 |
 
@@ -39,6 +39,9 @@ Generations on the reference cost the owner credits; the owner granted new credi
 - Their fonts where the licence does not allow them (the tokens file names the substitute, as in EPIC_001).
 - Their billing, credits, plans and account surfaces beyond their look.
 - Extending or subject references (STORY_017, BACKLOG_002) — the model side is EPIC_004's line.
+- **Classic mode** (the user menu's "Switch to classic mode") — owner, 2026-09-14: not supported; the entry is captured as a line in the inventory and never followed.
+- **Any signed-out, sign-in or auth surface** — owner, 2026-09-14: a one-man operation, so MiniMax Local has no auth anywhere; the reference is only ever captured signed in.
+- **Switching the unused parts off** — the owner wants, after this epic, a way to hide the surfaces he will not use locally rather than show them inert: [BACKLOG_003](../backlog/BACKLOG_003_the_parts_of_the_reference_ui_that_minimax_local_does_not_do_can_be_switched_off.md), a later epic.
 
 ## Working rules carried over
 
