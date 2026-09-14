@@ -45,6 +45,7 @@ test.describe("assets (STORY_015)", () => {
     await page.getByRole("dialog").getByRole("link", { name: "Download" }).click();
     const download = await downloadEvent;
     expect(readFileSync(await download.path()).length).toBe(readFileSync(FIXTURE_MP4).length);
+    expect(download.suggestedFilename()).toBe("Gallery clip.mp4"); // named by the server (BUG_004)
     await page.getByRole("dialog").getByRole("link", { name: "Open task" }).click();
     await expect(page).toHaveURL(new RegExp(`/task/${id}$`));
     await page.goto("/assets");

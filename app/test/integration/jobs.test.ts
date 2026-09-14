@@ -92,6 +92,15 @@ describe("create → status → result through the app's routes", () => {
     expect(ranged.status).toBe(206);
     expect((await ranged.arrayBuffer()).byteLength).toBe(100);
     expect(ranged.headers.get("content-range")).toMatch(/^bytes 0-99\//);
+    // BUG_004: the file is named by the server — inline for the player, attachment with ?download — with the history title
+    expect(res.headers.get("content-disposition")).toBe(`inline; filename="A small paper boat.mp4"; filename*=UTF-8''A%20small%20paper%20boat.mp4`);
+    expect(ranged.headers.get("content-disposition")).toMatch(/^inline; /);
+    const save = await getResult(new Request(`http://app/api/jobs/${id}/result?download`), ctx(id));
+    expect(save.status).toBe(200);
+    expect(save.headers.get("content-disposition")).toMatch(/^attachment; filename="A small paper boat\.mp4"/);
+    historyStore().remove(id);
+    const unknown = await getResult(new Request(`http://app/api/jobs/${id}/result`), ctx(id));
+    expect(unknown.headers.get("content-disposition")).toMatch(/^inline; filename="video\.mp4"/);
     const poster = await getPoster(new Request(`http://app/api/jobs/${id}/poster`), ctx(id));
     expect(poster.status).toBe(200);
     expect(poster.headers.get("content-type")).toBe("image/png");

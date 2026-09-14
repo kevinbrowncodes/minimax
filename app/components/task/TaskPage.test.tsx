@@ -92,6 +92,7 @@ describe("TaskPage", () => {
     render(<TaskPage entry={entry({ status: "done", progress: 100, result: { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 5.2, width: 1344, height: 768, sizeBytes: 1_581_571 } })} fetchImpl={done.fetchImpl} />);
     expect(screen.getByTestId("result-video")).toHaveAttribute("poster", "/api/jobs/j1/poster");
     expect(screen.getByRole("link", { name: /Download/ })).toHaveAttribute("download", "A boat.mp4");
+    expect(screen.getByRole("link", { name: /Download/ })).toHaveAttribute("href", "/api/jobs/j1/result?download"); // BUG_004
     expect(screen.getByText(/1344×768/)).toBeInTheDocument();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(10_000);

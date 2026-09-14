@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { Composer } from "@/components/composer/Composer";
+import { fileNameFor } from "@/lib/assets-filter";
 import type { ExtendSource } from "@/lib/composer-state";
 import { cx } from "@/lib/cx";
 import type { HistoryEntry } from "@/lib/history-store";
@@ -155,7 +156,7 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
                 {job.result.durationSeconds.toFixed(1)} s · {String(job.result.width)}×{String(job.result.height)} · {formatBytes(job.result.sizeBytes)}
               </div>
               <div className={styles.actions}>
-                <a className={styles.actionLink} href={resultPath} download={`${entry.title.replace(/[/\\?%*:|"<>…]/g, "").trim() || "video"}.mp4`}>⤓ Download</a>
+                <a className={styles.actionLink} href={`${resultPath}?download`} download={fileNameFor(entry)}>⤓ Download</a>
                 <button type="button" className={styles.actionLink} onClick={() => void copyPrompt()}>⧉ {copied ? "Copied" : "Copy prompt"}</button>
                 <button type="button" className={styles.actionLink} onClick={() => { setExtending(true); }} aria-pressed={extending}>⤴ Extend</button>
                 <span>{new Date(entry.finishedAt ?? entry.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>

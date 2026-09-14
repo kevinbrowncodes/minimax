@@ -39,7 +39,7 @@ test.describe("task page (STORY_014)", () => {
     await expect(page.locator('[data-step-state="done"]')).toHaveCount(4);
     await expectPlayable(page.getByTestId("result-video"), `/api/jobs/${id}/result`);
     const download = page.getByTestId("result").getByRole("link", { name: /Download/ });
-    await expect(download).toHaveAttribute("href", `/api/jobs/${id}/result`);
+    await expect(download).toHaveAttribute("href", `/api/jobs/${id}/result?download`); // the server names the save (BUG_004)
     await expect(download).toHaveAttribute("download", /\.mp4$/);
     await expect(page.getByRole("button", { name: "Send message" })).toBeVisible();
     expect((await stubApi.received(id)).request.prompt).toBe("A small paper boat drifting across a rain puddle");
@@ -94,7 +94,7 @@ test.describe("task page (STORY_014)", () => {
     const download = await downloadEvent;
     const file = await download.path();
     expect(readFileSync(file).length).toBe(readFileSync(FIXTURE_MP4).length);
-    expect(download.suggestedFilename()).toMatch(/\.mp4$/);
+    expect(download.suggestedFilename()).toBe("Save my clip.mp4"); // the server names the file (BUG_004)
   });
 
   test("image-to-video: the uploaded reference reaches the server and the bubble says so", async ({ page, stubApi }) => {

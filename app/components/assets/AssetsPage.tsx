@@ -130,7 +130,7 @@ export function AssetsPage({ fetchImpl, confirmImpl }: AssetsPageProps) {
                       <div className={styles.menu} role="menu" aria-label={`Actions for ${name}`}>
                         <Link href={`/task/${encodeURIComponent(entry.id)}`} role="menuitem" className={styles.menuItem}>Open task</Link>
                         <Link href={`/task/${encodeURIComponent(entry.id)}?extend`} role="menuitem" className={styles.menuItem}>Extend</Link>
-                        <a href={resultPath} download={name} role="menuitem" className={styles.menuItem}>Download</a>
+                        <a href={`${resultPath}?download`} download={name} role="menuitem" className={styles.menuItem}>Download</a>
                         <button type="button" role="menuitem" className={cx(styles.menuItem, styles.menuDanger)} onClick={() => void remove(entry)}>Delete from history</button>
                       </div>
                     ) : null}
@@ -147,7 +147,7 @@ export function AssetsPage({ fetchImpl, confirmImpl }: AssetsPageProps) {
           <>
             <div className={styles.dialogHead}>
               <span className={styles.dialogTitle}>{fileNameFor(preview)}</span>
-              <a className={styles.dialogButton} href={`/api/jobs/${encodeURIComponent(preview.id)}/result`} download={fileNameFor(preview)} aria-label="Download" title="Download">⤓</a>
+              <a className={styles.dialogButton} href={`/api/jobs/${encodeURIComponent(preview.id)}/result?download`} download={fileNameFor(preview)} aria-label="Download" title="Download">⤓</a>
               <Link className={styles.dialogButton} href={`/task/${encodeURIComponent(preview.id)}`} aria-label="Open task" title="Open task">↗</Link>
               <button type="button" className={styles.dialogButton} aria-label="Close" onClick={closePreview}>×</button>
             </div>

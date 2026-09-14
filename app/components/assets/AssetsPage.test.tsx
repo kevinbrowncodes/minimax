@@ -67,7 +67,7 @@ describe("AssetsPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "More actions for Paper boat.mp4" }));
     expect(screen.getByRole("menuitem", { name: "Open task" })).toHaveAttribute("href", "/task/a");
-    expect(screen.getByRole("menuitem", { name: "Download" })).toHaveAttribute("href", "/api/jobs/a/result");
+    expect(screen.getByRole("menuitem", { name: "Download" })).toHaveAttribute("href", "/api/jobs/a/result?download"); // named by the server (BUG_004)
     await act(async () => {
       fireEvent.click(screen.getByRole("menuitem", { name: "Delete from history" }));
       await Promise.resolve();
