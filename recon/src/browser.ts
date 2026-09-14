@@ -1,3 +1,4 @@
+import { createServer, connect, type Server } from "node:net";
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { PROFILE_DIR, REFERENCE_URL, VIEWPORT } from "./config.ts";
 import type { SessionSignals } from "./session.ts";
@@ -17,6 +18,43 @@ export async function openReference(headless: boolean): Promise<{ context: Brows
   const page = context.pages()[0] ?? (await context.newPage());
   await page.goto(REFERENCE_URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
   return { context, page };
+}
+
+/**
+ * The same persistent profile, headless, with Chromium's DevTools protocol published on `port` for every interface
+ * (CHORE_005): the owner signs in through chrome://inspect's screencast because the Spark has no display. Headless is
+ * required for `--remote-debugging-address`; `channel: "chromium"` keeps it the full browser, whose new headless mode
+ * carries the screencast. Nothing else differs from openReference.
+ */
+export async function openReferenceRemote(port: number): Promise<{ context: BrowserContext; page: Page; relay: Server }> {
+  // Under Playwright, Chromium keeps its DevTools server on 127.0.0.1 whatever --remote-debugging-address says
+  // (measured 2026-09-14 in the gate container), so a plain TCP relay on every interface fronts it. Chromium's own
+  // Host check still applies: the owner must address the Spark by IP, not by name.
+  const inner = port + 1;
+  const context = await chromium.launchPersistentContext(PROFILE_DIR, {
+    headless: true,
+    channel: "chromium",
+    viewport: { ...VIEWPORT },
+    locale: "en-US",
+    args: [`--remote-debugging-port=${String(inner)}`],
+  });
+  const relay = createServer((socket) => {
+    const upstream = connect(inner, "127.0.0.1");
+    socket.pipe(upstream).pipe(socket);
+    const drop = (): void => {
+      socket.destroy();
+      upstream.destroy();
+    };
+    socket.on("error", drop);
+    upstream.on("error", drop);
+  });
+  await new Promise<void>((resolve, reject) => {
+    relay.once("error", reject);
+    relay.listen(port, "0.0.0.0", () => { resolve(); });
+  });
+  const page = context.pages()[0] ?? (await context.newPage());
+  await page.goto(REFERENCE_URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  return { context, page, relay };
 }
 
 /**

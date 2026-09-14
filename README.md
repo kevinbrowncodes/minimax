@@ -162,13 +162,19 @@ When a floor fails, `tools/gate/run.sh` prints the files with the most uncovered
 
 ## Running Recon
 
+Recon captures the reference (agent.minimax.io) through the owner's own signed-in session, from the Spark, in the gate container — nothing is installed on the host ([CLAUDE.md → §3e](CLAUDE.md#3e-how-recon-is-recorded), [§4b](CLAUDE.md#4b-recon-with-playwright)).
+
 ```bash
-pnpm install
-pnpm recon:login    # opens a Chromium window; sign in to agent.minimax.io with GitHub yourself
-pnpm recon:check    # prints session: signed-in | signed-out | unknown (exit 0 / 1 / 2)
+recon/login.sh                       # the Spark has no display (CHORE_005): Chromium runs headless with its DevTools port on the LAN
+                                     # for the few minutes of the login; on the Mac open chrome://inspect/#devices → Configure… →
+                                     # add 192.168.1.33:9222 (the IP, not the name) → inspect the agent.minimax.io target → sign in with GitHub
+recon/run.sh check                   # prints session: signed-in | signed-out | unknown (exit 0 / 1 / 2)
+recon/run.sh capture [--generate N]  # dated screenshots into docs/recon/<date>/ and the raw network log into recon/out/<date>/
+recon/run.sh tokens <date>           # measured tokens → docs/recon/<date>/tokens.md + tokens.json
+recon/run.sh interactions <date>     # the network notes → docs/recon/<date>/interactions.md + endpoints.md
 ```
 
-The session lives in `recon/.profile/` and raw captures in `recon/out/`; both are gitignored. Curated captures land in `docs/recon/<date>/`. See [CLAUDE.md → §4b](CLAUDE.md#4b-recon-with-playwright).
+The session lives in `recon/.profile/` and raw captures in `recon/out/`; both are gitignored. Generations on the reference cost the owner credits: the count is agreed before a capture and written in the notes. The scripts never type credentials, never read cookies, and stop and ask when the session has expired.
 
 ## Running the UI
 

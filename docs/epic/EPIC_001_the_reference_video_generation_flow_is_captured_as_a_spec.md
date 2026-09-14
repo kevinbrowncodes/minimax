@@ -25,6 +25,7 @@ The owner's plan is UI first, model second. The UI is a clone, and a clone witho
 | 002 | [Every state of the video generation flow is captured as dated screenshots](../story/STORY_002_every_state_of_the_video_generation_flow_is_captured_as_dated_screenshots.md) | Done (gap: post-cancel thread state, owner accepted) |
 | 003 | [The reference's design tokens are measured, not eyeballed](../story/STORY_003_the_references_design_tokens_are_measured_not_eyeballed.md) | Done |
 | 004 | [The component inventory and interaction notes say what the flow does on the network](../story/STORY_004_the_component_inventory_and_interaction_notes_say_what_the_flow_does_on_the_network.md) | Done |
+| 018 | [The reference's dark mode and the surfaces never captured are recorded, from the Spark](../story/STORY_018_the_references_dark_mode_and_the_surfaces_never_captured_are_recorded_from_the_spark.md) | Drafted (2026-09-14) — second capture, needs the owner's sign-in through recon/login.sh (CHORE_005) |
 
 ## Constraints
 

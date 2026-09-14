@@ -6,6 +6,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "login": "node src/login.ts",
+    "login-remote": "node src/login-remote.ts",
     "check": "node src/check.ts",
     "capture": "node src/capture.ts",
     "tokens": "node src/tokens.ts",
