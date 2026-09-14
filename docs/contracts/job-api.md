@@ -1,6 +1,6 @@
 # Job API contract — create → status → result
 
-**Version 1.2 (2026-09-14; v1.1 2026-09-13; v1 2026-09-12).** v1.1 added extending a finished video (`continueFrom`, `capabilities.extension`, STORY_016) and an optional `seed`; v1.2 replaces `contextSeconds` with `overlapFrames` (STORY_017: the source's last frames become the new clip's own first frames). This is the one protocol the UI speaks to a generation server. Two servers implement it: the **stub** (`tools/stub-generation-server/`, STORY_008 — scripted outcomes for the test gate) and the **adapter** on the Spark in front of ComfyUI (`spark/adapter/`, STORY_006). The UI reaches either only through its own API routes (STORY_009), which read the base URL from `MODEL_BASE_URL`. A change to this document is a story on both sides.
+**Version 1.3 (2026-09-14, STORY_020; v1.2 2026-09-14; v1.1 2026-09-13; v1 2026-09-12).** v1.1 added extending a finished video (`continueFrom`, `capabilities.extension`, STORY_016) and an optional `seed`; v1.2 replaces `contextSeconds` with `overlapFrames` (STORY_017: the source's last frames become the new clip's own first frames). This is the one protocol the UI speaks to a generation server. Two servers implement it: the **stub** (`tools/stub-generation-server/`, STORY_008 — scripted outcomes for the test gate) and the **adapter** on the Spark in front of ComfyUI (`spark/adapter/`, STORY_006). The UI reaches either only through its own API routes (STORY_009), which read the base URL from `MODEL_BASE_URL`. A change to this document is a story on both sides. v1.3 adds `result.cuts` (where the server measured a shot change) and raises the prompt limit to 6000 characters; the servers also build the prompt the model is documented to expect around the caller's text (see below).
 
 ## Conventions
 
@@ -55,13 +55,17 @@ Response `200`:
   "updatedAt": "2026-09-12T18:33:10Z",
   "request": { "prompt": "…", "ratio": "16:9", "resolution": "768P", "durationSeconds": 5, "model": "minimax-h3", "referenceImages": 0, "seed": 1234567 },
   "error": { "code": "moderated", "message": "…" },
-  "result": { "url": "/jobs/…/result", "posterUrl": "/jobs/…/poster", "mimeType": "video/mp4", "frames": 124, "durationSeconds": 5.167, "width": 1344, "height": 768, "sizeBytes": 1581571 }
+  "result": { "url": "/jobs/…/result", "posterUrl": "/jobs/…/poster", "mimeType": "video/mp4", "frames": 124, "durationSeconds": 5.167, "width": 1344, "height": 768, "sizeBytes": 1581571, "cuts": [] }
 }
 ```
 
 `request` echoes what was accepted, `seed` included. For an extension it also carries `continueFrom`, `overlapFrames` (as requested or defaulted) and `overlap: { frames, seconds }` (what the server carried into the new clip). `result.frames` is the clip's length on the 24 fps grid (an extension's is the source's plus the new frames).
 
 `error` is present only when `status` is `failed` (`code` is `moderated` for a prompt or image the server refused on content grounds, `generation_failed` otherwise). `result` is present only when `status` is `done`; `url` and `posterUrl` are paths relative to the base URL. Unknown id → `404 not_found`.
+
+**`result.cuts` (v1.3, STORY_020).** Where the server measured that the shot changed — the set or the framing is no longer what it was — as `[{ "frame", "seconds" }]` on the joined clip's timeline (`frame` is the first frame of the new shot, 0-based; `seconds` = frame ⁄ 24 to two decimals). `[]` when the shot held; **absent** when the measure was unavailable (a server older than v1.3, or the measure missing from the run). The rule: the picture's outer border (the top and bottom 10 % of rows and the left and right 10 % of columns — the set, not the person) differs by 30 or more (mean absolute RGB, 0–255) from one second earlier; each contiguous run is one event, placed at the largest single-frame border step inside the first second that tripped it; events within 48 frames merge. Calibrated on static-camera footage; a prompt that moves the camera trips it too, which is why the UI says "the set or the framing". The stub's script `done-with-cut` reports `[{ "frame": 270, "seconds": 11.25 }]`; every other script reports `[]`.
+
+**The prompt the model gets (v1.3, STORY_020).** Both servers accept the caller's text as typed; the Spark's adapter builds MiniMax's documented format around it before sending it to the model: for a first frame, the instruction line `For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.`; for first + last frame, the FL2VA alignment line; none for text-only and for an extension; then `integrated_multimodal_description: [Shot 1] Live-action. The camera holds a perfectly static shot throughout the entire S.SS-second duration: no cut, no dissolve, no transition and no change of framing; …` followed by the caller's text as one paragraph (a line's leading `[m:ss-m:ss]` becomes `From m:ss to m:ss,`), then `overall_soundscape:` and `non_diegetic_music:`. Text that already begins with `integrated_multimodal_description:` or with either instruction line is sent unchanged. `request.prompt` still echoes what the caller sent.
 
 ## `DELETE /jobs/:id` — cancel
 

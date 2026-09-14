@@ -15,8 +15,9 @@ import { FPS, REQUIRED_CLASSES, buildGraph, extensionLength, lengthForSeconds, r
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
 import { interpret, type ComfyEvent } from "./progress.ts";
 import { buildPrompt } from "./prompt.ts";
+import { detectCuts, parseFrameChanges } from "./cuts.ts";
 
-export const VERSION = "1.2.0";
+export const VERSION = "1.3.0";
 
 export interface AdapterOptions {
   /** ComfyUI's base URL, e.g. http://comfyui:8188. */
@@ -141,6 +142,10 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
     }
     const { width, height } = sizeFor(job.request.ratio);
     const frames = framesOf(job);
+    // STORY_020: the shot-change measure (the "changes" node's text). Advisory: missing or malformed never fails the job.
+    const changes = parseFrameChanges(entry.textByNode["changes"]?.[0]);
+    const cuts = changes ? detectCuts(changes) : undefined;
+    if (!cuts) log(`job ${job.id}: no frame-change measure in ComfyUI's history (node "changes"); result.cuts omitted`);
     store.update(job.id, {
       status: "done",
       progress: 100,
@@ -153,9 +158,10 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
         width,
         height,
         sizeBytes: statSync(file).size,
+        ...(cuts ? { cuts } : {}),
       },
     });
-    log(`job ${job.id} done: ${video.subfolder}/${video.filename}`);
+    log(`job ${job.id} done: ${video.subfolder}/${video.filename}${cuts ? ` — shot changes: ${cuts.length === 0 ? "none" : cuts.map((c) => `${String(c.seconds)} s (frame ${String(c.frame)})`).join(", ")}` : ""}`);
   };
 
   const safeOutputPath = (subfolder: string, filename: string): string | undefined => {
@@ -384,6 +390,7 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
             width: job.result.width,
             height: job.result.height,
             sizeBytes: job.result.sizeBytes,
+            ...(job.result.cuts === undefined ? {} : { cuts: job.result.cuts }),
           },
         }
       : {}),

@@ -47,6 +47,14 @@ describe("buildGraph", () => {
     expect(graph["cond"]?.inputs).not.toHaveProperty("first_frame");
   });
 
+  it("adds the frame-change measure over the frames that are saved (STORY_020) and requires its class", () => {
+    const fresh = buildGraph(template, request, [], { seed: 7 });
+    expect(fresh["changes"]).toEqual({ class_type: "MiniMaxLocalFrameChanges", inputs: { images: ["decode_video", 0] } });
+    const ext = buildGraph(template, { ...request, durationSeconds: 10, continueFrom: "src" }, [], { seed: 7, continuation: { file: "video/src.mp4", frames: 124, overlapFrames: 39, prompt: "p" } });
+    expect(ext["changes"]).toEqual({ class_type: "MiniMaxLocalFrameChanges", inputs: { images: ["joined_frames", 0] } });
+    expect(REQUIRED_CLASSES).toContain("MiniMaxLocalFrameChanges");
+  });
+
   it("wires one image to first_frame and two to first_frame and last_frame", () => {
     const one = buildGraph(template, { ...request, ratio: "9:16", durationSeconds: 8 }, [{ name: "a.png" }]);
     expect(one["first_frame"]).toEqual({ class_type: "LoadImage", inputs: { image: "a.png" } });

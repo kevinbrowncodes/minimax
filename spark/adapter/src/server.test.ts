@@ -129,6 +129,27 @@ describe("create → status → result", () => {
     expect(String(graph?.["cond"]?.inputs["prompt"])).toMatch(/^How the reference pictures align with the target video — Picture 1 \(from Shot 1\) aligns with the 0\.00-second mark of the target video; Picture 2 \(from Shot 1\) aligns with the 5\.17-second mark of the target video\.\n\nintegrated_multimodal_description: \[Shot 1\] Live-action\./);
     await waitFor(id, (s) => s["status"] === "done");
   });
+
+  it("reports where the shot changed from the frame-change measure, [] for a held shot, and omits it when the measure is missing (STORY_020)", async () => {
+    // the fake's default series is a held shot
+    const held = await waitFor(await create(), (s) => s["status"] === "done");
+    expect((held["result"] as { cuts: unknown }).cuts).toEqual([]);
+    expect(fake.prompts[0]?.graph["changes"]).toEqual({ class_type: "MiniMaxLocalFrameChanges", inputs: { images: ["decode_video", 0] } });
+    // a hard cut at frame 142: the border jumps by 50 and every one-second comparison straddling it is 50
+    const step = Array.from({ length: 299 }, (_, j) => (j === 141 ? 50 : 1));
+    const second = Array.from({ length: 276 }, (_, i) => (i >= 118 && i < 142 ? 50 : 4));
+    fake.frameChanges = { frames: 300, span: 24, step, second };
+    const cut = await waitFor(await create({ ...valid, durationSeconds: 12 }), (s) => s["status"] === "done");
+    expect((cut["result"] as { cuts: unknown }).cuts).toEqual([{ frame: 142, seconds: 5.92 }]);
+    // no measure in the history at all: still done, no cuts key
+    fake.frameChanges = undefined;
+    const none = await waitFor(await create(), (s) => s["status"] === "done");
+    expect(none["result"]).not.toHaveProperty("cuts");
+    // malformed text: the same
+    fake.frameChanges = "not json";
+    const bad = await waitFor(await create(), (s) => s["status"] === "done");
+    expect(bad["result"]).not.toHaveProperty("cuts");
+  });
 });
 
 describe("cancel", () => {

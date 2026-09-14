@@ -54,6 +54,8 @@ RUN mkdir -p /comfy/ComfyUI/custom_nodes/ComfyUI-KJNodes \
  && rm -rf .git \
  && /comfy/venv/bin/pip install --quiet -r requirements.txt
 
+# STORY_020: our own nodes (the frame-change measure behind the shot-change check).
+COPY --chown=comfy:comfy custom_nodes/ /comfy/ComfyUI/custom_nodes/
 COPY --chown=comfy:comfy h3.sh container/ /comfy/bin/
 RUN chmod +x /comfy/bin/*.sh && mkdir -p /comfy/templates /comfy/ComfyUI/models /comfy/ComfyUI/output
 

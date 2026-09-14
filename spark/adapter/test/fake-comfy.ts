@@ -38,6 +38,8 @@ export interface FakeComfy {
   readonly calls: string[];
   behaviour: Behaviour;
   historyStatus: number;
+  /** STORY_020: what the "changes" node reports in history (its `ui.text`); undefined leaves the node out of the outputs. */
+  frameChanges: unknown;
   /** Complete a held prompt (behaviour "hold") as if ComfyUI had run it while nobody watched. */
   completeHeld(promptId: string): void;
   /** Forget a held prompt entirely — gone from the queue, no history (a ComfyUI restart mid-job, BUG_002). */
@@ -45,7 +47,7 @@ export interface FakeComfy {
   close(): Promise<void>;
 }
 
-const REQUIRED = ["UNETLoader", "CLIPLoader", "VAELoader", "MiniMaxH3ImageToVideo", "RandomNoise", "BasicGuider", "KSamplerSelect", "BasicScheduler", "SamplerCustomAdvanced", "VAEDecode", "VAEDecodeAudio", "CreateVideo", "SaveVideo", "LoadImage", "ImageFromBatch", "SaveImage", "LoadVideo", "GetVideoComponents", "MiniMaxH3ReferenceToVideo", "MiniMaxH3AddGuide", "ImageBatch", "TrimAudioDuration", "AudioConcat",
+const REQUIRED = ["UNETLoader", "CLIPLoader", "VAELoader", "MiniMaxH3ImageToVideo", "RandomNoise", "BasicGuider", "KSamplerSelect", "BasicScheduler", "SamplerCustomAdvanced", "VAEDecode", "VAEDecodeAudio", "CreateVideo", "SaveVideo", "LoadImage", "ImageFromBatch", "SaveImage", "LoadVideo", "GetVideoComponents", "MiniMaxH3ReferenceToVideo", "MiniMaxH3AddGuide", "ImageBatch", "TrimAudioDuration", "AudioConcat", "MiniMaxLocalFrameChanges",
   "VAEEncode", "VAEEncodeAudio", "EmptyMiniMaxH3LatentAV", "LTXVSeparateAVLatent", "LTXVConcatAVLatent", "ReplaceVideoLatentFrames", "LatentCut", "LatentConcat", "SolidMask", "MaskToImage", "RepeatImageBatch", "ImageToMask", "MaskComposite", "SetLatentNoiseMask"];
 export const FAKE_UNETS = ["minimax_h3_fl2va_int8_convrot.safetensors", "minimax_h3_ref2va_int8_convrot.safetensors"];
 
@@ -72,7 +74,8 @@ export async function startFakeComfy(options: FakeComfyOptions): Promise<FakeCom
   const pending = new Set<string>();
   const sockets = new Set<WebSocket>();
   const timers = new Set<ReturnType<typeof setTimeout>>();
-  const state = { behaviour: "success" as Behaviour, historyStatus: 200 };
+  // A held shot by default: 124 frames whose border barely moves (STORY_020).
+  const state = { behaviour: "success" as Behaviour, historyStatus: 200, frameChanges: { frames: 124, span: 24, step: Array.from({ length: 123 }, () => 1), second: Array.from({ length: 100 }, () => 4) } as unknown };
 
   const send = (event: unknown): void => {
     for (const ws of sockets) ws.send(JSON.stringify(event));
@@ -96,7 +99,8 @@ export async function startFakeComfy(options: FakeComfyOptions): Promise<FakeCom
     // An extension graph's LoadVideo previews the source, and the real ComfyUI lists it BEFORE the save node (BUG_003).
     const source = prompt.graph["source_video"]?.inputs["file"];
     const preview = typeof source === "string" ? { source_video: { images: [{ filename: path.basename(source.replace(/ \[output\]$/, "")), subfolder: sub, type: "output" }] } } : {};
-    return { ...preview, save: { images: [{ filename: videoName, subfolder: sub, type: "output" }] }, poster: { images: [{ filename: posterName, subfolder: sub, type: "output" }] } };
+    const changes = state.frameChanges === undefined ? {} : { changes: { text: [typeof state.frameChanges === "string" ? state.frameChanges : JSON.stringify(state.frameChanges)] } };
+    return { ...preview, save: { images: [{ filename: videoName, subfolder: sub, type: "output" }] }, poster: { images: [{ filename: posterName, subfolder: sub, type: "output" }] }, ...changes };
   };
   const complete = (prompt: SubmittedPrompt): void => {
     running.delete(prompt.id);
@@ -222,6 +226,12 @@ export async function startFakeComfy(options: FakeComfyOptions): Promise<FakeCom
     },
     set historyStatus(value: number) {
       state.historyStatus = value;
+    },
+    get frameChanges() {
+      return state.frameChanges;
+    },
+    set frameChanges(value: unknown) {
+      state.frameChanges = value;
     },
     completeHeld: (promptId) => {
       const prompt = prompts.find((p) => p.id === promptId);

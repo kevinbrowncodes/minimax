@@ -1,0 +1,33 @@
+/* STORY_020: the shot-change notice above the player — amber; wraps at narrow widths with Retry below the text */
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing_8) var(--spacing_12);
+  margin-bottom: var(--spacing_12);
+  padding: var(--spacing_8) var(--spacing_12);
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--text_default_primary);
+  font-size: 14px;
+  line-height: 22px;
+}
+.text {
+  flex: 1 1 24em;
+}
+.retry {
+  min-height: 44px;
+  padding: 0 var(--spacing_16);
+  border: 0;
+  border-radius: var(--radius_full);
+  background: var(--bg_interaction_primary_default);
+  color: var(--text_label_primary_default);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.retry:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

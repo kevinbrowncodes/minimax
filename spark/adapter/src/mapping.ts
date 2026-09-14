@@ -60,6 +60,8 @@ export const REQUIRED_CLASSES: readonly string[] = [
   // STORY_017 extensions: the source's tail as the new clip's own head, protected by the noise mask, joined in-graph
   "LoadVideo", "GetVideoComponents", "VAEEncode", "VAEEncodeAudio", "EmptyMiniMaxH3LatentAV", "LTXVSeparateAVLatent", "LTXVConcatAVLatent", "ReplaceVideoLatentFrames", "LatentCut", "LatentConcat",
   "SolidMask", "MaskToImage", "RepeatImageBatch", "ImageToMask", "MaskComposite", "SetLatentNoiseMask", "ImageBatch", "TrimAudioDuration", "AudioConcat",
+  // STORY_020: our own node (spark/comfyui/custom_nodes/minimax_local), the shot-change measure
+  "MiniMaxLocalFrameChanges",
 ];
 
 /** The Ref2VA checkpoint for the template's FL2VA file at the same precision (reported by health; not used by extensions since STORY_017). */
@@ -106,6 +108,8 @@ export function buildGraph(template: Graph, request: JobRequest, images: readonl
     // The poster: the first decoded frame, saved as PNG next to the video.
     graph["poster_frame"] = { class_type: "ImageFromBatch", inputs: { image: ["decode_video", 0], batch_index: 0, length: 1 } };
     graph["poster"] = { class_type: "SaveImage", inputs: { images: ["poster_frame", 0], filename_prefix: `${prefix}_poster` } };
+    // STORY_020: the shot-change measure over the frames that are saved.
+    graph["changes"] = { class_type: "MiniMaxLocalFrameChanges", inputs: { images: ["decode_video", 0] } };
     return graph;
   }
 
@@ -166,6 +170,8 @@ export function buildGraph(template: Graph, request: JobRequest, images: readonl
   graph["joined_frames"] = { class_type: "ImageBatch", inputs: { image1: ["source_parts", 0], image2: ["new_frames", 0] } };
   graph["joined_audio"] = { class_type: "AudioConcat", inputs: { audio1: ["source_parts", 1], audio2: ["new_audio", 0], direction: "after" } };
   video.inputs["images"] = ["joined_frames", 0];
+  // STORY_020: the shot-change measure over the joined frames, so the seam is measured too.
+  graph["changes"] = { class_type: "MiniMaxLocalFrameChanges", inputs: { images: ["joined_frames", 0] } };
   video.inputs["audio"] = ["joined_audio", 0];
   graph["poster_frame"] = { class_type: "ImageFromBatch", inputs: { image: ["joined_frames", 0], batch_index: 0, length: 1 } };
   graph["poster"] = { class_type: "SaveImage", inputs: { images: ["poster_frame", 0], filename_prefix: `${prefix}_poster` } };

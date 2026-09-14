@@ -18,11 +18,11 @@ So the frozen overlap fixes what the model starts from; it does not stop the mod
 
 ## Mitigations to measure (a story, one at a time, same prompt and seed)
 
-1. **Prompt:** the base format's single-shot lead is there already; add MiniMax's own camera vocabulary ("static shot", "no cut, no dissolve, no transition, no re-framing") and keep the owner's script free of shot-like phrasing — the cheapest test.
+1. ~~**Prompt:** the base format's single-shot lead is there already; add MiniMax's own camera vocabulary ("static shot", "no cut, no dissolve, no transition, no re-framing") and keep the owner's script free of shot-like phrasing — the cheapest test.~~ *(STORY_020, 2026-09-14: the adapter builds MiniMax's format; the scene paragraph is docs/scripts/scene.txt)*
 2. **Overlap 56 frames (2.3 s)** — more real footage in the clip's own timeline; one click in the UI.
 3. **A keyframe at the end** (`MiniMaxH3AddGuide`, the source's last frame re-anchored at the segment's last frame) so the shot must return to the same framing — cheap in the graph, but it constrains the end pose.
-4. **Seed sampling:** generate the extension twice and keep the one without a jump — the UI already lets the owner Retry; `seam-check.sh`-style jump scanning could flag a cut automatically in the adapter and offer a regenerate.
-5. **Guidance:** the template runs with `BasicGuider` (no CFG); a guided sampler with a negative prompt ("cut, dissolve, new shot, camera move") is the model-side lever, unmeasured.
+4. ~~**Seed sampling:** generate the extension twice and keep the one without a jump — the UI already lets the owner Retry; `seam-check.sh`-style jump scanning could flag a cut automatically in the adapter and offer a regenerate.~~ *(STORY_020: `result.cuts` + the notice's Retry; the mount is CHORE_009)*
+5. ~~**Guidance:** the template runs with `BasicGuider` (no CFG); a guided sampler with a negative prompt ("cut, dissolve, new shot, camera move") is the model-side lever, unmeasured.~~ *(withdrawn: the checkpoints are CFG-distilled)*
 
 ## Dependencies
 

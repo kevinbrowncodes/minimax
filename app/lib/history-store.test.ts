@@ -36,9 +36,10 @@ describe("HistoryStore", () => {
     expect(s.get("a")).toMatchObject({ title: "first boat", status: "queued", progress: 0 });
     expect(s.recordStatus("a", { id: "a", status: "running", progress: 40 })).toMatchObject({ status: "running", progress: 40 });
     expect(s.recordStatus("a", { id: "a", status: "running", progress: 10 })?.progress).toBe(40);
-    const done = s.recordStatus("a", { id: "a", status: "done", progress: 100, result: { url: "/jobs/a/result", posterUrl: "/jobs/a/poster", mimeType: "video/mp4", durationSeconds: 5, width: 1344, height: 768, sizeBytes: 1 } });
+    const done = s.recordStatus("a", { id: "a", status: "done", progress: 100, result: { url: "/jobs/a/result", posterUrl: "/jobs/a/poster", mimeType: "video/mp4", durationSeconds: 5, width: 1344, height: 768, sizeBytes: 1, cuts: [{ frame: 270, seconds: 11.25 }] } });
     expect(done?.finishedAt).toBeDefined();
     expect(done?.result?.url).toBe("/jobs/a/result");
+    expect(done?.result?.cuts).toEqual([{ frame: 270, seconds: 11.25 }]); // STORY_020: kept with the result
     const later = s.recordStatus("a", { id: "a", status: "running", progress: 1 });
     expect(later?.status).toBe("done");
     expect(s.patch("a", { openedAt: "2026-09-12T20:00:00Z" })?.openedAt).toBe("2026-09-12T20:00:00Z");

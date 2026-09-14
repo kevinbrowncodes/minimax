@@ -11,6 +11,11 @@ export interface Overlap {
   readonly frames: number;
   readonly seconds: number;
 }
+/** STORY_020 (contract v1.3): where the server measured a shot change — the first frame of the new shot and its time. */
+export interface Cut {
+  readonly frame: number;
+  readonly seconds: number;
+}
 export interface JobResult {
   readonly url: string;
   readonly posterUrl: string;
@@ -20,6 +25,8 @@ export interface JobResult {
   readonly width: number;
   readonly height: number;
   readonly sizeBytes: number;
+  /** Absent from a server older than v1.3 or when the measure was unavailable; [] when the shot held. */
+  readonly cuts?: readonly Cut[];
 }
 export interface JobRequest {
   readonly prompt: string;

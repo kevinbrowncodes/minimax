@@ -25,6 +25,8 @@ export interface JobResultFiles {
   readonly width: number;
   readonly height: number;
   readonly sizeBytes: number;
+  /** STORY_020: where the shot changed (cuts.ts); absent when the measure was unavailable, [] when none. */
+  readonly cuts?: readonly { readonly frame: number; readonly seconds: number }[];
 }
 export interface Job {
   readonly id: string;

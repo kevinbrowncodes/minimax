@@ -10,7 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
 import { DEFAULT_OVERLAP, MAX_FRAMES, OVERLAP_OPTIONS, extensionLength, lengthForSeconds, maxAddedSeconds, seconds } from "./extension.ts";
-import { DEFAULT_SCRIPT, isScriptName, isTerminal, stepFor, type JobError, type JobStatus, type ScriptName } from "./scripts.ts";
+import { DEFAULT_SCRIPT, cutsFor, isScriptName, isTerminal, stepFor, type JobError, type JobStatus, type ScriptName } from "./scripts.ts";
 
 export const VERSION = "1.2.0";
 export const CAPABILITIES = {
@@ -264,6 +264,7 @@ export function createStubServer(options: StubOptions = {}): StubServer {
             width: video.width,
             height: video.height,
             sizeBytes: video.sizeBytes,
+            cuts: cutsFor(job.script),
           },
         }
       : {}),

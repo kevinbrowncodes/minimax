@@ -241,3 +241,14 @@ describe("contract v1.2: extensions (STORY_017)", () => {
     expect((await (await api("/capabilities")).json()) as Record<string, unknown>).toMatchObject({ extension: CAPABILITIES.extension });
   });
 });
+
+describe("shot changes (STORY_020, contract v1.3)", () => {
+  it("done-with-cut reports the dissolve at 11.25 s; every other script reports none", async () => {
+    const flagged = await create("done-with-cut");
+    await status(flagged);
+    await status(flagged);
+    expect(await status(flagged)).toMatchObject({ status: "done", result: { cuts: [{ frame: 270, seconds: 11.25 }] } });
+    const clean = await create("done-after-1-poll");
+    expect(await status(clean)).toMatchObject({ status: "done", result: { cuts: [] } });
+  });
+});

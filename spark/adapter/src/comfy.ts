@@ -18,6 +18,8 @@ export interface HistoryEntry {
   readonly outputs: readonly OutputRef[];
   /** The same files by node id (BUG_003: a LoadVideo preview lists the source before the save node's file). */
   readonly byNode: Readonly<Record<string, readonly OutputRef[]>>;
+  /** STORY_020: a node's `ui.text` strings by node id (the frame-change measure reports this way). */
+  readonly textByNode: Readonly<Record<string, readonly string[]>>;
 }
 export interface QueueState {
   readonly running: readonly string[];
@@ -113,12 +115,20 @@ export class ComfyClient {
     const status = isRecord(entry["status"]) ? entry["status"] : {};
     const rawOutputs = entry["outputs"];
     const byNode: Record<string, readonly OutputRef[]> = {};
-    if (isRecord(rawOutputs)) for (const [node, value] of Object.entries(rawOutputs)) byNode[node] = collectOutputs(value);
+    const textByNode: Record<string, readonly string[]> = {};
+    if (isRecord(rawOutputs)) {
+      for (const [node, value] of Object.entries(rawOutputs)) {
+        byNode[node] = collectOutputs(value);
+        const text = isRecord(value) ? value["text"] : undefined;
+        if (Array.isArray(text)) textByNode[node] = text.filter((t): t is string => typeof t === "string");
+      }
+    }
     return {
       completed: status["completed"] === true,
       statusStr: typeof status["status_str"] === "string" ? status["status_str"] : undefined,
       outputs: collectOutputs(rawOutputs),
       byNode,
+      textByNode,
     };
   }
 

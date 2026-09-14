@@ -17,6 +17,8 @@ export interface Script {
   readonly steps: readonly Step[];
   /** POST /jobs answers 400 when the request carries a reference image. */
   readonly rejectsUpload?: boolean;
+  /** STORY_020: the shot changes the done result reports (contract v1.3 `result.cuts`); [] when absent. */
+  readonly cuts?: readonly { readonly frame: number; readonly seconds: number }[];
 }
 
 const q = (progress: number): Step => ({ status: "queued", progress });
@@ -34,6 +36,8 @@ export const SCRIPTS = {
     steps: [q(0), { status: "failed", progress: 0, error: { code: "moderated", message: "The prompt was refused on content grounds (scripted)." } }],
   },
   "cancel-midway": { steps: [q(0), r(10), r(25), r(50)] },
+  // STORY_020: done, but the server measured a shot change 11.25 s in (the 2026-09-14 chain's dissolve, frame 270)
+  "done-with-cut": { steps: [q(0), r(33), r(66), done], cuts: [{ frame: 270, seconds: 11.25 }] },
   "rejects-upload": { steps: [q(0), r(50), done], rejectsUpload: true },
 } as const satisfies Record<string, Script>;
 
@@ -56,4 +60,10 @@ export function stepFor(script: ScriptName, pollCount: number): Step {
   const step = steps[index];
   if (step === undefined) throw new Error(`script ${script} has no steps`);
   return step;
+}
+
+/** STORY_020: the shot changes a script's done result reports ([] unless the script says otherwise). */
+export function cutsFor(name: ScriptName): readonly { readonly frame: number; readonly seconds: number }[] {
+  const script: Script = SCRIPTS[name];
+  return script.cuts ?? [];
 }
