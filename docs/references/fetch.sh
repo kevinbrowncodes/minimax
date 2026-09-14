@@ -86,6 +86,14 @@ echo "  copied nodes_minimax_h3.py, comfy/ldm/minimax/*, text_encoders/minimax.p
 
 echo "# Community and framework docs"
 get https://raw.githubusercontent.com/joeynyc/MiniMax-H3-DGX-Spark/main/README.md community/joeynyc_MiniMax-H3-DGX-Spark_README.md
+# The community's H3 continuation packs (STORY_017's research): how each one carries a clip into the next generation.
+get https://raw.githubusercontent.com/xmarre/ComfyUI-H3-Continuum-Plus/main/README.md                       community/xmarre_ComfyUI-H3-Continuum-Plus_README.md
+get https://raw.githubusercontent.com/HerrgottMargott/Herrgotts-H3-Infinite-Continuation-Suite/main/README.md community/HerrgottMargott_H3-Infinite-Continuation-Suite_README.md
+get https://raw.githubusercontent.com/ttulttul/ComfyUI-Minimax-H3-Continuation/main/README.md                community/ttulttul_ComfyUI-Minimax-H3-Continuation_README.md
+get https://raw.githubusercontent.com/nkxx188/ComfyUI-MiniMaxH3-Easy/main/README.md                          community/nkxx188_ComfyUI-MiniMaxH3-Easy_README.md
+get https://raw.githubusercontent.com/seitanism/ComfyUI-H3-Motion-Context-MultiRef/main/README.md            community/seitanism_ComfyUI-H3-Motion-Context-MultiRef_README.md
+get https://raw.githubusercontent.com/tritant/ComfyUI_MiniMax_H3_Extender/main/README.md                     community/tritant_ComfyUI_MiniMax_H3_Extender_README.md
+get https://huggingface.co/joeygambino/MiniMax-H3-Multishot-Workflow/raw/main/README.md                     community/joeygambino_MiniMax-H3-Multishot-Workflow_README.md
 md  https://lmsysorg.mintlify.app/cookbook/diffusion/MiniMax/MiniMax-H3.md         community/sglang_cookbook_MiniMax-H3.md
 
 echo "# The announcement post (HTML kept; text extracted beside it)"

@@ -80,14 +80,20 @@ A local copy of everything public that explains the model this project runs, fet
 | --- | --- | --- |
 | `community/joeynyc_MiniMax-H3-DGX-Spark_README.md` | The vLLM-Omni FP8 route on one DGX Spark (EPIC_004 option A): measured memory and times, sm_121 patches | Apache-2.0 (code); the model is not |
 | `community/sglang_cookbook_MiniMax-H3.md` | The SGLang diffusion cookbook page MiniMax's card points at (option C) | © LMSYS |
+| `community/xmarre_ComfyUI-H3-Continuum-Plus_README.md` | Long-form H3 continuation pack: "Native Masked — exact continuation (Recommended)" copies the previous latent tail into the next target and protects it with the denoise mask; 39-frame AV profile | MIT (check the repo) |
+| `community/HerrgottMargott_H3-Infinite-Continuation-Suite_README.md` | Continuation suite that moved from keyframe reconstruction to in-place preservation with the per-stream masks; 39 frames (12 video / 65 audio latent steps) default; FL2VA weights | see the repo |
+| `community/ttulttul_ComfyUI-Minimax-H3-Continuation_README.md` | The keyframe-guide approach (22-frame tail as a native guide) — states it "cannot guarantee a seamless semantic transition" | see the repo |
+| `community/nkxx188_ComfyUI-MiniMaxH3-Easy_README.md` | Continuity modes side by side: Motion Context (previous latent, time-aligned), RGB Guide, Soft/Hard AV Prefix; 5/22/39/56/73-frame contexts | see the repo |
+| `community/seitanism_ComfyUI-H3-Motion-Context-MultiRef_README.md`, `community/tritant_ComfyUI_MiniMax_H3_Extender_README.md` | Two more extension packs built on preserved latent context | see the repos |
+| `community/joeygambino_MiniMax-H3-Multishot-Workflow_README.md` | Multi-shot workflow that names the two chaining methods: FL2VA's "trained continuation task" (last frame → first frame) and a 22-frame raw-latent "context pin" on Ref2VA, with notes on seams | see the repo |
 | `blog/minimax-h3-blog.html`, `blog/minimax-h3-blog.md` | "MiniMax H3: An Open Model Breaking the Boundaries Between Tasks and Modalities" — the announcement (2026-07-31); the `.md` is text extracted from the HTML | © MiniMax |
 
-## What these say about continuing a video (the basis of STORY_016)
+## What these say about continuing a video (the basis of STORY_016, revised by STORY_017's research)
 
 - The mechanism is `MiniMaxH3AddGuide` ([nodes_minimax_h3.py](comfyui/comfy_extras/nodes_minimax_h3.py)): an image batch of 5, 22, 39… frames (17k+5; shorter batches use one frame) is VAE-encoded and injected as a keyframe latent at `frame_idx` (negative counts from the end), optionally with audio anchored at the same index and cropped to the remaining duration. Chained nodes anchor several frames.
 - ComfyUI's docs and the PR say it outright: the first 22 frames of an existing video plus its audio at frame 0 → the model continues both streams ([comfy-docs/minimax-h3-native.md](comfy-docs/minimax-h3-native.md), [PR-15439.md](comfyui/PR-15439.md)). For *extending*, the guide is the source's **last** 22 frames.
 - The community extension workflow does the join the obvious way: cut the 22 overlapping frames (≈ 0.92 s) from the new segment, concatenate frames and audio ([examples/PR15375_…BasicMaskedExtension_v1.4.json](comfyui/examples/PR15375_droz_MiniMaxH3_BasicMaskedExtension_v1.4.json)). It uses Ref2VA weights; ours are FL2VA — STORY_016's manual verification is where that difference gets measured.
-- A second route exists — per-token latent noise masks (`denoise_mask` on the sampler, PR #15375) — for regenerating part of a clip while keeping the rest; more machinery, deferred.
+- **STORY_017 (2026-09-14) reversed the order of these two:** the model source ([comfy/ldm/minimax/model.py](comfyui/comfy/ldm/minimax/model.py) `PackedLayout`) shows references are token rows packed *before* the target's timeline and keyframes are *side* rows next to it, while the per-token noise mask (PR #15375) makes the source's own latents the first rows *of* the target — the only mechanism in which the new frames are the same clip. ComfyUI's docs call that "extending a clip while keeping the existing content stable", and every community continuation pack that appeared after PR #15375 recommends it (the `community/*` READMEs above). The reference-video route (STORY_016) produced a match cut to a new set on 2026-09-13.
 - `LoadVideo` (`comfy_extras/nodes_video.py` in the image) accepts `"<path> [output]"`, so a finished clip in ComfyUI's output directory can feed a new graph without an upload (`folder_paths.annotated_filepath`).
 
 ## Refreshing
