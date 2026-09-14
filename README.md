@@ -124,7 +124,7 @@ docs/
 
 ## Features
 
-What the UI does today, each matched to the reference capture the story cites ([docs/recon/2026-09-12/](docs/recon/2026-09-12/)):
+What the UI does today, each matched to the reference capture the story cites ([docs/recon/2026-09-12/](docs/recon/2026-09-12/) for the flow, [docs/recon/2026-09-14/](docs/recon/2026-09-14/) for both themes and every surface):
 
 | Feature | Story |
 | --- | --- |
@@ -133,6 +133,7 @@ What the UI does today, each matched to the reference capture the story cites ([
 | The task page: the prompt bubble, the working indicator, the Progress panel, **Stop generation**, playback in place, Download, Copy prompt, Retry, and history that survives a reload | STORY_014 |
 | Assets: every finished video as a poster tile, search and filter chips, a preview modal, Download, Open task, Delete from history | STORY_015 |
 | **Extend**: continue a finished video by +4…14 s (default +10), with the context the model watches as a setting, joined into one clip | STORY_016 |
+| **Dark mode**, by the system preference or by user menu › Settings › General › Appearance (Light mode / Dark mode / System, remembered per browser), on the reference's own semantic tokens; and every control we do not implement answers a click with "Not part of MiniMax Local — video generation only" | STORY_019 |
 
 Deliberate departures from the reference (an agent thread we do not have, 2K the Spark cannot produce, an Extend the reference does not offer) are listed in each story under **Departures from the reference**.
 

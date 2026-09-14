@@ -1,7 +1,7 @@
 # STORY_019 — The UI has the reference's dark mode, and every control either works or says why not
 
 **Epic:** [EPIC_005](../epic/EPIC_005_the_ui_looks_identical_to_the_reference_on_every_surface_in_both_themes.md)
-**Status:** In progress (2026-09-14) — UI Mockup filled from STORY_018's capture; one AC corrected against it (see the note under Acceptance Criteria)
+**Status:** Done (2026-09-14) — see the Done note at the bottom
 **Created:** 2026-09-14 (owner: "we don't support dark mode whereas agent.minimax.io does", and "some elements when I click on them seem to do nothing", e.g. the Work Area button)
 
 As the owner, I want the UI to follow the reference's dark theme — by my system preference and by a switch in the user menu, like theirs — and I want every control I can click to either do what it does on the reference or tell me plainly that it is not part of MiniMax Local, so that nothing on the screen is a dead click.
@@ -73,16 +73,19 @@ an inert control after a click (any theme, both widths; ours — the reference h
 
 ## Acceptance Criteria
 
-- [ ] **Theme tokens:** the design tokens gain a dark set, one value per light token, taken from the 2026-09-14 measurement; components use tokens only, so switching the theme changes every surface (sidebar, top bar, composer card and pills, popovers, task thread, Progress panel, result card, Assets tiles and modal, alerts).
-- [ ] **Theme choice:** `system` (default, follows `prefers-color-scheme`), `light`, `dark` — exposed where the reference exposes it (the user menu, with its wording) and remembered per browser; no flash of the wrong theme on load.
+- [x] **Theme tokens:** the design tokens gain a dark set, one value per light token, taken from the 2026-09-14 measurement; components use tokens only, so switching the theme changes every surface (sidebar, top bar, composer card and pills, popovers, task thread, Progress panel, result card, Assets tiles and modal, alerts).
+- [x] **Theme choice:** `system` (default, follows `prefers-color-scheme`), `light`, `dark` — exposed where the reference exposes it (the user menu, with its wording) and remembered per browser; no flash of the wrong theme on load.
   > **Corrected 2026-09-14 against STORY_018's capture:** the reference does not put the choice in the user menu; it is **user menu › Settings › General › Appearance**, three cards worded **Light mode / Dark mode / System**. This story renders the user menu with the reference's entries (Settings live, the rest inert with the notice) and the Settings modal's General section with those cards; the modal's other sections are nav entries that show the notice until the shell rebuild story fills them.
-- [ ] **Every inert control gives feedback on click:** the same notice, near the control, for two seconds, and the control stays keyboard-reachable; the tooltip stays. The list of inert controls and what each does on the reference comes from STORY_018's inventory; any control whose reference behaviour is **in MVP scope** and cheap (STORY_018 decides which, e.g. the Changelog link) is implemented instead of made inert.
-- [ ] Narrow (390): the theme applies; the notice fits.
+- [x] **Every inert control gives feedback on click:** the same notice, near the control, for two seconds, and the control stays keyboard-reachable; the tooltip stays. The list of inert controls and what each does on the reference comes from STORY_018's inventory; any control whose reference behaviour is **in MVP scope** and cheap (STORY_018 decides which, e.g. the Changelog link) is implemented instead of made inert.
+- [x] Narrow (390): the theme applies; the notice fits.
 
 ## Departures from the reference
 
 - The notice is ours: the reference has no inert controls, so there is nothing to match; the wording says what we deliberately do not build.
 - Anything the reference does with a control that is out of MVP scope stays out (backlog items exist for them).
+- The user menu's UID row reads `UID : local` — MiniMax Local has no account id (owner, 2026-09-14: no auth anywhere).
+- The theme choice is per browser (`localStorage`), where the reference's is on the account; the owner opens the UI from more than one browser, and BACKLOG_003 asks the per-browser vs server-wide question for the switch-off settings too.
+- The Settings modal's Account, Usage and Archived tasks sections are nav entries that show the notice; their panels belong to the shell rebuild story (EPIC_005 › 021+).
 
 ## Technical Notes
 
@@ -98,3 +101,24 @@ an inert control after a click (any theme, both widths; ours — the reference h
 ## Estimated Complexity
 
 M
+
+## Done (2026-09-14)
+
+**What landed** (`f311e4e` + the follow-up): the reference's semantic token set (58 names; 56 differ in dark) generated into `globals.css` from `docs/recon/2026-09-14/tokens.json`, with the dark values under `:root[data-theme="dark"]` and under `prefers-color-scheme: dark` for a root with no explicit choice; every stylesheet converted from palette to semantic tokens; `lib/theme.ts` (`system | light | dark`, stored under `minimax-local.theme`) with the boot function the layout inlines before first paint; `UserMenu` (the reference's entries, Settings live) and `SettingsDialog` (General: the three Appearance cards and the two Preferences rows; a bottom sheet at 390); the `Inert` component behind every control we do not implement (sidebar rows, Changelog / Download / Work Area / Download desktop, the composer's +, MiniMax-M3 and mode chips, the Assets tabs, the menu and Settings entries). The Agent Team section and the composer's Agent Team switch — gone from the reference on 2026-09-14 — were removed, not made inert.
+
+**Side by side** ([STORY_019_side_by_side/](STORY_019_side_by_side/), ours | theirs | differing pixels in red; a pixel counts as different when any channel moves by more than 40/255 — antialiasing-tolerant, layout-sensitive; dynamic content is NOT masked, so Recents titles, Assets tiles and thread text count against us):
+
+| Surface (dark) | 1440 | 390 |
+| --- | --- | --- |
+| Home | 96.2 % identical | 95.3 % |
+| User menu open | 97.7 % | 92.5 % |
+| Settings › General | 94.1 % | 86.6 % |
+| Composer, video mode | 93.8 % | 86.4 % |
+| Assets, Videos filter | 91.0 % | 90.8 % |
+| Task page | 89.2 % | 83.4 % |
+
+Light at 1440 for the same surfaces: 95.2 / 97.6 / 93.8 / 90.8 / 72.5 / 79.7 % — the Assets and task-page numbers are content (our ten tiles and our thread against their one tile and their agent thread), not theme.
+
+**Deltas that remain, and whose they are:** the sidebar's Inbox bell, the Agents guide card, the folded More / Projects headers and the Recents rows' dots and menu (shell rebuild story); the Showcase row, the promo card and the video-creator tag on its own line (composer rebuild story); the result file card, the Work Area panel with Deliverables and the credits notice (task-page rebuild story); the Assets tile's ⋯ menu and the From you / Star empty states (Assets rebuild story); a ≈ 8 px vertical offset of the heading and composer at 1440 (composer story). None of them is a colour: every measured token above matches the capture in both themes.
+
+**Verified this session:** the deployed container (`docker compose up -d --build app`) opened in dark and light at 1440 and 390 through the same Playwright profile the screenshots came from; the gate (typecheck, lint, 86 unit, integration, build, 52 e2e) green in the pre-push hook.

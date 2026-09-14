@@ -39,12 +39,14 @@ export function SettingsDialog({ open, choice, onChoose, onClose }: SettingsDial
       <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="settings-title" ref={panelRef} tabIndex={-1}>
         <nav className={styles.nav} aria-label="Settings">
           <span className={styles.navTitle}>Settings</span>
-          <button type="button" className={cx(styles.navItem, styles.navItemActive)} aria-current="true">
-            <IconGeneral /> General
-          </button>
-          <NavEntry icon={<IconAccount />} label="Account" />
-          <NavEntry icon={<IconUsage />} label="Usage" />
-          <NavEntry icon={<IconArchive />} label="Archived tasks" />
+          <div className={styles.navItems}>
+            <button type="button" className={cx(styles.navItem, styles.navItemActive)} aria-current="true">
+              <IconGeneral /> General
+            </button>
+            <NavEntry icon={<IconAccount />} label="Account" />
+            <NavEntry icon={<IconUsage />} label="Usage" />
+            <NavEntry icon={<IconArchive />} label="Archived tasks" />
+          </div>
         </nav>
         <div className={styles.panel}>
           <div className={styles.panelHead}>
