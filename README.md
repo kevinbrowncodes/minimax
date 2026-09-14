@@ -4,7 +4,59 @@
 
 > This README is the source of truth for **what the project is**. How we work (tickets, testing bar, gates, guardrails) lives in [CLAUDE.md](CLAUDE.md).
 
-**Status (2026-09-12):** greenfield. Nothing below the MVP Scope and Architecture sections is decided yet; each `TBD` is filled in by the story that settles it.
+**Status (2026-09-14):** the MVP works end to end on the Spark. All four epics are Done: the reference is captured, the UI is rebuilt, MiniMax-H3 runs on the GPU behind the job API, and a finished video can be extended. What is left is written down as bugs, chores and backlog items in `docs/`.
+
+---
+
+## Quick Start
+
+**Open the UI:** **<http://192.168.1.33:3000>** — from any browser on the LAN (that is the Spark's own address, verified 2026-09-14; `APP_PORT` in `.env` changes the port). Nothing is installed on the machine you browse from. The UI and the adapter containers are `restart: unless-stopped`, so they come back when the Spark reboots; the GPU half does not — see below.
+
+### Make a video
+
+1. **New task** in the sidebar, then the **Video generation** chip under the message box.
+2. Optional: **+ Reference** attaches a first frame (PNG, JPEG or WebP). A second image becomes the last frame.
+3. Type the prompt. MiniMax's own prompt guides are in [docs/references/prompt-guides/](docs/references/prompt-guides/); three worked example scripts are in [docs/scripts/](docs/scripts/).
+4. **Video parameters** sets the ratio, the resolution (768P — 2K is not open-sourced) and the duration (4–15 s).
+5. **Send.** The task page follows the job from queued to a playable result, with **Stop generation** while it runs, then **Download** and **Copy prompt**. Everything finished is also in **Assets**.
+
+### Extend a finished video
+
+On a finished video, press **⤴ Extend** (on the result card, or **Extend** in an Assets tile's ⋯ menu). The composer then shows the clip being continued and how many seconds of it the model will watch, the duration means seconds **added** (+10 s by default), and **Send** returns the source and its continuation as one clip — which can be extended again. Details and the measured behaviour: [STORY_016](docs/story/STORY_016_a_finished_video_can_be_extended_the_model_continues_it_from_its_last_second_and_the_longer_clip_plays_in_place.md).
+
+### The GPU half has to be running
+
+The UI and the adapter are always up; **ComfyUI is started per session**, because a generation needs most of the Spark's memory. Run these on the Spark, from the repo root:
+
+| Command | What it does |
+| --- | --- |
+| `spark/comfyui/run.sh` | Starts ComfyUI (GPU) and the adapter, and waits until both answer |
+| `spark/comfyui/stop.sh` | Stops ComfyUI; the adapter stays up, so the UI keeps working up to Send |
+| `spark/comfyui/verify.sh` | Proves the real chain — adapter, UI, validation — in seconds, without touching the GPU |
+| `docker ps` | Expect `minimax-app`, `minimax-adapter`, and `minimax-comfyui` while generating |
+
+### What a run costs (measured on the Spark)
+
+| Job | Time | Peak memory |
+| --- | --- | --- |
+| 5 s text-to-video | ≈ 17 min | 64 GiB |
+| 10 s from a reference image | ≈ 50 min | 71 GiB |
+| +10 s extension of a 10 s clip | ≈ 2 h 10 min | 88 GiB |
+| +10 s extension of a 20 s clip | ≈ 2 h 15 min | 97 GiB |
+
+The Spark has 121 GiB in total, so a generation needs the box mostly to itself: stop other memory-hungry containers first, by name, and start them again afterwards.
+
+### If something looks wrong
+
+| What you see | What it means | What to do |
+| --- | --- | --- |
+| "The Spark's adapter is not reachable" under the composer | the adapter container is down | `spark/comfyui/run.sh` |
+| Send answers "ComfyUI is not running on the Spark" | the GPU half is stopped — everything else is fine | `spark/comfyui/run.sh` |
+| Send answers "the Ref2VA checkpoint is not on the Spark" | the extension checkpoint was never fetched | `spark/comfyui/fetch-h3.sh` (34 GB) |
+| A job sits at "Queued…" for a minute or two | ComfyUI is loading a 34 GB checkpoint, or another job is ahead | wait; `docker logs -f minimax-comfyui` shows it |
+| "The Spark is busy" | the open-job limit is reached | let the running job finish |
+
+Deeper detail: [Running the UI](#running-the-ui), [Running the Model](#running-the-model), and [spark/README.md](spark/README.md) for the box itself.
 
 ---
 
@@ -69,7 +121,17 @@ docs/
 
 ## Features
 
-TBD — enumerated by the recon component inventory of the video generation surface. The MVP Scope section above is the outline.
+What the UI does today, each matched to the reference capture the story cites ([docs/recon/2026-09-12/](docs/recon/2026-09-12/)):
+
+| Feature | Story |
+| --- | --- |
+| The shell: sidebar, Recents with an unread dot, top bar, the reference's measured tokens | STORY_012 |
+| The composer: video mode, reference-image upload (0–2), model menu, the parameters popover (ratio, resolution, duration) greyed to what the Spark can actually do | STORY_013 |
+| The task page: the prompt bubble, the working indicator, the Progress panel, **Stop generation**, playback in place, Download, Copy prompt, Retry, and history that survives a reload | STORY_014 |
+| Assets: every finished video as a poster tile, search and filter chips, a preview modal, Download, Open task, Delete from history | STORY_015 |
+| **Extend**: continue a finished video by +4…14 s (default +10), with the context the model watches as a setting, joined into one clip | STORY_016 |
+
+Deliberate departures from the reference (an agent thread we do not have, 2K the Spark cannot produce, an Extend the reference does not offer) are listed in each story under **Departures from the reference**.
 
 ## Testing
 
