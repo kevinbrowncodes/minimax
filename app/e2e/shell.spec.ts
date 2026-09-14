@@ -110,15 +110,15 @@ test.describe("shell (STORY_021)", () => {
     await settled(page);
     await openDrawer();
     const sidebar = page.getByRole("navigation", { name: "Sidebar" });
-    await expect(sidebar.getByRole("button", { name: "More" })).toHaveAttribute("aria-expanded", "false");
+    await expect(sidebar.getByRole("button", { name: "More", exact: true })).toHaveAttribute("aria-expanded", "false");
     await expect(sidebar.getByText("MaxHermes")).toBeHidden();
-    await sidebar.getByRole("button", { name: "More" }).click();
+    await sidebar.getByRole("button", { name: "More", exact: true }).click();
     await settled(page);
     await expect(sidebar.getByText("MaxHermes")).toBeVisible();
     await page.reload();
     await settled(page);
     await openDrawer();
-    await expect(sidebar.getByRole("button", { name: "More" })).toHaveAttribute("aria-expanded", "true");
+    await expect(sidebar.getByRole("button", { name: "More", exact: true })).toHaveAttribute("aria-expanded", "true");
     await expect(sidebar.getByText("MaxHermes")).toBeVisible();
   });
 

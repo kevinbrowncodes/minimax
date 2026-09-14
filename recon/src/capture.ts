@@ -191,7 +191,9 @@ async function maskPersonal(page: Page): Promise<void> {
         const text = node.textContent ?? "";
         if (/^\s*MiniMax\d{4,}\s*$/.test(text)) node.textContent = "Owner";
         else if (/UID\s*[:：]\s*\d{6,}/.test(text)) node.textContent = text.replace(/(UID\s*[:：]\s*)\d{6,}/, "$1000000000000000000");
-        else if (/^\s*\d{15,}\s*$/.test(text) && node.parentElement && /UID/.test(node.parentElement.parentElement?.textContent ?? "")) node.textContent = "000000000000000000";
+        // A standalone run of 12+ digits is never UI copy on the reference — it is an account or session id.
+        else if (/^\s*\d{12,}\s*$/.test(text)) node.textContent = text.replace(/\d{12,}/, "000000000000000000");
+        else if (/\b\d{15,}\b/.test(text)) node.textContent = text.replace(/\b\d{15,}\b/g, "000000000000000000");
       }
       for (const input of Array.from(document.querySelectorAll("input"))) {
         if (/MiniMax\d{4,}/.test(input.value)) input.value = input.value.replace(/MiniMax\d{4,}/g, "Owner");

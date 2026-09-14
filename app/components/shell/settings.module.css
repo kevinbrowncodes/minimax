@@ -249,16 +249,19 @@
   background: var(--gray_0);
 }
 @media (max-width: 899px) {
+  /* narrow-settings-general@390: a sheet 356 wide, 123 px from the top; the page behind is dimmed as at 1440. */
   .backdrop {
-    align-items: flex-end;
+    align-items: flex-start;
+    padding-top: 123px;
   }
   .modal {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
-    width: calc(100vw - 32px);
-    height: min(600px, 80vh);
-    margin: 0 16px 16px;
+    width: calc(100vw - 34px);
+    height: min(598px, calc(100vh - 139px));
+    margin: 0 17px;
     border-radius: var(--radius_20);
+    box-shadow: 0 8px 32px var(--shadow_default);
   }
   .nav {
     gap: var(--spacing_8);

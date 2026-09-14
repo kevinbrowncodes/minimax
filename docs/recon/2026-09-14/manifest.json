@@ -1999,7 +1999,7 @@
       "theme": "light",
       "file": "user-menu-open@1440.png",
       "path": "/",
-      "capturedAt": "2026-09-14T19:31:07.104Z",
+      "capturedAt": "2026-09-14T21:19:50.291Z",
       "reachedBy": "auto",
       "note": "the user chip's menu"
     },
@@ -2009,7 +2009,7 @@
       "theme": "dark",
       "file": "user-menu-open-dark@1440.png",
       "path": "/",
-      "capturedAt": "2026-09-14T19:31:38.421Z",
+      "capturedAt": "2026-09-14T21:20:20.092Z",
       "reachedBy": "auto",
       "note": "the user chip's menu"
     },
@@ -2019,7 +2019,7 @@
       "theme": "dark",
       "file": "narrow-user-menu-open-dark@390.png",
       "path": "/",
-      "capturedAt": "2026-09-14T19:32:36.661Z",
+      "capturedAt": "2026-09-14T21:21:17.570Z",
       "reachedBy": "auto",
       "note": "the user chip's menu"
     },
@@ -2029,7 +2029,7 @@
       "theme": "light",
       "file": "narrow-user-menu-open@390.png",
       "path": "/",
-      "capturedAt": "2026-09-14T19:33:58.884Z",
+      "capturedAt": "2026-09-14T21:22:38.948Z",
       "reachedBy": "auto",
       "note": "the user chip's menu"
     }

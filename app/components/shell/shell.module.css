@@ -99,14 +99,15 @@
   .asideOpen {
     transform: translateX(0);
   }
+  /* The reference's drawer scrim is invisible (narrow-sidebar-drawer-open@390: the page beside the drawer stays as it
+     was); it exists to catch the closing tap. */
   .scrim {
     display: block;
     position: fixed;
     inset: 0;
-    background: var(--utility_overlay);
+    background: transparent;
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--duration_sidebar) var(--ease_standard);
     z-index: 10;
   }
   .scrimOpen {

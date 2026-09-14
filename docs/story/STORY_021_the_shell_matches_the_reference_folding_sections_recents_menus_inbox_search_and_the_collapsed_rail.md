@@ -1,7 +1,7 @@
 # STORY_021 — The shell matches the reference: folding sections, Recents menus, Inbox, Search and the collapsed rail
 
 **Epic:** [EPIC_005](../epic/EPIC_005_the_ui_looks_identical_to_the_reference_on_every_surface_in_both_themes.md) — the first rebuild story, cut from [inventory.md › What we lack › Shell](../recon/2026-09-14/inventory.md)
-**Status:** In progress (2026-09-14) — drafted from the 2026-09-14 capture; the owner asked to proceed to the epic's completion
+**Status:** Done (2026-09-14) — see the Done note at the bottom
 **Created:** 2026-09-14
 
 As the owner, I want the frame around every page — the sidebar with its folding sections, the Recents rows with their menu, the footer's Inbox, the collapsed icon rail, the Search and Create project dialogs, the promo card and the rest of Settings — to look and move exactly like agent.minimax.io's in both themes and at both widths, so that the app reads as the reference before I reach any page.
@@ -74,17 +74,17 @@ Recents row menu (recents-row-menu-open@1440)     Inbox (inbox-open@1440)       
 
 ## Acceptance Criteria
 
-- [ ] **Folding sections:** More, Projects and Recents are header buttons with `aria-expanded`; More and Projects start closed, Recents open; a click folds or unfolds with the reference's 0.15 s ease; the state is remembered per browser; at 390 the headers fold and unfold inside the drawer (the reference cannot — a departure in our favour, recorded).
-- [ ] **Recents rows:** a filled red dot for an unread finished job, a hollow dot once opened; hover (or focus) shows Pin and ⋯; ⋯ opens the row menu with the reference's seven entries; **Delete** removes the job from history (the same action as Assets › Delete from history, with the same confirmation, and the page leaves the task if it is open); Rename, Pin, Copy conversation ID, Move to project, Archive show the notice; Escape and a click outside close the menu. Six rows show; **Show more** reveals the rest.
-- [ ] **Agents guide card** under Recents with View now (notice) and a dismiss × that hides it for the browser.
-- [ ] **Inbox:** the footer bell opens the popover (tabs and Read all inert, "No messages yet"); Escape / outside closes it.
-- [ ] **Collapsed rail** at ≥ 900: Collapse sidebar leaves a 52 px rail of icon pills and the avatar; the logo (**Expand sidebar**) restores the 260 px sidebar; the choice is remembered per browser; the main column re-centres both ways.
-- [ ] **Narrow:** the page's toggle is a 30×30 icon named **Expand sidebar** at the top-left (touch target padded to 44); the scrim closes the drawer; navigation closes it too (departure: the reference leaves it open over the page).
-- [ ] **Search dialog** from the Search row: typing filters the history by title live, rows grouped Previous 7 days / Older, a row opens the task; Escape, Close and the backdrop close it; the row is no longer inert.
-- [ ] **Create project dialog** from Add new project: rendered as captured; Create shows the notice; Escape / Close / backdrop close it.
-- [ ] **Promo card** on the home at ≥ 900: two pages with dots, close hides it for the browser; the Download desktop button on page 2 and the whole card are inert with the notice.
-- [ ] **Settings › Account, Usage, Archived tasks** render as captured with every control inert (the notice); the nav switches sections; General keeps STORY_019's Appearance.
-- [ ] Both themes, both widths; every new control keyboard-reachable; touch targets ≥ 44 px at 390.
+- [x] **Folding sections:** More, Projects and Recents are header buttons with `aria-expanded`; More and Projects start closed, Recents open; a click folds or unfolds with the reference's 0.15 s ease; the state is remembered per browser; at 390 the headers fold and unfold inside the drawer (the reference cannot — a departure in our favour, recorded).
+- [x] **Recents rows:** a filled red dot for an unread finished job, a hollow dot once opened; hover (or focus) shows Pin and ⋯; ⋯ opens the row menu with the reference's seven entries; **Delete** removes the job from history (the same action as Assets › Delete from history, with the same confirmation, and the page leaves the task if it is open); Rename, Pin, Copy conversation ID, Move to project, Archive show the notice; Escape and a click outside close the menu. Six rows show; **Show more** reveals the rest.
+- [x] **Agents guide card** under Recents with View now (notice) and a dismiss × that hides it for the browser.
+- [x] **Inbox:** the footer bell opens the popover (tabs and Read all inert, "No messages yet"); Escape / outside closes it.
+- [x] **Collapsed rail** at ≥ 900: Collapse sidebar leaves a 52 px rail of icon pills and the avatar; the logo (**Expand sidebar**) restores the 260 px sidebar; the choice is remembered per browser; the main column re-centres both ways.
+- [x] **Narrow:** the page's toggle is a 30×30 icon named **Expand sidebar** at the top-left (touch target padded to 44); the scrim closes the drawer; navigation closes it too (departure: the reference leaves it open over the page).
+- [x] **Search dialog** from the Search row: typing filters the history by title live, rows grouped Previous 7 days / Older, a row opens the task; Escape, Close and the backdrop close it; the row is no longer inert.
+- [x] **Create project dialog** from Add new project: rendered as captured; Create shows the notice; Escape / Close / backdrop close it.
+- [x] **Promo card** on the home at ≥ 900: two pages with dots, close hides it for the browser; the Download desktop button on page 2 and the whole card are inert with the notice.
+- [x] **Settings › Account, Usage, Archived tasks** render as captured with every control inert (the notice); the nav switches sections; General keeps STORY_019's Appearance.
+- [x] Both themes, both widths; every new control keyboard-reachable; touch targets ≥ 44 px at 390.
 
 ## Departures from the reference
 
@@ -93,6 +93,8 @@ Recents row menu (recents-row-menu-open@1440)     Inbox (inbox-open@1440)       
 - The promo card's illustrations are our own drawings; its two headlines are kept.
 - The Recents menu's Rename / Pin / Move / Archive and the Inbox's tabs are inert (no conversations, projects or messages exist locally); Delete is ours.
 - Settings › Account / Usage / Archived tasks carry the reference's copy (plan names, "0 + 400") as static text — there is no account to read them from.
+- The Inbox popover at 390 is a full-width sheet; the reference's is the 476 px desktop popover overflowing the viewport.
+- The 390 drawer scrim is invisible like the reference's, but the Settings backdrop dims the page like the reference's — both as captured.
 
 ## Technical Notes
 
@@ -111,3 +113,31 @@ Recents row menu (recents-row-menu-open@1440)     Inbox (inbox-open@1440)       
 ## Estimated Complexity
 
 L
+
+## Done (2026-09-14)
+
+**Landed** (`906056f` + the follow-up): folding More / Projects / Recents headers (state in `lib/shell-prefs.ts`, per browser); Recents rows with the read / unread dot, hover Pin + ⋯, the reference's seven-entry row menu (Delete forgets the job through STORY_015's route and leaves its page; the rest show the notice), six rows then Show more; the Agents guide card; the footer's Inbox popover; the 52 px rail with the logo as Expand sidebar; the 390 toggle renamed and re-drawn as the reference's Expand sidebar icon; the Search tasks dialog (live title filter, Previous 7 days / Older, rows open the task); the Create project dialog; the promo carousel (≥ 900, our drawings); Settings › Account, Usage and Archived tasks as captured. Every new control is keyboard-reachable; touch targets are 44 px at 390.
+
+**Side by side** ([STORY_021_side_by_side/](STORY_021_side_by_side/); ours | theirs | differing pixels; the same 40/255 per-channel rule as STORY_019, content unmasked, ours shot at a plain 390 viewport like the captures):
+
+| Surface | 1440 light | 1440 dark | 390 light | 390 dark |
+| --- | --- | --- | --- | --- |
+| Home | 95.1 % | 95.5 % | 95.9 % | 96.0 % |
+| Collapsed rail | 96.4 % | 96.6 % | — | — |
+| More unfolded | 95.0 % | 95.4 % | — | — |
+| Recents row menu | 94.9 % | 95.3 % | 93.6 % | 93.7 % |
+| Inbox | 95.0 % | 95.7 % | 95.3 % | 95.4 % |
+| User menu | 96.0 % | 96.4 % | 92.9 % | 93.0 % |
+| Search dialog | 96.0 % | 96.5 % | 94.8 % | 94.4 % |
+| Create project | 93.1 % | 95.0 % | — | — |
+| Promo page 2 | 95.4 % | 95.9 % | — | — |
+| Settings › General | 93.2 % | 94.1 % | 90.6 % | 91.2 % |
+| Settings › Account | 95.1 % | 95.9 % | 94.4 % | 95.0 % |
+| Settings › Usage | 94.4 % | 95.2 % | 93.5 % | 94.1 % |
+| Settings › Archived tasks | 95.7 % | 96.1 % | 97.1 % | 97.7 % |
+
+**Deltas that remain, and whose they are:** our Recents titles and count (content); the Showcase row, the promo card's illustration and the composer's tag placement (composer story 022); the icon glyphs are our approximations of theirs (all stories); the guide card's illustration (ours). Two reference behaviours were found during the comparison and matched: the drawer scrim at 390 is invisible, the Settings backdrop is not.
+
+**Found on the way:** the four `user-menu-open` captures in `docs/recon/2026-09-14/` showed the account UID unmasked (the id sits in its own text node); the mask now zeroes any standalone 12+ digit run and the four were re-shot. The earlier versions remain in git history (`b4fbffe`…`ea72d4b`).
+
+**Verified this session:** the deployed container in both themes at 1440 and 390 through the screenshots above; the gate green in the pre-push hook.
