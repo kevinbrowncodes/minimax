@@ -125,3 +125,18 @@ describe("SettingsDialog sections (STORY_021; settings-account/usage/archived-ta
     expect(screen.getByRole("radiogroup", { name: "Appearance" })).toBeInTheDocument();
   });
 });
+
+describe("SearchDialog rows named by creation minute (CHORE_008)", () => {
+  it("shows the stamp, keeps the title as tooltip and accessible name, and still matches the title when searching", () => {
+    const created = new Date(2026, 8, 14, 18, 30).toISOString();
+    render(<SearchDialog open recents={[{ id: "c1", title: "Find me by title", createdAt: created, finishedAt: created }]} onClose={() => undefined} now={now} />);
+    const dialog = screen.getByRole("dialog", { name: "Search tasks" });
+    act(() => {
+      fireEvent.change(within(dialog).getByRole("searchbox"), { target: { value: "find me" } });
+    });
+    const row = within(dialog).getByRole("button", { name: "26-09-14-1830, Find me by title" });
+    expect(row).toHaveTextContent("26-09-14-1830");
+    expect(row).toHaveAttribute("title", "Find me by title");
+    expect(within(dialog).getByRole("button", { name: /Find me by title/ })).toBe(row);
+  });
+});

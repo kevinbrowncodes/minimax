@@ -42,3 +42,27 @@ export function groupByAge<T extends { readonly finishedAt?: string }>(entries: 
 }
 
 export type { RecentEntry };
+
+/**
+ * CHORE_008: a Recents row is named by the minute the task was created, in the browser's local time — `26-09-14-1200`
+ * for 14 September 2026 at 12:00 — because scripts start alike and first words cannot tell chain segments apart.
+ * Undefined when the entry has no usable createdAt (an older store), and the row falls back to the title.
+ */
+export function stampFor(createdAt: string | undefined): string | undefined {
+  if (createdAt === undefined) return undefined;
+  const d = new Date(createdAt);
+  if (Number.isNaN(d.getTime())) return undefined;
+  const two = (n: number): string => String(n).padStart(2, "0");
+  return `${two(d.getFullYear() % 100)}-${two(d.getMonth() + 1)}-${two(d.getDate())}-${two(d.getHours())}${two(d.getMinutes())}`;
+}
+
+/** The visible label of a Recents row: the creation stamp, else the title. */
+export function recentLabel(entry: { readonly title: string; readonly createdAt?: string }): string {
+  return stampFor(entry.createdAt) ?? entry.title;
+}
+
+/** The accessible name of a Recents row: "<stamp>, <title>" so a reader gets both and search-by-title still lands. */
+export function recentName(entry: { readonly title: string; readonly createdAt?: string }): string {
+  const stamp = stampFor(entry.createdAt);
+  return stamp === undefined ? entry.title : `${stamp}, ${entry.title}`;
+}

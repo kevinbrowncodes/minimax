@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { hasMoreRecents, visibleRecents } from "@/lib/recents";
+import { hasMoreRecents, recentLabel, recentName, visibleRecents } from "@/lib/recents";
 import { activeRow, isUnread, type RecentEntry } from "@/lib/route-title";
 import { DEFAULT_SHELL_PREFS, type Section, type ShellPrefs } from "@/lib/shell-prefs";
 import { cx } from "@/lib/cx";
@@ -112,9 +112,10 @@ function RecentRow({ entry, active, onNavigate, onDelete }: { readonly entry: Re
   const unread = isUnread(entry);
   return (
     <li ref={rootRef} className={cx(styles.recent, menuOpen && styles.recentMenuOpen)}>
-      <Link href={`/task/${encodeURIComponent(entry.id)}`} className={cx(styles.row, styles.recentLink, active && styles.rowActive)} aria-current={active ? "page" : undefined} onClick={onNavigate}>
+      <Link href={`/task/${encodeURIComponent(entry.id)}`} className={cx(styles.row, styles.recentLink, active && styles.rowActive)} aria-current={active ? "page" : undefined} aria-label={recentName(entry)} onClick={onNavigate}>
         <span className={cx(styles.dot, unread ? styles.dotUnread : styles.dotRead)} aria-label={unread ? "New result" : undefined} />
-        <span className={styles.rowLabel}>{entry.title}</span>
+        {/* CHORE_008: the row is named by its creation minute; the prompt's first words are the tooltip and the accessible name */}
+        <span className={styles.rowLabel} title={entry.title}>{recentLabel(entry)}</span>
       </Link>
       <span className={styles.recentActions}>
         <Inert label="Pin" className={styles.recentAction}><IconPin /></Inert>

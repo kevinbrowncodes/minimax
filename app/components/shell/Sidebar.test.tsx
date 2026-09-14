@@ -145,3 +145,17 @@ describe("Sidebar", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Not part of MiniMax Local");
   });
 });
+
+describe("Recents rows named by creation minute (CHORE_008)", () => {
+  it("shows the stamp as the label, keeps the prompt as the tooltip and in the accessible name, and falls back to the title without createdAt", () => {
+    const created = new Date(2026, 8, 14, 12, 0).toISOString();
+    render(<Sidebar pathname="/" recents={[{ id: "s1", title: "[0:00-0:03] From his standing stance, he…", createdAt: created, finishedAt: created }, { id: "s2", title: "Old store entry", finishedAt: created }]} />);
+    const row = screen.getByRole("link", { name: "26-09-14-1200, [0:00-0:03] From his standing stance, he…" });
+    expect(row).toHaveAttribute("href", "/task/s1");
+    expect(row).toHaveTextContent("26-09-14-1200");
+    expect(row).not.toHaveTextContent("standing stance");
+    expect(screen.getByTitle("[0:00-0:03] From his standing stance, he…")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /From his standing stance/ })).toBe(row);
+    expect(screen.getByRole("link", { name: "Old store entry" })).toHaveTextContent("Old store entry");
+  });
+});

@@ -2,6 +2,8 @@
 export interface RecentEntry {
   readonly id: string;
   readonly title: string;
+  /** CHORE_008: when the task was created — Recents rows are named by this minute. Absent on an entry from an older store. */
+  readonly createdAt?: string;
   readonly finishedAt?: string;
   readonly openedAt?: string;
 }

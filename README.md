@@ -128,7 +128,7 @@ What the UI does today, each matched to the reference capture the story cites ([
 
 | Feature | Story |
 | --- | --- |
-| The shell: sidebar, Recents with an unread dot, top bar, the reference's measured tokens | STORY_012 |
+| The shell: sidebar, Recents with an unread dot (each row named by the minute the task was created, `26-09-14-1200`, the prompt as its tooltip — CHORE_008), top bar, the reference's measured tokens | STORY_012 |
 | The composer: video mode, reference-image upload (0–2), model menu, the parameters popover (ratio, resolution, duration) greyed to what the Spark can actually do | STORY_013 |
 | The task page: the prompt bubble, the working indicator, the Progress panel, **Stop generation**, playback in place, Download, Copy prompt, Retry, and history that survives a reload | STORY_014 |
 | Assets: every finished video as a poster tile, search and filter chips, a preview modal, Download, Open task, Delete from history | STORY_015 |

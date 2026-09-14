@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { groupByAge, searchRecents } from "@/lib/recents";
+import { groupByAge, recentLabel, recentName, searchRecents } from "@/lib/recents";
 import type { RecentEntry } from "@/lib/route-title";
 import { IconClose } from "./icons";
 import styles from "./search-dialog.module.css";
@@ -56,12 +56,14 @@ function SearchDialogBody({ recents, onClose, now = () => new Date() }: SearchDi
                   key={entry.id}
                   type="button"
                   className={styles.row}
+                  aria-label={recentName(entry)}
+                  title={entry.title}
                   onClick={() => {
                     onClose();
                     router.push(`/task/${encodeURIComponent(entry.id)}`);
                   }}
                 >
-                  {entry.title}
+                  {recentLabel(entry)}
                 </button>
               ))}
             </div>
