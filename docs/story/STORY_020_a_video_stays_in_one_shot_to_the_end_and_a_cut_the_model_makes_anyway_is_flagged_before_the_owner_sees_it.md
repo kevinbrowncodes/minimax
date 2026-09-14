@@ -1,0 +1,125 @@
+# STORY_020 — A video stays in one shot to the end, and a cut the model makes anyway is flagged before the owner sees it
+
+**Status:** Drafted (2026-09-14) — awaiting the owner's approval. Promoted from [BACKLOG_004](../backlog/BACKLOG_004_an_extension_can_still_change_the_scene_on_its_own_after_the_overlap.md) after the owner saw the 31 s chain change set at 00:11 → 00:12.
+**Epic:** [EPIC_004](../epic/EPIC_004_a_video_model_runs_on_the_dgx_spark_behind_the_same_job_api.md) (the model side); follows [STORY_017](STORY_017_extending_a_video_keeps_the_scene_because_the_new_frames_are_generated_as_part_of_the_same_clip.md).
+
+As the owner, when I generate or extend a video I want the whole clip to be one continuous shot — the same set, lighting and framing from its first frame to its last — and when the model cuts to a different shot anyway I want to be told where, on the task page, before I download it, so that I never again find out from the video itself.
+
+## Why the extension still changed the scene (the evidence, 2026-09-14)
+
+STORY_017 fixed the **join**: the source's last 39 frames are the new clip's first 39 frames, and both seams on the chain measured continuous (0.08 and 0.04 of the clip's largest natural change). What it did not fix is what the model does **after** those 39 frames, and that is where the 31 s chain broke: segment 2 held the curtain for 1.4 s past the seam, then dissolved (frames 270–278, 11.25–11.6 s) to a black gym with two lamps and stayed there. Scanning the whole chain for this story (the table under Technical Notes) found more: segment 3 kept the gym but changed its framing 1.5 s after *its* seam too (21.7 s), and from there the camera tilted and pulled back through the squats (frames 500, 545, 620, 655 and 690 viewed) although every script says "the camera stays completely fixed". The base model did the same inside a **fresh** clip that day (segment 1 cut from a wide shot to a close-up at frame 142, 5.9 s). So this is not an extension defect — three of the day's five generations changed shot or framing on their own, and the two chained extensions did it at the same place, about 1.5 s after the overlap ends.
+
+Reading the sources again for *this* question (why does the model cut?) rather than STORY_017's (how do the frames join?) gives four facts, all from the saved references:
+
+1. **The model is natively multi-shot** ([MiniMax's blog](../references/blog/minimax-h3-blog.md): "Native multi-shot modeling") and its prompt format is built around shots and cut times ([base prompt guide §4.2](../references/prompt-guides/VIDEO_PROMPT_WRITING_GUIDE_base_en.txt): "`[Shot 2] At 00:03.500, the camera cuts to...`"). Left under-specified for ten seconds, it does what its training data does: it cuts.
+2. **We never sent the model its own prompt format.** MiniMax's format has a **mandatory first line** — for image-to-video, verbatim: `For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.` — "The instruction must be the first line of the final prompt" ([base guide §2.1](../references/prompt-guides/VIDEO_PROMPT_WRITING_GUIDE_base_en.txt)). Our fresh clips send the owner's script raw (no instruction, no `integrated_multimodal_description:`), and STORY_017's wrapper added the fields but not the instruction. ComfyUI adds nothing: the text encoder passes the prompt through as raw text ([text_encoders/minimax.py](../references/comfyui/comfy/text_encoders/minimax.py): "NOT chat-templated"). The scripts' `[0:00-0:03]` brackets are a format MiniMax does not use; the only timestamps in its format mark cuts.
+3. **MiniMax's own single-shot prompt says so in the model's vocabulary and at length.** The model card's image-to-video example ([model card](../references/raw/model-card_MiniMaxAI_MiniMax-H3.md)) opens `[Shot 1] … The camera holds a perfectly static shot throughout the entire eight-second duration` and runs to ~700 words; the reference guide puts a generation description at 350–500 words and adds "A single shot does not automatically justify a shorter description". Those prompts are written by **H3-Context-IR**, MiniMax's hosted rewriter, which is not in the open release; the owner's scripts are 160–180 words.
+4. **There is no guidance knob to turn up.** The released checkpoints are **CFG-distilled** ([model card](../references/raw/model-card_MiniMaxAI_MiniMax-H3.md); MiniMax's deploy notes keep `guidance_scale` at 1.0). A negative prompt ("cut, dissolve") cannot be applied; the positive prompt is the only steering, which makes point 2 the lever — and makes the result probabilistic, which is why the same script held in the morning and cut in the afternoon.
+
+**Consequence.** Sending the model its own format is necessary and evidenced; it lowers the odds of a cut but cannot make them zero. The only way the owner is *never* shown a cut is to measure every result for one and say so on the task page, with Retry one click away. This story does both. The checkpoint's other documented single-shot mechanism — a last frame, which "FL2VA generally favors a single shot" to interpolate towards ([base guide §3.2](../references/prompt-guides/VIDEO_PROMPT_WRITING_GUIDE_base_en.txt)) — pins the end pose to a frame we would have to supply; the source's own last frame contradicts script2's and script3's endings, so it stays in BACKLOG_004 as the owner's option for blocks that should end where they began.
+
+## Research (2026-09-14) — what the sources say
+
+| Source | What it says | What this story takes from it |
+| --- | --- | --- |
+| [Base prompt guide §2.1](../references/prompt-guides/VIDEO_PROMPT_WRITING_GUIDE_base_en.txt) | I2VA "always uses" the instruction line above; T2VA "begins directly with the three core fields"; the instruction "must be the first line" | The builder emits the I2VA line for a fresh clip with a first frame, no line for text-only and for extensions (the masked prefix is not a Picture) |
+| [Base prompt guide §4.1–4.3](../references/prompt-guides/VIDEO_PROMPT_WRITING_GUIDE_base_en.txt) | `[Shot 1]` opens with style and composition; cuts are written `the camera cuts to` with a time; camera motion has a named type, `Static Shot` = "the camera position and lens remain still" | `[Shot 1] Live-action. The camera holds a static shot throughout the entire S.SS-second duration…`; no time-stamped brackets in the body |
+| [Model card, I2VA example](../references/raw/model-card_MiniMaxAI_MiniMax-H3.md) | "The camera holds a perfectly static shot throughout the entire eight-second duration"; ~700 words | The exact phrase, with our clip's duration |
+| [Reference guide §5.2](../references/prompt-guides/VIDEO_PROMPT_WRITING_GUIDE_ref_en.txt) | 350–500 words for a generation; a single shot does not justify fewer | The prompt limit is raised so the owner *can* write that much; a local rewriter is [BACKLOG_005](../backlog/BACKLOG_005_a_local_prompt_rewriter_expands_a_short_script_the_way_minimaxs_cloud_does.md) |
+| [Model card](../references/raw/model-card_MiniMaxAI_MiniMax-H3.md), [MiniMax deploy notes](../references/api-reference/minimax-api_local-deploy-h3.md) | "CFG-distilled"; `guidance_scale` 1.0 | BACKLOG_004's remedy 5 (negative-prompt guidance) is withdrawn |
+| [HerrgottMargott suite](../references/community/HerrgottMargott_H3-Infinite-Continuation-Suite_README.md) | "The masked previous AV context does not need to be mentioned in the prompt. It is already present in the target latent"; FL2VA's last frame is "a strong visual target" | No instruction line for extensions; the last-frame anchor stays a backlog option |
+| [joeygambino chain](../references/community/joeygambino_MiniMax-H3-Multishot-Workflow_README.md) | Blind-reviewed single-shot 362-frame (15 s) renders "one continuous unedited take" on FL2VA; "do not name a nearby object in a shot's closing beat — *she glances down at the reel* reads as a request for a shot of the reel"; texture numbers are meaningless once "the model cuts to a different setup" | 15 s single shots are achievable; every result is scanned for a shot change before any other measure is trusted |
+| Our own seven generations of 2026-09-13/14, scanned for this story (the table under Technical Notes) | The **outer border** of the picture — the set, not the person — changes by at most 11 over any second in a clip that holds its shot, and by 37–58 across every cut, dissolve and camera move seen; the whole picture cannot tell them apart (a squat moved it by 66, the dissolve by 61) | The detector measures the border one second apart, threshold 30 |
+
+## UI Mockup
+
+**Reference capture: none** — agent.minimax.io has no such notice (its cloud rewrites prompts and never shows a cut check); this is a Departure. Desktop, the task page of a done job whose result was flagged:
+
+```
+│  You · 10:42                                                                                 │
+│  ┌──────────────────────────────────────────────────────────────────────────────────────┐   │
+│  │ [0:00-0:03] He steps his left foot back slightly…                                    │   │
+│  └──────────────────────────────────────────────────────────────────────────────────────┘   │
+│  MiniMax Local · 11:49                                                                       │
+│  ┌──────────────────────────────────────────────────────────────────────────────────────┐   │
+│  │ ⚠ The shot changed at 00:11 — the set or the framing is no longer what it was.      │   │
+│  │   Retry generates this again with a new seed.                         [ Retry ]      │   │
+│  ├──────────────────────────────────────────────────────────────────────────────────────┤   │
+│  │  ┌──────────────────────────────────────────────────────────┐                        │   │
+│  │  │                    ▶  video (unchanged)                  │                        │   │
+│  │  └──────────────────────────────────────────────────────────┘                        │   │
+│  │  Download · Extend                                                                   │   │
+│  └──────────────────────────────────────────────────────────────────────────────────────┘   │
+```
+
+The notice is a `role="status"` strip above the player in the result bubble, amber like the reference's warning tokens (`docs/recon/2026-09-12/tokens.md`); it lists every flagged time when there are several ("at 00:05, 00:11 and 00:21"). A clean result shows nothing new. Narrow (390): the strip wraps to two lines, Retry below the text, full width, ≥ 44 px. A job whose server predates v1.3 (no `cuts` field) shows nothing.
+
+## Acceptance Criteria
+
+**Prompt — both servers build the prompt the model is documented to expect (`spark/adapter/src/prompt.ts`; mirrored for validation only in the stub):**
+
+- [ ] A prompt that already begins with `integrated_multimodal_description:` or with either of MiniMax's instruction lines (`For the target video` / `How the reference pictures align`) is the owner's own base-format text and is sent **unchanged**.
+- [ ] **Fresh clip with a first frame (I2VA):** line 1 is, verbatim, `For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.`, then a blank line, then `integrated_multimodal_description: [Shot 1] Live-action. The camera holds a perfectly static shot throughout the entire S.SS-second duration: no cut, no dissolve, no transition and no change of framing; the person, the set, the props and the lighting in <Picture 1> stay as they are for the whole video. <body>`, a blank line, `overall_soundscape: <soundscape>`, a blank line, `non_diegetic_music: None, unless the description above asks for music.` — `S.SS` is the clip's grid length in seconds to two decimals (124 frames → `5.17`, 245 → `10.21`).
+- [ ] **Fresh clip without an image (T2VA):** the same without the instruction line and without the `<Picture 1>` clause (`…the person, the set, the props and the lighting established at the start stay…`).
+- [ ] **Extension:** no instruction line (the masked prefix is not a Picture); `[Shot 1] Live-action. The camera holds a perfectly static shot throughout the entire S.SS-second duration: no cut, no dissolve, no transition and no change of framing; the person, the set, the props and the lighting already in frame at the start stay exactly as they are for the whole video and the action continues without interruption. <body>` with `S.SS = L ⁄ 24` (294 → `12.25`), then the two audio fields as above. This replaces STORY_017's wrapper.
+- [ ] **`<body>`:** the owner's text with each line's leading `[m:ss-m:ss]` bracket rewritten as `From m:ss to m:ss,` (so `[0:03-0:07] He rolls…` → `From 0:03 to 0:07, he rolls…` — the first letter after the bracket is lower-cased when the original was capitalised), lines joined by single spaces into one paragraph, whitespace collapsed; every other word of the owner's is kept as written.
+- [ ] **`<soundscape>`:** `The ambience the description above specifies, and no other sound.` (the owner's sound sentences stay in the body, where MiniMax's own examples also put diegetic sound).
+- [ ] `MAX_PROMPT_CHARS` becomes **6000** on both servers (MiniMax's 350–700-word prompts are 2,500–4,500 characters); the contract says so.
+
+**Cut check — every result is measured for a shot change (`spark/comfyui/container/custom_nodes/minimax_local/`, `spark/adapter/src/cuts.ts`):**
+
+- [ ] The ComfyUI image gains one custom node, `MiniMaxLocalFrameChanges` (input: `IMAGE`; no graph output; saves nothing), which measures the **outer border of the picture** — the top and bottom 10 % of rows plus the left and right 10 % of columns: the set, not the person — and returns as a `ui` text output one JSON object with two series of mean absolute RGB differences on the 0–255 scale: `step[i]` between frames i and i + 1, and `second[i]` between frames i and i + 24. The graph feeds it the frames that are saved: `decode_video` for a fresh clip, `join` for an extension (so the seam is measured too). `REQUIRED_CLASSES` gains it and the fake lists it.
+- [ ] `cuts.ts` turns the two series into `Cut[]`, each `{ frame, seconds }`, by **one rule, calibrated on the seven clips in the table under Technical Notes: the shot has changed wherever the border differs by ≥ `SHOT_CHANGE` (30) from one second earlier.** Each contiguous run of such seconds is one event; its `frame` is the frame with the largest single `step` inside the first second that tripped it (the cut frame for a cut; the steepest point of a dissolve or a camera move), `seconds = frame ⁄ 24` to 2 decimals; events whose frames lie within 48 of each other merge into the earliest.
+- [ ] `result.cuts` (contract **v1.3**) carries the array — `[]` when none — for every done job on both servers; the stub's new script **`done-with-cut`** completes after three polls with `cuts: [{ "frame": 270, "seconds": 11.25 }]`; the other scripts return `[]`.
+- [ ] A missing or unparsable series (the node absent, the text malformed) never fails the job: `result.cuts` is omitted and the adapter logs one warning.
+
+**UI (`app/components/task/TaskPage.tsx`, `app/lib/history-store.ts`, `app/lib/job-api.ts`):**
+
+- [ ] When a done entry's `result.cuts` is non-empty, the result bubble shows the notice above the player: `The shot changed at 00:11 — the set or the framing is no longer what it was. Retry generates this again with a new seed.` — times as `mm:ss` from `seconds`, several listed as `00:05, 00:11 and 00:21`; `role="status"`, `data-testid="cut-notice"`. Nothing is shown when `cuts` is `[]` or absent.
+- [ ] Its **Retry** re-posts the entry's request (prompt, options, `continueFrom` and `overlapFrames` when it was an extension) **without** the seed, exactly like the failed-job Retry, and navigates to the new task; the flagged job stays in history and Assets unchanged.
+- [ ] `history-store` records `cuts` from the first `done` status and keeps it across reloads.
+
+**Docs:** `docs/contracts/job-api.md` v1.3 (`result.cuts`, the prompt limit, the prompt the servers build); README → Running the Model gains "What the model is told" (the built prompt) and "The cut check".
+
+## Departures from the reference
+
+The reference never shows a cut check (its cloud rewrites every prompt through H3-Context-IR and hides the result); ours shows the notice because the local model gets the owner's words with no rewriter in front of it. Extend, as before, does not exist in the reference.
+
+## Not in this story (and why)
+
+- **The last-frame anchor** (BACKLOG_004 remedy 3): MiniMax's documented single-shot mechanism for FL2VA, but it pins the end pose to a frame we must supply; with the source's last frame the extension would have to end where it began, which contradicts script2 and script3. The owner chooses it per block, later.
+- **Negative-prompt guidance** (remedy 5): withdrawn — the checkpoint is CFG-distilled.
+- **Overlap 56** (remedy 2): already one click in the UI; it changes what the model starts from, not what it does later.
+- **A local prompt rewriter** to reach MiniMax's 350–700 words from a short script: [BACKLOG_005](../backlog/BACKLOG_005_a_local_prompt_rewriter_expands_a_short_script_the_way_minimaxs_cloud_does.md).
+
+## Technical Notes
+
+- **Where the scan runs:** the frames are already a tensor in the graph after `VAEDecode`/the join; a 300-frame 1344×768 series costs one pass on the CPU (< 2 s) and no memory beyond the tensor ComfyUI holds anyway. Decoding the mp4 in the Node adapter would need ffmpeg in that image; the graph node needs nothing new.
+- **How the node reports:** ComfyUI copies a node's `{"ui": {...}}` return into `history[prompt_id].outputs[node_id]`; the adapter already indexes outputs by node (`HistoryEntry.byNode`, BUG_003) and reads `byNode["changes"].text[0]`.
+- **Calibration (2026-09-14, every generated clip on the Spark's disk, decoded with PyAV in the ComfyUI image; the eye's verdict from viewed frames):**
+
+  | Clip | What the eye sees | Border: largest change over one second | Events the rule reports |
+  | --- | --- | --- | --- |
+  | `d333b5a1` fresh 10 s (2026-09-13) | one shot | 11.2 | none |
+  | `2bc60a18` fresh 10 s (2026-09-13) | one shot | 2.7 | none |
+  | `0aa9d5a1` fresh 10 s, morning segment 1 | one shot | 9.7 | none |
+  | `fe072506` +10 s extension, morning | one shot; the seam continuous (its texture step 7.33 on the whole picture, 4.3 on the border) | 9.7 | none |
+  | `2f980101` fresh 10 s, chain segment 1 | wide shot → close-up at 5.9 s | 50.0 | 142 (5.92 s) |
+  | `7f201441` chain segment 2, 20 s | the cut above, then the dissolve at 11.25 s | 51.6 | 142, 270 |
+  | `98eb33ca` the chain, 31 s | both above; then the framing changes 1.5 s after seam 3 and the camera tilts and pulls back through the squats | 57.9 | 142, 270, 521 (21.7 s), 570, 629 (675 merges into it) |
+
+  Why the border: a whole-picture measure cannot separate a shot change from a person moving — the squat at 27.7 s moved the whole picture by 66 over a second, more than the dissolve (61), because the person fills the frame; the border stayed under 16 through every squat and moved only when the camera did. The threshold 30 sits 2.7× above the largest clean value and under every change seen. `seam-check.sh`'s whole-picture measure stays what it is, for the seam (CHORE_006).
+- **The seed:** Retry deliberately drops it — the point is a new draw. The like-for-like manual verification below keeps it.
+- **Prompt length:** the builder adds ≈ 400 characters; the owner's 180-word scripts are ≈ 1,000; MiniMax-length prompts need the 6,000 limit.
+
+## Testing Plan
+
+- **Unit — adapter** (`prompt.test.ts`, rewritten): pass-through for base-format and instruction-line prompts; the I2VA prompt for 124 and 245 frames (instruction line verbatim first, blank line, `5.17` / `10.21`, the `<Picture 1>` clause); the T2VA prompt (no instruction line, no Picture clause); the extension prompt for L = 294 (`12.25`, no instruction line, the "already in frame" clause); the bracket rewrite (`[0:03-0:07] He rolls` → `From 0:03 to 0:07, he rolls`; a line without a bracket untouched; three lines → one paragraph; a bracket in mid-line untouched). `cuts.test.ts` (new): flat series → `[]`; a `step` of 50 at frame 142 with `second` ≥ 30 for the 24 frames after it → `[{ 142, 5.92 }]`; a dissolve (`step` ≤ 11 throughout, `second` climbing past 30 at frame 290) → one event at the largest step inside that second; `second` ≥ 30 for 60 frames continuously → one event; two events 40 frames apart → one, 49 apart → two; `second` peaking at 29 → `[]`; malformed JSON → `undefined`. The node itself has no gate test (the gate has no Python runner): its ten lines are the same slicing `seam-check.sh` uses, and the calibration table above is its verification. `mapping.test.ts`: the `changes` node present with `decode_video` on a fresh graph and `join` on an extension; `REQUIRED_CLASSES` includes it. `capabilities.test.ts`: 6000 accepted, 6001 refused. `server.test.ts`: a fake history carrying the series → `result.cuts` computed; a fake without the node's output → `cuts` omitted, the job still done.
+- **Unit — stub / app:** `server.test.ts` (stub): `done-with-cut` yields the fixture and the `cuts` array; the default script yields `[]`; `MAX_PROMPT_CHARS` 6000. `history-store.test.ts`: `cuts` recorded and kept. `TaskPage.test.tsx`: the notice text for one event at 11.25 s ("The shot changed at 00:11"), for three ("at 00:05, 00:11 and 00:21"), nothing for `[]` and for an entry without `cuts`; Retry of a flagged extension re-posts `continueFrom` + `overlapFrames` and no `seed`.
+- **Integration — app:** `api/jobs` relays a 5,000-character prompt (accepted) and a 6,001-character one (400 from the stub, relayed).
+- **E2E** (`e2e/task.spec.ts`, extended): stub script `done-with-cut` → submit from the composer → wait for the `done` status response → the video plays (readiness, as always) **and** `cut-notice` reads "The shot changed at 00:11" → click its Retry → the POST body has no `seed` and the page is the new task → wait for its `done`. The default script shows no `cut-notice`. Regression: `composer.spec.ts`, `extend.spec.ts`, `assets.spec.ts` stay green (nothing they assert changes).
+- **Manual verification (not a gate) — two like-for-like runs on the Spark, each a controlled comparison, not a trial:** (1) extend the chain's segment 1 (`2f980101`) by +10 s with script2 at overlap 39 and **seed 2011835001** — the run that dissolved at 11.25 s — with nothing changed but the prompt; the pass is the owner seeing the curtain to the end and `cuts` empty; if it dissolves at the same place, the prompt was not the lever and that is recorded. (2) a fresh clip from `01.jpg` with script1 and **seed 1827163300** — the run that cut at 5.9 s — the same way. Then the detector, now running inside the graph, re-reports the events of the calibration table for the chain (`98eb33ca`, re-scanned through a no-op graph or by re-running the node on the saved frames). Model MiniMax-H3 FL2VA int8, ComfyUI v0.35.1, date recorded.
+
+## Estimated Complexity
+
+M — one prompt builder and its tests, one small custom node and a pure rule, one contract field on two servers, one notice on the task page, and two ~1 h verification runs.

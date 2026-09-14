@@ -1,6 +1,8 @@
 # BACKLOG_004 — An extension can still change the scene on its own after the overlap
 
 **Status:** Open (2026-09-14) · **Priority:** High — it is the one way STORY_017's result can still fail the owner's definition of extending
+**Promoted (2026-09-14):** remedies 1 and 4 are [STORY_020](../story/STORY_020_a_video_stays_in_one_shot_to_the_end_and_a_cut_the_model_makes_anyway_is_flagged_before_the_owner_sees_it.md) (the prompt in MiniMax's own format; every result measured for a shot change and flagged on the task page with Retry). Remedy 5 is **withdrawn**: the released checkpoints are CFG-distilled (model card), so there is no negative prompt to apply. Remedies 2 and 3 stay here — 2 is already one click in the UI; 3 pins the end pose to a frame we would have to supply, the owner's choice per block. The item stays open until they are built or withdrawn ([CLAUDE.md §3c](../../CLAUDE.md#3c-how-backlog-is-tracked)).
+**More evidence (2026-09-14, STORY_020's scan of the whole chain):** segment 3 changed its framing 1.5 s after its own seam too (21.7 s), and the camera then tilted and pulled back through the squats although the script fixes it — three of the day's five generations changed shot or framing on their own, the two chained extensions at the same place, ≈ 1.5 s after the overlap ends.
 
 ## Summary
 
