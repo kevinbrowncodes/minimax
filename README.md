@@ -10,7 +10,7 @@
 
 ## Quick Start
 
-**Open the UI:** **<http://192.168.1.33:3000>** — from any browser on the LAN (that is the Spark's own address, verified 2026-09-14; `APP_PORT` in `.env` changes the port). Nothing is installed on the machine you browse from. The UI and the adapter containers are `restart: unless-stopped`, so they come back when the Spark reboots; the GPU half does not — see below.
+**Open the UI:** **<http://spark-1.local:3000>** — from any browser on the LAN. The Spark's hostname is `spark-1` and it publishes itself over mDNS (Bonjour), so macOS, iOS and Linux find it by name; on a device that does not resolve `.local` (some Windows and Android setups, or a VPN that swallows mDNS) use the address it points at, **<http://192.168.1.33:3000>**. Both were checked on 2026-09-14 (`avahi-resolve -n spark-1.local` → `192.168.1.33`, and the UI answered `200` on the name). `APP_PORT` in `.env` changes the port. Nothing is installed on the machine you browse from, and the UI and adapter containers are `restart: unless-stopped`, so they come back when the Spark reboots; the GPU half does not — see below.
 
 ### Make a video
 
@@ -182,7 +182,7 @@ docker compose --profile dev up app-dev      # hot-reload dev server on port 300
 docker compose up -d --build app             # production build served on port 3000, restarts with the box
 ```
 
-Open `http://<the Spark's LAN address>:3000` from the Mac. The adapter stays up whenever the Spark is up (it needs no GPU); the model itself is started with `spark/comfyui/run.sh` when the memory is free and stopped with `spark/comfyui/stop.sh`; `spark/comfyui/verify.sh` proves the real chain in seconds. `tools/gate/run.sh lint build` runs only the named steps; `--from 4` restarts after a fix. Dependencies land in `node_modules/` inside the repo tree (written by the container, gitignored); the pnpm store persists in the `minimax_pnpm-store` volume; the UI's history in the `minimax_app-data` volume.
+Open `http://spark-1.local:3000` (or `http://192.168.1.33:3000`) from any browser on the LAN — see [Quick Start](#quick-start). The adapter stays up whenever the Spark is up (it needs no GPU); the model itself is started with `spark/comfyui/run.sh` when the memory is free and stopped with `spark/comfyui/stop.sh`; `spark/comfyui/verify.sh` proves the real chain in seconds. `tools/gate/run.sh lint build` runs only the named steps; `--from 4` restarts after a fix. Dependencies land in `node_modules/` inside the repo tree (written by the container, gitignored); the pnpm store persists in the `minimax_pnpm-store` volume; the UI's history in the `minimax_app-data` volume.
 
 **A real run through the UI, driven by Playwright** (EPIC_003's trial; not part of the gate — it needs ComfyUI and the adapter up, `spark/comfyui/run.sh`):
 
