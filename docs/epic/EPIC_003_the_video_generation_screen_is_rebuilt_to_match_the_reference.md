@@ -18,7 +18,6 @@ Drafted 2026-09-12 from EPIC_001's component inventory, one per surface/state gr
 | 015 | [Assets lists every finished video with a poster, a preview modal and download](../story/STORY_015_assets_lists_every_finished_video_with_a_poster_preview_and_download.md) | Done (2026-09-12) |
 | 016 | [A finished video can be extended: the model continues it from its last second, and the longer clip plays in place](../story/STORY_016_a_finished_video_can_be_extended_the_model_continues_it_from_its_last_second_and_the_longer_clip_plays_in_place.md) | Done (2026-09-13) — owner-requested, promoted from BACKLOG_001; not MVP scope; the real chain ran the same day (BUG_002, BUG_003, CHORE_003 found and fixed by it) |
 | 017 | [Extending a video keeps the scene, because the new frames are generated as part of the same clip](../story/STORY_017_extending_a_video_keeps_the_scene_because_the_new_frames_are_generated_as_part_of_the_same_clip.md) | Drafted (2026-09-14) — researched replacement for STORY_016's mechanism (native masked continuation on FL2VA); not MVP scope |
-| 019 | [The UI has the reference's dark mode, and every control either works or says why not](../story/STORY_019_the_ui_has_the_references_dark_mode_and_every_control_either_works_or_says_why_not.md) | Drafted (2026-09-14) — designed from STORY_018's capture |
 
 **Shared departures** (each story repeats the ones it touches): no agent thread, no billing, no ShowCase, out-of-MVP rows rendered inert, the session id in the path, 768P only and one model from `/api/capabilities`.
 

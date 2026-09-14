@@ -89,10 +89,13 @@ One machine hosts everything (owner's decision, 2026-09-12): the **DGX Spark** r
 
 The UI talks to the generation server through configuration only (base URL, optional key). The protocol is an async job: create a generation, poll its status, fetch the result file. Locally the same variables point at a **stub generation server** that returns scripted outcomes and a tiny fixture video, so nothing in the test gate depends on the Spark being reachable.
 
-Work is planned as two epics:
+Work is planned as epics:
 
-1. **UI recon and rebuild** — capture the reference's video generation surface with Playwright through the owner's own logged-in session (see [CLAUDE.md → §3e](CLAUDE.md#3e-how-recon-is-recorded) and [§4b](CLAUDE.md#4b-recon-with-playwright)), then recreate it as our own code.
-2. **Video model on the Spark** — choose a model whose license permits it, install a serving stack, fetch the weights, fit them in the Spark's unified memory at a usable resolution and clip length, run the server as a service, and point the UI at it. See [Running the Model](#running-the-model) for the open question this epic starts with.
+1. **EPIC_001** — the reference's video generation flow captured as a spec (Done 2026-09-12).
+2. **EPIC_002** — the app skeleton, the stub generation server and the test gate (Done).
+3. **EPIC_003** — the video generation screen rebuilt to match the reference (Done 2026-09-12; STORY_016/017 added Extend).
+4. **EPIC_004** — MiniMax-H3 on the Spark behind the job API (Done 2026-09-12; later items open).
+5. **[EPIC_005](docs/epic/EPIC_005_the_ui_looks_identical_to_the_reference_on_every_surface_in_both_themes.md)** — the UI looks identical to the reference on every surface, in both themes: a second recon pass, then one pixel-faithful rebuild story per surface, with out-of-scope controls rendered exactly and inert (Open 2026-09-14). Behaviours beyond video generation come later, in an epic of their own.
 
 ## Tech Stack
 

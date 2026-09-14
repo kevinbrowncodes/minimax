@@ -1,6 +1,6 @@
 # STORY_018 — The reference's dark mode and the surfaces never captured are recorded, from the Spark
 
-**Epic:** [EPIC_001](../epic/EPIC_001_the_reference_video_generation_flow_is_captured_as_a_spec.md) (recon)
+**Epic:** [EPIC_005](../epic/EPIC_005_the_ui_looks_identical_to_the_reference_on_every_surface_in_both_themes.md) (recon-led, looks only)
 **Status:** Drafted (2026-09-14) — awaiting the owner's sign-in through `recon/login.sh` (CHORE_005) and approval
 **Created:** 2026-09-14 — the owner noticed the reference has a dark mode we lack and controls of ours that "do nothing", granted new credits, and asked for another look
 

@@ -1,6 +1,6 @@
 # STORY_019 — The UI has the reference's dark mode, and every control either works or says why not
 
-**Epic:** [EPIC_003](../epic/EPIC_003_the_video_generation_screen_is_rebuilt_to_match_the_reference.md)
+**Epic:** [EPIC_005](../epic/EPIC_005_the_ui_looks_identical_to_the_reference_on_every_surface_in_both_themes.md)
 **Status:** Drafted (2026-09-14) — the UI Mockup's measured half waits for STORY_018's capture; awaiting the owner's approval after that
 **Created:** 2026-09-14 (owner: "we don't support dark mode whereas agent.minimax.io does", and "some elements when I click on them seem to do nothing", e.g. the Work Area button)
 

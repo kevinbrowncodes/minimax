@@ -11,4 +11,7 @@ SPARK_UID="$(id -u)"; SPARK_GID="$(id -g)"
 export SPARK_UID SPARK_GID
 docker image inspect minimax/gate:1.63.0-node26 > /dev/null 2>&1 || { printf '[recon] ERROR: gate image missing — run tools/gate/build.sh\n' >&2; exit 1; }
 mkdir -p "$ROOT/recon/.profile"
+# Chromium leaves its process-singleton links behind when a previous login was stopped rather than closed; they only
+# ever point at a container that no longer exists, and a launch with them present refuses "profile in use".
+rm -f "$ROOT/recon/.profile/SingletonLock" "$ROOT/recon/.profile/SingletonCookie" "$ROOT/recon/.profile/SingletonSocket"
 exec docker compose --project-directory "$ROOT" -f "$ROOT/compose.yaml" run --rm --no-deps -T -p "$PORT:$PORT" -e RECON_DEBUG_PORT="$PORT" gate pnpm --filter recon login-remote
