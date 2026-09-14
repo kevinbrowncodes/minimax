@@ -95,3 +95,41 @@ export const IconMoon = () => (
 export const IconMonitor = () => (
   <svg {...base}><rect x="2" y="3" width="12" height="8" rx="1.2" /><path d="M6 13.5h4M8 11v2.5" /></svg>
 );
+
+/* STORY_021: the shell's remaining glyphs. */
+export const IconChevronDown = () => (
+  <svg {...base}><path d="m4 6 4 4 4-4" /></svg>
+);
+export const IconPin = () => (
+  <svg {...base}><path d="M9.5 2.5 13.5 6.5 11 7.5 8.5 10 8 13.5 2.5 8 6 7.5 8.5 5z" /><path d="M2.5 13.5 6 10" /></svg>
+);
+export const IconMore = () => (
+  <svg {...base}><circle cx="3.5" cy="8" r="1.1" fill="currentColor" stroke="none" /><circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none" /><circle cx="12.5" cy="8" r="1.1" fill="currentColor" stroke="none" /></svg>
+);
+export const IconRename = () => (
+  <svg {...base}><path d="m3 13 .8-3.2L10.5 3.1a1.4 1.4 0 0 1 2 0l.4.4a1.4 1.4 0 0 1 0 2L6.2 12.2z" /></svg>
+);
+export const IconCopy = () => (
+  <svg {...base}><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M10.5 5.5V4a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 4v5A1.5 1.5 0 0 0 4 10.5h1.5" /></svg>
+);
+export const IconMove = () => (
+  <svg {...base}><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3h3l1.5 1.5H12.5A1.5 1.5 0 0 1 14 6v6a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12z" /><path d="M6.5 9.5h4M8.5 7.5l2 2-2 2" /></svg>
+);
+export const IconTrash = () => (
+  <svg {...base}><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5a1 1 0 0 0 1 .9h3.8a1 1 0 0 0 1-.9l.6-8.5" /></svg>
+);
+export const IconBell = () => (
+  <svg {...base}><path d="M4 11V7.5a4 4 0 0 1 8 0V11l1 1.5H3z" /><path d="M6.5 13.5a1.5 1.5 0 0 0 3 0" /></svg>
+);
+export const IconExpand = () => (
+  <svg {...base}><rect x="2" y="2.5" width="12" height="11" rx="2" /><path d="M6 2.5v11" /></svg>
+);
+export const IconInfo = () => (
+  <svg {...base}><circle cx="8" cy="8" r="6.3" /><path d="M8 7.2v4M8 5v.2" /></svg>
+);
+export const IconExternal = () => (
+  <svg {...base}><path d="M6 3.5H4A1.5 1.5 0 0 0 2.5 5v7A1.5 1.5 0 0 0 4 13.5h7a1.5 1.5 0 0 0 1.5-1.5v-2M9 2.5h4.5V7M13.5 2.5 7.5 8.5" /></svg>
+);
+export const IconPencil = () => (
+  <svg {...base}><path d="m2.5 13.5.7-2.8 8-8a1.2 1.2 0 0 1 1.7 0l.4.4a1.2 1.2 0 0 1 0 1.7l-8 8z" /></svg>
+);

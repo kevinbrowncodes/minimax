@@ -1,0 +1,87 @@
+/* Create project dialog — page-add-new-project@1440 (448 px; input 36 px; Create 79×36) (STORY_021). */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--utility_overlay);
+}
+.dialog {
+  width: min(448px, calc(100vw - 32px));
+  padding: var(--spacing_20) var(--spacing_24) var(--spacing_24);
+  border-radius: var(--radius_16);
+  background: var(--bg_default_tertiary);
+  border: 1px solid var(--border_default);
+  color: var(--text_default_primary);
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing_24);
+}
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: var(--line_height_26);
+}
+.close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--icon_default_secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.label {
+  display: block;
+  margin-bottom: var(--spacing_8);
+  font-size: 13px;
+  color: var(--text_default_secondary);
+}
+.input {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--spacing_12);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_8);
+  background: var(--bg_default_primary_elevated);
+  color: var(--text_default_primary);
+  font-size: 14px;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--border_accent);
+}
+.input::placeholder {
+  color: var(--text_default_tertiary);
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--spacing_24);
+}
+.create {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 var(--spacing_16);
+  border-radius: var(--radius_8);
+  background: var(--bg_interaction_primary_default);
+  color: var(--text_label_primary_default);
+  font-size: 14px;
+  font-weight: 500;
+}
+@media (max-width: 899px) {
+  .close,
+  .create {
+    min-height: 44px;
+  }
+}

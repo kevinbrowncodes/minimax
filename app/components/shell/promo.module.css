@@ -1,0 +1,137 @@
+/* Promo carousel card — home-signed-in@1440 (202×290 at 1213,590), promo-carousel-page-2@1440 (STORY_021). ≥ 900 only. */
+.card {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 25;
+  width: 202px;
+  padding: var(--spacing_8) var(--spacing_8) var(--spacing_12);
+  border-radius: var(--radius_16);
+  background: var(--bg_default_tertiary);
+  border: 1px solid var(--border_default);
+  box-shadow: 0 4px 24px var(--shadow_default);
+  color: var(--text_default_primary);
+}
+.close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_full);
+  background: var(--bg_default_tertiary);
+  color: var(--icon_default_secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.art {
+  position: relative;
+  height: 110px;
+  border-radius: var(--radius_12);
+  overflow: hidden;
+  margin-bottom: var(--spacing_12);
+}
+.artH3 {
+  background: linear-gradient(135deg, #1b6fd6, #0a2a5e);
+}
+.artReel {
+  position: absolute;
+  top: 18px;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius_full);
+  border: 6px solid #0b1e3f;
+  background: #d9ecff;
+}
+.artReel:first-child {
+  left: 48px;
+}
+.artReel:nth-child(2) {
+  left: 96px;
+}
+.artFilm {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  height: 22px;
+  background: repeating-linear-gradient(90deg, #0b1e3f 0 10px, #d9ecff 10px 18px);
+}
+.artDesktop {
+  background: linear-gradient(180deg, #2c7be5, #9bc7f5);
+}
+.artDock {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 28px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing_8);
+  border-radius: var(--radius_12);
+  background: #ffffffb3;
+}
+.artDock i {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius_8);
+  background: #ffffff;
+  border: 1px solid #0a0a0a26;
+}
+.artDock .artDockLogo {
+  width: 32px;
+  height: 32px;
+  background: #171717;
+  border-color: #171717;
+}
+.title {
+  margin: 0 0 var(--spacing_4);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: var(--line_height_22);
+}
+.body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text_default_secondary);
+}
+.primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  margin-top: var(--spacing_12);
+  border-radius: var(--radius_8);
+  background: var(--bg_interaction_primary_default);
+  color: var(--text_label_primary_default);
+  font-size: 14px;
+  font-weight: 500;
+}
+.dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -18px;
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing_8);
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius_full);
+  background: var(--icon_default_quaternary);
+  cursor: pointer;
+}
+.dotActive {
+  background: var(--icon_default_secondary);
+}

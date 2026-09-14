@@ -7,7 +7,7 @@ import { SettingsDialog } from "./SettingsDialog";
 import { Shell } from "./Shell";
 import { UserMenu } from "./UserMenu";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/", useRouter: () => ({ push: vi.fn() }) }));
 
 afterEach(() => {
   cleanup();
@@ -75,7 +75,8 @@ describe("SettingsDialog (STORY_019; settings-general@1440)", () => {
       screen.getByRole("radio", { name: "Dark mode" }).click();
     });
     expect(onChoose).toHaveBeenCalledWith("dark");
-    for (const name of ["Account", "Usage", "Archived tasks"]) expect(screen.getByRole("button", { name })).toHaveAttribute("aria-disabled", "true");
+    // STORY_021 filled the other sections (dialogs.test.tsx); here they only need to be real nav entries.
+    for (const name of ["Account", "Usage", "Archived tasks"]) expect(screen.getByRole("button", { name })).not.toHaveAttribute("aria-disabled");
     expect(screen.getAllByRole("switch")).toHaveLength(2);
     act(() => {
       screen.getByRole("switch", { name: "Remove watermark setting" }).click();

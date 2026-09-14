@@ -1,4 +1,5 @@
-/* Sidebar — home-signed-in@1440.png; tokens.md › sidebar (STORY_012) */
+/* Sidebar — home-signed-in@1440.png; tokens.md › sidebar (STORY_012); folding sections, Recents rows and menu, the guide card,
+   the Inbox and the 52 px rail from the 2026-09-14 capture (STORY_021) */
 .sidebar {
   width: var(--sidebar_width);
   height: 100%;
@@ -81,15 +82,216 @@
   margin-right: var(--spacing_4);
 }
 .section {
-  margin-top: var(--spacing_16);
+  margin-top: var(--spacing_8);
 }
-.sectionLabel {
-  display: block;
-  padding: 0 var(--spacing_8);
-  margin-bottom: var(--spacing_6);
+/* The folding header: 243×32, 13 px, padding 8 8 6 8; the chevron only on hover (sidebar-more-expanded@1440). */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 32px;
+  padding: var(--spacing_8) var(--spacing_8) var(--spacing_6);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
   font-size: 13px;
   line-height: 19.5px;
   color: var(--text_default_tertiary);
+  text-align: left;
+  cursor: pointer;
+}
+.sectionHeader:hover {
+  color: var(--text_default_secondary);
+}
+.sectionChevron {
+  display: inline-flex;
+  opacity: 0;
+  transition: transform var(--duration_fast) var(--ease_standard), opacity var(--duration_fast) var(--ease_standard);
+}
+.sectionHeader:hover .sectionChevron,
+.sectionHeader:focus-visible .sectionChevron {
+  opacity: 1;
+}
+.sectionChevronOpen {
+  transform: rotate(180deg);
+}
+.recents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.recent {
+  position: relative;
+}
+.recentLink {
+  height: 30px;
+  padding-right: 68px;
+}
+.recentActions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: none;
+  align-items: center;
+  height: 30px;
+}
+.recent:hover .recentActions,
+.recent:focus-within .recentActions,
+.recentMenuOpen .recentActions {
+  display: inline-flex;
+}
+.recentAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--icon_default_tertiary);
+  cursor: pointer;
+}
+.recentAction:hover {
+  background: var(--bg_interaction_tertiary_hover);
+  color: var(--icon_default_secondary);
+}
+.dotRead {
+  box-sizing: border-box;
+  background: transparent;
+  border: 1px solid var(--icon_default_quaternary);
+}
+.dotUnread {
+  background: var(--text_status_error);
+}
+.showMore {
+  height: 34px;
+}
+/* The row menu (recents-row-menu-open@1440): 237 px, entries 38 px, Delete in the danger colour. */
+.menu {
+  position: absolute;
+  top: 100%;
+  left: 100%;
+  z-index: 30;
+  width: 237px;
+  margin: var(--spacing_4) 0 0 calc(-1 * var(--spacing_32));
+  padding: var(--spacing_4);
+  border-radius: var(--radius_12);
+  background: var(--bg_default_tertiary);
+  border: 1px solid var(--border_default);
+  box-shadow: 0 4px 24px var(--shadow_default);
+}
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  width: 100%;
+  height: 38px;
+  padding: 0 var(--spacing_12);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--text_default_primary);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  text-align: left;
+  cursor: pointer;
+}
+.menuItem:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.menuIcon {
+  display: inline-flex;
+  color: var(--icon_default_secondary);
+}
+.menuLabel {
+  flex: 1;
+}
+.menuChevron {
+  color: var(--icon_default_tertiary);
+}
+.menuSeparator {
+  height: 1px;
+  margin: var(--spacing_4) 0;
+  background: var(--border_default);
+}
+.menuDanger,
+.menuDanger .menuIcon {
+  color: var(--text_label_danger_secondary_default);
+}
+/* The Agents guide card (home-signed-in@1440): a grouped card with a link and an illustration strip. */
+.guide {
+  position: relative;
+  margin-top: var(--spacing_24);
+  border-radius: var(--radius_12);
+  background: var(--bg_grouped_tertiary);
+  overflow: hidden;
+}
+.guideClose {
+  position: absolute;
+  top: var(--spacing_8);
+  right: var(--spacing_8);
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius_4);
+  background: transparent;
+  color: var(--icon_default_tertiary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.guideText {
+  margin: 0;
+  padding: var(--spacing_12) var(--spacing_32) 0 var(--spacing_12);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+}
+.guideLink {
+  display: inline-block;
+  margin: var(--spacing_4) var(--spacing_12) var(--spacing_12);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  color: var(--text_default_accent);
+}
+.guideArt {
+  height: 80px;
+  padding: var(--spacing_12) var(--spacing_12) 0;
+  background: linear-gradient(180deg, #4ea6ff, #2d8cf0);
+}
+.guideArtCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_8);
+  height: 100%;
+  padding: var(--spacing_8) var(--spacing_12);
+  border-radius: var(--radius_8) var(--radius_8) 0 0;
+  background: var(--bg_default_tertiary);
+  font-size: 10px;
+  line-height: 12px;
+  color: var(--text_default_primary);
+}
+.guideArtRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_4);
+}
+.guideArtRow i {
+  display: block;
+  width: 22px;
+  height: 12px;
+  border-radius: var(--radius_4);
+  background: var(--bg_grouped_tertiary_elevated);
+}
+.guideArtRow b {
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: var(--radius_4);
+  background: var(--bg_grouped_tertiary_elevated);
+  font-weight: 400;
+  font-size: 9px;
 }
 .empty {
   padding: var(--spacing_40) var(--spacing_16) 0;
@@ -108,4 +310,81 @@
   padding: var(--spacing_16) var(--spacing_8) 0;
   border-top: 1px solid var(--border_default);
   margin-top: var(--spacing_16);
+}
+.footerActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_8);
+}
+.inboxWrap {
+  position: relative;
+  display: inline-flex;
+}
+/* The 52 px rail (sidebar-collapsed@1440): the logo expands; rows are 34×34 icon pills at x 8; the avatar alone below. */
+.rail {
+  width: 52px;
+  padding: var(--spacing_12) var(--spacing_8) var(--spacing_16);
+  align-items: center;
+}
+.railLogo {
+  width: 32px;
+  height: 32px;
+  margin-bottom: var(--spacing_24);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--icon_default_primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.railLogo:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.railPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 1px;
+  border-radius: var(--radius_8);
+  color: var(--icon_default_primary);
+  cursor: pointer;
+  transition: background var(--duration_fast) var(--ease_standard);
+}
+.railPill:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.railPillActive {
+  background: var(--bg_grouped_tertiary_elevated);
+}
+.railFooter {
+  padding-top: var(--spacing_16);
+  border-top: 1px solid var(--border_default);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.railAvatar {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 899px) {
+  .sectionHeader,
+  .recentAction,
+  .menuItem,
+  .showMore {
+    min-height: 44px;
+  }
+  .recentLink {
+    height: 44px;
+  }
+  .recentActions {
+    height: 44px;
+  }
 }

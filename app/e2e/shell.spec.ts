@@ -1,4 +1,6 @@
 import { expect, test } from "./fixtures/test";
+import { listHistory } from "./fixtures/history";
+import { waitForTerminalStatus } from "./fixtures/job";
 import { settled } from "./fixtures/settle";
 
 test.describe("shell (STORY_012)", () => {
@@ -6,7 +8,7 @@ test.describe("shell (STORY_012)", () => {
     await page.goto("/");
     await settled(page);
     if (testInfo.project.name === "narrow") {
-      await page.getByRole("button", { name: "Open sidebar" }).click();
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
       await settled(page);
     }
     const sidebar = page.getByRole("navigation", { name: "Sidebar" });
@@ -14,7 +16,7 @@ test.describe("shell (STORY_012)", () => {
     await sidebar.getByRole("link", { name: "Assets" }).click();
     await expect(page).toHaveURL(/\/assets$/);
     if (testInfo.project.name === "narrow") {
-      await page.getByRole("button", { name: "Open sidebar" }).click();
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
       await settled(page);
     }
     await expect(sidebar.getByRole("link", { name: "Assets" })).toHaveAttribute("aria-current", "page");
@@ -23,12 +25,13 @@ test.describe("shell (STORY_012)", () => {
   test("out-of-MVP rows are inert, do not navigate, and answer a click with the notice (STORY_019)", async ({ page }, testInfo) => {
     await page.goto("/");
     if (testInfo.project.name === "narrow") {
-      await page.getByRole("button", { name: "Open sidebar" }).click();
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
       await settled(page);
     }
     const sidebar = page.getByRole("navigation", { name: "Sidebar" });
     // force: Playwright's actionability check treats aria-disabled as not enabled; the control does respond — that is the point.
-    for (const name of ["Search", "Plugins", "Scheduled", "Connect Mobile"]) {
+    // Search is ours since STORY_021 (it opens the Search dialog), so it is no longer in this list.
+    for (const name of ["Plugins", "Scheduled", "Connect Mobile"]) {
       const row = sidebar.getByRole("link", { name });
       await expect(row).toHaveAttribute("aria-disabled", "true");
       await row.click({ force: true });
@@ -51,7 +54,7 @@ test.describe("shell (STORY_012)", () => {
     test.skip(testInfo.project.name !== "narrow", "drawer exists only below 900 px");
     await page.goto("/");
     await settled(page);
-    const toggle = page.getByRole("button", { name: "Open sidebar" });
+    const toggle = page.getByRole("button", { name: "Expand sidebar" });
     const box = await toggle.boundingBox();
     expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
@@ -69,9 +72,136 @@ test.describe("shell (STORY_012)", () => {
     test.skip(testInfo.project.name !== "desktop", "desktop only");
     await page.goto("/");
     await expect(page.getByRole("navigation", { name: "Sidebar" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Open sidebar" })).toBeHidden();
+    // The page's own Expand sidebar toggle exists only at 390; the rail's is inside the sidebar and shows only when collapsed.
+    await expect(page.getByRole("button", { name: "Expand sidebar" })).toBeHidden();
     const width = await page.getByRole("navigation", { name: "Sidebar" }).evaluate((el) => el.getBoundingClientRect().width);
     expect(Math.round(width)).toBe(260);
+  });
+});
+
+test.describe("shell (STORY_021)", () => {
+  const sidebarWidth = (page: Parameters<typeof settled>[0]) => page.locator('nav[aria-label="Sidebar"]').evaluate((el) => Math.round(el.getBoundingClientRect().width));
+
+  test("desktop: Collapse sidebar leaves a 52 px rail, Expand sidebar restores 260, and the choice survives a reload", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "the rail exists only at ≥ 900 px");
+    await page.goto("/");
+    await settled(page);
+    await page.getByRole("button", { name: "Collapse sidebar" }).click();
+    await settled(page);
+    expect(await sidebarWidth(page)).toBe(52);
+    await expect(page.getByRole("navigation", { name: "Sidebar" }).getByRole("link", { name: "New task" })).toHaveAttribute("aria-current", "page");
+    await page.reload();
+    await settled(page);
+    expect(await sidebarWidth(page)).toBe(52);
+    await page.getByRole("button", { name: "Expand sidebar" }).click();
+    await settled(page);
+    expect(await sidebarWidth(page)).toBe(260);
+  });
+
+  test("More starts folded, a click unfolds it, and the fold survives a reload", async ({ page }, testInfo) => {
+    const narrow = testInfo.project.name === "narrow";
+    const openDrawer = async () => {
+      if (narrow) {
+        await page.getByRole("button", { name: "Expand sidebar" }).click();
+        await settled(page);
+      }
+    };
+    await page.goto("/");
+    await settled(page);
+    await openDrawer();
+    const sidebar = page.getByRole("navigation", { name: "Sidebar" });
+    await expect(sidebar.getByRole("button", { name: "More" })).toHaveAttribute("aria-expanded", "false");
+    await expect(sidebar.getByText("MaxHermes")).toBeHidden();
+    await sidebar.getByRole("button", { name: "More" }).click();
+    await settled(page);
+    await expect(sidebar.getByText("MaxHermes")).toBeVisible();
+    await page.reload();
+    await settled(page);
+    await openDrawer();
+    await expect(sidebar.getByRole("button", { name: "More" })).toHaveAttribute("aria-expanded", "true");
+    await expect(sidebar.getByText("MaxHermes")).toBeVisible();
+  });
+
+  test("Search finds a job by title and opens it; the Recents menu's Delete forgets it", async ({ page, stubApi }, testInfo) => {
+    const narrow = testInfo.project.name === "narrow";
+    // A finished job to find and then delete (the stub finishes it in one poll).
+    await page.goto("/?script=done-after-1-poll");
+    await page.getByRole("button", { name: /Video generation/ }).click();
+    await page.getByRole("textbox", { name: "Message" }).fill("Find me by title");
+    const terminal = waitForTerminalStatus(page);
+    await page.getByRole("button", { name: "Send message" }).click();
+    await expect(page).toHaveURL(/\/task\/[^/]+$/);
+    const id = page.url().split("/task/")[1] ?? "";
+    await terminal;
+    await page.goto("/");
+    await settled(page);
+    if (narrow) {
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
+      await settled(page);
+    }
+    await page.getByRole("navigation", { name: "Sidebar" }).getByRole("button", { name: "Search" }).click();
+    const dialog = page.getByRole("dialog", { name: "Search tasks" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("searchbox").fill("find me");
+    await expect(dialog.getByText("Previous 7 days")).toBeVisible();
+    await dialog.getByRole("button", { name: "Find me by title" }).click();
+    await expect(page).toHaveURL(new RegExp(`/task/${id}$`));
+    // Delete from the row menu: confirm, then the row is gone and the page leaves the task.
+    if (narrow) {
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
+      await settled(page);
+    }
+    page.once("dialog", (d) => void d.accept());
+    const row = page.getByRole("navigation", { name: "Sidebar" }).getByRole("link", { name: /Find me by title/ });
+    await row.hover();
+    await page.getByRole("button", { name: "More actions for Find me by title" }).click();
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("navigation", { name: "Sidebar" }).getByRole("link", { name: /Find me by title/ })).toHaveCount(0);
+    expect((await listHistory(page.request)).find((e) => e.id === id)).toBeUndefined();
+    expect(await stubApi.openJobs()).toEqual([]);
+  });
+
+  test("the Inbox opens its popover and Escape closes it", async ({ page }, testInfo) => {
+    await page.goto("/");
+    await settled(page);
+    if (testInfo.project.name === "narrow") {
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
+      await settled(page);
+    }
+    await page.getByRole("button", { name: /^Inbox/ }).click();
+    const inbox = page.getByRole("dialog", { name: "Inbox" });
+    await expect(inbox).toBeVisible();
+    await expect(inbox).toHaveText(/No messages yet/);
+    await page.keyboard.press("Escape");
+    await expect(inbox).toBeHidden();
+  });
+
+  test("narrow: the page's toggle is the reference's Expand sidebar icon with a 44 px hit area", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "narrow", "drawer exists only below 900 px");
+    await page.goto("/");
+    await settled(page);
+    const toggle = page.getByRole("button", { name: "Expand sidebar" });
+    await expect(toggle).toHaveAttribute("title", "Expand sidebar");
+    const box = await toggle.boundingBox();
+    expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+    await expect(page.getByTestId("promo-card")).toHaveCount(0);
+  });
+
+  test("desktop: the promo card shows two pages and Close hides it for the browser", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "the card is not shown at 390");
+    await page.goto("/");
+    await settled(page);
+    const card = page.getByTestId("promo-card");
+    await expect(card).toContainText("H3 takes the stage");
+    await card.getByRole("button", { name: "2" }).click();
+    await expect(card).toContainText("New MiniMax Desktop");
+    await card.getByRole("button", { name: "Close" }).click();
+    await expect(card).toHaveCount(0);
+    await page.reload();
+    await settled(page);
+    await expect(page.getByTestId("promo-card")).toHaveCount(0);
   });
 });
 
@@ -82,7 +212,7 @@ const bodyBackground = (page: Parameters<typeof settled>[0]) => page.evaluate(()
 /** User chip → Settings, opening the drawer first at 390 (the chip lives in the sidebar). */
 async function openSettings(page: Parameters<typeof settled>[0], narrow: boolean): Promise<void> {
   if (narrow) {
-    await page.getByRole("button", { name: "Open sidebar" }).click();
+    await page.getByRole("button", { name: "Expand sidebar" }).click();
     await settled(page);
   }
   await page.getByRole("button", { name: "Owner" }).click();

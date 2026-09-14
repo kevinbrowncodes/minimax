@@ -1,16 +1,20 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_SHELL_PREFS } from "@/lib/shell-prefs";
 import { Sidebar } from "./Sidebar";
 
 afterEach(cleanup);
 
+const recents = [
+  { id: "j1", title: "Paper boat on rain puddle", finishedAt: "2026-09-12T18:00:00Z" },
+  { id: "j2", title: "Paper boat in rain puddle", finishedAt: "2026-09-12T18:00:00Z", openedAt: "2026-09-12T19:00:00Z" },
+];
+
 describe("Sidebar", () => {
-  it("renders every captured row in order, with the out-of-MVP rows inert", () => {
+  it("renders the captured rows in order with More and Projects folded by default (2026-09-14), the out-of-MVP rows inert", () => {
     const { container } = render(<Sidebar pathname="/" recents={[]} />);
-    // The Agent Team rows of 2026-09-12 are gone from the reference (docs/recon/2026-09-14/inventory.md), so from us too (STORY_019).
-    const labels = ["New task", "Search", "Plugins", "Scheduled", "Assets", "Connect Mobile", "MaxHermes", "MaxClaw", "Add new project"];
     const texts = [...container.querySelectorAll('[class*="rowLabel"]')].map((el) => el.textContent);
-    expect(texts).toEqual(labels);
+    expect(texts).toEqual(["New task", "Search", "Plugins", "Scheduled", "Assets", "Connect Mobile"]);
     expect(screen.getByRole("link", { name: "New task" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("href", "/assets");
     for (const name of ["Search", "Plugins", "Scheduled", "Connect Mobile"]) {
@@ -18,23 +22,27 @@ describe("Sidebar", () => {
       expect(row).toHaveAttribute("aria-disabled", "true");
       expect(row).not.toHaveAttribute("href");
     }
+    expect(screen.getByRole("button", { name: "More" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Projects" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Recents" })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("No task history.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Owner" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Inbox/ })).toBeInTheDocument();
+    expect(screen.getByTestId("agents-guide")).toHaveTextContent("You can now find Agents in Plugins");
   });
 
-  it("an inert row answers a click with the notice (STORY_019)", () => {
-    render(<Sidebar pathname="/" recents={[]} />);
-    act(() => {
-      screen.getByRole("link", { name: "Plugins" }).click();
-    });
-    expect(screen.getByRole("status")).toHaveTextContent("Not part of MiniMax Local");
+  it("unfolded sections show their rows; the header reports the toggle (STORY_021)", () => {
+    const onToggleSection = vi.fn();
+    const prefs = { ...DEFAULT_SHELL_PREFS, folded: { more: false, projects: false, recents: true } };
+    render(<Sidebar pathname="/" recents={recents} prefs={prefs} onToggleSection={onToggleSection} onOpenCreateProject={() => undefined} />);
+    expect(screen.getByText("MaxHermes")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add new project" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Paper boat/ })).not.toBeInTheDocument();
+    screen.getByRole("button", { name: "More" }).click();
+    expect(onToggleSection).toHaveBeenCalledWith("more");
   });
 
   it("marks the active row from the path and lists recents with the unread dot", () => {
-    const recents = [
-      { id: "j1", title: "Paper boat on rain puddle", finishedAt: "2026-09-12T18:00:00Z" },
-      { id: "j2", title: "Paper boat in rain puddle", finishedAt: "2026-09-12T18:00:00Z", openedAt: "2026-09-12T19:00:00Z" },
-    ];
     const { rerender } = render(<Sidebar pathname="/assets" recents={recents} />);
     expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "New task" })).not.toHaveAttribute("aria-current");
@@ -42,6 +50,81 @@ describe("Sidebar", () => {
     expect(screen.getAllByLabelText("New result")).toHaveLength(1);
     rerender(<Sidebar pathname="/task/j1" recents={recents} />);
     expect(screen.getByRole("link", { name: /Paper boat on rain puddle/ })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("a Recents row's ⋯ opens the reference's menu; Delete calls the handler, the rest show the notice (STORY_021)", () => {
+    const onDeleteRecent = vi.fn();
+    render(<Sidebar pathname="/" recents={recents} onDeleteRecent={onDeleteRecent} />);
+    act(() => {
+      screen.getByRole("button", { name: "More actions for Paper boat on rain puddle" }).click();
+    });
+    const menu = screen.getByRole("menu", { name: "Actions for Paper boat on rain puddle" });
+    const items = within(menu).getAllByRole("menuitem").map((el) => el.getAttribute("aria-label") ?? el.textContent.trim());
+    expect(items).toEqual(["Rename", "Pin", "Copy conversation ID", "Move to project", "Archive", "Delete"]);
+    act(() => {
+      within(menu).getByRole("menuitem", { name: "Rename" }).click();
+    });
+    expect(within(menu).getByRole("status")).toHaveTextContent("Not part of MiniMax Local");
+    act(() => {
+      within(menu).getByRole("menuitem", { name: "Delete" }).click();
+    });
+    expect(onDeleteRecent).toHaveBeenCalledWith(recents[0]);
+    expect(screen.queryByRole("menu", { name: /Actions for/ })).not.toBeInTheDocument();
+  });
+
+  it("the menu closes on Escape", () => {
+    render(<Sidebar pathname="/" recents={recents} />);
+    act(() => {
+      screen.getByRole("button", { name: "More actions for Paper boat on rain puddle" }).click();
+    });
+    act(() => {
+      fireEvent.keyDown(window, { key: "Escape" });
+    });
+    expect(screen.queryByRole("menu", { name: /Actions for/ })).not.toBeInTheDocument();
+  });
+
+  it("shows six recents, then all after Show more (STORY_021)", () => {
+    const many = Array.from({ length: 8 }, (_, i) => ({ id: `j${String(i)}`, title: `Title ${String(i)}` }));
+    render(<Sidebar pathname="/" recents={many} />);
+    expect(screen.getAllByRole("link", { name: /^Title/ })).toHaveLength(6);
+    act(() => {
+      screen.getByRole("button", { name: "Show more" }).click();
+    });
+    expect(screen.getAllByRole("link", { name: /^Title/ })).toHaveLength(8);
+    expect(screen.queryByRole("button", { name: "Show more" })).not.toBeInTheDocument();
+  });
+
+  it("the guide card dismisses; Search and Add new project open our dialogs; the Inbox opens its popover", () => {
+    const onDismissGuide = vi.fn();
+    const onOpenSearch = vi.fn();
+    const onOpenCreateProject = vi.fn();
+    const prefs = { ...DEFAULT_SHELL_PREFS, folded: { ...DEFAULT_SHELL_PREFS.folded, projects: false } };
+    render(<Sidebar pathname="/" recents={[]} prefs={prefs} onDismissGuide={onDismissGuide} onOpenSearch={onOpenSearch} onOpenCreateProject={onOpenCreateProject} />);
+    screen.getByRole("button", { name: "Dismiss Agents guide" }).click();
+    expect(onDismissGuide).toHaveBeenCalledTimes(1);
+    screen.getByRole("button", { name: "Search" }).click();
+    expect(onOpenSearch).toHaveBeenCalledTimes(1);
+    screen.getByRole("button", { name: "Add new project" }).click();
+    expect(onOpenCreateProject).toHaveBeenCalledTimes(1);
+    act(() => {
+      screen.getByRole("button", { name: /^Inbox/ }).click();
+    });
+    expect(screen.getByRole("dialog", { name: "Inbox" })).toHaveTextContent("No messages yet");
+    act(() => {
+      fireEvent.keyDown(window, { key: "Escape" });
+    });
+    expect(screen.queryByRole("dialog", { name: "Inbox" })).not.toBeInTheDocument();
+  });
+
+  it("the rail renders icon pills only and the logo expands (STORY_021; sidebar-collapsed@1440)", () => {
+    const onExpand = vi.fn();
+    const { container } = render(<Sidebar pathname="/assets" recents={recents} rail onExpand={onExpand} />);
+    expect(container.querySelectorAll('[class*="rowLabel"]')).toHaveLength(0);
+    expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("button", { name: "More" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Paper boat/ })).not.toBeInTheDocument();
+    screen.getByRole("button", { name: "Expand sidebar" }).click();
+    expect(onExpand).toHaveBeenCalledTimes(1);
   });
 
   it("calls onNavigate for a real link and onCollapse for the collapse button", () => {
@@ -52,5 +135,13 @@ describe("Sidebar", () => {
     screen.getByRole("button", { name: "Collapse sidebar" }).click();
     expect(onNavigate).toHaveBeenCalledTimes(1);
     expect(onCollapse).toHaveBeenCalledTimes(1);
+  });
+
+  it("an inert row answers a click with the notice (STORY_019)", () => {
+    render(<Sidebar pathname="/" recents={[]} />);
+    act(() => {
+      screen.getByRole("link", { name: "Plugins" }).click();
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("Not part of MiniMax Local");
   });
 });

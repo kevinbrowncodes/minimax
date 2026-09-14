@@ -1,0 +1,114 @@
+/* Search tasks dialog — page-search@1440 (680×420 at 380,160), narrow-page-search@390 (STORY_021). */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 160px;
+  background: var(--utility_scrim);
+}
+.dialog {
+  width: min(680px, calc(100vw - 32px));
+  height: 420px;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius_16);
+  background: var(--bg_default_tertiary);
+  border: 1px solid var(--border_default);
+  box-shadow: 0 8px 32px var(--shadow_default);
+  color: var(--text_default_primary);
+  overflow: hidden;
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  height: 56px;
+  padding: 0 var(--spacing_12) 0 var(--spacing_24);
+  border-bottom: 1px solid var(--border_default);
+}
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  line-height: var(--line_height_22);
+  color: var(--text_default_primary);
+}
+.input::placeholder {
+  color: var(--text_default_tertiary);
+}
+.input::-webkit-search-cancel-button {
+  display: none;
+}
+.close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--icon_default_secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.close:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing_16) var(--spacing_12) var(--spacing_12);
+}
+.group + .group {
+  margin-top: var(--spacing_12);
+}
+.groupLabel {
+  display: block;
+  padding: 0 var(--spacing_12) var(--spacing_8);
+  font-size: 13px;
+  line-height: var(--line_height_20);
+  color: var(--text_default_tertiary);
+}
+.row {
+  display: block;
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--spacing_12);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--text_default_primary);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.row:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.empty {
+  margin: var(--spacing_32) 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text_default_tertiary);
+}
+@media (max-width: 899px) {
+  .backdrop {
+    align-items: flex-end;
+    padding: 0 16px 16px;
+  }
+  .dialog {
+    width: 100%;
+    height: min(420px, 70vh);
+  }
+}

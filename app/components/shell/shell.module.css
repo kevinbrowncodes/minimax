@@ -4,11 +4,9 @@
   grid-template-columns: var(--sidebar_width) minmax(0, 1fr);
   min-height: 100vh;
 }
+/* Collapsed (sidebar-collapsed@1440): a 52 px icon rail, not nothing (STORY_021). */
 .shellCollapsed {
-  grid-template-columns: 0 minmax(0, 1fr);
-}
-.shellCollapsed .aside {
-  overflow: hidden;
+  grid-template-columns: 52px minmax(0, 1fr);
 }
 .aside {
   position: sticky;
@@ -115,6 +113,7 @@
     opacity: 1;
     pointer-events: auto;
   }
+  /* narrow-home-signed-in@390: a 30×30 "Expand sidebar" icon at 16,14; the hit area is padded to 44 (STORY_021). */
   .menuButton {
     display: inline-flex;
     align-items: center;
@@ -124,7 +123,7 @@
     border: 0;
     border-radius: var(--radius_8);
     background: transparent;
-    color: var(--icon_default_secondary);
+    color: var(--icon_default_primary);
     cursor: pointer;
     margin-left: calc(-1 * var(--spacing_8));
   }

@@ -76,7 +76,7 @@ test.describe("task page (STORY_014)", () => {
     const before = (await stubApi.jobs()).length;
     await page.goto("/");
     if (testInfo.project.name === "narrow") {
-      await page.getByRole("button", { name: "Open sidebar" }).click();
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
       await settled(page);
     }
     await page.getByRole("navigation", { name: "Sidebar" }).getByRole("link", { name: /Reopen me later/ }).click();
