@@ -1,7 +1,9 @@
 /*
- * Design tokens measured from agent.minimax.io on 2026-09-12 (docs/recon/2026-09-12/tokens.md), STORY_012.
- * The names are the reference's own custom properties so a delta review reads one-to-one. Nothing in the app may use a
- * colour, radius, spacing or font that is not one of these.
+ * Design tokens measured from agent.minimax.io — the palette on 2026-09-12 (docs/recon/2026-09-12/tokens.md, STORY_012)
+ * and the semantic set with its dark values on 2026-09-14 (docs/recon/2026-09-14/tokens.md › Computed custom properties
+ * that differ between the themes, STORY_019). The names are the reference's own custom properties so a delta review
+ * reads one-to-one. Components use the SEMANTIC tokens (bg_, text_, icon_, border_, utility_) so the theme switch
+ * changes every surface; the palette stays for the few things the reference keys directly to it (purple, red, blue).
  */
 :root {
   --gray_0: #fff;
@@ -71,7 +73,192 @@
   --composer_width: 736px;
   --breakpoint_sidebar: 900px;
 
+  /* Semantic tokens, light (generated from tokens.json › computedVariables.light, 2026-09-14). */
+  --bg_default_primary: #fff;
+  --bg_default_primary_elevated: #fff;
+  --bg_default_secondary: #f5f5f5;
+  --bg_default_secondary_elevated: #f5f5f5;
+  --bg_default_tertiary: #fff;
+  --bg_default_tertiary_elevated: #fff;
+  --bg_grouped_tertiary: #f5f5f5;
+  --bg_grouped_tertiary_elevated: #f5f5f5;
+  --bg_interaction_primary_default: #171717;
+  --bg_interaction_primary_hover: #0a0a0acc;
+  --bg_interaction_primary_inactive: #adadad;
+  --bg_interaction_primary_press: #0a0a0ae5;
+  --bg_interaction_secondary_default: #0a0a0a0a;
+  --bg_interaction_secondary_hover: #0a0a0a14;
+  --bg_interaction_secondary_selected: #fafafa;
+  --bg_interaction_tertiary_hover: #0a0a0a0a;
+  --bg_interaction_tertiary_press: #0a0a0a14;
+  --bg_interaction_tertiary_selected: #0a0a0a0a;
+  --bg_interaction_accent_hover: #0094fc0a;
+  --bg_interaction_accent_press: #0094fc14;
+  --bg_interaction_danger_secondary_default: #feedee;
+  --bg_interaction_danger_secondary_hover: #fef6f7;
+  --bg_status_blue: #e5f5ff;
+  --bg_status_error: #feedee;
+  --bg_status_positive: #d9f4e4;
+  --bg_status_warning: #ffeee3;
+  --bg_status_video_generation: #9a55c21a;
+  --text_default_primary: #171717;
+  --text_default_secondary: #666;
+  --text_default_tertiary: #adadad;
+  --text_default_quaternary: #ccc;
+  --text_default_inverted: #fff;
+  --text_default_accent: #0094fc;
+  --text_label_primary_default: #fff;
+  --text_label_secondary_default: #666;
+  --text_label_danger_secondary_default: #f73646;
+  --text_status_error: #f73646;
+  --text_status_video_generation: #9a55c2;
+  --icon_default_primary: #171717;
+  --icon_default_secondary: #666;
+  --icon_default_tertiary: #adadad;
+  --icon_default_quaternary: #ccc;
+  --icon_default_inverted: #fff;
+  --icon_default_accent: #0094fc;
+  --icon_interaction_primary_default: #fff;
+  --icon_interaction_tertiary_default: #adadad;
+  --icon_interaction_tertiary_hover: #666;
+  --border_default: #0a0a0a14;
+  --border_light: #0a0a0a0a;
+  --border_heavy: #0a0a0af2;
+  --border_accent: #0094fc;
+  --border_tertiary_hover: #0a0a0a14;
+  --border_status_error: #feedee;
+  --utility_overlay: #00000040;
+  --utility_scrim: #ffffff80;
+  --utility_popover: #0a0a0ae5;
+  --utility_scrollbar: #0a0a0a26;
+  --shadow_default: #0a0a0a14;
+
   color-scheme: light;
+}
+
+/*
+ * Dark (tokens.json › computedVariables.dark). The explicit choice wins in both directions; with no choice stored the
+ * system preference decides (STORY_019). Only the tokens whose value differs are redefined here.
+ */
+:root[data-theme="dark"] {
+  --bg_default_primary: #171717;
+  --bg_default_primary_elevated: #1c1c1c;
+  --bg_default_secondary: #1c1c1c;
+  --bg_default_secondary_elevated: #262626;
+  --bg_default_tertiary: #262626;
+  --bg_default_tertiary_elevated: #303030;
+  --bg_grouped_tertiary: #262626;
+  --bg_grouped_tertiary_elevated: #303030;
+  --bg_interaction_primary_default: #fff;
+  --bg_interaction_primary_hover: #ffffffcc;
+  --bg_interaction_primary_inactive: #949494;
+  --bg_interaction_primary_press: #ffffffe5;
+  --bg_interaction_secondary_default: #ffffff0a;
+  --bg_interaction_secondary_hover: #ffffff12;
+  --bg_interaction_secondary_selected: #262626;
+  --bg_interaction_tertiary_hover: #ffffff0a;
+  --bg_interaction_tertiary_press: #ffffff12;
+  --bg_interaction_tertiary_selected: #ffffff12;
+  --bg_interaction_accent_hover: #0064ab1a;
+  --bg_interaction_accent_press: #0064ab26;
+  --bg_interaction_danger_secondary_default: #33030a;
+  --bg_interaction_danger_secondary_hover: #4d0610;
+  --bg_status_blue: #0078ff1a;
+  --bg_status_error: #33030a;
+  --bg_status_positive: #082614;
+  --bg_status_warning: #311908;
+  --text_default_primary: #ededed;
+  --text_default_secondary: #949494;
+  --text_default_tertiary: #666;
+  --text_default_quaternary: #4a4a4a;
+  --text_default_inverted: #171717;
+  --text_default_accent: #0077d9;
+  --text_label_primary_default: #171717;
+  --text_label_secondary_default: #f5f5f5;
+  --text_label_danger_secondary_default: #e31937;
+  --text_status_error: #e31937;
+  --icon_default_primary: #ededed;
+  --icon_default_secondary: #949494;
+  --icon_default_tertiary: #666;
+  --icon_default_quaternary: #4a4a4a;
+  --icon_default_inverted: #171717;
+  --icon_default_accent: #0077d9;
+  --icon_interaction_primary_default: #171717;
+  --icon_interaction_tertiary_default: #949494;
+  --icon_interaction_tertiary_hover: #adadad;
+  --border_default: #ffffff12;
+  --border_light: #ffffff0a;
+  --border_heavy: #fffffff2;
+  --border_accent: #0077d9;
+  --border_tertiary_hover: #ffffff26;
+  --border_status_error: #33030a;
+  --utility_overlay: #0000003d;
+  --utility_scrim: #00000080;
+  --utility_popover: #fffffff2;
+  --utility_scrollbar: #ffffff26;
+  --shadow_default: #0a0a0a80;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg_default_primary: #171717;
+    --bg_default_primary_elevated: #1c1c1c;
+    --bg_default_secondary: #1c1c1c;
+    --bg_default_secondary_elevated: #262626;
+    --bg_default_tertiary: #262626;
+    --bg_default_tertiary_elevated: #303030;
+    --bg_grouped_tertiary: #262626;
+    --bg_grouped_tertiary_elevated: #303030;
+    --bg_interaction_primary_default: #fff;
+    --bg_interaction_primary_hover: #ffffffcc;
+    --bg_interaction_primary_inactive: #949494;
+    --bg_interaction_primary_press: #ffffffe5;
+    --bg_interaction_secondary_default: #ffffff0a;
+    --bg_interaction_secondary_hover: #ffffff12;
+    --bg_interaction_secondary_selected: #262626;
+    --bg_interaction_tertiary_hover: #ffffff0a;
+    --bg_interaction_tertiary_press: #ffffff12;
+    --bg_interaction_tertiary_selected: #ffffff12;
+    --bg_interaction_accent_hover: #0064ab1a;
+    --bg_interaction_accent_press: #0064ab26;
+    --bg_interaction_danger_secondary_default: #33030a;
+    --bg_interaction_danger_secondary_hover: #4d0610;
+    --bg_status_blue: #0078ff1a;
+    --bg_status_error: #33030a;
+    --bg_status_positive: #082614;
+    --bg_status_warning: #311908;
+    --text_default_primary: #ededed;
+    --text_default_secondary: #949494;
+    --text_default_tertiary: #666;
+    --text_default_quaternary: #4a4a4a;
+    --text_default_inverted: #171717;
+    --text_default_accent: #0077d9;
+    --text_label_primary_default: #171717;
+    --text_label_secondary_default: #f5f5f5;
+    --text_label_danger_secondary_default: #e31937;
+    --text_status_error: #e31937;
+    --icon_default_primary: #ededed;
+    --icon_default_secondary: #949494;
+    --icon_default_tertiary: #666;
+    --icon_default_quaternary: #4a4a4a;
+    --icon_default_inverted: #171717;
+    --icon_default_accent: #0077d9;
+    --icon_interaction_primary_default: #171717;
+    --icon_interaction_tertiary_default: #949494;
+    --icon_interaction_tertiary_hover: #adadad;
+    --border_default: #ffffff12;
+    --border_light: #ffffff0a;
+    --border_heavy: #fffffff2;
+    --border_accent: #0077d9;
+    --border_tertiary_hover: #ffffff26;
+    --border_status_error: #33030a;
+    --utility_overlay: #0000003d;
+    --utility_scrim: #00000080;
+    --utility_popover: #fffffff2;
+    --utility_scrollbar: #ffffff26;
+    --shadow_default: #0a0a0a80;
+    color-scheme: dark;
+  }
 }
 
 *,
@@ -84,8 +271,8 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--gray_0);
-  color: var(--gray_1000);
+  background: var(--bg_default_primary_elevated);
+  color: var(--text_default_primary);
   font-family: var(--font_sans);
   font-size: 13px;
   line-height: 19.5px;
@@ -105,6 +292,6 @@ a {
 }
 
 :focus-visible {
-  outline: 2px solid var(--blue_400);
+  outline: 2px solid var(--border_accent);
   outline-offset: 2px;
 }

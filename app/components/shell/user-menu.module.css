@@ -1,0 +1,109 @@
+/* The user chip and its menu — user-menu-open@1440 / -dark (STORY_019). 237 px menu, 38 px entries, 12 px radius. */
+.root {
+  position: relative;
+}
+.chip {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  height: 32px;
+  padding: 0 var(--spacing_8) 0 var(--spacing_4);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--text_default_primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--duration_fast) var(--ease_standard);
+}
+.chip:hover,
+.chip[aria-expanded="true"] {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: 237px;
+  padding: var(--spacing_6);
+  background: var(--bg_default_tertiary);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_12);
+  box-shadow: 0 4px 24px var(--shadow_default);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  color: var(--text_default_primary);
+}
+.uid {
+  padding: var(--spacing_8) var(--spacing_12) var(--spacing_4);
+  font-size: 12px;
+  line-height: var(--line_height_16);
+  color: var(--text_default_tertiary);
+}
+.plan {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing_6) var(--spacing_12) var(--spacing_8);
+}
+.planName {
+  font-size: 16px;
+  line-height: var(--line_height_22);
+}
+.subscribe {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 var(--spacing_12);
+  border-radius: var(--radius_8);
+  background: var(--bg_interaction_primary_default);
+  color: var(--text_label_primary_default);
+  font-size: 13px;
+  font-weight: 500;
+}
+.separator {
+  height: 1px;
+  margin: var(--spacing_4) 0;
+  background: var(--border_default);
+}
+.entry {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  width: 100%;
+  height: 38px;
+  padding: 0 var(--spacing_12);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--text_default_primary);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--duration_fast) var(--ease_standard);
+}
+.entry:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.entryInert {
+  box-sizing: border-box;
+}
+.entryIcon {
+  display: inline-flex;
+  color: var(--icon_default_secondary);
+}
+.entryLabel {
+  flex: 1;
+}
+.entryChevron {
+  display: inline-flex;
+  color: var(--icon_default_tertiary);
+}
+@media (max-width: 899px) {
+  .chip,
+  .entry {
+    min-height: 44px;
+  }
+}

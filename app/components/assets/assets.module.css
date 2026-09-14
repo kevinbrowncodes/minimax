@@ -12,7 +12,7 @@
 .tabs {
   display: flex;
   gap: var(--spacing_32);
-  border-bottom: 1px solid var(--opacity_black_1_8);
+  border-bottom: 1px solid var(--border_default);
   margin-bottom: var(--spacing_24);
 }
 .tab {
@@ -23,12 +23,12 @@
   font-size: 16px;
   font-weight: 500;
   line-height: var(--line_height_26);
-  color: var(--gray_300);
-  cursor: default;
+  color: var(--text_default_tertiary);
+  cursor: pointer;
 }
 .tabActive {
-  color: var(--gray_1000);
-  border-bottom-color: var(--gray_1000);
+  color: var(--text_default_primary);
+  border-bottom-color: var(--text_default_primary);
 }
 .toolbar {
   display: flex;
@@ -45,15 +45,17 @@
   background: transparent;
   font-size: 14px;
   line-height: var(--line_height_20);
-  color: var(--gray_1000);
+  color: var(--text_default_secondary);
   cursor: pointer;
   transition: background var(--duration_fast) var(--ease_standard);
 }
 .chip:hover {
-  background: var(--opacity_black_1_4);
+  background: var(--bg_interaction_tertiary_hover);
+  color: var(--text_default_primary);
 }
 .chipActive {
-  background: var(--opacity_black_1_4);
+  background: var(--bg_interaction_secondary_default);
+  color: var(--text_default_primary);
 }
 .search {
   margin-left: auto;
@@ -64,9 +66,9 @@
   width: 256px;
   max-width: 100%;
   padding: 0 var(--spacing_12);
-  border: 1px solid var(--opacity_black_1_8);
+  border: 1px solid var(--border_default);
   border-radius: var(--radius_8);
-  color: var(--gray_300);
+  color: var(--icon_default_tertiary);
 }
 .search input {
   flex: 1;
@@ -75,10 +77,10 @@
   outline: none;
   background: transparent;
   font-size: 14px;
-  color: var(--gray_1000);
+  color: var(--text_default_primary);
 }
 .search input::placeholder {
-  color: var(--gray_300);
+  color: var(--text_default_tertiary);
 }
 .grid {
   display: grid;
@@ -87,20 +89,20 @@
 }
 .tile {
   width: 254px;
-  border: 1px solid var(--opacity_black_1_8);
+  border: 1px solid var(--border_default);
   border-radius: var(--radius_12);
   overflow: hidden;
-  background: var(--gray_0);
+  background: var(--bg_default_tertiary);
 }
 .poster {
   position: relative;
   width: 100%;
   height: 143px;
-  background: var(--gray_75);
+  background: var(--bg_grouped_tertiary_elevated);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--gray_300);
+  color: var(--icon_default_tertiary);
 }
 .poster img {
   width: 100%;
@@ -147,7 +149,7 @@
   border: 0;
   border-radius: var(--radius_8);
   background: transparent;
-  color: var(--gray_500);
+  color: var(--icon_default_secondary);
   cursor: pointer;
   font-size: 16px;
 }
@@ -160,9 +162,10 @@
   top: calc(100% + 4px);
   z-index: 20;
   min-width: 180px;
-  background: var(--gray_0);
+  background: var(--bg_default_tertiary);
+  border: 1px solid var(--border_default);
   border-radius: var(--radius_12);
-  box-shadow: 0 4px 24px var(--opacity_black_1_15);
+  box-shadow: 0 4px 24px var(--shadow_default);
   padding: var(--spacing_6);
 }
 .menuItem {
@@ -178,10 +181,10 @@
   cursor: pointer;
 }
 .menuItem:hover {
-  background: var(--opacity_black_1_4);
+  background: var(--bg_interaction_tertiary_hover);
 }
 .menuDanger {
-  color: var(--red_500);
+  color: var(--text_label_danger_secondary_default);
 }
 .empty {
   padding: var(--spacing_64) 0;
@@ -198,7 +201,7 @@
   margin: 0;
 }
 .emptyText {
-  color: var(--gray_500);
+  color: var(--text_default_secondary);
   margin: 0 0 var(--spacing_8);
 }
 .primary {
@@ -207,8 +210,8 @@
   height: 36px;
   padding: 0 var(--spacing_16);
   border-radius: var(--radius_8);
-  background: var(--gray_1000);
-  color: var(--gray_0);
+  background: var(--bg_interaction_primary_default);
+  color: var(--text_label_primary_default);
   font-size: 14px;
   font-weight: 500;
 }
@@ -218,17 +221,18 @@
   border-radius: var(--radius_12);
   padding: 0;
   overflow: hidden;
-  background: var(--gray_0);
+  background: var(--bg_default_tertiary);
+  color: var(--text_default_primary);
 }
 .dialog::backdrop {
-  background: var(--opacity_black_1_50);
+  background: var(--utility_overlay);
 }
 .dialogHead {
   display: flex;
   align-items: center;
   gap: var(--spacing_8);
   padding: var(--spacing_16) var(--spacing_24);
-  border-bottom: 1px solid var(--opacity_black_1_8);
+  border-bottom: 1px solid var(--border_default);
   font-size: 16px;
 }
 .dialogTitle {
@@ -243,7 +247,7 @@
   border: 0;
   border-radius: var(--radius_8);
   background: transparent;
-  color: var(--gray_500);
+  color: var(--icon_default_secondary);
   display: inline-flex;
   align-items: center;
   justify-content: center;

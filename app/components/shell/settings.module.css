@@ -1,0 +1,291 @@
+/* Settings modal — settings-general@1440 (940 px, left nav 220 px, cards 210×120) and narrow-settings-general@390 (a
+   bottom sheet with tab nav). Values from tokens.md › settings-* elements (STORY_019). */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--utility_overlay);
+}
+.modal {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  width: min(940px, calc(100vw - 32px));
+  height: min(600px, calc(100vh - 32px));
+  border-radius: var(--radius_16);
+  background: var(--bg_default_primary_elevated);
+  color: var(--text_default_primary);
+  overflow: hidden;
+  outline: none;
+}
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_4);
+  padding: var(--spacing_24) var(--spacing_8);
+  background: var(--bg_default_secondary);
+  border-right: 1px solid var(--border_default);
+}
+.navTitle {
+  padding: 0 var(--spacing_12);
+  margin-bottom: var(--spacing_12);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  color: var(--text_default_secondary);
+}
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  height: 37px;
+  padding: 0 var(--spacing_12);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--text_default_primary);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--duration_fast) var(--ease_standard);
+}
+.navItem:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.navItemActive {
+  background: var(--bg_interaction_tertiary_selected);
+}
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+  padding: 0 var(--spacing_24);
+  border-bottom: 1px solid var(--border_default);
+}
+.panelTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: var(--line_height_26);
+}
+.close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--icon_default_secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.close:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.panelBody {
+  overflow-y: auto;
+  padding: var(--spacing_24) var(--spacing_24) var(--spacing_32);
+}
+.sectionTitle {
+  margin: 0 0 var(--spacing_16);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: var(--line_height_20);
+}
+.options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing_20);
+  margin-bottom: var(--spacing_32);
+}
+.option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_12);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.preview {
+  display: block;
+  height: 120px;
+  border-radius: var(--radius_12);
+  border: 2px solid transparent;
+  padding: var(--spacing_16) var(--spacing_20);
+  transition: border-color var(--duration_fast) var(--ease_standard);
+}
+.previewSelected {
+  border-color: var(--border_accent);
+}
+.preview_light {
+  background: var(--gray_75);
+}
+.preview_dark {
+  background: var(--gray_1000);
+}
+.preview_system {
+  background: linear-gradient(90deg, var(--gray_75) 50%, var(--gray_1000) 50%);
+}
+.previewCard {
+  position: relative;
+  display: block;
+  height: 100%;
+  border-radius: var(--radius_8);
+  padding: var(--spacing_12);
+}
+.preview_light .previewCard {
+  background: var(--gray_0);
+}
+.preview_dark .previewCard {
+  background: var(--gray_800);
+}
+.preview_system .previewCard {
+  background: linear-gradient(90deg, var(--gray_0) 50%, var(--gray_800) 50%);
+}
+.previewLine,
+.previewLineShort {
+  display: block;
+  height: 6px;
+  border-radius: var(--radius_full);
+  background: var(--gray_100);
+  margin-bottom: var(--spacing_6);
+}
+.previewLineShort {
+  width: 55%;
+}
+.preview_dark .previewLine,
+.preview_dark .previewLineShort {
+  background: var(--gray_700);
+}
+.previewDot {
+  position: absolute;
+  right: var(--spacing_12);
+  bottom: var(--spacing_12);
+  width: 24px;
+  height: 8px;
+  border-radius: var(--radius_full);
+  background: var(--gray_1000);
+}
+.preview_dark .previewDot,
+.preview_system .previewDot {
+  background: var(--gray_0);
+}
+.optionLabel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing_8);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  color: var(--text_default_tertiary);
+}
+.option[aria-checked="true"] .optionLabel {
+  color: var(--text_default_primary);
+}
+.preferences {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius_12);
+  background: var(--bg_grouped_tertiary);
+  padding: 0 var(--spacing_16);
+}
+.preference {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_24);
+  padding: var(--spacing_16) 0;
+}
+.preference + .preference {
+  border-top: 1px solid var(--border_default);
+}
+.preferenceText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_4);
+  flex: 1;
+}
+.preferenceTitle {
+  font-size: 14px;
+  line-height: var(--line_height_20);
+}
+.preferenceDescription {
+  font-size: 12px;
+  line-height: var(--line_height_16);
+  color: var(--text_default_secondary);
+}
+.switch {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  width: 40px;
+  height: 20px;
+  padding: 2px;
+  border-radius: var(--radius_full);
+  background: var(--border_accent);
+}
+.switchKnob {
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  border-radius: var(--radius_full);
+  background: var(--gray_0);
+}
+@media (max-width: 899px) {
+  .backdrop {
+    align-items: flex-end;
+  }
+  .modal {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    width: calc(100vw - 32px);
+    height: min(600px, 80vh);
+    margin: 0 16px 16px;
+    border-radius: var(--radius_20);
+  }
+  .nav {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: var(--spacing_8);
+    padding: var(--spacing_16) var(--spacing_16) var(--spacing_8);
+    border-right: 0;
+    border-bottom: 1px solid var(--border_default);
+  }
+  .navTitle {
+    flex: 0 0 100%;
+    margin-bottom: var(--spacing_4);
+  }
+  .navItem {
+    flex: none;
+    min-height: 44px;
+  }
+  .panelHead {
+    display: none;
+  }
+  .options {
+    gap: var(--spacing_12);
+  }
+  .preview {
+    height: 64px;
+    padding: var(--spacing_8) var(--spacing_12);
+  }
+  .optionLabel {
+    font-size: 13px;
+  }
+  .option,
+  .close {
+    min-height: 44px;
+  }
+}

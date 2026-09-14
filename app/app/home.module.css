@@ -10,7 +10,7 @@
   font-size: 32px;
   font-weight: 400;
   line-height: normal;
-  color: var(--gray_1000);
+  color: var(--text_default_primary);
   text-align: center;
 }
 @media (max-width: 899px) {

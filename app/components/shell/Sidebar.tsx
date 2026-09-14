@@ -4,27 +4,29 @@ import type { ReactNode } from "react";
 import { activeRow, isUnread, type RecentEntry } from "@/lib/route-title";
 import { cx } from "@/lib/cx";
 import styles from "./sidebar.module.css";
-import { IconAvatar, IconClock, IconCollapse, IconDownload, IconFolder, IconLogo, IconPhone, IconPlugins, IconPlusCircle, IconProject, IconSearch } from "./icons";
-
-const INERT_TITLE = "Not part of MiniMax Local";
+import { Inert } from "./Inert";
+import { UserMenu } from "./UserMenu";
+import { IconClock, IconCollapse, IconDownload, IconFolder, IconLogo, IconPhone, IconPlugins, IconPlusCircle, IconProject, IconSearch } from "./icons";
 
 export interface SidebarProps {
   readonly pathname: string;
   readonly recents: readonly RecentEntry[];
   readonly onNavigate?: () => void;
   readonly onCollapse?: () => void;
+  readonly onOpenSettings?: () => void;
 }
 
+/** A sidebar row the reference has and we do not implement: looks like the others, answers a click with the notice (STORY_019). */
 function InertRow({ icon, label, muted = false }: { readonly icon?: ReactNode; readonly label: string; readonly muted?: boolean }) {
   return (
-    <div className={cx(styles.row, styles.rowInert, muted && styles.rowMuted)} role="link" aria-disabled="true" title={INERT_TITLE}>
+    <Inert role="link" label={label} className={cx(styles.row, styles.rowInert, muted && styles.rowMuted)}>
       {icon ? <span className={styles.rowIcon}>{icon}</span> : null}
       <span className={styles.rowLabel}>{label}</span>
-    </div>
+    </Inert>
   );
 }
 
-export function Sidebar({ pathname, recents, onNavigate, onCollapse }: SidebarProps) {
+export function Sidebar({ pathname, recents, onNavigate, onCollapse, onOpenSettings }: SidebarProps) {
   const active = activeRow(pathname);
   const link = (href: string, key: string, icon: ReactNode, label: string) => (
     <Link href={href} className={cx(styles.row, active === key && styles.rowActive)} aria-current={active === key ? "page" : undefined} onClick={onNavigate}>
@@ -71,16 +73,10 @@ export function Sidebar({ pathname, recents, onNavigate, onCollapse }: SidebarPr
           </ul>
         )}
       </div>
-      <div className={styles.section}>
-        <span className={styles.sectionLabel}>Agent Team</span>
-        <InertRow label="General" muted />
-        <InertRow label="Coder" muted />
-        <InertRow label="Verifier" muted />
-      </div>
       <div className={styles.spacer} />
       <div className={styles.footer}>
-        <span className={styles.user}><IconAvatar /> Owner</span>
-        <span className={styles.iconButton} role="button" aria-disabled="true" title={INERT_TITLE} aria-label="Download desktop"><IconDownload /></span>
+        <UserMenu onOpenSettings={onOpenSettings ?? (() => undefined)} />
+        <Inert label="Download desktop" className={styles.iconButton} align="end"><IconDownload /></Inert>
       </div>
     </nav>
   );

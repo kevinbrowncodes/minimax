@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
 
@@ -7,7 +7,8 @@ afterEach(cleanup);
 describe("Sidebar", () => {
   it("renders every captured row in order, with the out-of-MVP rows inert", () => {
     const { container } = render(<Sidebar pathname="/" recents={[]} />);
-    const labels = ["New task", "Search", "Plugins", "Scheduled", "Assets", "Connect Mobile", "MaxHermes", "MaxClaw", "Add new project", "General", "Coder", "Verifier"];
+    // The Agent Team rows of 2026-09-12 are gone from the reference (docs/recon/2026-09-14/inventory.md), so from us too (STORY_019).
+    const labels = ["New task", "Search", "Plugins", "Scheduled", "Assets", "Connect Mobile", "MaxHermes", "MaxClaw", "Add new project"];
     const texts = [...container.querySelectorAll('[class*="rowLabel"]')].map((el) => el.textContent);
     expect(texts).toEqual(labels);
     expect(screen.getByRole("link", { name: "New task" })).toHaveAttribute("href", "/");
@@ -18,7 +19,15 @@ describe("Sidebar", () => {
       expect(row).not.toHaveAttribute("href");
     }
     expect(screen.getByText("No task history.")).toBeInTheDocument();
-    expect(screen.getByText("Owner")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Owner" })).toBeInTheDocument();
+  });
+
+  it("an inert row answers a click with the notice (STORY_019)", () => {
+    render(<Sidebar pathname="/" recents={[]} />);
+    act(() => {
+      screen.getByRole("link", { name: "Plugins" }).click();
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("Not part of MiniMax Local");
   });
 
   it("marks the active row from the path and lists recents with the unread dot", () => {

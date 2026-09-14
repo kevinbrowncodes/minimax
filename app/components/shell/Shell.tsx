@@ -4,11 +4,12 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { topBarFor, type RecentEntry } from "@/lib/route-title";
 import { useNarrow } from "@/lib/use-narrow";
 import { cx } from "@/lib/cx";
+import { useThemeChoice } from "@/lib/use-theme";
+import { Inert } from "./Inert";
+import { SettingsDialog } from "./SettingsDialog";
 import { Sidebar } from "./Sidebar";
 import { IconDocument, IconDownload, IconMenu, IconWorkArea } from "./icons";
 import styles from "./shell.module.css";
-
-const INERT_TITLE = "Not part of MiniMax Local";
 
 export interface ShellProps {
   readonly children: ReactNode;
@@ -20,7 +21,12 @@ export function Shell({ children }: ShellProps) {
   const narrow = useNarrow();
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [themeChoice, setThemeChoice] = useThemeChoice();
   const [recents, setRecents] = useState<readonly RecentEntry[]>([]);
+  const closeSettings = useCallback(() => {
+    setSettingsOpen(false);
+  }, []);
 
   // Recents follow the history store; refetched on every navigation so a new job or a finished one shows up.
   useEffect(() => {
@@ -65,6 +71,9 @@ export function Shell({ children }: ShellProps) {
             if (narrow) closeDrawer();
             else setCollapsed((c) => !c);
           }}
+          onOpenSettings={() => {
+            setSettingsOpen(true);
+          }}
         />
       </aside>
       <div className={styles.main}>
@@ -78,15 +87,16 @@ export function Shell({ children }: ShellProps) {
           <div className={styles.topbarActions}>
             {bar.kind === "home" ? (
               <>
-                <span className={styles.iconButton} role="button" aria-disabled="true" title={INERT_TITLE} aria-label="Changelog"><IconDocument /></span>
-                <span className={styles.secondaryButton} role="button" aria-disabled="true" title={INERT_TITLE}><IconDownload /> Download</span>
+                <Inert label="Changelog" className={styles.iconButton} align="end"><IconDocument /></Inert>
+                <Inert label="Download" className={styles.secondaryButton} align="end"><IconDownload /> Download</Inert>
               </>
             ) : null}
-            {bar.kind === "task" ? <span className={styles.iconButton} role="button" aria-disabled="true" title={INERT_TITLE} aria-label="Work Area"><IconWorkArea /></span> : null}
+            {bar.kind === "task" ? <Inert label="Work Area" className={styles.iconButton} align="end"><IconWorkArea /></Inert> : null}
           </div>
         </header>
         <div className={styles.content}>{children}</div>
       </div>
+      <SettingsDialog open={settingsOpen} choice={themeChoice} onChoose={setThemeChoice} onClose={closeSettings} />
     </div>
   );
 }

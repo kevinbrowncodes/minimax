@@ -31,7 +31,7 @@
 .topbarTitle {
   font-size: 14px;
   line-height: var(--line_height_20);
-  color: var(--gray_1000);
+  color: var(--text_default_primary);
 }
 .topbarActions {
   display: flex;
@@ -48,8 +48,12 @@
   border: 0;
   border-radius: var(--radius_8);
   background: transparent;
-  color: var(--gray_500);
-  cursor: default;
+  color: var(--icon_default_secondary);
+  cursor: pointer;
+  transition: background var(--duration_fast) var(--ease_standard);
+}
+.iconButton:hover {
+  background: var(--bg_interaction_tertiary_hover);
 }
 .secondaryButton {
   display: inline-flex;
@@ -57,14 +61,18 @@
   gap: var(--spacing_6);
   height: 32px;
   padding: 0 var(--spacing_12);
-  border: 1px solid var(--opacity_black_1_8);
+  border: 1px solid var(--border_default);
   border-radius: var(--radius_8);
-  background: var(--gray_0);
+  background: var(--bg_default_primary_elevated);
   font-size: 14px;
   font-weight: 500;
   line-height: var(--line_height_20);
-  color: var(--gray_1000);
-  cursor: default;
+  color: var(--text_default_primary);
+  cursor: pointer;
+  transition: background var(--duration_fast) var(--ease_standard);
+}
+.secondaryButton:hover {
+  background: var(--bg_interaction_tertiary_hover);
 }
 .content {
   flex: 1;
@@ -88,7 +96,7 @@
     z-index: 20;
     transform: translateX(-100%);
     transition: transform var(--duration_sidebar) var(--ease_standard);
-    background: var(--gray_0);
+    background: var(--bg_default_primary_elevated);
   }
   .asideOpen {
     transform: translateX(0);
@@ -97,7 +105,7 @@
     display: block;
     position: fixed;
     inset: 0;
-    background: var(--opacity_black_1_50);
+    background: var(--utility_overlay);
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--duration_sidebar) var(--ease_standard);
@@ -116,7 +124,7 @@
     border: 0;
     border-radius: var(--radius_8);
     background: transparent;
-    color: var(--gray_500);
+    color: var(--icon_default_secondary);
     cursor: pointer;
     margin-left: calc(-1 * var(--spacing_8));
   }

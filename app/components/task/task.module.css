@@ -26,21 +26,21 @@
   max-width: 600px;
   padding: var(--spacing_12) var(--spacing_16);
   border-radius: var(--radius_12);
-  background: var(--gray_75);
+  background: var(--bg_grouped_tertiary);
   font-size: 16px;
   line-height: var(--line_height_26);
-  color: var(--gray_1000);
+  color: var(--text_default_primary);
   white-space: pre-wrap;
 }
 .mention {
-  color: var(--gray_500);
+  color: var(--text_default_secondary);
 }
 .refs {
   display: flex;
   gap: var(--spacing_8);
   margin-top: var(--spacing_8);
   font-size: 13px;
-  color: var(--gray_500);
+  color: var(--text_default_secondary);
 }
 .indicator {
   display: flex;
@@ -48,14 +48,14 @@
   gap: var(--spacing_8);
   font-size: 16px;
   line-height: var(--line_height_26);
-  color: var(--gray_1000);
+  color: var(--text_default_primary);
 }
 .avatar {
   width: 24px;
   height: 24px;
   border-radius: var(--radius_6);
-  background: var(--gray_1000);
-  color: var(--gray_0);
+  background: var(--bg_interaction_primary_default);
+  color: var(--text_label_primary_default);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -66,7 +66,7 @@
   width: 8px;
   height: 8px;
   border-radius: var(--radius_full);
-  background: var(--blue_400);
+  background: var(--text_default_accent);
   animation: pulse 1.2s ease-in-out infinite;
 }
 @keyframes pulse {
@@ -88,20 +88,20 @@
 }
 .summary {
   font-size: 13px;
-  color: var(--gray_500);
+  color: var(--text_default_secondary);
 }
 .actions {
   display: flex;
   align-items: center;
   gap: var(--spacing_16);
   font-size: 13px;
-  color: var(--gray_500);
+  color: var(--text_default_secondary);
 }
 .actionLink {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing_4);
-  color: var(--gray_1000);
+  color: var(--text_default_primary);
   cursor: pointer;
   border: 0;
   background: transparent;
@@ -120,8 +120,8 @@
   padding: 0 var(--spacing_16);
   border: 0;
   border-radius: var(--radius_full);
-  background: var(--gray_1000);
-  color: var(--gray_0);
+  background: var(--bg_interaction_primary_default);
+  color: var(--text_label_primary_default);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -137,17 +137,17 @@
 .footer {
   font-size: 11px;
   line-height: 14px;
-  color: var(--gray_300);
+  color: var(--text_default_tertiary);
   text-align: center;
 }
 .panel {
   align-self: start;
   position: sticky;
   top: var(--spacing_16);
-  border: 1px solid var(--opacity_black_1_8);
+  border: 1px solid var(--border_default);
   border-radius: var(--radius_12);
   padding: var(--spacing_12) var(--spacing_16);
-  background: var(--gray_0);
+  background: var(--bg_default_tertiary);
 }
 .panelHead {
   display: flex;
@@ -160,7 +160,7 @@
 }
 .panelHint {
   font-size: 13px;
-  color: var(--gray_500);
+  color: var(--text_default_secondary);
 }
 .steps {
   list-style: none;
@@ -186,41 +186,41 @@
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  border: 1px solid var(--opacity_black_1_15);
-  color: var(--gray_500);
+  border: 1px solid var(--border_default);
+  color: var(--text_default_secondary);
 }
 .stepDone .stepMark {
-  background: var(--gray_1000);
-  border-color: var(--gray_1000);
-  color: var(--gray_0);
+  background: var(--bg_interaction_primary_default);
+  border-color: var(--bg_interaction_primary_default);
+  color: var(--text_label_primary_default);
 }
 .stepDone .stepLabel {
   text-decoration: line-through;
-  color: var(--gray_300);
+  color: var(--text_default_tertiary);
 }
 .stepActive .stepMark {
-  border-color: var(--gray_1000);
-  color: var(--gray_1000);
+  border-color: var(--text_default_primary);
+  color: var(--text_default_primary);
 }
 .stepFailed .stepMark {
-  border-color: var(--red_500);
-  color: var(--red_500);
+  border-color: var(--text_status_error);
+  color: var(--text_status_error);
 }
 .stepDetail {
   display: block;
   font-size: 12px;
-  color: var(--gray_500);
+  color: var(--text_default_secondary);
 }
 .bar {
   height: 4px;
   border-radius: var(--radius_full);
-  background: var(--gray_100);
+  background: var(--bg_grouped_tertiary_elevated);
   overflow: hidden;
   margin-top: var(--spacing_4);
 }
 .barFill {
   height: 100%;
-  background: var(--gray_1000);
+  background: var(--bg_interaction_primary_default);
   transition: width 0.3s ease;
 }
 @media (max-width: 899px) {
@@ -249,9 +249,9 @@
   display: block;
   margin-top: var(--spacing_8);
   font-size: 13px;
-  color: var(--gray_500);
+  color: var(--text_default_secondary);
 }
 .continues a {
-  color: var(--gray_1000);
+  color: var(--text_default_primary);
   text-decoration: underline;
 }

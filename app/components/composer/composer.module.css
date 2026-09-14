@@ -10,7 +10,8 @@
 }
 .card {
   width: 100%;
-  background: var(--gray_0);
+  background: var(--bg_default_tertiary);
+  border: 1px solid var(--border_default);
   border-radius: var(--radius_20);
   box-shadow: var(--shadow_composer);
   padding: var(--spacing_16) var(--spacing_16) var(--spacing_12);
@@ -20,7 +21,7 @@
   position: relative;
 }
 .cardDrop {
-  outline: 2px dashed var(--blue_400);
+  outline: 2px dashed var(--border_accent);
   outline-offset: -8px;
 }
 .references {
@@ -32,21 +33,21 @@
   width: 90px;
   height: 90px;
   border-radius: var(--radius_12);
-  background: var(--gray_75);
+  background: var(--bg_grouped_tertiary_elevated);
   border: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--spacing_6);
-  color: var(--gray_300);
+  color: var(--text_default_tertiary);
   font-size: 12px;
   line-height: var(--line_height_16);
   cursor: pointer;
   transition: background var(--duration_fast) var(--ease_standard);
 }
 .tile:hover {
-  background: var(--gray_100);
+  background: var(--bg_interaction_tertiary_press);
 }
 .tilePlus {
   font-size: 20px;
@@ -58,7 +59,7 @@
   height: 90px;
   border-radius: var(--radius_12);
   overflow: hidden;
-  background: var(--gray_75);
+  background: var(--bg_grouped_tertiary_elevated);
 }
 .thumb img {
   width: 100%;
@@ -93,8 +94,8 @@
   height: 26px;
   padding: 0 var(--spacing_8) 0 var(--spacing_6);
   border-radius: var(--radius_6);
-  background: var(--purple_50);
-  color: var(--purple_500);
+  background: var(--bg_status_video_generation);
+  color: var(--text_status_video_generation);
   font-size: 14px;
   line-height: var(--line_height_20);
   white-space: nowrap;
@@ -102,7 +103,7 @@
 .tagRemove {
   border: 0;
   background: transparent;
-  color: var(--purple_500);
+  color: var(--text_status_video_generation);
   cursor: pointer;
   padding: 0 0 0 var(--spacing_4);
   line-height: 1;
@@ -117,11 +118,11 @@
   background: transparent;
   font-size: 16px;
   line-height: var(--line_height_26);
-  color: var(--gray_1000);
+  color: var(--text_default_primary);
   padding: 0;
 }
 .editor::placeholder {
-  color: var(--gray_300);
+  color: var(--text_default_tertiary);
 }
 .bar {
   display: flex;
@@ -141,34 +142,22 @@
   border: 0;
   border-radius: var(--radius_10);
   background: transparent;
-  color: var(--gray_500);
+  color: var(--icon_default_secondary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  cursor: default;
-}
-.inert {
-  color: var(--blue_400);
-  font-size: 14px;
-  line-height: var(--line_height_20);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing_4);
-  height: 32px;
-  padding: 0 var(--spacing_4);
-  border-radius: var(--radius_10);
-  cursor: default;
+  cursor: pointer;
 }
 .inertModel {
-  color: var(--gray_1000);
+  color: var(--text_default_primary);
   font-size: 14px;
   display: inline-flex;
   align-items: center;
   gap: var(--spacing_4);
   height: 32px;
   padding: 0 var(--spacing_8);
-  cursor: default;
+  cursor: pointer;
 }
 .pill {
   display: inline-flex;
@@ -176,38 +165,41 @@
   gap: var(--spacing_6);
   height: 32px;
   padding: 0 var(--spacing_12);
-  border: 1px solid var(--opacity_black_1_8);
+  border: 1px solid var(--border_default);
   border-radius: var(--radius_full);
-  background: var(--gray_0);
+  background: var(--bg_default_tertiary);
   font-size: 14px;
   line-height: var(--line_height_20);
-  color: var(--gray_1000);
+  color: var(--text_default_primary);
   cursor: pointer;
   transition: background var(--duration_fast) var(--ease_standard);
 }
 .pill:hover {
-  background: var(--opacity_black_1_4);
+  background: var(--bg_interaction_tertiary_hover);
 }
 .pillSep {
   width: 1px;
   height: 14px;
-  background: var(--opacity_black_1_8);
+  background: var(--border_default);
 }
 .send {
   width: 32px;
   height: 32px;
   border-radius: var(--radius_full);
   border: 0;
-  background: var(--gray_1000);
-  color: var(--gray_0);
+  background: var(--bg_interaction_primary_default);
+  color: var(--icon_interaction_primary_default);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: background var(--duration_fast) var(--ease_standard);
 }
+.send:hover:not(:disabled) {
+  background: var(--bg_interaction_primary_hover);
+}
 .send:disabled {
-  background: var(--gray_300);
+  background: var(--bg_interaction_primary_inactive);
   cursor: default;
 }
 .chips {
@@ -222,26 +214,23 @@
   gap: var(--spacing_6);
   height: 32px;
   padding: 0 var(--spacing_12);
-  border: 1px solid var(--opacity_black_1_8);
+  border: 1px solid var(--border_default);
   border-radius: var(--radius_8);
-  background: var(--gray_0);
+  background: transparent;
   font-size: 14px;
   line-height: var(--line_height_20);
-  color: var(--gray_1000);
+  color: var(--text_default_primary);
   cursor: pointer;
   transition: background var(--duration_fast) var(--ease_standard);
 }
 .chip:hover {
-  background: var(--opacity_black_1_4);
+  background: var(--bg_interaction_tertiary_hover);
 }
 .chipActive {
-  background: var(--gray_75);
+  background: var(--bg_interaction_tertiary_selected);
 }
 .chipInert {
-  cursor: default;
-}
-.chipInert:hover {
-  background: var(--gray_0);
+  cursor: pointer;
 }
 .h3 {
   display: inline-flex;
@@ -249,8 +238,8 @@
   height: 18px;
   padding: 0 var(--spacing_6);
   border-radius: var(--radius_4);
-  background: var(--opacity_purple_500_10);
-  color: var(--purple_500);
+  background: var(--bg_status_video_generation);
+  color: var(--text_status_video_generation);
   font-size: 11px;
   line-height: 14px;
 }
@@ -260,9 +249,10 @@
   top: calc(100% + 8px);
   left: var(--spacing_16);
   width: min(442px, calc(100vw - 32px));
-  background: var(--gray_0);
+  background: var(--bg_default_tertiary);
+  border: 1px solid var(--border_default);
   border-radius: var(--radius_12);
-  box-shadow: 0 4px 24px var(--opacity_black_1_15);
+  box-shadow: 0 4px 24px var(--shadow_default);
   padding: var(--spacing_12);
   font-size: 14px;
   line-height: var(--line_height_22);
@@ -271,14 +261,14 @@
   display: block;
   font-size: 11px;
   line-height: 14px;
-  color: var(--gray_300);
+  color: var(--text_default_tertiary);
   margin: var(--spacing_8) 0 var(--spacing_6);
 }
 .track {
   display: flex;
   gap: 2px;
   padding: 2px;
-  background: var(--gray_75);
+  background: var(--bg_grouped_tertiary_elevated);
   border-radius: var(--radius_8);
 }
 .segment {
@@ -287,7 +277,7 @@
   border: 0;
   border-radius: var(--radius_6);
   background: transparent;
-  color: var(--gray_1000);
+  color: var(--text_default_secondary);
   font-size: 12px;
   font-weight: 500;
   line-height: var(--line_height_16);
@@ -302,11 +292,12 @@
   min-height: 44px;
 }
 .segmentSelected {
-  background: var(--gray_0);
-  box-shadow: 0 1px 2px var(--opacity_black_1_8);
+  background: var(--bg_default_tertiary);
+  color: var(--text_default_primary);
+  box-shadow: 0 1px 2px var(--shadow_default);
 }
 .segment:disabled {
-  color: var(--gray_300);
+  color: var(--text_default_tertiary);
   cursor: default;
 }
 .menu {
@@ -315,9 +306,10 @@
   top: calc(100% + 8px);
   left: var(--spacing_16);
   min-width: 220px;
-  background: var(--gray_0);
+  background: var(--bg_default_tertiary);
+  border: 1px solid var(--border_default);
   border-radius: var(--radius_12);
-  box-shadow: 0 4px 24px var(--opacity_black_1_15);
+  box-shadow: 0 4px 24px var(--shadow_default);
   padding: var(--spacing_6);
   font-size: 14px;
   line-height: var(--line_height_22);
@@ -336,15 +328,15 @@
   cursor: pointer;
 }
 .menuItem:hover:not(:disabled) {
-  background: var(--opacity_black_1_4);
+  background: var(--bg_interaction_tertiary_hover);
 }
 .menuItem:disabled {
-  color: var(--gray_300);
+  color: var(--text_default_tertiary);
   cursor: default;
 }
 .menuNote {
   font-size: 11px;
-  color: var(--gray_300);
+  color: var(--text_default_tertiary);
 }
 .error {
   width: 100%;
@@ -352,14 +344,14 @@
   gap: var(--spacing_6);
   padding: var(--spacing_8) var(--spacing_12);
   border-radius: var(--radius_8);
-  background: var(--red_50);
-  color: var(--red_500);
+  background: var(--bg_status_error);
+  color: var(--text_status_error);
   font-size: 13px;
 }
 .note {
   width: 100%;
   text-align: center;
-  color: var(--gray_500);
+  color: var(--text_default_secondary);
   font-size: 13px;
 }
 .hidden {
@@ -404,7 +396,7 @@
   height: 90px;
   flex: 0 0 90px;
   border-radius: var(--radius_12);
-  background: var(--gray_75);
+  background: var(--bg_grouped_tertiary_elevated);
   object-fit: cover;
   display: block;
 }
@@ -415,10 +407,10 @@
   min-width: 0;
   font-size: 13px;
   line-height: 18px;
-  color: var(--gray_500);
+  color: var(--text_default_secondary);
 }
 .continuationTitle {
-  color: var(--gray_1000);
+  color: var(--text_default_primary);
   font-weight: 500;
 }
 .continuationRemove {
@@ -428,18 +420,18 @@
   border: 0;
   border-radius: var(--radius_full);
   background: transparent;
-  color: var(--gray_500);
+  color: var(--icon_default_secondary);
   font-size: 20px;
   cursor: pointer;
 }
 .continuationRemove:hover {
-  background: var(--opacity_black_1_4);
-  color: var(--gray_1000);
+  background: var(--bg_interaction_tertiary_hover);
+  color: var(--icon_default_primary);
 }
 .fixedNote {
   display: block;
   font-size: 11px;
   line-height: 14px;
-  color: var(--gray_300);
+  color: var(--text_default_tertiary);
   margin: var(--spacing_4) 0 0;
 }

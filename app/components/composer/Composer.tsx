@@ -7,9 +7,9 @@ import { overlapSeconds } from "@/lib/extend";
 import type { Capabilities } from "@/lib/job-api";
 import { submitJob } from "@/lib/submit-job";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
+import { Inert } from "@/components/shell/Inert";
 import styles from "./composer.module.css";
 
-const INERT_TITLE = "Not part of MiniMax Local";
 const PLACEHOLDER = "Enter message... (use / for commands)";
 const EXTEND_PLACEHOLDER = "Describe what happens next…";
 const FIXED_NOTE = "fixed by the video being extended";
@@ -221,11 +221,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
           />
         </div>
         <div className={styles.bar}>
-          <span className={styles.iconButton} role="button" aria-disabled="true" title={INERT_TITLE} aria-label="Add attachment">+</span>
-          <span className={styles.inert} role="switch" aria-checked="false" aria-disabled="true" title={INERT_TITLE}>
-            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="M6 13.5h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
-            Agent Team
-          </span>
+          <Inert label="Add attachment" className={styles.iconButton}>+</Inert>
           {video ? (
             <>
               <span style={{ position: "relative" }} data-popover="model">
@@ -306,7 +302,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
             </>
           ) : null}
           <div className={styles.barRight}>
-            <span className={styles.inertModel} role="button" aria-disabled="true" title={INERT_TITLE}>MiniMax-M3 <span aria-hidden="true">⌄</span></span>
+            <Inert label="MiniMax-M3" className={styles.inertModel} align="end">MiniMax-M3 <span aria-hidden="true">⌄</span></Inert>
             {stop ? (
               <button type="button" className={styles.send} aria-label="Stop generation" disabled={stop.pending} onClick={stop.onStop}>
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" /></svg>
@@ -332,7 +328,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
           Video generation <span className={styles.h3}>H3</span>
         </button>
         {["Document", "Website", "Image Generation", "More"].map((label) => (
-          <span key={label} className={cx(styles.chip, styles.chipInert)} role="button" aria-disabled="true" title={INERT_TITLE}>{label}</span>
+          <Inert key={label} label={label} className={cx(styles.chip, styles.chipInert)}>{label}</Inert>
         ))}
       </div>
       )}

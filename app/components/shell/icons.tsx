@@ -45,3 +45,53 @@ export const IconLogo = () => (
 export const IconAvatar = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#0094fc" /><rect x="5" y="7" width="14" height="10" rx="3" fill="#fff" /><circle cx="9.5" cy="12" r="1.5" fill="#0094fc" /><circle cx="14.5" cy="12" r="1.5" fill="#0094fc" /></svg>
 );
+
+/* STORY_019: the user menu, the Settings modal and the Appearance cards. */
+export const IconSwitchBack = () => (
+  <svg {...base}><path d="M6 4 3 7l3 3" /><path d="M3 7h6.5a3.5 3.5 0 0 1 0 7H6" /></svg>
+);
+export const IconSettings = () => (
+  <svg {...base}><circle cx="8" cy="8" r="2.2" /><path d="M8 1.8v1.7M8 12.5v1.7M1.8 8h1.7M12.5 8h1.7M3.6 3.6l1.2 1.2M11.2 11.2l1.2 1.2M3.6 12.4l1.2-1.2M11.2 4.8l1.2-1.2" /></svg>
+);
+export const IconGift = () => (
+  <svg {...base}><rect x="2" y="6" width="12" height="8" rx="1" /><path d="M2 9h12M8 6v8M5 6a1.6 1.6 0 1 1 3-1M11 6a1.6 1.6 0 1 0-3-1" /></svg>
+);
+export const IconChart = () => (
+  <svg {...base}><path d="M2.5 13.5h11M4 11V7M8 11V4M12 11V8.5" /></svg>
+);
+export const IconHeadset = () => (
+  <svg {...base}><path d="M3 9.5V8a5 5 0 0 1 10 0v1.5" /><rect x="2.5" y="9" width="2.5" height="4" rx="1" /><rect x="11" y="9" width="2.5" height="4" rx="1" /></svg>
+);
+export const IconBook = () => (
+  <svg {...base}><path d="M3 2.5h6.5a2 2 0 0 1 2 2V13.5H5a2 2 0 0 0-2 2z" /><path d="M3 12.5A2 2 0 0 1 5 11h6.5" /></svg>
+);
+export const IconLogout = () => (
+  <svg {...base}><path d="M6.5 2.5H4a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 4 13.5h2.5M10 5l3 3-3 3M13 8H6.5" /></svg>
+);
+export const IconChevronRight = () => (
+  <svg {...base}><path d="m6 4 4 4-4 4" /></svg>
+);
+export const IconClose = () => (
+  <svg {...base}><path d="m4 4 8 8M12 4l-8 8" /></svg>
+);
+export const IconGeneral = () => (
+  <svg {...base}><circle cx="8" cy="8" r="6.3" /><circle cx="8" cy="8" r="2" /></svg>
+);
+export const IconAccount = () => (
+  <svg {...base}><circle cx="8" cy="8" r="6.3" /><circle cx="8" cy="6.5" r="2" /><path d="M4.5 12.5a3.5 3.5 0 0 1 7 0" /></svg>
+);
+export const IconUsage = () => (
+  <svg {...base}><circle cx="8" cy="8" r="6.3" /><path d="M8 4.5v3.5l2.5 1.5" /><circle cx="8" cy="8" r="2.5" /></svg>
+);
+export const IconArchive = () => (
+  <svg {...base}><rect x="2" y="3" width="12" height="3" rx="0.8" /><path d="M3 6v6.5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6M6.5 9h3" /></svg>
+);
+export const IconSun = () => (
+  <svg {...base}><circle cx="8" cy="8" r="2.8" /><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1" /></svg>
+);
+export const IconMoon = () => (
+  <svg {...base}><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5z" /></svg>
+);
+export const IconMonitor = () => (
+  <svg {...base}><rect x="2" y="3" width="12" height="8" rx="1.2" /><path d="M6 13.5h4M8 11v2.5" /></svg>
+);

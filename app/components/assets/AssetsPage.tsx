@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { ASSET_CHIPS, ASSET_TABS, fileNameFor, filterAssets, type AssetChip } from "@/lib/assets-filter";
 import { cx } from "@/lib/cx";
 import type { HistoryEntry } from "@/lib/history-store";
+import { Inert } from "@/components/shell/Inert";
 import styles from "./assets.module.css";
 
-const INERT_TITLE = "Not part of MiniMax Local";
 
 export interface AssetsPageProps {
   readonly fetchImpl?: typeof fetch;
@@ -85,11 +85,17 @@ export function AssetsPage({ fetchImpl, confirmImpl }: AssetsPageProps) {
     <main className={styles.page}>
       <h1 className={styles.title}>Assets</h1>
       <div className={styles.tabs} role="tablist">
-        {ASSET_TABS.map((tab, i) => (
-          <button key={tab} type="button" role="tab" aria-selected={i === 0} aria-disabled={i === 0 ? undefined : "true"} title={i === 0 ? undefined : INERT_TITLE} className={cx(styles.tab, i === 0 && styles.tabActive)}>
-            {tab}
-          </button>
-        ))}
+        {ASSET_TABS.map((tab, i) =>
+          i === 0 ? (
+            <button key={tab} type="button" role="tab" aria-selected className={cx(styles.tab, styles.tabActive)}>
+              {tab}
+            </button>
+          ) : (
+            <Inert key={tab} role="tab" ariaSelected={false} label={tab} className={styles.tab}>
+              {tab}
+            </Inert>
+          ),
+        )}
       </div>
       <div className={styles.toolbar}>
         {ASSET_CHIPS.map((c) => (
