@@ -14,7 +14,7 @@ import { JobStore, isTerminal, type Job } from "./job-store.ts";
 import { FPS, REQUIRED_CLASSES, buildGraph, extensionLength, lengthForSeconds, ref2vaFileFor, seconds, sizeFor, templateUnet, type Continuation, type Graph, type UploadedImage } from "./mapping.ts";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
 import { interpret, type ComfyEvent } from "./progress.ts";
-import { continuationPrompt } from "./prompt.ts";
+import { buildPrompt } from "./prompt.ts";
 
 export const VERSION = "1.2.0";
 
@@ -438,7 +438,7 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
       if (overlap > sourceFrames) throw new HttpError(400, "validation", `the video has ${String(sourceFrames)} frames; an overlap of ${String(overlap)} does not fit`, "overlapFrames");
       request = { ...request, overlap: { frames: overlap, seconds: seconds(overlap) } };
       const file = source.result.video.subfolder ? `${source.result.video.subfolder}/${source.result.video.filename}` : source.result.video.filename;
-      continuation = { file, frames: sourceFrames, overlapFrames: overlap, prompt: continuationPrompt(request.prompt) };
+      continuation = { file, frames: sourceFrames, overlapFrames: overlap, prompt: buildPrompt(request.prompt, { kind: "extension", frames: extensionLength(request.durationSeconds, overlap) }) };
     }
     if (store.open().length >= maxOpenJobs) throw new HttpError(503, "busy", `the Spark already has ${String(maxOpenJobs)} jobs open; try again later`);
     if (!comfyReachable && !(await checkComfy())) throw new HttpError(503, "busy", NOT_RUNNING);
@@ -455,8 +455,11 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
         const uploaded = await comfy.uploadImage(upload.data, `job-${id}-${String(index)}${path.extname(upload.filename) || ".png"}`, upload.contentType);
         images.push({ name: uploaded.subfolder ? `${uploaded.subfolder}/${uploaded.name}` : uploaded.name });
       }
-      const graph = buildGraph(options.graphTemplate, request, images, { filenamePrefix: `video/job-${id}`, seed, ...(continuation ? { continuation } : {}) });
+      // STORY_020: the model gets its documented format around the owner's words (an extension's is on the continuation).
+      const freshPrompt = continuation ? undefined : buildPrompt(request.prompt, { kind: "fresh", frames: lengthForSeconds(request.durationSeconds), images: images.length });
+      const graph = buildGraph(options.graphTemplate, request, images, { filenamePrefix: `video/job-${id}`, seed, ...(continuation ? { continuation } : {}), ...(freshPrompt === undefined ? {} : { prompt: freshPrompt }) });
       if (continuation) log(`job ${id} continues ${continuation.file}: its last ${String(continuation.overlapFrames)} frames become the new clip's head, ${String(extensionLength(request.durationSeconds, continuation.overlapFrames))} frames generated, prompt:\n${continuation.prompt}`);
+      else log(`job ${id} prompt as sent to the model:\n${freshPrompt ?? request.prompt}`);
       promptId = await comfy.submit(graph);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

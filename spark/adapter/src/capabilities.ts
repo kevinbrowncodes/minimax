@@ -13,7 +13,8 @@ export const CAPABILITIES = {
 export type Ratio = (typeof CAPABILITIES.ratios)[number];
 
 export const IMAGE_TYPES: ReadonlySet<string> = new Set(["image/png", "image/jpeg", "image/webp"]);
-export const MAX_PROMPT_CHARS = 2000;
+/** STORY_020: MiniMax's own 350–700-word prompts run to 4,500 characters; the owner must be able to write one. */
+export const MAX_PROMPT_CHARS = 6000;
 
 /** What was carried from the source into the new clip's own first frames. */
 export interface Overlap {

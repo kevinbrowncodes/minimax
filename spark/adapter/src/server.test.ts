@@ -77,7 +77,9 @@ describe("create → status → result", () => {
     const done = await waitFor(id, (s) => s["status"] === "done");
     expect(done).toMatchObject({ progress: 100, result: { url: `/jobs/${id}/result`, posterUrl: `/jobs/${id}/poster`, mimeType: "video/mp4", durationSeconds: 5.167, width: 1344, height: 768 } });
     const submitted = fake.prompts[0];
-    expect(submitted?.graph["cond"]?.inputs).toMatchObject({ prompt: "A small paper boat", width: 1344, height: 768, length: 124 });
+    expect(submitted?.graph["cond"]?.inputs).toMatchObject({ width: 1344, height: 768, length: 124 });
+    // STORY_020: the model gets MiniMax's format around the owner's words (text-only: no instruction line)
+    expect(String(submitted?.graph["cond"]?.inputs["prompt"])).toMatch(/^integrated_multimodal_description: \[Shot 1\] Live-action\. The camera holds a perfectly static shot throughout the entire 5\.17-second duration: .* A small paper boat\n\noverall_soundscape: /);
     expect(submitted?.graph["save"]?.inputs["filename_prefix"]).toBe(`video/job-${id}`);
     const res = await api(`/jobs/${id}/result`);
     expect(res.status).toBe(200);
@@ -123,6 +125,8 @@ describe("create → status → result", () => {
     expect(graph?.["first_frame"]).toMatchObject({ class_type: "LoadImage", inputs: { image: fake.uploads[0]?.name } });
     expect(graph?.["last_frame"]).toMatchObject({ class_type: "LoadImage", inputs: { image: fake.uploads[1]?.name } });
     expect(graph?.["cond"]?.inputs).toMatchObject({ first_frame: ["first_frame", 0], last_frame: ["last_frame", 0] });
+    // STORY_020: first + last frame → MiniMax's FL2VA alignment line first, then the format around the owner's words
+    expect(String(graph?.["cond"]?.inputs["prompt"])).toMatch(/^How the reference pictures align with the target video — Picture 1 \(from Shot 1\) aligns with the 0\.00-second mark of the target video; Picture 2 \(from Shot 1\) aligns with the 5\.17-second mark of the target video\.\n\nintegrated_multimodal_description: \[Shot 1\] Live-action\./);
     await waitFor(id, (s) => s["status"] === "done");
   });
 });
@@ -331,8 +335,14 @@ describe("extensions (STORY_017: native masked continuation)", () => {
     expect(graph?.["cond"]?.class_type).toBe("MiniMaxH3ImageToVideo");
     expect(graph?.["cond"]?.inputs).not.toHaveProperty("first_frame");
     expect(graph?.["guide"]).toBeUndefined();
-    expect(String(graph?.["cond"]?.inputs["prompt"])).toMatch(/^integrated_multimodal_description: \[Shot 1\] Live-action, one continuous shot/);
-    expect(String(graph?.["cond"]?.inputs["prompt"])).toContain("A small paper boat");
+    // STORY_020: the extension's prompt is MiniMax's format with no instruction line (the preserved head is not a Picture)
+    expect(String(graph?.["cond"]?.inputs["prompt"])).toMatch(/^integrated_multimodal_description: \[Shot 1\] Live-action\. The camera holds a perfectly static shot throughout the entire 12\.25-second duration/);
+    expect(String(graph?.["cond"]?.inputs["prompt"])).toContain("already in frame at the start stay exactly as they are for the whole video and the action continues without interruption. A small paper boat");
+    expect(String(graph?.["cond"]?.inputs["prompt"])).toMatch(/\n\noverall_soundscape: .*\n\nnon_diegetic_music: /);
+    // …and the fresh text-only source got the format without an instruction line and without a Picture clause
+    const sourcePrompt = String(fake.prompts[0]?.graph["cond"]?.inputs["prompt"]);
+    expect(sourcePrompt).toMatch(/^integrated_multimodal_description: \[Shot 1\] Live-action\. The camera holds a perfectly static shot throughout the entire 5\.17-second duration/);
+    expect(sourcePrompt).not.toContain("<Picture 1>");
     const done = await waitFor(ext, isDone);
     expect(done["result"]).toMatchObject({ frames: 379, durationSeconds: 15.792, width: 1344, height: 768 });
     // BUG_003: the result is the save node's file, not the LoadVideo preview of the source that ComfyUI lists first

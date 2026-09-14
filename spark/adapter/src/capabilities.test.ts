@@ -7,12 +7,15 @@ describe("validateRequest", () => {
   it("accepts a valid request, trims the prompt, defaults the model and counts uploads", () => {
     expect(validateRequest(valid, [])).toEqual({ prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: 5, model: "minimax-h3", referenceImages: 0 });
     expect(validateRequest({ ...valid, durationSeconds: "15", model: "" }, [{ field: "referenceImage", contentType: "image/webp", size: 1 }]).referenceImages).toBe(1);
+    // STORY_020: a MiniMax-length prompt fits (6000 characters); one more is refused
+    expect(validateRequest({ ...valid, prompt: "x".repeat(6000) }, []).prompt).toHaveLength(6000);
+    expect(() => validateRequest({ ...valid, prompt: "x".repeat(6001) }, [])).toThrow(/longer than 6000/);
   });
 
   it("rejects each field with the contract's code and field", () => {
     const cases: [Record<string, unknown>, string, string][] = [
       [{ ...valid, prompt: " " }, "validation", "prompt"],
-      [{ ...valid, prompt: "x".repeat(2001) }, "validation", "prompt"],
+      [{ ...valid, prompt: "x".repeat(6001) }, "validation", "prompt"],
       [{ ...valid, ratio: "2:1" }, "unsupported_option", "ratio"],
       [{ ...valid, ratio: 169 }, "validation", "ratio"],
       [{ ...valid, resolution: "2K" }, "unsupported_option", "resolution"],

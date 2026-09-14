@@ -42,13 +42,15 @@ export interface Continuation {
   readonly frames: number;
   /** The source's last N frames carried into the new clip as its own first frames (one of OVERLAP_OPTIONS). */
   readonly overlapFrames: number;
-  /** The prompt in MiniMax's base format (prompt.ts continuationPrompt). */
+  /** The prompt in MiniMax's base format (prompt.ts buildPrompt, kind "extension"). */
   readonly prompt: string;
 }
 export interface GraphOptions {
   readonly seed?: number;
   readonly filenamePrefix?: string;
   readonly continuation?: Continuation;
+  /** STORY_020: the prompt as built for the model for a fresh clip (prompt.ts buildPrompt); the request's text when absent. */
+  readonly prompt?: string;
 }
 
 const NEEDED_NODES = ["unet", "clip", "vae_video", "vae_audio", "cond", "noise", "guider", "sampler", "sigmas", "sample", "decode_video", "decode_audio", "video", "save"] as const;
@@ -88,7 +90,7 @@ export function buildGraph(template: Graph, request: JobRequest, images: readonl
 
   const continuation = options.continuation;
   if (!continuation) {
-    cond.inputs["prompt"] = request.prompt;
+    cond.inputs["prompt"] = options.prompt ?? request.prompt;
     cond.inputs["width"] = width;
     cond.inputs["height"] = height;
     cond.inputs["length"] = lengthForSeconds(request.durationSeconds);

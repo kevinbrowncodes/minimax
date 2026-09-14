@@ -23,7 +23,7 @@ or `multipart/form-data` with the same fields as text parts plus **0–2** `refe
 
 | Field | Rule |
 | --- | --- |
-| `prompt` | string, 1–2000 characters after trimming, required |
+| `prompt` | string, 1–6000 characters after trimming, required (v1.3: was 2000; MiniMax-length prompts need the room) |
 | `ratio` | one of `capabilities.ratios`, required |
 | `resolution` | one of `capabilities.resolutions`, required |
 | `durationSeconds` | integer within `capabilities.durationsSeconds` (`min`, `max`, `step`), required |

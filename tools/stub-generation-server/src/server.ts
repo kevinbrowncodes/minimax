@@ -23,7 +23,7 @@ export const CAPABILITIES = {
   extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30 },
 } as const;
 const IMAGE_TYPES: ReadonlySet<string> = new Set(["image/png", "image/jpeg", "image/webp"]);
-const MAX_PROMPT = 2000;
+const MAX_PROMPT = 6000; // STORY_020: room for a MiniMax-length prompt (mirrors the adapter's MAX_PROMPT_CHARS)
 
 export interface JobRequest {
   readonly prompt: string;
