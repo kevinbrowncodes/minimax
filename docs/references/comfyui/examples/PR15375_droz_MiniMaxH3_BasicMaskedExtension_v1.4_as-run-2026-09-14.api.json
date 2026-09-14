@@ -1,0 +1,1424 @@
+{
+ "1": {
+  "inputs": {
+   "unet_name": "minimax_h3_fl2va_int8_convrot.safetensors",
+   "weight_dtype": "default"
+  },
+  "class_type": "UNETLoader",
+  "_meta": {
+   "title": "Load Diffusion Model"
+  }
+ },
+ "2": {
+  "inputs": {
+   "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+   "type": "minimax",
+   "device": "default"
+  },
+  "class_type": "CLIPLoader",
+  "_meta": {
+   "title": "Load CLIP"
+  }
+ },
+ "3": {
+  "inputs": {
+   "vae_name": "minimax_h3_video_vae_fp16.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "Load VAE"
+  }
+ },
+ "4": {
+  "inputs": {
+   "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "Load VAE"
+  }
+ },
+ "12": {
+  "inputs": {
+   "samples": [
+    "296",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE Decode"
+  }
+ },
+ "13": {
+  "inputs": {
+   "samples": [
+    "296",
+    0
+   ],
+   "vae": [
+    "4",
+    0
+   ]
+  },
+  "class_type": "VAEDecodeAudio",
+  "_meta": {
+   "title": "VAE Decode Audio"
+  }
+ },
+ "25": {
+  "inputs": {
+   "samples": [
+    "297",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE Decode"
+  }
+ },
+ "26": {
+  "inputs": {
+   "samples": [
+    "297",
+    0
+   ],
+   "vae": [
+    "4",
+    0
+   ]
+  },
+  "class_type": "VAEDecodeAudio",
+  "_meta": {
+   "title": "VAE Decode Audio"
+  }
+ },
+ "30": {
+  "inputs": {
+   "overlap": [
+    "247:68",
+    1
+   ],
+   "overlap_side": "source",
+   "overlap_mode": "cut",
+   "source_images": [
+    "12",
+    0
+   ],
+   "new_images": [
+    "25",
+    0
+   ]
+  },
+  "class_type": "ImageBatchExtendWithOverlap",
+  "_meta": {
+   "title": "Image Batch Extend With Overlap"
+  }
+ },
+ "31": {
+  "inputs": {
+   "start_index": [
+    "247:75",
+    0
+   ],
+   "duration": 2048,
+   "audio": [
+    "26",
+    0
+   ]
+  },
+  "class_type": "TrimAudioDuration",
+  "_meta": {
+   "title": "Trim Audio Duration"
+  }
+ },
+ "32": {
+  "inputs": {
+   "direction": "after",
+   "audio1": [
+    "13",
+    0
+   ],
+   "audio2": [
+    "31",
+    0
+   ]
+  },
+  "class_type": "AudioConcat",
+  "_meta": {
+   "title": "Concatenate Audio"
+  }
+ },
+ "33": {
+  "inputs": {
+   "fps": 24,
+   "bit_depth": 8,
+   "color_space": "sRGB",
+   "images": [
+    "206",
+    2
+   ],
+   "audio": [
+    "205",
+    0
+   ]
+  },
+  "class_type": "CreateVideo",
+  "_meta": {
+   "title": "Create Video"
+  }
+ },
+ "34": {
+  "inputs": {
+   "filename_prefix": "video/MiniMaxH3_MaskedExtensions",
+   "format": "auto",
+   "format.codec": "auto",
+   "codec": "auto",
+   "video": [
+    "33",
+    0
+   ]
+  },
+  "class_type": "SaveVideo",
+  "_meta": {
+   "title": "Save Video"
+  }
+ },
+ "60": {
+  "inputs": {
+   "value": 12.5
+  },
+  "class_type": "PrimitiveFloat",
+  "_meta": {
+   "title": "Gen Duration (sec)"
+  }
+ },
+ "61": {
+  "inputs": {
+   "value": 2
+  },
+  "class_type": "PrimitiveInt",
+  "_meta": {
+   "title": "Overlap Chunks"
+  }
+ },
+ "90": {
+  "inputs": {
+   "f_string": "frames={a} tokens={b} audio_frames={c} tail_tokens={d} kept_frames={e} tail_audio={f} latent_w={g} latent_h={h} trim_seconds={i}",
+   "values.a": [
+    "247:64",
+    1
+   ],
+   "values.b": [
+    "247:65",
+    1
+   ],
+   "values.c": [
+    "247:66",
+    1
+   ],
+   "values.d": [
+    "247:67",
+    1
+   ],
+   "values.e": [
+    "247:69",
+    1
+   ],
+   "values.f": [
+    "247:68",
+    1
+   ],
+   "values.g": [
+    "247:73",
+    1
+   ],
+   "values.h": [
+    "247:74",
+    1
+   ],
+   "values.i": [
+    "247:75",
+    0
+   ]
+  },
+  "class_type": "StringFormat",
+  "_meta": {
+   "title": "Format Text"
+  }
+ },
+ "91": {
+  "inputs": {
+   "source": [
+    "90",
+    0
+   ]
+  },
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "Preview as Text"
+  }
+ },
+ "198": {
+  "inputs": {
+   "samples": [
+    "298",
+    0
+   ],
+   "vae": [
+    "4",
+    0
+   ]
+  },
+  "class_type": "VAEDecodeAudio",
+  "_meta": {
+   "title": "VAE Decode Audio"
+  }
+ },
+ "200": {
+  "inputs": {
+   "samples": [
+    "298",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE Decode"
+  }
+ },
+ "203": {
+  "inputs": {
+   "start_index": [
+    "247:75",
+    0
+   ],
+   "duration": 2048,
+   "audio": [
+    "198",
+    0
+   ]
+  },
+  "class_type": "TrimAudioDuration",
+  "_meta": {
+   "title": "Trim Audio Duration"
+  }
+ },
+ "205": {
+  "inputs": {
+   "direction": "after",
+   "audio1": [
+    "32",
+    0
+   ],
+   "audio2": [
+    "203",
+    0
+   ]
+  },
+  "class_type": "AudioConcat",
+  "_meta": {
+   "title": "Concatenate Audio"
+  }
+ },
+ "206": {
+  "inputs": {
+   "overlap": [
+    "247:68",
+    1
+   ],
+   "overlap_side": "source",
+   "overlap_mode": "cut",
+   "source_images": [
+    "30",
+    2
+   ],
+   "new_images": [
+    "200",
+    0
+   ]
+  },
+  "class_type": "ImageBatchExtendWithOverlap",
+  "_meta": {
+   "title": "Image Batch Extend With Overlap"
+  }
+ },
+ "244": {
+  "inputs": {
+   "aspect_ratio": "16:9 (Widescreen)",
+   "megapixels": 0.5,
+   "multiple": 32
+  },
+  "class_type": "ResolutionSelector",
+  "_meta": {
+   "title": "Resolution Selector"
+  }
+ },
+ "260": {
+  "inputs": {
+   "fps": 24,
+   "bit_depth": 8,
+   "color_space": "sRGB",
+   "images": [
+    "25",
+    0
+   ],
+   "audio": [
+    "26",
+    0
+   ]
+  },
+  "class_type": "CreateVideo",
+  "_meta": {
+   "title": "Create Video"
+  }
+ },
+ "261": {
+  "inputs": {
+   "filename_prefix": "tmp/video_1",
+   "format": "auto",
+   "format.codec": "auto",
+   "codec": "auto",
+   "video": [
+    "260",
+    0
+   ]
+  },
+  "class_type": "SaveVideo",
+  "_meta": {
+   "title": "Save Preview Video"
+  }
+ },
+ "262": {
+  "inputs": {
+   "fps": 24,
+   "bit_depth": 8,
+   "color_space": "sRGB",
+   "images": [
+    "12",
+    0
+   ],
+   "audio": [
+    "13",
+    0
+   ]
+  },
+  "class_type": "CreateVideo",
+  "_meta": {
+   "title": "Create Video"
+  }
+ },
+ "263": {
+  "inputs": {
+   "filename_prefix": "tmp/video_0",
+   "format": "auto",
+   "format.codec": "auto",
+   "codec": "auto",
+   "video": [
+    "262",
+    0
+   ]
+  },
+  "class_type": "SaveVideo",
+  "_meta": {
+   "title": "Save Preview Video"
+  }
+ },
+ "264": {
+  "inputs": {
+   "fps": 24,
+   "bit_depth": 8,
+   "color_space": "sRGB",
+   "images": [
+    "200",
+    0
+   ],
+   "audio": [
+    "198",
+    0
+   ]
+  },
+  "class_type": "CreateVideo",
+  "_meta": {
+   "title": "Create Video"
+  }
+ },
+ "265": {
+  "inputs": {
+   "filename_prefix": "tmp/video_2",
+   "format": "auto",
+   "format.codec": "auto",
+   "codec": "auto",
+   "video": [
+    "264",
+    0
+   ]
+  },
+  "class_type": "SaveVideo",
+  "_meta": {
+   "title": "Save Preview Video"
+  }
+ },
+ "268": {
+  "inputs": {
+   "prompt": "integrated_multimodal_description: [Shot 1] Hyper realistic cinematic footage, ultra detailed, volumetric light, shallow depth of field. A dim arcade in the year 2050, worn carpet and scuffed floor panels lit by a mix of old fluorescent tubes and cyan and magenta neon. A teenage boy stands on a circular haptic platform wearing a slim black visor and glowing bands on his wrists and ankles, knees bent, shoulders shifting as he plays. Two other players stand in identical rigs glowing further back, and a paper soda cup sits on the platform rail. The camera pushes slowly and steadily toward him across the room, closing gradually on the visor until reflections of a rain lit neon city crawl across its black mirrored surface, and keeps pushing until the visor fills the entire frame. A burst of electric blue light floods the frame to white. The white clears to a first person point of view inside the game, sleek grey gloved hands and forearms swinging in frame, sprinting hard along a wet rooftop high above a vast neon megacity with rain streaking sideways. The view sprints straight at the roof edge and launches off it in one long flat leap, staying level rather than dropping, gloved hands thrown forward, flying forward between two towers toward a rooftop directly ahead at the same height, the glowing street far below.\n\noverall_soundscape: Low arcade hum, cooling fans and distant muffled game audio, echoing pop music playing through old ceiling speakers and reverberating across the room, the boy breathing fast, soft servo clicks from the haptic rig, then a deep bass whoosh as the sound swaps to roaring wind, hard fast footfalls slapping wet metal, rain, and the launch into open air where the footsteps stop and only wind remains.\n\nnon_diegetic_music: No score during the arcade, then a driving electronic score with pulsing synth bass entering as the white light clears.",
+   "width": [
+    "244",
+    0
+   ],
+   "height": [
+    "244",
+    1
+   ],
+   "length": [
+    "247:64",
+    1
+   ],
+   "ref_image_size": "match",
+   "clip": [
+    "2",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ],
+   "audio_vae": [
+    "4",
+    0
+   ]
+  },
+  "class_type": "MiniMaxH3ReferenceToVideo",
+  "_meta": {
+   "title": "MiniMax H3 Reference to Video"
+  }
+ },
+ "269": {
+  "inputs": {
+   "prompt": "integrated_multimodal_description: [Shot 1] Hyper realistic cinematic first person point of view video game footage, ultra detailed, volumetric light, wide angle with motion blur. Sleek grey gloved hands and forearms are thrown forward in frame, flying forward in one long flat leap between two towers in a vast neon megacity, level with a rooftop directly ahead at the same height, rain streaking past, the glowing street far below. The rooftop rushes up and the view slams down onto it, dropping hard and low as the legs absorb the impact and the gloved hands swing down out of frame, then rising smoothly back to running height as the sprint continues forward without pausing. An enormous hovering transport ship roars across low overhead from left to right, its lit underside filling the entire top of the frame, engine downwash blasting the rain sideways and tearing ripples across the puddles on the roof as the view flinches down and keeps running beneath it. Ahead is the edge of the rooftop and beyond it is a thick metal pipe connecting the edge of the roof with the edge of the roof 10 feet away. The view slows and glances down as the player's feet take confident precise steps onto the pipe connecting the roofs, the city streets coming into view far far below, a high speed train track seen to the left of the current building. And then the view looks back up, moving forward deliberately as the next rooftop approaches. Suddenly a trap door opens and a man in dark military gear and a heavy weapon emerges and points at the viewer yelling through the rain [English]<d>Runner! Stop immediately!\"</d>, voice drowned out slightly by the rain and pulsing beat. The video ends while the viewer is still moving forward on the pipe between buildings, nearing the next rooftop.\n\noverall_soundscape: Roaring wind and rain with no footsteps through the flight, then a heavy crashing impact of boots on wet metal and a grunt of effort, fast pounding footfalls resuming, then a colossal engine roar building and passing directly overhead with a deep thrumming downwash that drowns everything, the roar receding, footfalls hammering, the the sound of slightly straining metal, footfalls on the hollow metal, and breathing as the pipe crossing begins.\n\nnon_diegetic_music: A driving electronic score at full intensity, pulsing synth bass and tight percussion under a soaring synth lead that continues throughout the video.",
+   "width": [
+    "244",
+    0
+   ],
+   "height": [
+    "244",
+    1
+   ],
+   "length": [
+    "247:64",
+    1
+   ],
+   "ref_image_size": "match",
+   "clip": [
+    "2",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ],
+   "audio_vae": [
+    "4",
+    0
+   ]
+  },
+  "class_type": "MiniMaxH3ReferenceToVideo",
+  "_meta": {
+   "title": "MiniMax H3 Reference to Video"
+  }
+ },
+ "270": {
+  "inputs": {
+   "prompt": "integrated_multimodal_description: [Shot 1] Hyper realistic cinematic first person point of view video game footage, ultra detailed, volumetric light, wide angle with motion blur. Sleek grey gloved hands are in frame as the player cross a metal pipe connecting two rooftops, with a man in dark military gear seen pointing a heavy weapon at the viewer. The view leaps into running motion as the view crosses over to the next rooftop, then banks sharply left avoiding the man. The view runs forward and skids to a halt right near the next edge. The view looks down for a moment at a futuristic hyper fast train that is speeding past just below the level of the rooftop, left to right. The view looks left down the track, seeing the train stretching and winding through the city, and then glances right to see the train speeding towards some tall neon-lit buildings. A voice is heard from behind, yelling but drowned out by the rain: [English]<d>Nowhere to run!</d>.  After a moment's hesitation the view looks forward again and leaps onto the train, the gloved fist seen grabbing hard on a metal handhold on the roof of the fast moving train, and the view whips with motion blur as it steadies itself. At the very end the view stabilizes and stands, looking forward from the roof of the train, looking up at the beautiful city of even taller buildings in the rainy night. As buildings near the train whip by in a blur of motion there is a moment of reflection.\n\noverall_soundscape: Metal creaking slightly under footfalls and then rapid footsteps on wet concrete. Then the deep roar and rhythmic clatter of a train at full speed, screeching metal wheels on the track. The sound of a breath intake and the sudden transition to the roaring wind sound as the player jumps onto the train, rain hammering on metal, wind tearing past, hard breathing gradually steadying under it all.\n\nnon_diegetic_music: A driving electronic score that lands on a final small synth piano melody at the very end as the viewer stands on the train, opening out wide as the skyline is revealed.",
+   "width": [
+    "244",
+    0
+   ],
+   "height": [
+    "244",
+    1
+   ],
+   "length": [
+    "247:64",
+    1
+   ],
+   "ref_image_size": "match",
+   "clip": [
+    "2",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ],
+   "audio_vae": [
+    "4",
+    0
+   ]
+  },
+  "class_type": "MiniMaxH3ReferenceToVideo",
+  "_meta": {
+   "title": "MiniMax H3 Reference to Video"
+  }
+ },
+ "296": {
+  "inputs": {
+   "seed": 111,
+   "steps": 20,
+   "cfg": 1,
+   "sampler_name": "euler_ancestral",
+   "scheduler": "simple",
+   "denoise": 1,
+   "model": [
+    "1",
+    0
+   ],
+   "positive": [
+    "268",
+    0
+   ],
+   "negative": [
+    "268",
+    0
+   ],
+   "latent_image": [
+    "268",
+    1
+   ]
+  },
+  "class_type": "KSampler",
+  "_meta": {
+   "title": "KSampler"
+  }
+ },
+ "297": {
+  "inputs": {
+   "seed": 222,
+   "steps": 20,
+   "cfg": 1,
+   "sampler_name": "euler_ancestral",
+   "scheduler": "simple",
+   "denoise": 1,
+   "model": [
+    "1",
+    0
+   ],
+   "positive": [
+    "269",
+    0
+   ],
+   "negative": [
+    "269",
+    0
+   ],
+   "latent_image": [
+    "319:318",
+    0
+   ]
+  },
+  "class_type": "KSampler",
+  "_meta": {
+   "title": "KSampler"
+  }
+ },
+ "298": {
+  "inputs": {
+   "seed": 333,
+   "steps": 20,
+   "cfg": 1,
+   "sampler_name": "euler_ancestral",
+   "scheduler": "simple",
+   "denoise": 1,
+   "model": [
+    "1",
+    0
+   ],
+   "positive": [
+    "270",
+    0
+   ],
+   "negative": [
+    "270",
+    0
+   ],
+   "latent_image": [
+    "339:338",
+    0
+   ]
+  },
+  "class_type": "KSampler",
+  "_meta": {
+   "title": "KSampler"
+  }
+ },
+ "247:64": {
+  "inputs": {
+   "expression": "max(5, round(a*24)) + (5 - (max(5, round(a*24)) % 17)) % 17",
+   "values.a": [
+    "60",
+    0
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "247:65": {
+  "inputs": {
+   "expression": "round((a - 5) / 17 * 5 + 2)",
+   "values.a": [
+    "247:64",
+    1
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "247:66": {
+  "inputs": {
+   "expression": "round(a * 5 / 3)",
+   "values.a": [
+    "247:64",
+    1
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "247:67": {
+  "inputs": {
+   "expression": "round(5 * (a - 1) + 2)",
+   "values.a": [
+    "61",
+    0
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "247:69": {
+  "inputs": {
+   "expression": "round(a - round((b - c) * 5 / 3))",
+   "values.a": [
+    "247:66",
+    1
+   ],
+   "values.b": [
+    "247:64",
+    1
+   ],
+   "values.c": [
+    "247:68",
+    1
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "247:68": {
+  "inputs": {
+   "expression": "round(17 * (a - 1) + 5)",
+   "values.a": [
+    "61",
+    0
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "247:73": {
+  "inputs": {
+   "expression": "round(a / 16)",
+   "values.a": [
+    "244",
+    0
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "247:74": {
+  "inputs": {
+   "expression": "round(a / 16)",
+   "values.a": [
+    "244",
+    1
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "247:75": {
+  "inputs": {
+   "expression": "a / 40",
+   "values.a": [
+    "247:69",
+    1
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "319:300": {
+  "inputs": {
+   "expression": "round(-a)",
+   "values.a": [
+    "247:67",
+    1
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "319:301": {
+  "inputs": {
+   "av_latent": [
+    "269",
+    1
+   ]
+  },
+  "class_type": "LTXVSeparateAVLatent",
+  "_meta": {
+   "title": "Separate AV Latent"
+  }
+ },
+ "319:302": {
+  "inputs": {
+   "dim": "t",
+   "index": [
+    "319:300",
+    1
+   ],
+   "amount": [
+    "247:67",
+    1
+   ],
+   "samples": [
+    "319:303",
+    0
+   ]
+  },
+  "class_type": "LatentCut",
+  "_meta": {
+   "title": "LatentCut"
+  }
+ },
+ "319:303": {
+  "inputs": {
+   "av_latent": [
+    "296",
+    0
+   ]
+  },
+  "class_type": "LTXVSeparateAVLatent",
+  "_meta": {
+   "title": "Separate AV Latent"
+  }
+ },
+ "319:304": {
+  "inputs": {
+   "dim": "x",
+   "index": [
+    "319:305",
+    1
+   ],
+   "amount": [
+    "247:69",
+    1
+   ],
+   "samples": [
+    "319:303",
+    1
+   ]
+  },
+  "class_type": "LatentCut",
+  "_meta": {
+   "title": "LatentCut"
+  }
+ },
+ "319:305": {
+  "inputs": {
+   "expression": "round(-a)",
+   "values.a": [
+    "247:69",
+    1
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "319:306": {
+  "inputs": {
+   "f_string": "0:(0.0),\n{a}:(1.0)\n",
+   "values.a": [
+    "247:67",
+    1
+   ]
+  },
+  "class_type": "StringFormat",
+  "_meta": {
+   "title": "Format Text"
+  }
+ },
+ "319:307": {
+  "inputs": {
+   "dim": "t",
+   "samples1": [
+    "319:302",
+    0
+   ],
+   "samples2": [
+    "319:301",
+    0
+   ]
+  },
+  "class_type": "LatentConcat",
+  "_meta": {
+   "title": "LatentConcat"
+  }
+ },
+ "319:308": {
+  "inputs": {
+   "dim": "x",
+   "samples1": [
+    "319:304",
+    0
+   ],
+   "samples2": [
+    "319:301",
+    1
+   ]
+  },
+  "class_type": "LatentConcat",
+  "_meta": {
+   "title": "LatentConcat"
+  }
+ },
+ "319:309": {
+  "inputs": {
+   "value": 1,
+   "width": [
+    "319:315",
+    1
+   ],
+   "height": 2
+  },
+  "class_type": "SolidMask",
+  "_meta": {
+   "title": "Create Solid Mask"
+  }
+ },
+ "319:310": {
+  "inputs": {
+   "points_string": [
+    "319:306",
+    0
+   ],
+   "invert": false,
+   "frames": [
+    "247:65",
+    1
+   ],
+   "width": [
+    "247:73",
+    1
+   ],
+   "height": [
+    "247:74",
+    1
+   ],
+   "interpolation": "none"
+  },
+  "class_type": "CreateFadeMaskAdvanced",
+  "_meta": {
+   "title": "Create Fade Mask Advanced"
+  }
+ },
+ "319:311": {
+  "inputs": {
+   "dim": "x",
+   "index": 0,
+   "amount": [
+    "247:66",
+    1
+   ],
+   "samples": [
+    "319:308",
+    0
+   ]
+  },
+  "class_type": "LatentCut",
+  "_meta": {
+   "title": "LatentCut"
+  }
+ },
+ "319:312": {
+  "inputs": {
+   "x": [
+    "247:69",
+    1
+   ],
+   "y": 0,
+   "operation": "add",
+   "destination": [
+    "319:314",
+    0
+   ],
+   "source": [
+    "319:309",
+    0
+   ]
+  },
+  "class_type": "MaskComposite",
+  "_meta": {
+   "title": "Combine Masks"
+  }
+ },
+ "319:313": {
+  "inputs": {
+   "dim": "t",
+   "index": 0,
+   "amount": [
+    "247:65",
+    1
+   ],
+   "samples": [
+    "319:307",
+    0
+   ]
+  },
+  "class_type": "LatentCut",
+  "_meta": {
+   "title": "LatentCut"
+  }
+ },
+ "319:314": {
+  "inputs": {
+   "value": 0,
+   "width": [
+    "247:66",
+    1
+   ],
+   "height": 2
+  },
+  "class_type": "SolidMask",
+  "_meta": {
+   "title": "Create Solid Mask"
+  }
+ },
+ "319:315": {
+  "inputs": {
+   "expression": "round(a - b)",
+   "values.a": [
+    "247:66",
+    1
+   ],
+   "values.b": [
+    "247:69",
+    1
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "319:316": {
+  "inputs": {
+   "samples": [
+    "319:313",
+    0
+   ],
+   "mask": [
+    "319:310",
+    0
+   ]
+  },
+  "class_type": "SetLatentNoiseMask",
+  "_meta": {
+   "title": "Set Latent Noise Mask"
+  }
+ },
+ "319:317": {
+  "inputs": {
+   "samples": [
+    "319:311",
+    0
+   ],
+   "mask": [
+    "319:312",
+    0
+   ]
+  },
+  "class_type": "SetLatentNoiseMask",
+  "_meta": {
+   "title": "Set Latent Noise Mask"
+  }
+ },
+ "319:318": {
+  "inputs": {
+   "video_latent": [
+    "319:316",
+    0
+   ],
+   "audio_latent": [
+    "319:317",
+    0
+   ]
+  },
+  "class_type": "LTXVConcatAVLatent",
+  "_meta": {
+   "title": "Concat AV Latent"
+  }
+ },
+ "339:320": {
+  "inputs": {
+   "expression": "round(-a)",
+   "values.a": [
+    "247:67",
+    1
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "339:321": {
+  "inputs": {
+   "av_latent": [
+    "270",
+    1
+   ]
+  },
+  "class_type": "LTXVSeparateAVLatent",
+  "_meta": {
+   "title": "Separate AV Latent"
+  }
+ },
+ "339:322": {
+  "inputs": {
+   "dim": "t",
+   "index": [
+    "339:320",
+    1
+   ],
+   "amount": [
+    "247:67",
+    1
+   ],
+   "samples": [
+    "339:323",
+    0
+   ]
+  },
+  "class_type": "LatentCut",
+  "_meta": {
+   "title": "LatentCut"
+  }
+ },
+ "339:323": {
+  "inputs": {
+   "av_latent": [
+    "297",
+    0
+   ]
+  },
+  "class_type": "LTXVSeparateAVLatent",
+  "_meta": {
+   "title": "Separate AV Latent"
+  }
+ },
+ "339:324": {
+  "inputs": {
+   "dim": "x",
+   "index": [
+    "339:325",
+    1
+   ],
+   "amount": [
+    "247:69",
+    1
+   ],
+   "samples": [
+    "339:323",
+    1
+   ]
+  },
+  "class_type": "LatentCut",
+  "_meta": {
+   "title": "LatentCut"
+  }
+ },
+ "339:325": {
+  "inputs": {
+   "expression": "round(-a)",
+   "values.a": [
+    "247:69",
+    1
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "339:326": {
+  "inputs": {
+   "f_string": "0:(0.0),\n{a}:(1.0)\n",
+   "values.a": [
+    "247:67",
+    1
+   ]
+  },
+  "class_type": "StringFormat",
+  "_meta": {
+   "title": "Format Text"
+  }
+ },
+ "339:327": {
+  "inputs": {
+   "dim": "t",
+   "samples1": [
+    "339:322",
+    0
+   ],
+   "samples2": [
+    "339:321",
+    0
+   ]
+  },
+  "class_type": "LatentConcat",
+  "_meta": {
+   "title": "LatentConcat"
+  }
+ },
+ "339:328": {
+  "inputs": {
+   "dim": "x",
+   "samples1": [
+    "339:324",
+    0
+   ],
+   "samples2": [
+    "339:321",
+    1
+   ]
+  },
+  "class_type": "LatentConcat",
+  "_meta": {
+   "title": "LatentConcat"
+  }
+ },
+ "339:329": {
+  "inputs": {
+   "value": 1,
+   "width": [
+    "339:335",
+    1
+   ],
+   "height": 2
+  },
+  "class_type": "SolidMask",
+  "_meta": {
+   "title": "Create Solid Mask"
+  }
+ },
+ "339:330": {
+  "inputs": {
+   "points_string": [
+    "339:326",
+    0
+   ],
+   "invert": false,
+   "frames": [
+    "247:65",
+    1
+   ],
+   "width": [
+    "247:73",
+    1
+   ],
+   "height": [
+    "247:74",
+    1
+   ],
+   "interpolation": "none"
+  },
+  "class_type": "CreateFadeMaskAdvanced",
+  "_meta": {
+   "title": "Create Fade Mask Advanced"
+  }
+ },
+ "339:331": {
+  "inputs": {
+   "dim": "x",
+   "index": 0,
+   "amount": [
+    "247:66",
+    1
+   ],
+   "samples": [
+    "339:328",
+    0
+   ]
+  },
+  "class_type": "LatentCut",
+  "_meta": {
+   "title": "LatentCut"
+  }
+ },
+ "339:332": {
+  "inputs": {
+   "x": [
+    "247:69",
+    1
+   ],
+   "y": 0,
+   "operation": "add",
+   "destination": [
+    "339:334",
+    0
+   ],
+   "source": [
+    "339:329",
+    0
+   ]
+  },
+  "class_type": "MaskComposite",
+  "_meta": {
+   "title": "Combine Masks"
+  }
+ },
+ "339:333": {
+  "inputs": {
+   "dim": "t",
+   "index": 0,
+   "amount": [
+    "247:65",
+    1
+   ],
+   "samples": [
+    "339:327",
+    0
+   ]
+  },
+  "class_type": "LatentCut",
+  "_meta": {
+   "title": "LatentCut"
+  }
+ },
+ "339:334": {
+  "inputs": {
+   "value": 0,
+   "width": [
+    "247:66",
+    1
+   ],
+   "height": 2
+  },
+  "class_type": "SolidMask",
+  "_meta": {
+   "title": "Create Solid Mask"
+  }
+ },
+ "339:335": {
+  "inputs": {
+   "expression": "round(a - b)",
+   "values.a": [
+    "247:66",
+    1
+   ],
+   "values.b": [
+    "247:69",
+    1
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "Math Expression"
+  }
+ },
+ "339:336": {
+  "inputs": {
+   "samples": [
+    "339:333",
+    0
+   ],
+   "mask": [
+    "339:330",
+    0
+   ]
+  },
+  "class_type": "SetLatentNoiseMask",
+  "_meta": {
+   "title": "Set Latent Noise Mask"
+  }
+ },
+ "339:337": {
+  "inputs": {
+   "samples": [
+    "339:331",
+    0
+   ],
+   "mask": [
+    "339:332",
+    0
+   ]
+  },
+  "class_type": "SetLatentNoiseMask",
+  "_meta": {
+   "title": "Set Latent Noise Mask"
+  }
+ },
+ "339:338": {
+  "inputs": {
+   "video_latent": [
+    "339:336",
+    0
+   ],
+   "audio_latent": [
+    "339:337",
+    0
+   ]
+  },
+  "class_type": "LTXVConcatAVLatent",
+  "_meta": {
+   "title": "Concat AV Latent"
+  }
+ }
+}

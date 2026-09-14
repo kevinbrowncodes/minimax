@@ -1,6 +1,6 @@
 # CHORE_007 — The ComfyUI image carries kijai's KJNodes pack, so reference workflows run as published
 
-**Status:** In progress (2026-09-14)
+**Status:** Done (2026-09-14) — the pack loaded, and the author's workflow ran to completion on it (STORY_020, "Control run — result")
 **Created:** 2026-09-14, for STORY_020's control run (the owner: "is there an example of video extension working that we borrow and test against instead of using our own?" → "Please proceed!")
 
 ## Summary
