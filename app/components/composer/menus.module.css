@@ -110,6 +110,10 @@
   border-radius: var(--radius_full);
   background: var(--gray_0);
 }
+.sheetBackdrop,
+.sheetHead {
+  display: none;
+}
 @media (max-width: 899px) {
   .item {
     min-height: 44px;
@@ -117,5 +121,48 @@
   .submenu {
     top: 100%;
     left: 0;
+  }
+  /* narrow-agent-model-menu-open@390: a "Select model" sheet over a dimmed page. */
+  .sheetBackdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: var(--utility_overlay);
+  }
+  .agentMenu {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 41;
+    width: auto;
+    padding: var(--spacing_16);
+    border-radius: var(--radius_20) var(--radius_20) 0 0;
+    font-size: 16px;
+  }
+  .sheetHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing_12);
+  }
+  .sheetTitle {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: var(--line_height_26);
+  }
+  .sheetClose {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: var(--radius_8);
+    background: transparent;
+    color: var(--icon_default_secondary);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .agentMenu .item {
+    height: 44px;
+    font-size: 16px;
   }
 }

@@ -1,7 +1,7 @@
 # STORY_022 — The home and composer match the reference: Showcase, the attach menu, the mode chips and the agent-model menu
 
 **Epic:** [EPIC_005](../epic/EPIC_005_the_ui_looks_identical_to_the_reference_on_every_surface_in_both_themes.md) — the second rebuild story, cut from [inventory.md › What we lack › Home](../recon/2026-09-14/inventory.md)
-**Status:** In progress (2026-09-14)
+**Status:** Done (2026-09-14) — see the Done note at the bottom
 **Created:** 2026-09-14
 
 As the owner, I want the home and the composer — the heading's position, the Showcase row under the video composer, the attach menu and its submenus, the Document / Website / Image Generation modes and the More menu, and the MiniMax-M3 menu — to look and move like agent.minimax.io's in both themes and at both widths, so that the first screen reads as the reference.
@@ -49,12 +49,12 @@ bottom bar: +  📄 Document              MiniMax-M3 ⌄ (↑) ; Showcase of fou
 
 ## Acceptance Criteria
 
-- [ ] **Position:** at 1440 × 900 the heading's top is at 231 ± 2 and the composer card's top at 302 ± 2 (light and dark).
-- [ ] **Showcase, video mode:** a "Showcase" row with four cards (our own four example scenes — prompt, ratio, resolution, duration — and our own drawn thumbnails, captions of our own); a card click types the prompt after the tag and sets the parameters; **Clear selected scene** appears and empties the composer; **Preview example** shows the notice; the × hides the row for the session; two columns at 390.
-- [ ] **Attach menu:** + opens the five-entry menu; **Add files or photos** opens the reference-image chooser in video mode (the same input STORY_013 uses) and shows the notice in the other modes; Add to project ›, Skills ›, Plugins › open their submenus on hover or click, every submenu entry inert; Environment variables inert; Escape and a click outside close it.
-- [ ] **Modes:** Document, Website and Image Generation switch the composer into that mode — chips hidden, the mode pill in the bottom bar, that mode's Showcase (four drawn cards, captions of our own, a card click shows the notice); the pill leaves the mode; Send in those modes shows the notice ("video generation only") instead of submitting. **More** opens its five-entry menu, every entry inert.
-- [ ] **MiniMax-M3 menu:** opens as captured, the three models and the Thinking switch inert; Escape / outside closes it.
-- [ ] Both themes, both widths, keyboard-reachable, 44 px touch targets at 390; every existing composer and task e2e stays green.
+- [x] **Position:** at 1440 × 900 the heading's top is at 231 ± 2 and the composer card's top at 302 ± 2 (light and dark).
+- [x] **Showcase, video mode:** a "Showcase" row with four cards (our own four example scenes — prompt, ratio, resolution, duration — and our own drawn thumbnails, captions of our own); a card click types the prompt after the tag and sets the parameters; **Clear selected scene** appears and empties the composer; **Preview example** shows the notice; the × hides the row for the session; two columns at 390.
+- [x] **Attach menu:** + opens the five-entry menu; **Add files or photos** opens the reference-image chooser in video mode (the same input STORY_013 uses) and shows the notice in the other modes; Add to project ›, Skills ›, Plugins › open their submenus on hover or click, every submenu entry inert; Environment variables inert; Escape and a click outside close it.
+- [x] **Modes:** Document, Website and Image Generation switch the composer into that mode — chips hidden, the mode pill in the bottom bar, that mode's Showcase (four drawn cards, captions of our own, a card click shows the notice); the pill leaves the mode; Send in those modes shows the notice ("video generation only") instead of submitting. **More** opens its five-entry menu, every entry inert.
+- [x] **MiniMax-M3 menu:** opens as captured, the three models and the Thinking switch inert; Escape / outside closes it.
+- [x] Both themes, both widths, keyboard-reachable, 44 px touch targets at 390; every existing composer and task e2e stays green.
 
 ## Departures from the reference
 
@@ -62,6 +62,8 @@ bottom bar: +  📄 Document              MiniMax-M3 ⌄ (↑) ; Showcase of fou
 - The Skills submenu lists no skills (none exist locally) — only Manage skills and Add skill, inert; Plugins lists video-creator and Add plugins, inert.
 - Document / Website / Image Generation and the More menu's modes are looks only: sending in them shows the notice.
 - Thinking, the agent models and Environment variables are inert.
+- At 390 the reference's bottom bar overlaps its own controls (one capture shows the Model pill and hides the parameters, another the reverse); ours keeps the parameters chip and hides the Model pill (one model is local anyway) so the bar stays on one row.
+- The Showcase's × is named "Clear selected scene" as on the reference; ours both empties the composer and hides the row.
 
 ## Technical Notes
 
@@ -79,3 +81,24 @@ bottom bar: +  📄 Document              MiniMax-M3 ⌄ (↑) ; Showcase of fou
 ## Estimated Complexity
 
 M
+
+## Done (2026-09-14)
+
+**Landed** (`7b66bf3` + the follow-up): the home's heading and composer at the capture's positions; choosing a mode hides the chips and shows the Showcase (`lib/showcase.ts`: four video scenes of our own whose card types its prompt and parameters; four drawn cards for Document / Website / Image Generation, looks only); the mode pill in the bottom bar; the + menu with the Add to project / Skills / Plugins submenus (Add files or photos opens the reference chooser in video mode); the More menu; the MiniMax-M3 menu with the Thinking switch, a "Select model" sheet at 390; the Model pill hidden at 390; the tag's × on hover.
+
+**Side by side** ([STORY_022_side_by_side/](STORY_022_side_by_side/); the same rule as STORY_019/021; ours at a plain 390 viewport; the reference's Showcase thumbnails and captions are its content and count against us in every row below):
+
+| Surface | 1440 light | 1440 dark | 390 light | 390 dark |
+| --- | --- | --- | --- | --- |
+| Home | 96.1 % | 96.8 % | 96.2 % | 96.2 % |
+| Composer, video mode | 90.3 % | 91.2 % | 73.5 % | 77.9 % |
+| + menu | 91.5 % | 92.0 % | 74.0 % | 81.6 % |
+| Skills submenu | 92.1 % | 92.0 % | 79.0 % | 84.5 % |
+| MiniMax-M3 menu | 90.2 % | 91.0 % | 89.9 % | 93.7 % |
+| Scene selected | 84.2 % | 88.4 % | 63.9 % | 69.4 % |
+| Document mode | 95.3 % | 93.8 % | 88.5 % | 78.0 % |
+| More menu | 96.2 % | 96.7 % | — | — |
+
+**Deltas that remain, and whose they are:** the Showcase thumbnails and captions (ours by decision); the reference's composer card is ≈ 20 px taller in video mode (its editor keeps a blank line after the tag); our Recents titles; at 390 the promo card in the reference's light captures (taken before it was dismissed) covers the lower half. No colour or type delta remains on these surfaces.
+
+**Verified this session:** the deployed container in both themes at 1440 and 390 through the screenshots above; the gate green in the pre-push hook.

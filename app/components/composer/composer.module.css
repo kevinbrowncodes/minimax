@@ -100,6 +100,7 @@
   line-height: var(--line_height_20);
   white-space: nowrap;
 }
+/* The tag's × shows on hover or focus (composer-video-mode@1440 shows the tag without it). */
 .tagRemove {
   border: 0;
   background: transparent;
@@ -107,6 +108,13 @@
   cursor: pointer;
   padding: 0 0 0 var(--spacing_4);
   line-height: 1;
+  opacity: 0;
+  transition: opacity var(--duration_fast) var(--ease_standard);
+}
+.tag:hover .tagRemove,
+.tagRemove:focus-visible,
+.tag:focus-within .tagRemove {
+  opacity: 1;
 }
 .editor {
   flex: 1;
@@ -157,7 +165,13 @@
   gap: var(--spacing_4);
   height: 32px;
   padding: 0 var(--spacing_8);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
   cursor: pointer;
+}
+.inertModel:hover {
+  background: var(--bg_interaction_tertiary_hover);
 }
 .pill {
   display: inline-flex;
@@ -365,6 +379,20 @@
 @media (max-width: 899px) {
   .card {
     border-radius: var(--radius_16);
+  }
+  /* narrow-composer-video-mode@390: the bar stays on one row — the Model pill is not shown (the reference hides it; one model is local anyway). */
+  .modelWrap {
+    display: none;
+  }
+  .bar {
+    flex-wrap: nowrap;
+  }
+  .inertModel {
+    padding: 0 var(--spacing_4);
+    white-space: nowrap;
+  }
+  .pill {
+    white-space: nowrap;
   }
   .segmentRatio {
     min-height: 44px;

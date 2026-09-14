@@ -97,21 +97,31 @@ export function ModeMenu() {
 
 const AGENT_MODELS = ["MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7 HighSpeed"] as const;
 
-/** agent-model-menu-open@1440: 218 px, right-aligned; three models (M3 checked) and a Thinking switch. */
-export function AgentModelMenu() {
+/**
+ * agent-model-menu-open@1440: 218 px, right-aligned; three models (M3 checked) and a Thinking switch. At 390
+ * (narrow-agent-model-menu-open@390) the same entries are a "Select model" bottom sheet over a dimmed page with a ×.
+ */
+export function AgentModelMenu({ onClose }: { readonly onClose: () => void }) {
   return (
-    <div className={cx(styles.menu, styles.agentMenu)} role="menu" aria-label="Agent model">
-      {AGENT_MODELS.map((label, i) => (
-        <Inert key={label} role="menuitem" label={label} className={styles.item}>
-          <span className={styles.check} aria-hidden="true">{i === 0 ? "✓" : ""}</span>
-          <span className={styles.label}>{label}</span>
-        </Inert>
-      ))}
-      <div className={styles.separator} />
-      <div className={cx(styles.item, styles.itemStatic)}>
-        <span className={styles.label}>Thinking</span>
-        <Inert role="switch" ariaChecked label="Thinking" className={styles.switch} align="end"><span className={styles.switchKnob} /></Inert>
+    <>
+      <div className={styles.sheetBackdrop} onMouseDown={(event) => { event.stopPropagation(); onClose(); }} aria-hidden="true" />
+      <div className={cx(styles.menu, styles.agentMenu)} role="menu" aria-label="Agent model">
+        <div className={styles.sheetHead}>
+          <span className={styles.sheetTitle}>Select model</span>
+          <button type="button" className={styles.sheetClose} aria-label="Close" onClick={onClose}>×</button>
+        </div>
+        {AGENT_MODELS.map((label, i) => (
+          <Inert key={label} role="menuitem" label={label} className={styles.item}>
+            <span className={styles.check} aria-hidden="true">{i === 0 ? "✓" : ""}</span>
+            <span className={styles.label}>{label}</span>
+          </Inert>
+        ))}
+        <div className={styles.separator} />
+        <div className={cx(styles.item, styles.itemStatic)}>
+          <span className={styles.label}>Thinking</span>
+          <Inert role="switch" ariaChecked label="Thinking" className={styles.switch} align="end"><span className={styles.switchKnob} /></Inert>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

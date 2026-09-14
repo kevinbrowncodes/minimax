@@ -239,7 +239,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
           ) : null}
           {video ? (
             <>
-              <span style={{ position: "relative" }} data-popover="model">
+              <span style={{ position: "relative" }} className={styles.modelWrap} data-popover="model">
                 <button type="button" className={styles.pill} aria-haspopup="menu" aria-expanded={popover === "model"} aria-label={`Model: ${REFERENCE_MODELS.find((m) => m.id === state.model)?.label ?? "MiniMax-H3"}`} onClick={() => { setPopover(popover === "model" ? undefined : "model"); }} disabled={!caps || extending !== undefined} title={extending ? FIXED_NOTE : undefined}>
                   <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><circle cx="7" cy="7" r="2" fill="currentColor" /></svg>
                   {(REFERENCE_MODELS.find((m) => m.id === state.model)?.label ?? "MiniMax-H3.0").replace(".0", "")}
@@ -319,7 +319,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
           <div className={styles.barRight}>
             <span style={{ position: "relative" }} data-popover="agent">
               <button type="button" className={styles.inertModel} aria-label="MiniMax-M3" aria-haspopup="menu" aria-expanded={popover === "agent"} onClick={() => { setPopover(popover === "agent" ? undefined : "agent"); }}>MiniMax-M3 <span aria-hidden="true">⌄</span></button>
-              {popover === "agent" ? <AgentModelMenu /> : null}
+              {popover === "agent" ? <AgentModelMenu onClose={() => { setPopover(undefined); }} /> : null}
             </span>
             {lookOnly ? (
               <Inert label="Send message" className={cx(styles.send, styles.sendInert)} align="end">

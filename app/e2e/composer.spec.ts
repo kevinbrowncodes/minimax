@@ -3,7 +3,7 @@ import { settled } from "./fixtures/settle";
 import { REFERENCE_IMAGE } from "./fixtures/upload";
 
 test.describe("composer and video mode (STORY_013)", () => {
-  test("video parameters and the model menu reflect the Spark's capabilities", async ({ page }) => {
+  test("video parameters and the model menu reflect the Spark's capabilities", async ({ page }, testInfo) => {
     await page.goto("/");
     await page.getByRole("button", { name: /Video generation/ }).click();
     await settled(page);
@@ -18,6 +18,11 @@ test.describe("composer and video mode (STORY_013)", () => {
     await expect(page.getByRole("button", { name: "Video parameters: 9:16 768P 10s" })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog", { name: "Video parameters" })).toBeHidden();
+    if (testInfo.project.name === "narrow") {
+      // narrow-composer-video-mode@390: the reference does not show the Model control at 390 (STORY_022), so neither do we.
+      await expect(page.getByRole("button", { name: /^Model:/ })).toBeHidden();
+      return;
+    }
     await page.getByRole("button", { name: /^Model:/ }).click();
     await settled(page);
     await expect(page.getByRole("menuitemradio", { name: /Hailuo-2.3/ })).toBeDisabled();
