@@ -62,12 +62,18 @@ test.describe("extend a finished video (STORY_016, STORY_017)", () => {
     expect(received.request).toMatchObject({ prompt: "and then he bows", continueFrom: id1, durationSeconds: 10, overlapFrames: 22 });
   });
 
-  test("Assets offers Extend, which opens the task extending; Stop extending restores the composer without creating a job", async ({ page, stubApi }) => {
+  test("Assets offers Send to new task, which opens the task extending; Stop extending restores the composer without creating a job", async ({ page, stubApi }, testInfo) => {
     const id = await finishOne(page, "Gallery clip");
     await page.goto("/assets");
     await settled(page);
-    await page.getByRole("button", { name: "More actions for Gallery clip.mp4" }).click();
-    await page.getByRole("menuitem", { name: "Extend" }).click();
+    // STORY_024: the reference's entry is "Send to new task"; at 390 the tile has no ⋯, the preview's ⋯ carries it
+    if (testInfo.project.name === "narrow") {
+      await page.getByRole("button", { name: "Preview Gallery clip.mp4" }).click();
+      await page.getByRole("dialog").getByRole("button", { name: "More actions" }).click();
+    } else {
+      await page.getByRole("button", { name: "More actions for Gallery clip.mp4" }).click();
+    }
+    await page.getByRole("menuitem", { name: "Send to new task" }).click();
     await expect(page).toHaveURL(new RegExp(`/task/${id}\\?extend$`));
     await expect(page.getByTestId("continuation")).toBeVisible();
     const before = (await stubApi.jobs()).length;

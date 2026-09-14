@@ -13,11 +13,14 @@ export interface ShellState {
   readonly previewOpen: boolean;
   readonly openPreview: () => void;
   readonly closePreview: () => void;
+  /** What the page puts in the top bar at 390 (STORY_024: the Assets page's Search and Filter buttons); undefined when it has nothing. */
+  readonly pageActions: ReactNode;
+  readonly setPageActions: (actions: ReactNode) => void;
 }
 
 const noop = (): void => undefined;
 
-export const ShellContext = createContext<ShellState>({ workAreaOpen: true, toggleWorkArea: noop, previewOpen: false, openPreview: noop, closePreview: noop });
+export const ShellContext = createContext<ShellState>({ workAreaOpen: true, toggleWorkArea: noop, previewOpen: false, openPreview: noop, closePreview: noop, pageActions: undefined, setPageActions: noop });
 
 export function useShell(): ShellState {
   return useContext(ShellContext);
@@ -33,6 +36,7 @@ export interface ShellStateProviderProps {
 export function ShellStateProvider({ scope, children }: ShellStateProviderProps) {
   const [workAreaOpen, setWorkAreaOpen] = useState(true);
   const [previewFor, setPreviewFor] = useState<string | undefined>(undefined);
+  const [pageActions, setPageActions] = useState<ReactNode>(undefined);
   const previewOpen = previewFor === scope;
   const toggleWorkArea = useCallback(() => {
     if (previewFor === scope) {
@@ -48,6 +52,6 @@ export function ShellStateProvider({ scope, children }: ShellStateProviderProps)
   const closePreview = useCallback(() => {
     setPreviewFor(undefined);
   }, []);
-  const value = useMemo<ShellState>(() => ({ workAreaOpen, toggleWorkArea, previewOpen, openPreview, closePreview }), [workAreaOpen, toggleWorkArea, previewOpen, openPreview, closePreview]);
+  const value = useMemo<ShellState>(() => ({ workAreaOpen, toggleWorkArea, previewOpen, openPreview, closePreview, pageActions, setPageActions }), [workAreaOpen, toggleWorkArea, previewOpen, openPreview, closePreview, pageActions]);
   return <ShellContext.Provider value={value}>{children}</ShellContext.Provider>;
 }

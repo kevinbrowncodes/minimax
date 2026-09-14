@@ -3,14 +3,24 @@ import type { HistoryEntry } from "./history-store";
 
 export const ASSET_CHIPS = ["All", "Websites", "Documents", "Excel", "PPT", "Images", "Videos", "Audio"] as const;
 export type AssetChip = (typeof ASSET_CHIPS)[number];
-export const ASSET_TABS = ["From Agent", "From You", "Star"] as const;
+/** assets-all@1440: "From agent", "From you", "Star" (STORY_024 takes the capture's casing). */
+export const ASSET_TABS = ["From agent", "From you", "Star"] as const;
+export type AssetTab = (typeof ASSET_TABS)[number];
+
+/** narrow-assets-all@390: the 390 chip row reads "Website" and "Document" where 1440 reads the plurals. */
+export function narrowChipLabel(chip: AssetChip): string {
+  return chip === "Websites" ? "Website" : chip === "Documents" ? "Document" : chip;
+}
 
 export interface AssetFilter {
   readonly chip: AssetChip;
   readonly query: string;
+  /** From you (uploads) and Star (starred) hold nothing in MiniMax Local; both show the empty state. Default: From agent. */
+  readonly tab?: AssetTab;
 }
 
 export function filterAssets(entries: readonly HistoryEntry[], filter: AssetFilter): readonly HistoryEntry[] {
+  if ((filter.tab ?? "From agent") !== "From agent") return [];
   if (filter.chip !== "All" && filter.chip !== "Videos") return [];
   const q = filter.query.trim().toLowerCase();
   return entries.filter((e) => e.status === "done" && e.result !== undefined && (q === "" || e.title.toLowerCase().includes(q) || `${e.title}.mp4`.toLowerCase().includes(q)));

@@ -1,45 +1,64 @@
-/* Assets — assets-empty@1440, assets-one-video@1440, assets-video-tile-hover@1440, assets-video-preview@1440,
-   narrow-assets@390; tokens.md (STORY_015) */
+/* Assets — assets-all@1440 / -dark, assets-tile-menu-open@1440, assets-tab-from-you@1440, assets-filter-images@1440,
+   narrow-assets-all@390, narrow-assets-video-preview@390; tokens.md › Elements › assets (STORY_024; STORY_015 before it) */
 .page {
-  padding: var(--spacing_24) var(--spacing_64) var(--spacing_64);
+  padding: var(--spacing_8) var(--spacing_64) var(--spacing_64);
 }
+/* page-title@1440: 26 px/500 at y 64, then 40 px to the tabs */
 .title {
-  margin: 0 0 var(--spacing_32);
+  margin: 0 0 var(--spacing_40);
   font-size: 26px;
   font-weight: 500;
   line-height: var(--line_height_32);
 }
+/* tab-active@1440: 99 × 32, 16 px/500, 20 px apart, a 2 px underline inset 4 px; no rule under the row */
 .tabs {
   display: flex;
-  gap: var(--spacing_32);
-  border-bottom: 1px solid var(--border_default);
-  margin-bottom: var(--spacing_24);
+  gap: var(--spacing_20);
+  margin-bottom: 25px;
 }
 .tab {
-  padding: 0 0 var(--spacing_8);
+  position: relative;
+  height: 32px;
+  padding: 0 var(--spacing_8);
   border: 0;
-  border-bottom: 2px solid transparent;
   background: transparent;
   font-size: 16px;
   font-weight: 500;
-  line-height: var(--line_height_26);
+  line-height: var(--line_height_20);
   color: var(--text_default_tertiary);
   cursor: pointer;
 }
+.tab:hover {
+  color: var(--text_default_secondary);
+}
 .tabActive {
   color: var(--text_default_primary);
-  border-bottom-color: var(--text_default_primary);
 }
+.tabActive::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 0;
+  height: 2px;
+  background: var(--text_default_primary);
+}
+/* filter-active@1440: 32 px chips, radius 8, 8 px apart; the search 252 × 34 at the right */
 .toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_16);
+  margin-bottom: 21px;
+}
+.chips {
   display: flex;
   align-items: center;
   gap: var(--spacing_8);
   flex-wrap: wrap;
-  margin-bottom: var(--spacing_24);
 }
 .chip {
-  height: 34px;
-  padding: 0 var(--spacing_16);
+  height: 32px;
+  padding: 0 var(--spacing_12);
   border: 0;
   border-radius: var(--radius_8);
   background: transparent;
@@ -48,13 +67,11 @@
   color: var(--text_default_secondary);
   cursor: pointer;
   transition: background var(--duration_fast) var(--ease_standard);
+  white-space: nowrap;
 }
-.chip:hover {
-  background: var(--bg_interaction_tertiary_hover);
-  color: var(--text_default_primary);
-}
+.chip:hover,
 .chipActive {
-  background: var(--bg_interaction_secondary_default);
+  background: var(--bg_interaction_tertiary_hover);
   color: var(--text_default_primary);
 }
 .search {
@@ -63,8 +80,9 @@
   align-items: center;
   gap: var(--spacing_6);
   height: 34px;
-  width: 256px;
+  width: 252px;
   max-width: 100%;
+  flex: none;
   padding: 0 var(--spacing_12);
   border: 1px solid var(--border_default);
   border-radius: var(--radius_8);
@@ -82,13 +100,14 @@
 .search input::placeholder {
   color: var(--text_default_tertiary);
 }
+/* asset-tile@1440: 252 × 182, radius 12, a 140 px poster and a 40 px name row; 16 px apart */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 254px);
+  grid-template-columns: repeat(auto-fill, 252px);
   gap: var(--spacing_16);
 }
 .tile {
-  width: 254px;
+  width: 252px;
   border: 1px solid var(--border_default);
   border-radius: var(--radius_12);
   overflow: hidden;
@@ -96,46 +115,69 @@
 }
 .poster {
   position: relative;
+  display: block;
   width: 100%;
-  height: 143px;
+  height: 140px;
+  padding: 0;
+  border: 0;
   background: var(--bg_grouped_tertiary_elevated);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--icon_default_tertiary);
+  color: var(--icon_default_quaternary);
+  cursor: pointer;
 }
 .poster img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-.preview {
+.posterGlyph,
+.playGlyph {
   position: absolute;
-  inset: 0;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 0;
-  background: var(--opacity_black_1_50);
+  pointer-events: none;
+}
+.posterGlyph svg {
+  width: 28px;
+  height: 28px;
+}
+.playGlyph {
+  z-index: 2;
   color: var(--gray_0);
-  font-size: 14px;
   opacity: 0;
-  cursor: pointer;
   transition: opacity var(--duration_fast) var(--ease_standard);
 }
-.tile:hover .preview,
-.tile:focus-within .preview {
+.playGlyph svg {
+  width: 32px;
+  height: 32px;
+}
+.poster:hover .playGlyph,
+.poster:focus-visible .playGlyph {
   opacity: 1;
 }
+/* asset-tile-name@1440: a camera icon 13 px in, the name 14 px, the ⋯ 32 × 32 at the right */
 .name {
   display: flex;
   align-items: center;
-  gap: var(--spacing_8);
+  gap: var(--spacing_6);
   height: 40px;
-  padding: 0 var(--spacing_8) 0 var(--spacing_12);
+  padding: 0 var(--spacing_4) 0 13px;
   font-size: 14px;
   line-height: var(--line_height_20);
+  color: var(--text_default_primary);
+}
+.nameIcon {
+  flex: none;
+  display: inline-flex;
+  color: var(--icon_default_secondary);
 }
 .nameText {
   flex: 1;
@@ -146,48 +188,67 @@
 .kebab {
   width: 32px;
   height: 32px;
+  padding: 0;
   border: 0;
   border-radius: var(--radius_8);
   background: transparent;
   color: var(--icon_default_secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  font-size: 16px;
+  transition: background var(--duration_fast) var(--ease_standard);
+}
+.kebab:hover,
+.kebab[aria-expanded="true"] {
+  background: var(--bg_interaction_tertiary_hover);
 }
 .kebabWrap {
   position: relative;
+  display: inline-flex;
 }
+/* assets-tile-menu-open@1440: 198 wide, right-aligned to the ⋯, 4 px under it, 36 px entries with a 16 px icon */
 .menu {
   position: absolute;
   right: 0;
   top: calc(100% + 4px);
   z-index: 20;
-  min-width: 180px;
+  width: 198px;
   background: var(--bg_default_tertiary);
   border: 1px solid var(--border_default);
   border-radius: var(--radius_12);
   box-shadow: 0 4px 24px var(--shadow_default);
   padding: var(--spacing_6);
+  display: flex;
+  flex-direction: column;
 }
 .menuItem {
   width: 100%;
-  display: block;
-  padding: var(--spacing_6) var(--spacing_8);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  height: 36px;
+  padding: 0 var(--spacing_8);
   border: 0;
   border-radius: var(--radius_8);
   background: transparent;
   text-align: left;
+  text-decoration: none;
+  color: var(--text_default_primary);
   font-size: 14px;
-  line-height: var(--line_height_22);
+  line-height: var(--line_height_20);
   cursor: pointer;
+  white-space: nowrap;
 }
 .menuItem:hover {
   background: var(--bg_interaction_tertiary_hover);
 }
 .menuDanger {
-  color: var(--text_label_danger_secondary_default);
+  color: var(--text_status_error);
 }
+/* assets-tab-from-you@1440: the empty state ≈ 160 px under the chips */
 .empty {
-  padding: var(--spacing_64) 0;
+  padding: 160px 0 var(--spacing_64);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -202,25 +263,30 @@
 }
 .emptyText {
   color: var(--text_default_secondary);
-  margin: 0 0 var(--spacing_8);
+  font-size: 13px;
+  line-height: var(--line_height_20);
+  margin: 0 0 var(--spacing_12);
 }
+/* empty-cta@1440: 93 × 32 primary, radius 8 */
 .primary {
   display: inline-flex;
   align-items: center;
-  height: 36px;
-  padding: 0 var(--spacing_16);
+  height: 32px;
+  padding: 0 var(--spacing_12);
   border-radius: var(--radius_8);
   background: var(--bg_interaction_primary_default);
   color: var(--text_label_primary_default);
   font-size: 14px;
   font-weight: 500;
+  text-decoration: none;
 }
+/* the preview: the 390 sheet's head (× · the name · ⋯) over the video; a centred dialog at 1440 (uncaptured there) */
 .dialog {
-  width: min(1120px, calc(100vw - 32px));
+  width: min(720px, calc(100vw - 32px));
   border: 0;
-  border-radius: var(--radius_12);
+  border-radius: var(--radius_16);
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
   background: var(--bg_default_tertiary);
   color: var(--text_default_primary);
 }
@@ -231,60 +297,160 @@
   display: flex;
   align-items: center;
   gap: var(--spacing_8);
-  padding: var(--spacing_16) var(--spacing_24);
-  border-bottom: 1px solid var(--border_default);
-  font-size: 16px;
+  height: 56px;
+  padding: 0 var(--spacing_16);
 }
 .dialogTitle {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: var(--line_height_20);
 }
 .dialogButton {
+  flex: none;
   width: 32px;
   height: 32px;
+  padding: 0;
   border: 0;
   border-radius: var(--radius_8);
   background: transparent;
-  color: var(--icon_default_secondary);
+  color: var(--icon_default_primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 16px;
+}
+.dialogButton:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.dialogBody {
+  padding: 0 var(--spacing_16) var(--spacing_16);
 }
 .dialogVideo {
   width: 100%;
   aspect-ratio: 16 / 9;
   background: var(--gray_1000);
+  border-radius: var(--radius_12);
   display: block;
 }
+/* the Search and Filter buttons the page puts in the Shell's bar at 390 */
+.barButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--icon_default_primary);
+  cursor: pointer;
+}
+.barButton[aria-pressed="true"] {
+  background: var(--bg_interaction_tertiary_hover);
+}
+/* narrow-assets-all@390: no title, tabs or search unless the bar asks; chips at y 56 scrolling; two 168 × 95 tiles per row
+   with the name under them and no ⋯; the preview is a full-screen sheet */
 @media (max-width: 899px) {
   .page {
-    padding: var(--spacing_16);
+    padding: 0 var(--spacing_16) var(--spacing_32);
+  }
+  .title {
+    display: none;
+  }
+  .tabs {
+    display: none;
+    margin: 0 0 var(--spacing_8);
+  }
+  .tabsShown {
+    display: flex;
+  }
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing_8);
+    margin-bottom: var(--spacing_16);
+  }
+  .chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 calc(-1 * var(--spacing_16));
+    padding: 0 var(--spacing_16);
+  }
+  .chip {
+    height: 30px;
+    padding: 0 10px;
+    flex: none;
   }
   .search {
+    display: none;
     margin-left: 0;
     width: 100%;
+    height: 44px;
+  }
+  .searchShown {
+    display: flex;
   }
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing_24) var(--spacing_20);
   }
   .tile {
     width: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
   }
   .poster {
-    height: 100px;
+    height: 95px;
+    border-radius: var(--radius_8);
+    overflow: hidden;
   }
-  .chip,
-  .kebab,
-  .dialogButton,
-  .preview {
-    min-height: 44px;
+  .name {
+    height: auto;
+    padding: var(--spacing_16) 0 0;
   }
-  .kebab,
+  .nameIcon,
+  .name .kebabWrap {
+    display: none;
+  }
+  .empty {
+    padding-top: 120px;
+  }
+  .dialog {
+    width: 100vw;
+    max-width: 100vw;
+    height: calc(100vh - 56px);
+    max-height: calc(100vh - 56px);
+    margin: 56px 0 0;
+    border-radius: var(--radius_16) var(--radius_16) 0 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .dialog:not([open]) {
+    display: none;
+  }
   .dialogButton {
-    min-width: 44px;
+    width: 44px;
+    height: 44px;
+  }
+  .dialogBody {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 0 0 var(--spacing_16);
+  }
+  .dialogVideo {
+    border-radius: 0;
+  }
+  .menuItem,
+  .primary {
+    min-height: 44px;
   }
 }

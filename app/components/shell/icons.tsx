@@ -133,3 +133,22 @@ export const IconExternal = () => (
 export const IconPencil = () => (
   <svg {...base}><path d="m2.5 13.5.7-2.8 8-8a1.2 1.2 0 0 1 1.7 0l.4.4a1.2 1.2 0 0 1 0 1.7l-8 8z" /></svg>
 );
+/* STORY_024 — the Assets page's glyphs: a camera on the tile, a filter in the 390 bar, the ⋯ menu's four entries */
+export const IconVideo = () => (
+  <svg {...base}><rect x="2" y="4" width="8.5" height="8" rx="1.5" /><path d="m10.5 7 3.5-2v6l-3.5-2" /></svg>
+);
+export const IconFilter = () => (
+  <svg {...base}><path d="M2.5 4.5h11M4.5 8h7M6.5 11.5h3" /><circle cx="6" cy="4.5" r="1.3" fill="var(--bg_default_primary_elevated)" /><circle cx="10" cy="8" r="1.3" fill="var(--bg_default_primary_elevated)" /><circle cx="8" cy="11.5" r="1.3" fill="var(--bg_default_primary_elevated)" /></svg>
+);
+export const IconLocate = () => (
+  <svg {...base}><path d="M9 2.5h3.5a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9" /><path d="M2.5 8h7M7 5.5 9.5 8 7 10.5" /></svg>
+);
+export const IconArrowUpRight = () => (
+  <svg {...base}><path d="M4 12 12 4M5.5 4H12v6.5" /></svg>
+);
+export const IconStar = () => (
+  <svg {...base}><path d="m8 2.2 1.8 3.8 4.1.5-3 2.9.8 4.1L8 11.5l-3.7 2 .8-4.1-3-2.9 4.1-.5z" /></svg>
+);
+export const IconPlay = () => (
+  <svg {...base}><circle cx="8" cy="8" r="6.3" /><path d="m6.5 5.5 4 2.5-4 2.5z" fill="currentColor" stroke="none" /></svg>
+);

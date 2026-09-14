@@ -20,6 +20,7 @@
   min-height: 100vh;
 }
 .topbar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -28,6 +29,15 @@
 }
 .topbarTitle {
   font-size: 14px;
+  line-height: var(--line_height_20);
+  color: var(--text_default_primary);
+}
+/* narrow-assets-all@390: the page's name centred in the bar, 16 px */
+.topbarCentre {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
   line-height: var(--line_height_20);
   color: var(--text_default_primary);
 }

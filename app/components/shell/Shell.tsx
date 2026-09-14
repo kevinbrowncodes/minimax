@@ -54,7 +54,7 @@ export function Shell({ children, confirmImpl }: ShellProps) {
 function ShellFrame({ children, confirmImpl }: ShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { workAreaOpen, toggleWorkArea } = useShell();
+  const { workAreaOpen, toggleWorkArea, pageActions } = useShell();
   const narrow = useNarrow();
   const [prefs, dispatchPrefs] = useReducer(prefsReducer, DEFAULT_SHELL_PREFS, () => (typeof window === "undefined" ? DEFAULT_SHELL_PREFS : readShellPrefs(safeStorage())));
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -167,7 +167,10 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
             <IconExpand />
           </button>
           {bar.kind === "task" ? <span className={styles.topbarTitle}>{bar.title}</span> : null}
+          {/* narrow-assets-all@390: the bar carries the page title centred, with the page's own buttons at the right (STORY_024) */}
+          {bar.kind === "assets" && narrow ? <span className={styles.topbarCentre}>Assets</span> : null}
           <div className={styles.topbarActions}>
+            {narrow ? pageActions : null}
             {bar.kind === "home" ? (
               <>
                 <Inert label="Changelog" className={styles.iconButton} align="end"><IconDocument /></Inert>

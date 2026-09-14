@@ -1,5 +1,6 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { useShell, ShellStateProvider } from "@/components/shell/ShellContext";
 import type { HistoryEntry } from "@/lib/history-store";
 import { AssetsPage } from "./AssetsPage";
 
@@ -48,17 +49,19 @@ describe("AssetsPage", () => {
     expect(screen.getAllByTestId("asset-tile")).toHaveLength(1);
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Images" }));
-    expect(screen.getByText("No images yet")).toBeInTheDocument();
+    expect(screen.getByText("No assets yet")).toBeInTheDocument(); // the one empty state for every chip (STORY_024)
     fireEvent.click(screen.getByRole("button", { name: "Videos" }));
     fireEvent.click(screen.getByRole("button", { name: "Preview Paper boat.mp4" }));
     const video = screen.getByTestId("preview-video");
     expect(video).toHaveAttribute("src", "/api/jobs/a/result");
-    expect(screen.getByRole("link", { name: "Download" })).toHaveAttribute("download", "Paper boat.mp4");
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    // the preview's ⋯ leads with Download (STORY_024)
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    expect(within(screen.getByRole("menu", { name: "Preview actions" })).getByRole("menuitem", { name: /Download/ })).toHaveAttribute("download", "Paper boat.mp4");
+    fireEvent.click(screen.getByRole("button", { name: "Close asset preview" }));
     expect(screen.queryByTestId("preview-video")).not.toBeInTheDocument();
   });
 
-  it("the kebab menu opens the task, downloads, and deletes from history after a confirm", async () => {
+  it("the kebab menu locates the task, sends to a new task, has an inert Star, and deletes from history after a confirm", async () => {
     const { fetchImpl, deleted } = fetchWith([entry("a", "Paper boat")]);
     const confirmImpl = vi.fn(() => true);
     render(<AssetsPage fetchImpl={fetchImpl} confirmImpl={confirmImpl} />);
@@ -66,10 +69,13 @@ describe("AssetsPage", () => {
       expect(screen.getByTestId("asset-tile")).toBeInTheDocument();
     });
     fireEvent.click(screen.getByRole("button", { name: "More actions for Paper boat.mp4" }));
-    expect(screen.getByRole("menuitem", { name: "Open task" })).toHaveAttribute("href", "/task/a");
-    expect(screen.getByRole("menuitem", { name: "Download" })).toHaveAttribute("href", "/api/jobs/a/result?download"); // named by the server (BUG_004)
+    // assets-tile-menu-open@1440: Locate in task, Send to new task, Star, Delete
+    expect(screen.getAllByRole("menuitem").map((el) => el.textContent.trim())).toEqual(["Locate in task", "Send to new task", "Star", "Delete"]);
+    expect(screen.getByRole("menuitem", { name: "Locate in task" })).toHaveAttribute("href", "/task/a");
+    expect(screen.getByRole("menuitem", { name: "Send to new task" })).toHaveAttribute("href", "/task/a?extend");
+    expect(screen.getByRole("menuitem", { name: "Star" })).toHaveAttribute("aria-disabled", "true");
     await act(async () => {
-      fireEvent.click(screen.getByRole("menuitem", { name: "Delete from history" }));
+      fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
       await Promise.resolve();
     });
     expect(confirmImpl).toHaveBeenCalledWith(expect.stringContaining("Paper boat"));
@@ -81,14 +87,73 @@ describe("AssetsPage", () => {
 });
 
 describe("AssetsPage — extend (STORY_016)", () => {
-  it("the kebab offers Extend, linking to the task with ?extend", async () => {
+  it("the kebab's Send to new task links to the task with ?extend (STORY_024 names it as the reference does)", async () => {
     render(<AssetsPage fetchImpl={fetchWith([entry("a", "Gallery clip")]).fetchImpl} />);
     await waitFor(() => {
       expect(screen.getByTestId("asset-tile")).toBeInTheDocument();
     });
     fireEvent.click(screen.getByRole("button", { name: "More actions for Gallery clip.mp4" }));
-    const items = screen.getAllByRole("menuitem").map((el) => el.textContent);
-    expect(items).toEqual(["Open task", "Extend", "Download", "Delete from history"]);
-    expect(screen.getByRole("menuitem", { name: "Extend" })).toHaveAttribute("href", "/task/a?extend");
+    expect(screen.getByRole("menuitem", { name: "Send to new task" })).toHaveAttribute("href", "/task/a?extend");
+  });
+});
+
+describe("AssetsPage — the reference's Assets page (STORY_024)", () => {
+  it("From you and Star show the empty state; From agent shows the tiles again", async () => {
+    render(<AssetsPage fetchImpl={fetchWith([entry("a", "Paper boat")]).fetchImpl} />);
+    await waitFor(() => {
+      expect(screen.getByTestId("asset-tile")).toBeInTheDocument();
+    });
+    const tabs = screen.getByRole("tablist", { name: "Assets" });
+    expect(within(tabs).getAllByRole("tab").map((el) => el.textContent)).toEqual(["From agent", "From you", "Star"]);
+    fireEvent.click(within(tabs).getByRole("tab", { name: "From you" }));
+    expect(within(tabs).getByRole("tab", { name: "From you" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByTestId("assets-empty")).toHaveTextContent("No assets yet");
+    fireEvent.click(within(tabs).getByRole("tab", { name: "Star" }));
+    expect(screen.getByTestId("assets-empty")).toBeInTheDocument();
+    fireEvent.click(within(tabs).getByRole("tab", { name: "From agent" }));
+    expect(screen.getByTestId("asset-tile")).toBeInTheDocument();
+  });
+
+  it("the preview's ⋯ menu carries Download and the tile's four entries; Delete from it closes the preview", async () => {
+    const { fetchImpl, deleted } = fetchWith([entry("a", "Paper boat")]);
+    render(<AssetsPage fetchImpl={fetchImpl} confirmImpl={() => true} />);
+    await waitFor(() => {
+      expect(screen.getByTestId("asset-tile")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Preview Paper boat.mp4" }));
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    const menu = screen.getByRole("menu", { name: "Preview actions" });
+    expect(within(menu).getAllByRole("menuitem").map((el) => el.textContent.trim())).toEqual(["Download", "Locate in task", "Send to new task", "Star", "Delete"]);
+    await act(async () => {
+      fireEvent.click(within(menu).getByRole("menuitem", { name: "Delete" }));
+      await Promise.resolve();
+    });
+    expect(deleted).toEqual(["a"]);
+    await waitFor(() => {
+      expect(screen.queryByTestId("preview-video")).not.toBeInTheDocument();
+    });
+  });
+
+  it("puts its Search and Filter buttons in the Shell's slot; Search shows the field, Filter shows the tabs", async () => {
+    function Bar() {
+      const { pageActions } = useShell();
+      return <div data-testid="bar">{pageActions}</div>;
+    }
+    render(
+      <ShellStateProvider scope="/assets">
+        <Bar />
+        <AssetsPage fetchImpl={fetchWith([entry("a", "Paper boat")]).fetchImpl} />
+      </ShellStateProvider>,
+    );
+    const bar = screen.getByTestId("bar");
+    await waitFor(() => {
+      expect(within(bar).getByRole("button", { name: "Search" })).toBeInTheDocument();
+    });
+    expect(within(bar).getByRole("button", { name: "Search" })).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(within(bar).getByRole("button", { name: "Search" }));
+    expect(within(bar).getByRole("button", { name: "Search" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("searchbox")).toHaveFocus();
+    fireEvent.click(within(bar).getByRole("button", { name: "Filter" }));
+    expect(within(bar).getByRole("button", { name: "Filter" })).toHaveAttribute("aria-pressed", "true");
   });
 });

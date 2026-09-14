@@ -300,7 +300,7 @@ describe("TaskPage — the reference's task page (STORY_023)", () => {
     expect(within(panel).queryByRole("button", { name: "A boat.mp4" })).not.toBeInTheDocument();
     cleanup();
     render(
-      <ShellContext.Provider value={{ workAreaOpen: false, toggleWorkArea: () => undefined, previewOpen: false, openPreview: () => undefined, closePreview: () => undefined }}>
+      <ShellContext.Provider value={{ workAreaOpen: false, toggleWorkArea: () => undefined, previewOpen: false, openPreview: () => undefined, closePreview: () => undefined, pageActions: undefined, setPageActions: () => undefined }}>
         <TaskPage entry={done()} fetchImpl={fetchScript([]).fetchImpl} />
       </ShellContext.Provider>,
     );
