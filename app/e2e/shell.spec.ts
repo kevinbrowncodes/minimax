@@ -22,22 +22,63 @@ test.describe("shell (STORY_012)", () => {
     await expect(sidebar.getByRole("link", { name: "Assets" })).toHaveAttribute("aria-current", "page");
   });
 
-  test("out-of-MVP rows are inert, do not navigate, and answer a click with the notice (STORY_019)", async ({ page }, testInfo) => {
+  test("the sidebar's rows open our renderings of the reference's pages, whose controls are inert (STORY_025)", async ({ page }, testInfo) => {
+    const narrow = testInfo.project.name === "narrow";
+    const openDrawer = async () => {
+      if (narrow) {
+        await page.getByRole("button", { name: "Expand sidebar" }).click();
+        await settled(page);
+      }
+    };
+    const sidebar = page.getByRole("navigation", { name: "Sidebar" });
+    // force: Playwright's actionability check treats aria-disabled as not enabled; the control does respond — that is the point.
+    const rows: readonly { row: string; url: RegExp; inert: string; testid: string }[] = [
+      { row: "Plugins", url: /\/plugins$/, inert: "Install Excel", testid: "plugins-page" },
+      { row: "Scheduled", url: /\/scheduled$/, inert: "Scheduled task status", testid: "scheduled-page" },
+      { row: "Connect mobile", url: /\/connect-mobile$/, inert: "Create IM Bot", testid: "connect-page" },
+    ];
+    for (const { row, url, inert, testid } of rows) {
+      await page.goto("/");
+      await settled(page);
+      await openDrawer();
+      await sidebar.getByRole("link", { name: row }).click();
+      await expect(page).toHaveURL(url);
+      await expect(page.getByTestId(testid)).toBeVisible();
+      await settled(page); // the drawer slides shut on navigation at 390; a forced click through it would land on a row
+      const control = page.getByRole("button", { name: inert });
+      await expect(control).toHaveAttribute("aria-disabled", "true");
+      await control.click({ force: true });
+      await expect(page.getByRole("status").filter({ hasText: "Not part of MiniMax Local" }).first()).toBeVisible();
+      await expect(page).toHaveURL(url);
+      await openDrawer();
+      await expect(sidebar.getByRole("link", { name: row })).toHaveAttribute("aria-current", "page");
+    }
+  });
+
+  test("the Agents guide's View now opens Plugins › Manage, whose ‹ Plugins goes back; Personal shows the empty state; More › MaxHermes at desktop (STORY_025)", async ({ page }, testInfo) => {
     await page.goto("/");
+    await settled(page);
     if (testInfo.project.name === "narrow") {
       await page.getByRole("button", { name: "Expand sidebar" }).click();
       await settled(page);
     }
+    await page.getByRole("link", { name: "View now" }).click();
+    await expect(page).toHaveURL(/\/plugins\/manage$/);
+    await expect(page.getByRole("heading", { name: "Management" })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Name" })).toHaveValue("General");
+    await page.getByRole("link", { name: "Plugins" }).first().click();
+    await expect(page).toHaveURL(/\/plugins$/);
+    await page.getByRole("tab", { name: "Personal" }).click();
+    await expect(page.getByTestId("plugins-empty")).toHaveText(/No matching plugins or skills/);
+    if (testInfo.project.name === "narrow") return; // More cannot unfold in the drawer (its header closes it), as on the reference
     const sidebar = page.getByRole("navigation", { name: "Sidebar" });
-    // force: Playwright's actionability check treats aria-disabled as not enabled; the control does respond — that is the point.
-    // Search is ours since STORY_021 (it opens the Search dialog), so it is no longer in this list.
-    for (const name of ["Plugins", "Scheduled", "Connect Mobile"]) {
-      const row = sidebar.getByRole("link", { name });
-      await expect(row).toHaveAttribute("aria-disabled", "true");
-      await row.click({ force: true });
-      await expect(row.getByRole("status")).toHaveText(/Not part of MiniMax Local/);
-      await expect(page).toHaveURL(/\/$/);
-    }
+    await sidebar.getByRole("button", { name: "More", exact: true }).click();
+    await sidebar.getByRole("link", { name: "MaxHermes" }).click();
+    await expect(page).toHaveURL(/\/max-hermes$/);
+    await expect(page.getByRole("heading", { name: "An Agent That Grows With You." })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start now" })).toHaveAttribute("aria-disabled", "true");
+    await page.goto("/max-claw");
+    await expect(page.getByRole("heading", { name: "Your 24/7 personal assistant." })).toBeVisible();
   });
 
   test("the top bar's Changelog is inert with the notice and never leaves the page (STORY_019)", async ({ page }) => {
@@ -120,6 +161,23 @@ test.describe("shell (STORY_021)", () => {
     await openDrawer();
     await expect(sidebar.getByRole("button", { name: "More", exact: true })).toHaveAttribute("aria-expanded", "true");
     await expect(sidebar.getByText("MaxHermes")).toBeVisible();
+  });
+
+  test("Dark mode survives a reload with More unfolded — a stored preference must not undo the theme (BUG_005)", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "More unfolds in the desktop sidebar (the drawer's header closes it at 390)");
+    await page.addInitScript(() => {
+      localStorage.setItem("minimax-local.theme", "dark");
+    });
+    await page.goto("/");
+    await settled(page);
+    const sidebar = page.getByRole("navigation", { name: "Sidebar" });
+    await sidebar.getByRole("button", { name: "More", exact: true }).click();
+    await expect(sidebar.getByRole("link", { name: "MaxHermes" })).toBeVisible();
+    await page.reload();
+    await settled(page);
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(28, 28, 28)");
+    await expect(sidebar.getByRole("link", { name: "MaxHermes" })).toBeVisible();
   });
 
   test("Search finds a job by title and opens it; the Recents menu's Delete forgets it", async ({ page, stubApi }, testInfo) => {

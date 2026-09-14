@@ -11,6 +11,14 @@ describe("topBarFor", () => {
     expect(topBarFor("/task/unknown", recents)).toEqual({ kind: "task", title: "Unnamed Session" });
     expect(topBarFor("/elsewhere", recents)).toEqual({ kind: "other" });
   });
+  it("names the six pages behind the sidebar (STORY_025)", () => {
+    expect(topBarFor("/plugins", recents)).toEqual({ kind: "page", page: "plugins" });
+    expect(topBarFor("/plugins/manage", recents)).toEqual({ kind: "page", page: "plugins-manage" });
+    expect(topBarFor("/scheduled", recents)).toEqual({ kind: "page", page: "scheduled" });
+    expect(topBarFor("/connect-mobile", recents)).toEqual({ kind: "page", page: "connect-mobile" });
+    expect(topBarFor("/max-hermes", recents)).toEqual({ kind: "page", page: "max-hermes" });
+    expect(topBarFor("/max-claw", recents)).toEqual({ kind: "page", page: "max-claw" });
+  });
 });
 
 describe("activeRow and isUnread", () => {
@@ -19,6 +27,13 @@ describe("activeRow and isUnread", () => {
     expect(activeRow("/assets")).toBe("assets");
     expect(activeRow("/task/j%201")).toBe("task:j 1");
     expect(activeRow("/nope")).toBeUndefined();
+    // STORY_025: the pages behind the sidebar light their row; Manage lights Plugins
+    expect(activeRow("/plugins")).toBe("plugins");
+    expect(activeRow("/plugins/manage")).toBe("plugins");
+    expect(activeRow("/scheduled")).toBe("scheduled");
+    expect(activeRow("/connect-mobile")).toBe("connect-mobile");
+    expect(activeRow("/max-hermes")).toBe("max-hermes");
+    expect(activeRow("/max-claw")).toBe("max-claw");
   });
   it("shows the dot only for a finished job not opened since", () => {
     expect(isUnread({ id: "a", title: "a" })).toBe(false);

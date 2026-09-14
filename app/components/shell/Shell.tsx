@@ -1,8 +1,9 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useReducer, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { topBarFor, type RecentEntry } from "@/lib/route-title";
-import { DEFAULT_SHELL_PREFS, readShellPrefs, reduceShellPrefs, writeShellPrefs, type Section, type ShellPrefs, type ShellPrefsAction } from "@/lib/shell-prefs";
+import { type Section } from "@/lib/shell-prefs";
+import { dispatchShellPrefs, getServerShellPrefs, getShellPrefs, subscribeShellPrefs } from "@/lib/shell-prefs-store";
 import { useNarrow } from "@/lib/use-narrow";
 import { cx } from "@/lib/cx";
 import { useThemeChoice } from "@/lib/use-theme";
@@ -20,20 +21,6 @@ export interface ShellProps {
   readonly children: ReactNode;
   /** Injectable confirm for the Recents menu's Delete (tests). */
   readonly confirmImpl?: (message: string) => boolean;
-}
-
-function safeStorage(): Storage | null {
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
-function prefsReducer(prefs: ShellPrefs, action: ShellPrefsAction): ShellPrefs {
-  const next = reduceShellPrefs(prefs, action);
-  writeShellPrefs(safeStorage(), next);
-  return next;
 }
 
 /**
@@ -56,7 +43,9 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
   const router = useRouter();
   const { workAreaOpen, toggleWorkArea, pageActions } = useShell();
   const narrow = useNarrow();
-  const [prefs, dispatchPrefs] = useReducer(prefsReducer, DEFAULT_SHELL_PREFS, () => (typeof window === "undefined" ? DEFAULT_SHELL_PREFS : readShellPrefs(safeStorage())));
+  // BUG_005: hydrate with the defaults, take the stored preferences after — never a mismatch that would drop data-theme
+  const prefs = useSyncExternalStore(subscribeShellPrefs, getShellPrefs, getServerShellPrefs);
+  const dispatchPrefs = dispatchShellPrefs;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -169,8 +158,10 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
           {bar.kind === "task" ? <span className={styles.topbarTitle}>{bar.title}</span> : null}
           {/* narrow-assets-all@390: the bar carries the page title centred, with the page's own buttons at the right (STORY_024) */}
           {bar.kind === "assets" && narrow ? <span className={styles.topbarCentre}>Assets</span> : null}
+          {/* the pages behind the sidebar put their whole chrome in the bar at every width (STORY_025) */}
+          {bar.kind === "page" ? <div className={styles.topbarPage}>{pageActions}</div> : null}
           <div className={styles.topbarActions}>
-            {narrow ? pageActions : null}
+            {bar.kind === "assets" && narrow ? pageActions : null}
             {bar.kind === "home" ? (
               <>
                 <Inert label="Changelog" className={styles.iconButton} align="end"><IconDocument /></Inert>

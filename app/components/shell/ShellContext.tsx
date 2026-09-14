@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 /**
  * What the Shell shares with the task page it frames (STORY_023): whether the Work Area panel is shown — the top bar's
@@ -24,6 +24,20 @@ export const ShellContext = createContext<ShellState>({ workAreaOpen: true, togg
 
 export function useShell(): ShellState {
   return useContext(ShellContext);
+}
+
+/**
+ * Puts a page's chrome in the Shell's top bar for as long as the page is mounted (STORY_024/025). Pass a memoised
+ * node: the effect re-runs when the node changes, so an unmemoised one would loop through the Shell's re-render.
+ */
+export function usePageActions(actions: ReactNode): void {
+  const { setPageActions } = useShell();
+  useEffect(() => {
+    setPageActions(actions);
+    return () => {
+      setPageActions(undefined);
+    };
+  }, [setPageActions, actions]);
 }
 
 export interface ShellStateProviderProps {

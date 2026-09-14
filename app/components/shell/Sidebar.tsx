@@ -14,12 +14,14 @@ import {
   IconAvatar,
   IconBell,
   IconChevronDown,
+  IconClaw,
   IconClock,
   IconClose,
   IconCollapse,
   IconCopy,
   IconDownload,
   IconFolder,
+  IconHermes,
   IconLogo,
   IconMore,
   IconMove,
@@ -171,18 +173,18 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
         <button type="button" className={styles.railLogo} aria-label="Expand sidebar" title="Expand sidebar" onClick={onExpand}><IconLogo /></button>
         {pill("/", "new-task", <IconPlusCircle />, "New task")}
         <Inert label="Search" className={styles.railPill} align="start"><IconSearch /></Inert>
-        <Inert label="Plugins" className={styles.railPill}><IconPlugins /></Inert>
-        <Inert label="Scheduled" className={styles.railPill}><IconClock /></Inert>
+        {pill("/plugins", "plugins", <IconPlugins />, "Plugins")}
+        {pill("/scheduled", "scheduled", <IconClock />, "Scheduled")}
         {pill("/assets", "assets", <IconFolder />, "Assets")}
-        <Inert label="Connect Mobile" className={styles.railPill}><IconPhone /></Inert>
+        {pill("/connect-mobile", "connect-mobile", <IconPhone />, "Connect mobile")}
         <div className={styles.spacer} />
         <div className={styles.railFooter}><span className={styles.railAvatar} aria-label="Owner"><IconAvatar /></span></div>
       </nav>
     );
   }
 
-  const link = (href: string, key: string, icon: ReactNode, label: string) => (
-    <Link href={href} className={cx(styles.row, active === key && styles.rowActive)} aria-current={active === key ? "page" : undefined} onClick={onNavigate}>
+  const link = (href: string, key: string, icon: ReactNode, label: string, muted = false) => (
+    <Link href={href} className={cx(styles.row, muted && styles.rowMuted, active === key && styles.rowActive)} aria-current={active === key ? "page" : undefined} onClick={onNavigate}>
       <span className={styles.rowIcon}>{icon}</span>
       <span className={styles.rowLabel}>{label}</span>
     </Link>
@@ -196,17 +198,18 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
       </div>
       {link("/", "new-task", <IconPlusCircle />, "New task")}
       {onOpenSearch ? <ActionRow icon={<IconSearch />} label="Search" onClick={onOpenSearch} /> : <InertRow icon={<IconSearch />} label="Search" />}
-      <InertRow icon={<IconPlugins />} label="Plugins" />
-      <InertRow icon={<IconClock />} label="Scheduled" />
+      {/* STORY_025: the rows lead to our renderings of the reference's pages; the pages are the inert part now */}
+      {link("/plugins", "plugins", <IconPlugins />, "Plugins")}
+      {link("/scheduled", "scheduled", <IconClock />, "Scheduled")}
       {link("/assets", "assets", <IconFolder />, "Assets")}
-      <InertRow icon={<IconPhone />} label="Connect Mobile" />
+      {link("/connect-mobile", "connect-mobile", <IconPhone />, "Connect mobile")}
 
       <div className={styles.section}>
         <SectionHeader label="More" section="more" folded={prefs.folded.more} onToggle={onToggleSection} />
         {prefs.folded.more ? null : (
           <>
-            <InertRow label="MaxHermes" muted />
-            <InertRow label="MaxClaw" muted />
+            {link("/max-hermes", "max-hermes", <IconHermes />, "MaxHermes", true)}
+            {link("/max-claw", "max-claw", <IconClaw />, "MaxClaw", true)}
           </>
         )}
       </div>
@@ -238,7 +241,7 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
         <div className={styles.guide} data-testid="agents-guide">
           <button type="button" className={styles.guideClose} aria-label="Dismiss Agents guide" onClick={onDismissGuide}><IconClose /></button>
           <p className={styles.guideText}>You can now find Agents in Plugins</p>
-          <Inert role="link" label="View now" className={styles.guideLink}>View now</Inert>
+          <Link href="/plugins/manage" className={styles.guideLink} onClick={onNavigate}>View now</Link>
           <div className={styles.guideArt} aria-hidden="true">
             <span className={styles.guideArtCard}>
               <span className={styles.guideArtTitle}>Manage</span>

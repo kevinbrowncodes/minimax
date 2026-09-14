@@ -1,7 +1,7 @@
 # EPIC_005 — The UI looks identical to the reference on every surface, in both themes
 
-**Status:** Open (2026-09-14) — the owner's decision after reviewing the MVP: "it should look identical to agent.minimax.io, with the exception being we are using our local Spark MiniMax and not a cloud one"; looks first, behaviours later
-**Started:** 2026-09-14
+**Status:** Done (2026-09-14) — the owner's decision after reviewing the MVP: "it should look identical to agent.minimax.io, with the exception being we are using our local Spark MiniMax and not a cloud one"; looks first, behaviours later. All seven stories (018, 019, 021–025) landed on 2026-09-14; every surface a signed-in user sees is rebuilt in both themes at both widths, 84–98 % pixel-identical to the 2026-09-14 captures at 1440, the rest being the reference's own content (its prompts, prose, Recents, videos, Showcase, logos and art) and the departures each story lists. What comes next is [BACKLOG_003](../backlog/BACKLOG_003_the_parts_of_the_reference_ui_that_minimax_local_does_not_do_can_be_switched_off.md) (switching the unused parts off) and the wiring pass the owner asked for after the copy.
+**Started:** 2026-09-14 · **Finished:** 2026-09-14
 
 ## Goal
 
@@ -31,7 +31,7 @@ Recon first, then one rebuild story per surface, each drafted after the capture 
 | 022 | [The home and composer match the reference: Showcase, the attach menu, the mode chips and the agent-model menu](../story/STORY_022_the_home_and_composer_match_the_reference_showcase_attach_menu_mode_chips_and_the_agent_model_menu.md) | **Done (2026-09-14)** — 84–97 % pixel-identical at 1440 in both themes; the remaining pixels are the Showcase's content |
 | 023 | [The task page matches the reference: the result card, the preview pane, the Work Area panel and the thread rows](../story/STORY_023_the_task_page_matches_the_reference_result_card_preview_pane_work_area_panel_and_thread_rows.md) | **Done (2026-09-14)** — 94–95 % pixel-identical at 1440 in both themes on the resting states; the remaining pixels are the reference's prompt, prose, Recents and video |
 | 024 | [The Assets page matches the reference: the tabs, the chips, the tile menu and the preview dialog](../story/STORY_024_the_assets_page_matches_the_reference_tabs_chips_tile_menu_and_the_preview_dialog.md) | **Done (2026-09-14)** — 96–98 % pixel-identical at 1440 in both themes; the rest is the reference's grey poster and Recents |
-| 025 | The pages behind the sidebar (Plugins and Manage, Scheduled, Connect mobile, MaxHermes, MaxClaw) rendered as the reference renders them and inert | To draft after 024 |
+| 025 | [The pages behind the sidebar (Plugins and Manage, Scheduled, Connect mobile, MaxHermes, MaxClaw) render as the reference does, and inert](../story/STORY_025_the_pages_behind_the_sidebar_plugins_manage_scheduled_connect_mobile_maxhermes_and_maxclaw_render_as_the_reference_does_and_inert.md) | **Done (2026-09-14)** — 88–98 % pixel-identical at 1440 in both themes; the rest is the reference's logos, art and Recents; BUG_005 (a stored preference undid Dark mode on reload) found and fixed on the way |
 
 ## Recon budget
 

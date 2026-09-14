@@ -11,17 +11,18 @@ const recents = [
 ];
 
 describe("Sidebar", () => {
-  it("renders the captured rows in order with More and Projects folded by default (2026-09-14), the out-of-MVP rows inert", () => {
+  it("renders the captured rows in order with More and Projects folded by default (2026-09-14); the rows lead to our pages (STORY_025)", () => {
     const { container } = render(<Sidebar pathname="/" recents={[]} />);
     const texts = [...container.querySelectorAll('[class*="rowLabel"]')].map((el) => el.textContent);
-    expect(texts).toEqual(["New task", "Search", "Plugins", "Scheduled", "Assets", "Connect Mobile"]);
+    expect(texts).toEqual(["New task", "Search", "Plugins", "Scheduled", "Assets", "Connect mobile"]);
     expect(screen.getByRole("link", { name: "New task" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("href", "/assets");
-    for (const name of ["Search", "Plugins", "Scheduled", "Connect Mobile"]) {
-      const row = screen.getByText(name).closest("[role=link]");
-      expect(row).toHaveAttribute("aria-disabled", "true");
-      expect(row).not.toHaveAttribute("href");
-    }
+    expect(screen.getByRole("link", { name: "Plugins" })).toHaveAttribute("href", "/plugins");
+    expect(screen.getByRole("link", { name: "Scheduled" })).toHaveAttribute("href", "/scheduled");
+    expect(screen.getByRole("link", { name: "Connect mobile" })).toHaveAttribute("href", "/connect-mobile");
+    expect(screen.getByRole("link", { name: "View now" })).toHaveAttribute("href", "/plugins/manage");
+    const search = screen.getByText("Search").closest("[role=link]");
+    expect(search).toHaveAttribute("aria-disabled", "true"); // Search without a handler stays inert
     expect(screen.getByRole("button", { name: "More" })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("button", { name: "Projects" })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("button", { name: "Recents" })).toHaveAttribute("aria-expanded", "true");
@@ -35,7 +36,8 @@ describe("Sidebar", () => {
     const onToggleSection = vi.fn();
     const prefs = { ...DEFAULT_SHELL_PREFS, folded: { more: false, projects: false, recents: true } };
     render(<Sidebar pathname="/" recents={recents} prefs={prefs} onToggleSection={onToggleSection} onOpenCreateProject={() => undefined} />);
-    expect(screen.getByText("MaxHermes")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "MaxHermes" })).toHaveAttribute("href", "/max-hermes");
+    expect(screen.getByRole("link", { name: "MaxClaw" })).toHaveAttribute("href", "/max-claw");
     expect(screen.getByRole("button", { name: "Add new project" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Paper boat/ })).not.toBeInTheDocument();
     screen.getByRole("button", { name: "More" }).click();
@@ -137,12 +139,18 @@ describe("Sidebar", () => {
     expect(onCollapse).toHaveBeenCalledTimes(1);
   });
 
-  it("an inert row answers a click with the notice (STORY_019)", () => {
+  it("an inert row answers a click with the notice (STORY_019); the page rows light up on their paths (STORY_025)", () => {
     render(<Sidebar pathname="/" recents={[]} />);
     act(() => {
-      screen.getByRole("link", { name: "Plugins" }).click();
+      screen.getByRole("link", { name: "Search" }).click();
     });
     expect(screen.getByRole("status")).toHaveTextContent("Not part of MiniMax Local");
+    cleanup();
+    render(<Sidebar pathname="/plugins/manage" recents={[]} />);
+    expect(screen.getByRole("link", { name: "Plugins" })).toHaveAttribute("aria-current", "page");
+    cleanup();
+    render(<Sidebar pathname="/connect-mobile" recents={[]} rail />);
+    expect(screen.getByRole("link", { name: "Connect mobile" })).toHaveAttribute("aria-current", "page");
   });
 });
 
