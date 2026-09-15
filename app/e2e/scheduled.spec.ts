@@ -119,6 +119,55 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     expect(await stubApi.openJobs()).toEqual([]);
   });
 
+  test("an extension queued against a clip still running waits for it, then goes and finishes (STORY_043)", async ({ page, request, stubApi }, testInfo) => {
+    test.slow();
+    const narrow = testInfo.project.name === "narrow";
+    // a slow clip: ten polls to done — long enough to queue an extension against it
+    await page.goto("/?script=slow-done-after-10-polls");
+    await settled(page);
+    await page.getByRole("button", { name: /Video generation/ }).click();
+    await page.getByRole("textbox", { name: "Message" }).fill("A slow clip");
+    const sourceDone = waitForTerminalStatus(page, { timeout: 90_000 });
+    await page.getByRole("button", { name: "Send message" }).click();
+    await expect(page).toHaveURL(/\/task\/[^/]+$/);
+    const src = page.url().split("/task/")[1] ?? "";
+    await expect(page.getByTestId("indicator")).toContainText(/Queued|Generating/);
+    // Queue an extension from the running task page: the pending tile, +N s, Send → queued behind its source
+    await page.getByRole("button", { name: /Queue an extension/ }).click();
+    await expect(page.getByTestId("continuation")).toHaveAttribute("data-pending", "true");
+    await expect(page.getByTestId("continuation")).toContainText("Continues · 5.0 s (not finished yet");
+    await page.getByPlaceholder("Describe what happens next…").fill("and it drifts on");
+    const queued = page.waitForResponse((r) => r.url().includes("/api/jobs") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Send message" }).click();
+    expect((await queued).status()).toBe(202);
+    await expect(page.getByTestId("toast")).toHaveText("Queued — 1st in line");
+    await page.waitForURL((url) => /\/task\/[^/]+$/.test(url.pathname) && !url.pathname.endsWith(src)); // the new task's page, not the source's
+    const ext = page.url().split("/task/")[1] ?? "";
+    expect(ext).not.toBe(src);
+    await expect(page.getByTestId("indicator")).toContainText("Waiting — 1st in line");
+    expect((await listHistory(request)).find((e) => e.id === ext)?.status).toBe("queued");
+    // on Scheduled the row names its source and waits while the source runs
+    await page.goto("/scheduled");
+    await settled(page);
+    const rows = page.getByTestId("waiting-row");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText("Waiting · after");
+    await expect(page.getByRole("region", { name: "Running" })).toContainText("A slow clip");
+    // the source finishes (its status polled by this page), the extension goes and finishes
+    const extDone = waitForTerminalStatus(page, { id: ext, timeout: 90_000 });
+    expect((await sourceDone).status).toBe("done");
+    await expect(page.getByRole("region", { name: "Waiting" })).toHaveCount(0, { timeout: 20_000 });
+    expect((await extDone).status).toBe("done");
+    await expect(page.getByRole("region", { name: "Done today" })).toContainText("and it drifts on", { timeout: 15_000 });
+    const extEntry = (await (await request.get(`/api/history/${ext}`)).json()) as { continuesFrom?: { id: string }; jobId?: string };
+    expect(extEntry.continuesFrom?.id).toBe(src);
+    const received = await stubApi.received(extEntry.jobId ?? "");
+    expect(received.request.continueFrom).toBe(src); // the source was created directly: its id is the stub's
+    if (narrow) await expect(page.getByTestId("scheduled-page")).toBeVisible();
+    for (const id of [ext, src]) await request.delete(`/api/history/${id}`);
+    expect(await stubApi.openJobs()).toEqual([]);
+  });
+
   test("the empty page, its search and the status filter", async ({ page }) => {
     await page.goto("/scheduled");
     await settled(page);

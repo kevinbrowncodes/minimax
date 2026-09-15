@@ -73,7 +73,8 @@ describe("ScheduledPage (STORY_041)", () => {
     const { fetchImpl, calls } = fetchWith(queue, history);
     render(inShell(<ScheduledPage fetchImpl={fetchImpl} now={now} pollMs={0} />));
     const running = await screen.findByRole("region", { name: "Running" });
-    expect(within(running).getAllByTestId("running-row").map((r) => r.textContent)).toEqual(["26-09-15-1901Paper boat on rain puddleGenerating 42 %Stop"]); // 41 in history, 42 from the poll
+    expect(within(running).getAllByTestId("running-row").map((r) => r.textContent)).toEqual(["26-09-15-1901Paper boat on rain puddleGenerating 42 %Queue an extensionStop"]); // 41 in history, 42 from the poll
+    expect(within(running).getByRole("link", { name: "Queue an extension of Paper boat on rain puddle" })).toHaveAttribute("href", "/task/r1?extend"); // STORY_043
     expect(calls.filter((c) => c.method === "GET" && c.url.startsWith("/api/jobs/")).map((c) => c.url)).toEqual(["/api/jobs/r1"]); // the running one is polled, the waiting one is not
     const waiting = screen.getByRole("region", { name: "Waiting" });
     expect(within(waiting).getByRole("heading")).toHaveTextContent("Waiting (2)");
@@ -81,7 +82,8 @@ describe("ScheduledPage (STORY_041)", () => {
     expect(rows.map((r) => r.getAttribute("data-position"))).toEqual(["1", "2"]);
     expect(rows[0]).toHaveTextContent("Waiting · next");
     expect(rows[1]).toHaveTextContent("Not before Sep 16, 02:00");
-    expect(within(rows[0] as HTMLElement).getByRole("link", { name: /Same boat, wider/ })).toHaveAttribute("href", "/task/w1");
+    expect(within(rows[0] as HTMLElement).getByRole("link", { name: "Queue an extension of Same boat, wider" })).toHaveAttribute("href", "/task/w1?extend"); // STORY_043
+    expect(within(rows[0] as HTMLElement).getByRole("link", { name: /^26-09-15-1902/ })).toHaveAttribute("href", "/task/w1"); // the task link (Queue an extension is the other link)
     expect(within(rows[0] as HTMLElement).getByRole("button", { name: "Move Same boat, wider up" })).toBeDisabled();
     expect(within(rows[1] as HTMLElement).getByRole("button", { name: "Move Neon street at night down" })).toBeDisabled();
     expect(within(screen.getByRole("region", { name: "Done today" })).getByRole("link", { name: /Forest dawn/ })).toHaveAttribute("href", "/task/d1");
@@ -115,6 +117,13 @@ describe("ScheduledPage (STORY_041)", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Scheduled task status" }), { target: { value: "Done" } });
     expect(screen.queryByRole("region", { name: "Waiting" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Done today" })).toBeInTheDocument();
+  });
+
+  it("a waiting extension reads after its source (STORY_043)", async () => {
+    const ext: QueueRow = { id: "w3", position: 3, title: "Same boat, wider +4 s", createdAt: at(19, 6), referenceImages: 0, continueFrom: { id: "r1", title: "Paper boat on rain puddle", createdAt: at(19, 1) } };
+    render(inShell(<ScheduledPage fetchImpl={fetchWith([...queue, ext], history).fetchImpl} now={now} pollMs={0} />));
+    const waiting = await screen.findByRole("region", { name: "Waiting" });
+    expect(within(waiting).getAllByTestId("waiting-row")[2]).toHaveTextContent("Waiting · after 26-09-15-1901");
   });
 
   it("says when the Spark's model is not running, and nothing when it is (CHORE_011)", async () => {

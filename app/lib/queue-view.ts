@@ -2,6 +2,7 @@
  * What the Scheduled page shows (STORY_041): the queue's waiting rows, the jobs running on the model server, and the
  * last day's finished ones, drawn from the queue list and the history list. Pure.
  */
+import { recentLabel } from "./recents";
 import type { RecentEntry } from "./route-title";
 import { formatDoneAt } from "./task-view";
 
@@ -13,6 +14,15 @@ export interface QueueRow {
   readonly notBefore?: string;
   readonly referenceImages: number;
   readonly projectId?: string;
+  /** STORY_043: an extension's source; the row reads "Waiting · after <its stamp>". */
+  readonly continueFrom?: { readonly id: string; readonly title: string; readonly createdAt?: string };
+}
+
+/** The waiting row's word (STORY_041, STORY_043): next / waiting / after its source / not before a time. */
+export function waitingLabel(row: QueueRow, now: Date = new Date()): string {
+  if (row.notBefore !== undefined) return formatNotBefore(row.notBefore, now);
+  if (row.continueFrom !== undefined) return `Waiting · after ${recentLabel({ title: row.continueFrom.title, createdAt: row.continueFrom.createdAt })}`;
+  return row.position === 1 ? "Waiting · next" : "Waiting";
 }
 
 export const SCHEDULE_FILTERS = ["All", "Waiting", "Running", "Done", "Failed"] as const;

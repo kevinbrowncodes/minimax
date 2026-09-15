@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { historyStore } from "./history-store";
-import { submitDue, upstreamFields, upstreamJobId } from "./queue-runner";
-import { enqueue, listQueue, waiting } from "./queue-store";
+import { sourceState, submitDue, upstreamFields, upstreamJobId } from "./queue-runner";
+import { enqueue, listQueue, waiting, type QueueEntry } from "./queue-store";
 
 let dir = "";
 const request = { prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: 5, model: "minimax-h3", projectId: "p1", script: "done-after-1-poll" };
@@ -52,6 +52,37 @@ describe("the queue runner (STORY_041)", () => {
     expect(await submitDue({ now: new Date("2026-09-16T07:00:00.000Z"), submit })).toBe(2);
     expect(waiting()).toEqual([]);
     expect(listQueue().every((e) => e.jobId !== undefined)).toBe(true);
+  });
+
+  it("holds an extension while its source runs, submits it with the mapped id once done, and fails it with the reason when the source fails (STORY_043)", async () => {
+    // b extends a; c is a fresh request behind them
+    enqueue({ id: "b", request: { ...request, continueFrom: "a", overlapFrames: 39 }, referenceFiles: [] });
+    enqueue({ id: "c", request, referenceFiles: [] });
+    historyStore().patch("a", { status: "running", progress: 40, jobId: "job-a" });
+    expect(sourceState("a")).toBe("pending");
+    const sent: string[] = [];
+    const submit = vi.fn((entry: QueueEntry) => {
+      sent.push(`${entry.id}${entry.request.continueFrom === undefined ? "" : `←${String(upstreamFields(entry.request)["continueFrom"])}`}`);
+      return Promise.resolve(json({ id: `job-${entry.id}`, status: "queued", progress: 0 }, 202));
+    });
+    expect(await submitDue({ submit })).toBe(1);
+    expect(sent).toEqual(["c"]); // b waits for a; c went past it
+    expect(waiting().map((e) => e.id)).toEqual(["b"]);
+    historyStore().recordStatus("a", { id: "a", status: "done", progress: 100, result: { url: "/jobs/a/result", posterUrl: "/jobs/a/poster", mimeType: "video/mp4", durationSeconds: 5, width: 1, height: 1, sizeBytes: 1 } });
+    expect(sourceState("a")).toBe("done");
+    expect(await submitDue({ submit })).toBe(1);
+    expect(sent).toEqual(["c", "b←job-a"]); // the source's real job id (BUG_007)
+    expect(waiting()).toEqual([]);
+    // a source that fails takes its extension out of the line with the reason
+    historyStore().create({ id: "s", prompt: "s boat", params, referenceImages: 0 });
+    historyStore().create({ id: "e", prompt: "e boat", params, referenceImages: 0 });
+    enqueue({ id: "e", request: { ...request, continueFrom: "s" }, referenceFiles: [] });
+    historyStore().recordStatus("s", { id: "s", status: "failed", progress: 10, error: { code: "generation_failed", message: "boom" } });
+    expect(sourceState("s")).toBe("gone");
+    expect(sourceState("never")).toBe("gone");
+    expect(await submitDue({ submit })).toBe(0);
+    expect(waiting()).toEqual([]);
+    expect(historyStore().get("e")).toMatchObject({ status: "failed", error: { code: "source_failed", message: "its source did not finish" } });
   });
 
   it("fails a request the server refuses for a reason of its own, leaves the line on unreachable, and runs once at a time", async () => {

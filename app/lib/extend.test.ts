@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_OVERLAP, MAX_FRAMES, OVERLAP_OPTIONS, extensionLength, joinedSeconds, lengthForSeconds, maxAddedSeconds, overlapSeconds } from "./extend";
+import { DEFAULT_OVERLAP, MAX_FRAMES, OVERLAP_OPTIONS, extensionLength, joinedSeconds, lengthForSeconds, maxAddedSeconds, overlapSeconds, pendingSourceSeconds, type PendingLength } from "./extend";
 
 describe("extend arithmetic (mirrors spark/adapter/src/grid.ts)", () => {
   it("reproduces the adapter's table", () => {
@@ -15,5 +15,21 @@ describe("extend arithmetic (mirrors spark/adapter/src/grid.ts)", () => {
     expect(OVERLAP_OPTIONS).toEqual([22, 39, 56]);
     expect(DEFAULT_OVERLAP).toBe(39);
     expect(MAX_FRAMES).toBe(362);
+  });
+});
+
+describe("the length a pending clip will have (STORY_043)", () => {
+  const first: PendingLength = { id: "a", params: { durationSeconds: 5 } };
+  const second: PendingLength = { id: "b", params: { durationSeconds: 4, overlapFrames: 39 }, continuesFrom: { id: "a" } };
+  const third: PendingLength = { id: "c", params: { durationSeconds: 10 }, continuesFrom: { id: "b" } };
+  const lookup = (id: string): PendingLength | undefined => ({ a: first, b: second, c: third })[id];
+
+  it("is the requested seconds for a fresh clip, the joined length for an extension, resolved down a chain; a measured result wins", () => {
+    expect(pendingSourceSeconds(first, lookup)).toBe(5);
+    expect(pendingSourceSeconds(second, lookup)).toBe(joinedSeconds(5, 4, 39));
+    expect(pendingSourceSeconds(third, lookup)).toBe(joinedSeconds(joinedSeconds(5, 4, 39), 10, DEFAULT_OVERLAP));
+    expect(pendingSourceSeconds({ ...second, continuesFrom: { id: "a", durationSeconds: 5.167 } }, lookup)).toBe(joinedSeconds(5.167, 4, 39)); // the recorded source length is used when known
+    expect(pendingSourceSeconds({ ...second, result: { durationSeconds: 8.5 } }, lookup)).toBe(8.5);
+    expect(pendingSourceSeconds({ ...second, continuesFrom: { id: "gone" } }, lookup)).toBe(joinedSeconds(4, 4, 39)); // an unknown source: its own seconds stand in
   });
 });

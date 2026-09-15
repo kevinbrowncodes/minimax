@@ -33,3 +33,22 @@ export function overlapSeconds(overlapFrames: number): string {
 export function joinedSeconds(sourceSeconds: number, addedSeconds: number, overlapFrames: number): number {
   return Math.round(((lengthForSeconds(sourceSeconds) + extensionLength(addedSeconds, overlapFrames) - overlapFrames) / FPS) * 10) / 10;
 }
+
+/**
+ * STORY_043: the length a clip *will* have, from its request, for extending it before it has finished — a fresh clip's
+ * requested seconds; an extension's source length plus what it adds (the source found through `lookup`, its own
+ * length the same way — a chain resolves back to its first clip). A measured result, when there is one, wins.
+ */
+export interface PendingLength {
+  readonly id: string;
+  readonly params: { readonly durationSeconds: number; readonly overlapFrames?: number };
+  readonly continuesFrom?: { readonly id: string; readonly durationSeconds?: number };
+  readonly result?: { readonly durationSeconds: number };
+}
+export function pendingSourceSeconds(entry: PendingLength, lookup: (id: string) => PendingLength | undefined, depth = 0): number {
+  if (entry.result) return entry.result.durationSeconds;
+  if (entry.continuesFrom === undefined) return entry.params.durationSeconds;
+  const source = lookup(entry.continuesFrom.id);
+  const sourceSeconds = entry.continuesFrom.durationSeconds ?? (source && depth < 20 ? pendingSourceSeconds(source, lookup, depth + 1) : entry.params.durationSeconds);
+  return joinedSeconds(sourceSeconds, entry.params.durationSeconds, entry.params.overlapFrames ?? DEFAULT_OVERLAP);
+}

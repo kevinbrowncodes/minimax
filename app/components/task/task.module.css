@@ -691,3 +691,19 @@
   color: var(--text_default_primary);
   text-decoration: underline;
 }
+
+/* STORY_043: the "Queue an extension" action beside the indicator while a clip is queued or running */
+.queueExtension {
+  margin-left: auto;
+  height: 28px;
+  padding: 0 var(--spacing_10);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--text_default_primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.queueExtension:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}

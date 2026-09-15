@@ -148,7 +148,10 @@ export function removeQueued(id: string): boolean {
   return true;
 }
 
-/** The waiting entries whose time has come, in line order (a timed one is skipped, never blocking the rest). */
-export function due(now: Date = new Date()): readonly QueueEntry[] {
-  return read().filter((e) => e.jobId === undefined && (e.notBefore === undefined || Date.parse(e.notBefore) <= now.getTime()));
+/**
+ * The waiting entries whose time has come, in line order (a timed one is skipped, never blocking the rest). STORY_043:
+ * an extension is due only when its source is done — `isSourceDone(id)` says; without it a source counts as done.
+ */
+export function due(now: Date = new Date(), isSourceDone: (id: string) => boolean = () => true): readonly QueueEntry[] {
+  return read().filter((e) => e.jobId === undefined && (e.notBefore === undefined || Date.parse(e.notBefore) <= now.getTime()) && (e.request.continueFrom === undefined || isSourceDone(e.request.continueFrom)));
 }

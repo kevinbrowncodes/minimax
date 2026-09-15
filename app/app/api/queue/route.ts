@@ -25,7 +25,18 @@ export function GET(): Promise<Response> {
     const store = historyStore();
     const entries = waiting().map((e) => {
       const entry = store.get(e.id);
-      return { id: e.id, position: e.position, title: entry?.title ?? e.request.prompt, createdAt: e.createdAt, ...(e.notBefore === undefined ? {} : { notBefore: e.notBefore }), referenceImages: e.referenceFiles.length, projectId: e.request.projectId };
+      const source = e.request.continueFrom === undefined ? undefined : store.get(e.request.continueFrom);
+      return {
+        id: e.id,
+        position: e.position,
+        title: entry?.title ?? e.request.prompt,
+        createdAt: e.createdAt,
+        ...(e.notBefore === undefined ? {} : { notBefore: e.notBefore }),
+        referenceImages: e.referenceFiles.length,
+        projectId: e.request.projectId,
+        // STORY_043: an extension names its source so the row can say "after …"
+        ...(e.request.continueFrom === undefined ? {} : { continueFrom: { id: e.request.continueFrom, title: source?.title ?? e.request.continueFrom, ...(source?.createdAt === undefined ? {} : { createdAt: source.createdAt }) } }),
+      };
     });
     return entries.length >= 0 ? Response.json({ entries, model }) : errorResponse({ status: 500, code: "internal", message: "unreachable" });
   });

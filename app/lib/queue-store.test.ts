@@ -45,6 +45,14 @@ describe("the queue store (STORY_041)", () => {
     expect(listQueue().map((e) => e.id)).toEqual(["a", "c"]);
   });
 
+  it("holds an extension until its source is done, without blocking the rows behind it (STORY_043)", () => {
+    enqueue({ id: "x", request: { ...request, continueFrom: "src" }, referenceFiles: [] });
+    enqueue({ id: "y", request, referenceFiles: [] });
+    expect(due(new Date(), (id) => id !== "src").map((e) => e.id)).toEqual(["y"]); // src pending: x skipped, y goes
+    expect(due(new Date(), () => true).map((e) => e.id)).toEqual(["x", "y"]);
+    expect(due().map((e) => e.id)).toEqual(["x", "y"]); // without a lookup a source counts as done
+  });
+
   it("ignores garbage on disk", () => {
     writeFileSync(queueFile(), "nope");
     expect(listQueue()).toEqual([]);

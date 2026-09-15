@@ -23,6 +23,8 @@ export interface TaskPageProps {
   readonly entry: HistoryEntry;
   /** Open with the docked composer already extending this video (`/task/:id?extend`, STORY_016). */
   readonly extendOnOpen?: boolean;
+  /** STORY_043: the length a queued or running clip will have (from its request), so it can be extended before it finishes. */
+  readonly pendingSeconds?: number;
   /** Injected for tests. */
   readonly fetchImpl?: typeof fetch;
 }
@@ -80,7 +82,7 @@ function PanelSection({ title, children }: { readonly title: string; readonly ch
  * Deliverables) the top bar toggles, the Processed row and the message actions. STORY_026 removed the reference's
  * credits notice, Like / Dislike and the "MiniMax Agent is AI…" line.
  */
-export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPageProps) {
+export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, fetchImpl }: TaskPageProps) {
   const router = useRouter();
   const doFetch = fetchImpl ?? fetch;
   const { workAreaOpen, previewOpen, openPreview, closePreview, notify } = useShell();
@@ -88,7 +90,7 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
   const [job, dispatch] = useReducer(reduceJob, entry, fromEntry);
   const [busy, setBusy] = useState<"stop" | "retry" | undefined>(undefined);
   const [copied, setCopied] = useState(false);
-  const [extending, setExtending] = useState(extendOnOpen && entry.status === "done");
+  const [extending, setExtending] = useState(extendOnOpen && (entry.status === "done" || entry.status === "queued" || entry.status === "running"));
   const [overlap, setOverlap] = useState<Overlap | undefined>(entry.overlap);
   // The card's menu is fixed to the viewport (anchored under the More button) so the thread's scroller does not clip it.
   const [cardMenu, setCardMenu] = useState<{ readonly top: number; readonly right: number } | undefined>(undefined);
@@ -246,7 +248,10 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
   const extendSource: ExtendSource | undefined =
     extending && job.status === "done" && job.result
       ? { id: entry.id, title: entry.title, durationSeconds: job.result.durationSeconds, ratio: entry.params.ratio, resolution: entry.params.resolution, model: entry.params.model, posterUrl: posterPath }
-      : undefined;
+      : extending && running
+        // STORY_043: a clip still queued or running — its requested length; the extension waits for it in the queue
+        ? { id: entry.id, title: entry.title, durationSeconds: pendingSeconds ?? entry.params.durationSeconds, ratio: entry.params.ratio, resolution: entry.params.resolution, model: entry.params.model, posterUrl: posterPath, pending: true }
+        : undefined;
 
   const done = job.status === "done" && job.result;
   const fileName = fileNameFor(entry);
@@ -294,6 +299,8 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
                 <span className={styles.avatar} aria-hidden="true">M</span>
                 <span className={styles.pulse} aria-hidden="true" />
                 <span>{indicatorFor(job)}</span>
+                {/* STORY_043: an extension can be queued before the clip is done; it waits in the line for it */}
+                {extending ? null : <button type="button" className={styles.queueExtension} onClick={() => { closePreview(); setExtending(true); }}>⤴ Queue an extension</button>}
               </div>
             ) : (
               <div className={styles.processedWrap}>
@@ -376,7 +383,7 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
               <span className={cx(styles.jumpArrow, !atBottom && styles.jumpArrowDown)} aria-hidden="true">↑</span>
             </button>
           ) : null}
-          <Composer variant="docked" fetchImpl={fetchImpl} initialProjectId={entry.projectId} stop={running ? { pending: busy === "stop", onStop: () => void stop() } : undefined} extend={extendSource} onStopExtending={() => { setExtending(false); }} />
+          <Composer variant="docked" fetchImpl={fetchImpl} initialProjectId={entry.projectId} stop={running && !extending ? { pending: busy === "stop", onStop: () => void stop() } : undefined} extend={extendSource} onStopExtending={() => { setExtending(false); }} />
         </div>
       </div>
 

@@ -81,11 +81,15 @@ async function queued(fields: Fields, files: readonly File[], script: string | n
   const id = randomUUID();
   const referenceFiles = await saveReferenceFiles(id, files);
   const entry = enqueue({ id, request: queuedRequest(fields, script), referenceFiles, ...(fields.notBefore === undefined ? {} : { notBefore: new Date(fields.notBefore).toISOString() }) });
-  historyStore().create({
+  const store = historyStore();
+  const source = fields.continueFrom === undefined ? undefined : store.get(fields.continueFrom);
+  const continuesFrom = fields.continueFrom === undefined ? undefined : { id: fields.continueFrom, title: source?.title ?? fields.continueFrom, ...(source?.result ? { durationSeconds: source.result.durationSeconds } : {}) };
+  store.create({
     id,
     prompt: fields.prompt,
     params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model, ...(fields.overlapFrames === undefined ? {} : { overlapFrames: fields.overlapFrames }) },
     referenceImages: files.length,
+    ...(continuesFrom ? { continuesFrom } : {}),
     ...(fields.projectId === undefined ? {} : { projectId: fields.projectId }),
     ...(referenceFiles.length === 0 ? {} : { referenceFiles }),
   });
@@ -129,6 +133,13 @@ async function accepted(response: Response, fields: Fields, files: readonly File
     return relayJson(new Response(text, { status: 503, headers: { "content-type": "application/json" } }));
   }
   return recorded(response, fields, files);
+}
+
+/** STORY_043: an extension of a clip that is still queued or running waits in the line for it (an unknown source goes up and the server refuses it, as before). */
+function pendingSource(fields: Fields): boolean {
+  if (fields.continueFrom === undefined) return false;
+  const source = historyStore().get(fields.continueFrom);
+  return source !== undefined && (source.status === "queued" || source.status === "running");
 }
 
 /** STORY_031: a named project must exist before a job is created in it. */
@@ -178,7 +189,7 @@ export function POST(request: Request): Promise<Response> {
       const refused = unknownProject(fields);
       if (refused) return refused;
       if (fields.replaces !== undefined) return replaced(fields, [], script);
-      if (fields.notBefore !== undefined) return queued(fields, [], script);
+      if (fields.notBefore !== undefined || pendingSource(fields)) return queued(fields, [], script);
       // the model never sees our own fields, and a source's id is mapped to the server's (BUG_007): the body goes up as sent unless either applies
       const needsRewrite = source !== undefined && (Object.keys(source).some((key) => APP_ONLY.has(key)) || typeof source["continueFrom"] === "string");
       const body = source && needsRewrite ? JSON.stringify(upstreamBody(source)) : text;
@@ -203,7 +214,7 @@ export function POST(request: Request): Promise<Response> {
       const refused = unknownProject(fields);
       if (refused) return refused;
       if (fields.replaces !== undefined) return replaced(fields, files, script);
-      if (fields.notBefore !== undefined) return queued(fields, files, script);
+      if (fields.notBefore !== undefined || pendingSource(fields)) return queued(fields, files, script);
       return accepted(await forward(path, { method: "POST", body: out }), fields, files, script);
     }
     return errorResponse({ status: 415, code: "unsupported_media_type", message: "send application/json or multipart/form-data" });

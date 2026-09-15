@@ -200,10 +200,38 @@ describe("TaskPage — extend (STORY_016, STORY_017)", () => {
     render(<TaskPage entry={entry({ status: "done", progress: 100, result })} extendOnOpen fetchImpl={fetchScript([]).fetchImpl} />);
     expect(screen.getByTestId("continuation")).toBeInTheDocument();
     cleanup();
-    // not done: ?extend is ignored and there is no Extend action
+    // failed: ?extend is ignored and there is no Extend action
     render(<TaskPage entry={entry({ status: "failed", progress: 0, error: { code: "generation_failed", message: "x" } })} extendOnOpen fetchImpl={fetchScript([]).fetchImpl} />);
     expect(screen.queryByTestId("continuation")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Queue an extension/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "More" })).not.toBeInTheDocument();
+  });
+
+  it("a clip still running can be extended: Queue an extension (or ?extend) opens the pending tile with the requested length; Send posts continueFrom; Stop generation yields to Send while extending (STORY_043)", async () => {
+    const script = fetchScript([{ status: "running", progress: 40 }]);
+    render(shell(<TaskPage entry={entry({ status: "running", progress: 40 })} pendingSeconds={5} fetchImpl={script.fetchImpl} />));
+    expect(screen.getByRole("button", { name: "Stop generation" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Queue an extension/ }));
+    const tile = screen.getByTestId("continuation");
+    expect(tile).toHaveAttribute("data-pending", "true");
+    expect(tile).toHaveTextContent("Continues · 5.0 s (not finished yet — the extension waits for it)");
+    expect(screen.queryByRole("button", { name: "Stop generation" })).not.toBeInTheDocument(); // Send is back while extending
+    fireEvent.change(screen.getByPlaceholderText("Describe what happens next…"), { target: { value: "and drifts on" } });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0); // the capabilities answer lands (fake timers: flush the microtasks)
+    });
+    expect(screen.getByRole("button", { name: "Send message" })).toBeEnabled();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+      await Promise.resolve();
+    });
+    expect(script.posts).toHaveLength(1);
+    expect(JSON.parse(script.posts[0] ?? "{}")).toMatchObject({ continueFrom: "j1", prompt: "and drifts on" });
+    fireEvent.click(screen.getByRole("button", { name: "Stop extending" }));
+    expect(screen.getByRole("button", { name: "Stop generation" })).toBeInTheDocument();
+    cleanup();
+    render(shell(<TaskPage entry={entry({ status: "queued", progress: 0 })} extendOnOpen pendingSeconds={9.3} fetchImpl={fetchScript([{ status: "queued", progress: 0 }]).fetchImpl} />));
+    expect(screen.getByTestId("continuation")).toHaveTextContent("Continues · 9.3 s");
   });
 
   it("an extension's bubble names its source and what was carried, from history or from the first status", async () => {

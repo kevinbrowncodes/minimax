@@ -583,3 +583,13 @@
     min-height: 44px;
   }
 }
+
+/* STORY_043: a pending source has no poster yet */
+.continuationPending {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg_grouped_tertiary_elevated);
+  color: var(--icon_default_tertiary);
+  font-size: 20px;
+}

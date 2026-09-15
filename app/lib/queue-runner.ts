@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { historyStore } from "./history-store";
 import type { CreateJobResponse } from "./job-api";
 import { forward } from "./model-client";
-import { due, markSubmitted, removeQueued, type QueueEntry } from "./queue-store";
+import { due, markSubmitted, removeQueued, waiting, type QueueEntry } from "./queue-store";
 import { referenceFilePath } from "./uploads";
 
 export type Submit = (entry: QueueEntry) => Promise<Response>;
@@ -38,6 +38,15 @@ export const submitToModel: Submit = (entry) => {
   return forward(path, { method: "POST", body: form });
 };
 
+/** STORY_043: what an extension's source is up to — "done", still "pending", or "gone" (failed, cancelled, forgotten). */
+export function sourceState(id: string): "done" | "pending" | "gone" {
+  const entry = historyStore().get(id);
+  if (!entry) return "gone";
+  if (entry.status === "done") return "done";
+  if (entry.status === "failed" || entry.status === "cancelled") return "gone";
+  return "pending";
+}
+
 let running: Promise<number> | undefined;
 
 /**
@@ -50,7 +59,14 @@ export function submitDue(options: { readonly now?: Date; readonly submit?: Subm
   const run = (async () => {
     const submit = options.submit ?? submitToModel;
     let count = 0;
-    for (const entry of due(options.now)) {
+    // STORY_043: an extension whose source will never finish leaves the line with the reason
+    for (const entry of waiting()) {
+      if (entry.request.continueFrom !== undefined && sourceState(entry.request.continueFrom) === "gone") {
+        historyStore().recordStatus(entry.id, { id: entry.id, status: "failed", progress: 0, error: { code: "source_failed", message: "its source did not finish" } });
+        removeQueued(entry.id);
+      }
+    }
+    for (const entry of due(options.now, (id) => sourceState(id) === "done")) {
       let response: Response;
       try {
         response = await submit(entry);

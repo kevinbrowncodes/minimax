@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { cx } from "@/lib/cx";
 import type { JobStatusResponse } from "@/lib/job-api";
-import { SCHEDULE_FILTERS, filterSections, formatNotBefore, isEmpty, modelNotice, runningLabel, scheduleSections, toLocalInput, type ModelState, type QueueRow, type ScheduleFilter } from "@/lib/queue-view";
+import { SCHEDULE_FILTERS, filterSections, isEmpty, modelNotice, runningLabel, scheduleSections, toLocalInput, waitingLabel, type ModelState, type QueueRow, type ScheduleFilter } from "@/lib/queue-view";
 import { recentLabel } from "@/lib/recents";
 import type { RecentEntry } from "@/lib/route-title";
 import { formatDoneAt } from "@/lib/task-view";
@@ -140,6 +140,7 @@ export function ScheduledPage({ fetchImpl, now, pollMs = SCHEDULED_POLL_MS }: Sc
                 </Link>
                 <span className={styles.scheduleStatus}>{runningLabel(entry)}</span>
                 <span className={styles.scheduleActions}>
+                  <Link href={`/task/${encodeURIComponent(entry.id)}?extend`} className={styles.smallButtonPlain} aria-label={`Queue an extension of ${entry.title}`}>Queue an extension</Link>
                   <button type="button" className={styles.smallButton} aria-label={`Stop ${entry.title}`} onClick={() => void act(`/api/jobs/${encodeURIComponent(entry.id)}`, { method: "DELETE" })}>Stop</button>
                 </span>
               </li>
@@ -153,7 +154,7 @@ export function ScheduledPage({ fetchImpl, now, pollMs = SCHEDULED_POLL_MS }: Sc
           <h2 className={styles.scheduleHeading}>Waiting ({shown.waiting.length})</h2>
           <ul className={styles.scheduleList}>
             {shown.waiting.map((row) => {
-              const status = row.notBefore === undefined ? (row.position === 1 ? "Waiting · next" : "Waiting") : formatNotBefore(row.notBefore, clock());
+              const status = waitingLabel(row, clock());
               const isTiming = timing === row.id;
               return (
                 <li key={row.id} className={styles.scheduleRow} data-testid="waiting-row" data-position={row.position}>
@@ -167,6 +168,7 @@ export function ScheduledPage({ fetchImpl, now, pollMs = SCHEDULED_POLL_MS }: Sc
                     <button type="button" className={styles.smallButtonPlain} aria-label={`Move ${row.title} up`} disabled={row.position === 1} onClick={() => void patchQueue(row.id, { move: "up" })}>↑</button>
                     <button type="button" className={styles.smallButtonPlain} aria-label={`Move ${row.title} down`} disabled={row.position === all.waiting.length} onClick={() => void patchQueue(row.id, { move: "down" })}>↓</button>
                     <button type="button" className={styles.smallButtonPlain} aria-label={`Run ${row.title} at`} aria-expanded={isTiming} onClick={() => { setTiming(isTiming ? undefined : row.id); }}>Run at…</button>
+                    <Link href={`/task/${encodeURIComponent(row.id)}?extend`} className={styles.smallButtonPlain} aria-label={`Queue an extension of ${row.title}`}>Queue an extension</Link>
                     <button type="button" className={styles.smallButtonPlain} aria-label={`Edit ${row.title}`} onClick={() => { router.push(`/?queue=${encodeURIComponent(row.id)}`); }}>Edit</button>
                     <button type="button" className={cx(styles.smallButtonPlain, styles.smallButtonDangerPlain)} aria-label={`Remove ${row.title}`} onClick={() => void act(`/api/queue/${encodeURIComponent(row.id)}`, { method: "DELETE" })}>Remove</button>
                   </span>

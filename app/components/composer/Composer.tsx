@@ -254,11 +254,15 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
         data-testid="composer"
       >
         {video && extending ? (
-          <div className={styles.continuation} data-testid="continuation">
-            {/* eslint-disable-next-line @next/next/no-img-element -- the source's poster, served by our own route */}
-            <img className={styles.continuationPoster} src={extending.posterUrl} alt="" />
+          <div className={styles.continuation} data-testid="continuation" data-pending={extending.pending === true}>
+            {extending.pending === true ? (
+              <span className={cx(styles.continuationPoster, styles.continuationPending)} aria-hidden="true">…</span>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element -- the source's poster, served by our own route
+              <img className={styles.continuationPoster} src={extending.posterUrl} alt="" />
+            )}
             <div className={styles.continuationText}>
-              <span className={styles.continuationTitle}>Continues · {extending.durationSeconds.toFixed(1)} s</span>
+              <span className={styles.continuationTitle}>Continues · {extending.durationSeconds.toFixed(1)} s{extending.pending === true ? " (not finished yet — the extension waits for it)" : ""}</span>
               <span data-testid="overlap-line">carries its last {overlapSeconds(state.overlapFrames)} s into the new clip</span>
             </div>
             <button type="button" className={styles.continuationRemove} aria-label="Stop extending" onClick={stopExtending}>×</button>

@@ -128,6 +128,44 @@ describe("the queue through the app's routes", () => {
     expect(received.uploads.map((u) => u.filename)).toEqual(["ref.png"]); // the image reached the server when its turn came
   });
 
+  it("an extension of a clip still running is queued, waits for it, and goes with the stub's id once it is done; a cancelled source fails its extension; an unknown source is refused (STORY_043)", async () => {
+    // the source runs slowly on the stub; its extension is posted at once
+    const src = (await (await createJob(jsonRequest("/api/jobs?script=slow-done-after-10-polls", valid))).json()) as CreateJobResponse;
+    expect(src.status).toBe("queued");
+    const ext = await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, prompt: "And on", continueFrom: src.id, overlapFrames: 39 }));
+    expect(ext.status).toBe(202);
+    const extBody = (await ext.json()) as Queued;
+    expect(extBody).toMatchObject({ status: "queued", position: 1 });
+    expect((await stubJobs()).map((j) => j.id)).toEqual([src.id]); // the extension never reached the server
+    const rows = await line();
+    expect(rows).toHaveLength(1);
+    expect((rows[0] as { continueFrom?: { id: string; title: string } }).continueFrom).toMatchObject({ id: src.id, title: "A small paper boat" });
+    expect(((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries.find((e) => e.id === extBody.id)?.continuesFrom).toMatchObject({ id: src.id, title: "A small paper boat" });
+    // polls while the source runs never submit it
+    await status(src.id);
+    await listHistory();
+    expect(await line()).toHaveLength(1);
+    // the source done → the next list poll submits the extension, naming the stub's job (the source was created directly, so its id is the stub's)
+    let s = await status(src.id);
+    for (let i = 0; i < 12 && s.status !== "done"; i += 1) s = await status(src.id);
+    expect(s.status).toBe("done");
+    await listHistory();
+    expect(await line()).toEqual([]);
+    const extEntry = ((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries.find((e) => e.id === extBody.id);
+    expect(extEntry?.jobId).toBeDefined();
+    const received = (await (await fetch(`${stubUrl}/__stub/jobs/${extEntry?.jobId ?? ""}/received`)).json()) as { request: { continueFrom?: string; overlapFrames?: number } };
+    expect(received.request).toMatchObject({ continueFrom: src.id, overlapFrames: 39 });
+    // a cancelled source takes its queued extension out of the line with the reason
+    const src2 = (await (await createJob(jsonRequest("/api/jobs?script=slow-done-after-10-polls", { ...valid, prompt: "Doomed" }))).json()) as CreateJobResponse;
+    const ext2 = (await (await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, prompt: "Never", continueFrom: src2.id }))).json()) as Queued;
+    expect((await cancelJob(new Request(`http://app/api/jobs/${src2.id}`, { method: "DELETE" }), ctx(src2.id))).status).toBe(202);
+    await listHistory();
+    expect(await line()).toEqual([]);
+    expect(((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries.find((e) => e.id === ext2.id)).toMatchObject({ status: "failed", error: { code: "source_failed" } });
+    // an unknown source goes up and the server refuses it, as before
+    expect((await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, continueFrom: "nope" }))).status).toBe(400);
+  });
+
   it("move, Edit (replaces, in place, position and time kept), Remove, cancel of a waiting one; a submitted one can no longer be edited or removed", async () => {
     stub.setBusy(true);
     const a = (await (await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, prompt: "First" }))).json()) as Queued;

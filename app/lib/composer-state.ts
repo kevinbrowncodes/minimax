@@ -26,6 +26,8 @@ export interface ExtendSource {
   readonly resolution: string;
   readonly model: string;
   readonly posterUrl: string;
+  /** STORY_043: the source has not finished — its length is what it was asked for; the extension waits for it in the queue. */
+  readonly pending?: boolean;
 }
 /** The composer's modes: text (the plain composer, BACKLOG_006's chat) and video (ours). STORY_026 removed the reference's other chips. */
 export type ComposerMode = "text" | "video";

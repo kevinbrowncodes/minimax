@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterSections, formatNotBefore, isEmpty, modelNotice, runningLabel, scheduleSections, toLocalInput, type QueueRow } from "./queue-view";
+import { filterSections, formatNotBefore, isEmpty, modelNotice, runningLabel, scheduleSections, toLocalInput, waitingLabel, type QueueRow } from "./queue-view";
 import type { RecentEntry } from "./route-title";
 
 const now = new Date(2026, 8, 15, 19, 0);
@@ -38,6 +38,16 @@ describe("the Scheduled page's sections (STORY_041)", () => {
     expect(waitingOnly.running).toEqual([]);
     expect(waitingOnly.done).toEqual([]);
     expect(isEmpty(filterSections(s, "nothing like it", "All"))).toBe(true);
+  });
+
+  it("names the waiting row's state: next, waiting, after its source, or not before a time (STORY_041, STORY_043)", () => {
+    const [first, second] = queue;
+    if (!first || !second) throw new Error("fixture");
+    expect(waitingLabel(first, now)).toBe("Waiting · next");
+    expect(waitingLabel({ ...first, position: 2 }, now)).toBe("Waiting");
+    expect(waitingLabel(second, now)).toBe("Not before Sep 16, 02:00");
+    expect(waitingLabel({ ...first, continueFrom: { id: "r1", title: "Paper boat on rain puddle", createdAt: at(19, 1) } }, now)).toBe("Waiting · after 26-09-15-1901");
+    expect(waitingLabel({ ...first, continueFrom: { id: "r1", title: "Paper boat on rain puddle" } }, now)).toBe("Waiting · after Paper boat on rain puddle"); // no stamp without a creation time
   });
 
   it("says why the line waits when the adapter or the model is down, and nothing when both answer (CHORE_011)", () => {
