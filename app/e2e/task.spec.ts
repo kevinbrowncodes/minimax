@@ -110,6 +110,31 @@ test.describe("task page (STORY_014)", () => {
     expect(download.suggestedFilename()).toBe("Save my clip.mp4"); // the server names the file (BUG_004)
   });
 
+  test("the preview pane's Download ▾ offers Copy link and Star (STORY_032; behaviour-preview-more-03)", async ({ page, request }) => {
+    await page.addInitScript(() => {
+      const copied: string[] = [];
+      Object.defineProperty(window, "__copied", { value: copied });
+      Object.defineProperty(navigator, "clipboard", { value: { writeText: (text: string) => { copied.push(text); return Promise.resolve(); } }, configurable: true });
+    });
+    const { id, terminal } = await submit(page, "done-after-1-poll", "Star my clip");
+    await terminal;
+    const pane = page.getByTestId("preview-pane");
+    await expect(pane).toBeVisible(); // opened by itself when the job finished on the page (STORY_023)
+    await pane.getByRole("button", { name: "More download options" }).click();
+    const menu = pane.getByRole("menu", { name: "Preview actions" });
+    await expect(menu.getByRole("menuitem")).toHaveText(["Download", "Copy link", "Star"]);
+    const starred = page.waitForResponse((r) => r.url().includes(`/api/history/${id}`) && r.request().method() === "PATCH");
+    await menu.getByRole("menuitem", { name: "Star" }).click();
+    expect((await starred).ok()).toBe(true);
+    await expect(page.getByTestId("toast")).toHaveText(/Starred/);
+    expect(((await (await request.get(`/api/history/${id}`)).json()) as { starred?: boolean }).starred).toBe(true);
+    await pane.getByRole("button", { name: "More download options" }).click();
+    await expect(menu.getByRole("menuitem", { name: "Unstar" })).toBeVisible();
+    await menu.getByRole("menuitem", { name: "Copy link" }).click();
+    await expect(page.getByTestId("toast")).toHaveText(/Link copied/);
+    expect(await page.evaluate(() => (window as unknown as { __copied: string[] }).__copied)).toEqual([`${new URL(page.url()).origin}/api/jobs/${id}/result`]);
+  });
+
   test("image-to-video: the uploaded reference reaches the server and the bubble says so", async ({ page, stubApi }) => {
     const { id, terminal } = await submit(page, "done-after-1-poll", "Animate this", { withImage: true });
     await terminal;

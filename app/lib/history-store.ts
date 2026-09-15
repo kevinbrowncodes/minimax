@@ -16,6 +16,14 @@ export interface HistoryParams {
   /** STORY_017: the requested overlap of an extension, kept so Retry re-posts it. */
   readonly overlapFrames?: number;
 }
+/** STORY_032: a reference image kept with the job — `n` is its upload ordinal (the route's key), `file` its name on disk. */
+export interface ReferenceFile {
+  readonly n: number;
+  readonly name: string;
+  readonly file: string;
+  readonly size: number;
+  readonly type: string;
+}
 export interface HistoryEntry {
   readonly id: string;
   readonly title: string;
@@ -39,10 +47,14 @@ export interface HistoryEntry {
   readonly archivedAt?: string;
   /** STORY_031: the project the task was started in or moved to (`lib/project-store`); absent = No project. */
   readonly projectId?: string;
+  /** STORY_032: Assets › Star. */
+  readonly starred?: boolean;
+  /** STORY_032: the reference images attached to the job, kept under `uploads/<id>/` beside the history file. */
+  readonly referenceFiles?: readonly ReferenceFile[];
   readonly error?: JobError;
   readonly result?: JobResult;
 }
-export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "overlap" | "pinned" | "pinnedAt" | "archived" | "archivedAt" | "projectId">>;
+export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "overlap" | "pinned" | "pinnedAt" | "archived" | "archivedAt" | "projectId" | "starred" | "referenceFiles">>;
 
 const TERMINAL: ReadonlySet<JobStatus> = new Set(["done", "failed", "cancelled"]);
 const TITLE_MAX = 48;

@@ -330,6 +330,13 @@
 .dialogBody {
   padding: 0 var(--spacing_16) var(--spacing_16);
 }
+/* STORY_032: a reference image in the preview, fitted like the video */
+.dialogImage {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius_8);
+}
 .dialogVideo {
   width: 100%;
   aspect-ratio: 16 / 9;

@@ -101,6 +101,10 @@ describe("history through the app's routes", () => {
     expect(archived.archived).toBe(true);
     expect(typeof archived.archivedAt).toBe("string");
     expect((await patchHistory(jsonRequest(`/api/history/${id}`, { archived: "yes" }, "PATCH"), ctx(id))).status).toBe(400);
+    // STORY_032: starred is a boolean
+    expect(((await (await patchHistory(jsonRequest(`/api/history/${id}`, { starred: true }, "PATCH"), ctx(id))).json()) as HistoryEntry).starred).toBe(true);
+    expect((await patchHistory(jsonRequest(`/api/history/${id}`, { starred: 1 }, "PATCH"), ctx(id))).status).toBe(400);
+    expect(((await (await patchHistory(jsonRequest(`/api/history/${id}`, { starred: false }, "PATCH"), ctx(id))).json()) as HistoryEntry).starred).toBe(false);
     expect(((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries.find((e) => e.id === id)?.archived).toBe(true);
     const restored = (await (await patchHistory(jsonRequest(`/api/history/${id}`, { archived: false }, "PATCH"), ctx(id))).json()) as HistoryEntry;
     expect(restored.archived).toBe(false);

@@ -410,6 +410,47 @@
 .previewDownload:hover {
   background: var(--bg_interaction_tertiary_hover);
 }
+/* STORY_032 (behaviour-preview-more-03): Download and its ▾ as one 30 px control; the menu 170 wide under the ▾, 36 px entries */
+.previewDownloadGroup {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.previewDownloadGroup .previewDownload {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: 0;
+}
+.previewDownloadMore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border_default);
+  border-top-right-radius: var(--radius_8);
+  border-bottom-right-radius: var(--radius_8);
+  background: var(--bg_default_primary_elevated);
+  color: var(--icon_default_secondary);
+  cursor: pointer;
+}
+.previewDownloadMore:hover,
+.previewDownloadMore[aria-expanded="true"] {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.previewMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  width: 170px;
+  padding: var(--spacing_4);
+  border-radius: var(--radius_12);
+  background: var(--bg_default_tertiary);
+  border: 1px solid var(--border_default);
+  box-shadow: 0 4px 24px var(--shadow_default);
+}
 .previewIcon {
   width: 32px;
   height: 32px;

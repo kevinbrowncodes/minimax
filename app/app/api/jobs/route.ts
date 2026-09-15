@@ -2,6 +2,7 @@ import { historyStore } from "@/lib/history-store";
 import type { CreateJobResponse } from "@/lib/job-api";
 import { errorResponse, forward, guarded, relayJson } from "@/lib/model-client";
 import { projectStore } from "@/lib/project-store";
+import { saveReferenceFiles } from "@/lib/uploads";
 import { validateReferenceImages } from "@/lib/upload-validation";
 
 export const dynamic = "force-dynamic";
@@ -43,11 +44,12 @@ function unknownProject(fields: Fields): Response | undefined {
   return undefined;
 }
 
-/** After the server accepted the job, record it in history BEFORE answering the browser (STORY_014). */
-async function accepted(response: Response, fields: Fields, referenceImages: number): Promise<Response> {
+/** After the server accepted the job, record it in history BEFORE answering the browser (STORY_014); the reference images are kept with it (STORY_032). */
+async function accepted(response: Response, fields: Fields, files: readonly File[]): Promise<Response> {
   if (response.status !== 202) return relayJson(response);
   const body = (await response.json()) as CreateJobResponse;
   const store = historyStore();
+  const referenceFiles = await saveReferenceFiles(body.id, files);
   // STORY_016: an extension remembers its source by id and by the title it had (the source may leave history later).
   const source = fields.continueFrom === undefined ? undefined : store.get(fields.continueFrom);
   const continuesFrom = fields.continueFrom === undefined ? undefined : { id: fields.continueFrom, title: source?.title ?? fields.continueFrom, ...(source?.result ? { durationSeconds: source.result.durationSeconds } : {}) };
@@ -55,9 +57,10 @@ async function accepted(response: Response, fields: Fields, referenceImages: num
     id: body.id,
     prompt: fields.prompt,
     params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model, ...(fields.overlapFrames === undefined ? {} : { overlapFrames: fields.overlapFrames }) },
-    referenceImages,
+    referenceImages: files.length,
     ...(continuesFrom ? { continuesFrom } : {}),
     ...(fields.projectId === undefined ? {} : { projectId: fields.projectId }),
+    ...(referenceFiles.length === 0 ? {} : { referenceFiles }),
   });
   return Response.json(body, { status: 202 });
 }
@@ -83,7 +86,7 @@ export function POST(request: Request): Promise<Response> {
       if (refused) return refused;
       // the model never sees the project: the body goes up as sent unless it carried one
       const body = source && "projectId" in source ? JSON.stringify(Object.fromEntries(Object.entries(source).filter(([key]) => key !== "projectId"))) : text;
-      return accepted(await forward(path, { method: "POST", headers: { "content-type": "application/json" }, body }), fields, 0);
+      return accepted(await forward(path, { method: "POST", headers: { "content-type": "application/json" }, body }), fields, []);
     }
     if (contentType.startsWith("multipart/form-data")) {
       const form = await request.formData();
@@ -103,7 +106,7 @@ export function POST(request: Request): Promise<Response> {
       const fields = fieldsFrom(source);
       const refused = unknownProject(fields);
       if (refused) return refused;
-      return accepted(await forward(path, { method: "POST", body: out }), fields, files.length);
+      return accepted(await forward(path, { method: "POST", body: out }), fields, files);
     }
     return errorResponse({ status: 415, code: "unsupported_media_type", message: "send application/json or multipart/form-data" });
   });

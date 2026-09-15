@@ -1,5 +1,6 @@
 import { historyStore } from "@/lib/history-store";
 import { errorResponse, guarded } from "@/lib/model-client";
+import { removeUploads } from "@/lib/uploads";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export function DELETE(request: Request): Promise<Response> {
   return guarded(() => {
     const ids = (new URL(request.url).searchParams.get("ids") ?? "").split(",").map((id) => id.trim()).filter((id) => id !== "");
     if (ids.length === 0) return Promise.resolve(errorResponse({ status: 400, code: "validation", message: "ids must name at least one history entry", field: "ids" }));
+    for (const id of ids) removeUploads(id); // STORY_032
     return Promise.resolve(Response.json({ removed: historyStore().removeMany(ids) }));
   });
 }

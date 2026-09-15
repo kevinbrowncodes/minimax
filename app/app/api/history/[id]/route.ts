@@ -1,6 +1,7 @@
 import { historyStore } from "@/lib/history-store";
 import { errorResponse, guarded } from "@/lib/model-client";
 import { projectStore } from "@/lib/project-store";
+import { removeUploads } from "@/lib/uploads";
 
 export const dynamic = "force-dynamic";
 
@@ -26,8 +27,14 @@ export function PATCH(request: Request, context: Context): Promise<Response> {
       return errorResponse({ status: 400, code: "validation", message: "body is not valid JSON" });
     }
     if (typeof body !== "object" || body === null) return errorResponse({ status: 400, code: "validation", message: "body must be an object" });
-    const patch: { openedAt?: string; title?: string; pinned?: boolean; pinnedAt?: string; archived?: boolean; archivedAt?: string; projectId?: string } = {};
+    const patch: { openedAt?: string; title?: string; pinned?: boolean; pinnedAt?: string; archived?: boolean; archivedAt?: string; projectId?: string; starred?: boolean } = {};
     for (const [key, value] of Object.entries(body)) {
+      if (key === "starred") {
+        // Assets › Star (STORY_032)
+        if (typeof value !== "boolean") return errorResponse({ status: 400, code: "validation", message: "starred must be a boolean", field: key });
+        patch.starred = value;
+        continue;
+      }
       if (key === "projectId") {
         // Move to project › (STORY_031): a project's id, or null for No project
         if (value === null) {
@@ -66,6 +73,7 @@ export function PATCH(request: Request, context: Context): Promise<Response> {
 export function DELETE(_request: Request, context: Context): Promise<Response> {
   return guarded(async () => {
     const { id } = await context.params;
+    removeUploads(id); // STORY_032: the reference images go with the entry
     return historyStore().remove(id) ? new Response(null, { status: 204 }) : errorResponse({ status: 404, code: "not_found", message: `no history entry ${id}` });
   });
 }

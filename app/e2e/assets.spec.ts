@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "./fixtures/test";
-import { clearHistory } from "./fixtures/history";
+import { clearHistory, listHistory } from "./fixtures/history";
 import { waitForTerminalStatus } from "./fixtures/job";
 import { settled } from "./fixtures/settle";
+import { REFERENCE_IMAGE, REFERENCE_IMAGE_NAME } from "./fixtures/upload";
 import { expectPlayable } from "./fixtures/video";
 
 const FIXTURE_MP4 = path.resolve(process.cwd(), "../tools/stub-generation-server/fixtures/fixture.mp4");
@@ -78,6 +79,91 @@ test.describe("assets (STORY_015)", () => {
     await expect(page.getByTestId("asset-tile")).toHaveCount(1);
     await page.getByRole("button", { name: "Images" }).click();
     await expect(page.getByTestId("assets-empty")).toHaveText(/No assets yet/); // the one empty state (STORY_024)
+  });
+});
+
+test.describe("Assets — Star, From you and the preview's ⋯ (STORY_032)", () => {
+  test("Star through the tile ⋯ → the Star tab and Unstar; From you lists the reference image, previews it and deletes the file only", async ({ page, request }, testInfo) => {
+    const narrow = testInfo.project.name === "narrow";
+    // an image-to-video job: the fixture image is kept with it
+    await page.goto("/?script=done-after-1-poll");
+    await page.getByRole("button", { name: /Video generation/ }).click();
+    await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
+    await page.getByRole("textbox", { name: "Message" }).fill("Starry clip");
+    const terminal = waitForTerminalStatus(page);
+    await page.getByRole("button", { name: "Send message" }).click();
+    await expect(page).toHaveURL(/\/task\/[^/]+$/);
+    const id = page.url().split("/task/")[1] ?? "";
+    await terminal;
+    await page.goto("/assets");
+    await settled(page);
+    const tile = page.getByTestId("asset-tile").filter({ hasText: "Starry clip.mp4" });
+    await expect(tile).toBeVisible();
+    // Star: behaviour-assets-star-01..03 — the toast, the Star tab, Unstar
+    const dialog = page.getByRole("dialog");
+    const openTileMenu = async (name: string): Promise<void> => {
+      if (narrow) {
+        // narrow-assets-all@390: no ⋯ on the tile; the preview's ⋯ carries the actions
+        await page.getByRole("button", { name: `Preview ${name}` }).click();
+        await dialog.getByRole("button", { name: "More actions" }).click();
+      } else await page.getByRole("button", { name: `More actions for ${name}` }).click();
+    };
+    const closeDialogIfOpen = async (): Promise<void> => {
+      if (narrow && (await dialog.isVisible())) await dialog.getByRole("button", { name: "Close asset preview" }).click();
+    };
+    await openTileMenu("Starry clip.mp4");
+    const starred = page.waitForResponse((r) => r.url().includes(`/api/history/${id}`) && r.request().method() === "PATCH");
+    await page.getByRole("menuitem", { name: "Star" }).click();
+    expect((await starred).ok()).toBe(true);
+    await expect(page.getByTestId("toast")).toHaveText(/Starred/);
+    await closeDialogIfOpen();
+    expect(((await (await request.get(`/api/history/${id}`)).json()) as { starred?: boolean }).starred).toBe(true);
+    if (narrow) await page.getByRole("button", { name: "Filter" }).click(); // the bar's Filter shows the tabs (STORY_024)
+    await page.getByRole("tab", { name: "Star" }).click();
+    await expect(page.getByTestId("asset-tile")).toHaveCount(1);
+    await openTileMenu("Starry clip.mp4");
+    await page.getByRole("menuitem", { name: "Unstar" }).click();
+    await expect(page.getByTestId("toast")).toHaveText(/Unstarred/);
+    await closeDialogIfOpen();
+    await expect(page.getByTestId("assets-empty")).toBeVisible();
+    // From you: the reference image, as an image tile; the Images chip finds it on From agent too
+    await page.getByRole("tab", { name: "From you" }).click();
+    const imageTile = page.getByTestId("asset-tile").filter({ hasText: REFERENCE_IMAGE_NAME });
+    await expect(imageTile).toBeVisible();
+    await expect(imageTile).toHaveAttribute("data-kind", "image");
+    await page.getByRole("button", { name: `Preview ${REFERENCE_IMAGE_NAME}` }).click();
+    await expect(page.getByTestId("preview-image")).toHaveAttribute("src", `/api/history/${id}/reference/1`);
+    expect((await request.get(`/api/history/${id}/reference/1`)).headers()["content-type"]).toBe("image/png");
+    await dialog.getByRole("button", { name: "Close asset preview" }).click();
+    await page.getByRole("tab", { name: "From agent" }).click();
+    await page.getByRole("button", { name: "Images" }).click();
+    await expect(page.getByTestId("asset-tile").filter({ hasText: REFERENCE_IMAGE_NAME })).toBeVisible();
+    // Delete the image: the file goes, the task stays
+    await openTileMenu(REFERENCE_IMAGE_NAME);
+    page.once("dialog", (d) => void d.accept());
+    const removed = page.waitForResponse((r) => r.url().includes(`/api/history/${id}/reference/1`) && r.request().method() === "DELETE");
+    await page.getByRole("menuitem", { name: "Delete" }).click();
+    expect((await removed).status()).toBe(204);
+    await expect(page.getByTestId("assets-empty")).toBeVisible();
+    expect((await request.get(`/api/history/${id}/reference/1`)).status()).toBe(404);
+    expect((await listHistory(request)).find((e) => e.id === id)?.status).toBe("done");
+  });
+
+  test("the preview's Copy link puts the result's URL on the clipboard", async ({ page }) => {
+    await page.addInitScript(() => {
+      const copied: string[] = [];
+      Object.defineProperty(window, "__copied", { value: copied });
+      Object.defineProperty(navigator, "clipboard", { value: { writeText: (text: string) => { copied.push(text); return Promise.resolve(); } }, configurable: true });
+    });
+    const id = await finishOneJob(page, "Link me");
+    await page.goto("/assets");
+    await settled(page);
+    await page.getByRole("button", { name: "Preview Link me.mp4" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: "More actions" }).click();
+    await dialog.getByRole("menuitem", { name: "Copy link" }).click();
+    await expect(page.getByTestId("toast")).toHaveText(/Link copied/);
+    expect(await page.evaluate(() => (window as unknown as { __copied: string[] }).__copied)).toEqual([`${new URL(page.url()).origin}/api/jobs/${id}/result`]);
   });
 });
 

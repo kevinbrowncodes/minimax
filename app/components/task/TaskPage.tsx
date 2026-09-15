@@ -5,7 +5,7 @@ import { useCallback, useEffect, useReducer, useRef, useState, type ReactNode } 
 import { Composer } from "@/components/composer/Composer";
 import { Inert } from "@/components/shell/Inert";
 import { useShell } from "@/components/shell/ShellContext";
-import { IconChevronDown, IconClose, IconCopy, IconDocument, IconDownload, IconMore } from "@/components/shell/icons";
+import { IconChevronDown, IconClose, IconCopy, IconDocument, IconDownload, IconMore, IconStar } from "@/components/shell/icons";
 import { fileNameFor } from "@/lib/assets-filter";
 import type { ExtendSource } from "@/lib/composer-state";
 import { cx } from "@/lib/cx";
@@ -83,7 +83,7 @@ function PanelSection({ title, children }: { readonly title: string; readonly ch
 export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPageProps) {
   const router = useRouter();
   const doFetch = fetchImpl ?? fetch;
-  const { workAreaOpen, previewOpen, openPreview, closePreview } = useShell();
+  const { workAreaOpen, previewOpen, openPreview, closePreview, notify } = useShell();
   const narrow = useNarrow();
   const [job, dispatch] = useReducer(reduceJob, entry, fromEntry);
   const [busy, setBusy] = useState<"stop" | "retry" | undefined>(undefined);
@@ -96,6 +96,9 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
   const closeCardMenu = useCallback(() => {
     setCardMenu(undefined);
   }, []);
+  // STORY_032 (behaviour-preview-more-03): the preview pane's Download ▾ — Download · Copy link · Star / Unstar
+  const [previewMenuOpen, setPreviewMenuOpen] = useState(false);
+  const [starred, setStarred] = useState(entry.starred === true);
   const [processedOpen, setProcessedOpen] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
   const [overflows, setOverflows] = useState(false);
@@ -183,15 +186,17 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
   const running = job.status === "queued" || job.status === "running";
 
   useEffect(() => {
-    if (!cardMenuOpen && !previewOpen) return undefined;
+    if (!cardMenuOpen && !previewOpen && !previewMenuOpen) return undefined;
     const onKey = (event: globalThis.KeyboardEvent): void => {
       if (event.key === "Escape") {
         closeCardMenu();
+        setPreviewMenuOpen(false);
         closePreview();
       }
     };
     const onClick = (event: MouseEvent): void => {
       if (cardMenuOpen && !(event.target instanceof Element && event.target.closest("[data-card-menu]"))) closeCardMenu();
+      if (previewMenuOpen && !(event.target instanceof Element && event.target.closest("[data-preview-menu]"))) setPreviewMenuOpen(false);
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("mousedown", onClick);
@@ -199,7 +204,7 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("mousedown", onClick);
     };
-  }, [cardMenuOpen, previewOpen, closePreview, closeCardMenu]);
+  }, [cardMenuOpen, previewOpen, previewMenuOpen, closePreview, closeCardMenu]);
 
   // The jump button shows once the thread overflows its scroller; its arrow follows the scroll position.
   const measureScroll = useCallback(() => {
@@ -245,6 +250,25 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
 
   const done = job.status === "done" && job.result;
   const fileName = fileNameFor(entry);
+  /** STORY_032: Star / Unstar from the preview pane — the same PATCH and toast as Assets. */
+  const toggleStar = async (): Promise<void> => {
+    const next = !starred;
+    const res = await doFetch(`/api/history/${encodeURIComponent(entry.id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ starred: next }) }).catch(() => undefined);
+    if (res?.ok === true) {
+      setStarred(next);
+      notify(next ? "Starred" : "Unstarred");
+    } else notify("That did not save — the app's server did not answer", { tone: "info" });
+  };
+  /** STORY_032: Copy link — the result's URL on the clipboard. */
+  const copyLink = async (): Promise<void> => {
+    const link = `${window.location.origin}${resultPath}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      notify("Link copied");
+    } catch {
+      notify(`Clipboard unavailable — the link is ${link}`, { tone: "info" });
+    }
+  };
   const doneAt = entry.finishedAt ?? entry.createdAt;
   const showPanel = workAreaOpen && !previewOpen && !narrow; // narrow-task-page@390: no panel
 
@@ -363,7 +387,17 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
             <span className={styles.previewDivider} aria-hidden="true" />
             <span className={styles.previewFile}>{fileName}</span>
             <span className={styles.previewActions}>
-              <a className={styles.previewDownload} href={`${resultPath}?download`} download={fileName}><IconDownload /> Download <IconChevronDown /></a>
+              <span className={styles.previewDownloadGroup} data-preview-menu>
+                <a className={styles.previewDownload} href={`${resultPath}?download`} download={fileName}><IconDownload /> Download</a>
+                <button type="button" className={styles.previewDownloadMore} aria-label="More download options" aria-haspopup="menu" aria-expanded={previewMenuOpen} onClick={() => { setPreviewMenuOpen((o) => !o); }}><IconChevronDown /></button>
+                {previewMenuOpen ? (
+                  <div className={styles.previewMenu} role="menu" aria-label="Preview actions">
+                    <a role="menuitem" className={styles.cardMenuItem} href={`${resultPath}?download`} download={fileName} onClick={() => { setPreviewMenuOpen(false); }}><IconDownload /> Download</a>
+                    <button type="button" role="menuitem" className={styles.cardMenuItem} onClick={() => { setPreviewMenuOpen(false); void copyLink(); }}><IconCopy /> Copy link</button>
+                    <button type="button" role="menuitem" className={styles.cardMenuItem} onClick={() => { setPreviewMenuOpen(false); void toggleStar(); }}><IconStar /> {starred ? "Unstar" : "Star"}</button>
+                  </div>
+                ) : null}
+              </span>
               <Inert label="More" className={styles.previewIcon} align="end"><IconMore /></Inert>
               <button type="button" className={styles.previewIcon} aria-label="Close" onClick={closePreview}><IconClose /></button>
             </span>

@@ -49,6 +49,9 @@ describe("HistoryStore", () => {
     expect(s.patch("a", { archived: true, archivedAt: "2026-09-15T12:11:00Z" })).toMatchObject({ archived: true, archivedAt: "2026-09-15T12:11:00Z" }); // STORY_030
     expect(s.patch("a", { archived: false, archivedAt: undefined })?.archived).toBe(false);
     expect(s.get("a")?.archivedAt).toBeUndefined();
+    expect(s.patch("a", { starred: true })?.starred).toBe(true); // STORY_032
+    expect(s.patch("a", { referenceFiles: [{ n: 1, name: "ref.png", file: "1-ref.png", size: 3, type: "image/png" }] })?.referenceFiles).toHaveLength(1);
+    expect(s.get("a")?.referenceFiles?.[0]?.name).toBe("ref.png");
     expect(s.patch("zzz", { progress: 1 })).toBeUndefined();
     expect(s.recordStatus("zzz", { id: "zzz", status: "done", progress: 100 })).toBeUndefined();
     expect(s.remove("b")).toBe(true);

@@ -242,6 +242,36 @@ describe("TaskPage — the reference's task page (STORY_023)", () => {
     expect(screen.queryByTestId("preview-pane")).not.toBeInTheDocument();
   });
 
+  it("the preview pane's Download ▾ offers Download, Copy link and Star; Star patches the entry and reads Unstar; Copy link copies the result's URL (STORY_032)", async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.assign(navigator, { clipboard: { writeText } });
+    const script = fetchScript([]);
+    render(shell(<TaskPage entry={done()} fetchImpl={script.fetchImpl} />));
+    fireEvent.click(screen.getByRole("button", { name: "Open preview" }));
+    const pane = screen.getByTestId("preview-pane");
+    expect(within(pane).getByRole("link", { name: /Download/ })).toHaveAttribute("href", "/api/jobs/j1/result?download");
+    fireEvent.click(within(pane).getByRole("button", { name: "More download options" }));
+    const menu = within(pane).getByRole("menu", { name: "Preview actions" });
+    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent.trim())).toEqual(["Download", "Copy link", "Star"]); // behaviour-preview-more-03 minus Refresh (Departures)
+    expect(within(menu).getByRole("menuitem", { name: "Download" })).toHaveAttribute("download", "A boat.mp4");
+    await act(async () => {
+      fireEvent.click(within(menu).getByRole("menuitem", { name: "Star" }));
+      await Promise.resolve();
+    });
+    expect(script.calls).toContain("PATCH /api/history/j1");
+    expect(within(pane).queryByRole("menu")).not.toBeInTheDocument();
+    fireEvent.click(within(pane).getByRole("button", { name: "More download options" }));
+    expect(within(pane).getByRole("menuitem", { name: "Unstar" })).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(within(pane).getByRole("menuitem", { name: "Copy link" }));
+      await Promise.resolve();
+    });
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/api/jobs/j1/result`);
+    fireEvent.click(within(pane).getByRole("button", { name: "More download options" }));
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(within(pane).queryByRole("menu")).not.toBeInTheDocument();
+  });
+
   it("the card's More menu offers Open preview, Download and Extend, and closes on Escape", () => {
     render(shell(<TaskPage entry={done()} fetchImpl={fetchScript([]).fetchImpl} />));
     fireEvent.click(screen.getByRole("button", { name: "More" }));

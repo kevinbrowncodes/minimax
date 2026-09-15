@@ -1,12 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { ASSET_CHIPS, ASSET_TABS, fileNameFor, filterAssets, type AssetChip, type AssetTab } from "@/lib/assets-filter";
+import { ASSET_CHIPS, ASSET_TABS, assetItems, assetKey, assetName, fileNameFor, referenceUrl, type AssetChip, type AssetItem, type AssetTab } from "@/lib/assets-filter";
 import { cx } from "@/lib/cx";
 import type { HistoryEntry } from "@/lib/history-store";
-import { Inert } from "@/components/shell/Inert";
 import { useShell } from "@/components/shell/ShellContext";
-import { IconArrowUpRight, IconClose, IconDownload, IconFilter, IconLocate, IconMore, IconPlay, IconSearch, IconStar, IconTrash, IconVideo } from "@/components/shell/icons";
+import { IconArrowUpRight, IconClose, IconCopy, IconDownload, IconFilter, IconImage, IconLocate, IconMore, IconPlay, IconSearch, IconStar, IconTrash, IconVideo } from "@/components/shell/icons";
 import styles from "./assets.module.css";
 
 export interface AssetsPageProps {
@@ -16,26 +15,38 @@ export interface AssetsPageProps {
 }
 
 interface AssetMenuProps {
-  readonly entry: HistoryEntry;
+  readonly item: AssetItem;
   readonly label: string;
-  /** The preview's copy of the menu leads with Download (STORY_024 › Departures). */
+  /** The preview's copy of the menu leads with Download and Copy link (STORY_024 › Departures, STORY_032). */
   readonly withDownload?: boolean;
   readonly onDelete: () => void;
+  readonly onStar: (entry: HistoryEntry) => void;
+  readonly onCopyLink: (entry: HistoryEntry) => void;
   readonly onClose: () => void;
 }
 
-/** assets-tile-menu-open@1440: Locate in task, Send to new task, Star, Delete (red); 198 wide, 36 px entries. */
-function AssetMenu({ entry, label, withDownload = false, onDelete, onClose }: AssetMenuProps) {
-  const name = fileNameFor(entry);
+/**
+ * assets-tile-menu-open@1440: Locate in task, Send to new task, Star, Delete (red); 198 wide, 36 px entries. STORY_032:
+ * Star / Unstar is real (behaviour-assets-star-03 reads Unstar); an image's menu is Locate in task and Delete.
+ */
+function AssetMenu({ item, label, withDownload = false, onDelete, onStar, onCopyLink, onClose }: AssetMenuProps) {
+  const { entry } = item;
   const taskPath = `/task/${encodeURIComponent(entry.id)}`;
   return (
     <div className={styles.menu} role="menu" aria-label={label}>
-      {withDownload ? (
-        <a href={`/api/jobs/${encodeURIComponent(entry.id)}/result?download`} download={name} role="menuitem" className={styles.menuItem} onClick={onClose}><IconDownload /> Download</a>
+      {withDownload && item.kind === "video" ? (
+        <>
+          <a href={`/api/jobs/${encodeURIComponent(entry.id)}/result?download`} download={fileNameFor(entry)} role="menuitem" className={styles.menuItem} onClick={onClose}><IconDownload /> Download</a>
+          <button type="button" role="menuitem" className={styles.menuItem} onClick={() => { onClose(); onCopyLink(entry); }}><IconCopy /> Copy link</button>
+        </>
       ) : null}
       <Link href={taskPath} role="menuitem" className={styles.menuItem} onClick={onClose}><IconLocate /> Locate in task</Link>
-      <Link href={`${taskPath}?extend`} role="menuitem" className={styles.menuItem} onClick={onClose}><IconArrowUpRight /> Send to new task</Link>
-      <Inert role="menuitem" label="Star" className={styles.menuItem}><IconStar /> Star</Inert>
+      {item.kind === "video" ? (
+        <>
+          <Link href={`${taskPath}?extend`} role="menuitem" className={styles.menuItem} onClick={onClose}><IconArrowUpRight /> Send to new task</Link>
+          <button type="button" role="menuitem" className={styles.menuItem} onClick={() => { onClose(); onStar(entry); }}><IconStar /> {entry.starred === true ? "Unstar" : "Star"}</button>
+        </>
+      ) : null}
       <button type="button" role="menuitem" className={cx(styles.menuItem, styles.menuDanger)} onClick={onDelete}><IconTrash /> Delete</button>
     </div>
   );
@@ -45,19 +56,21 @@ function AssetMenu({ entry, label, withDownload = false, onDelete, onClose }: As
  * Assets (STORY_015): every finished video as a tile, a preview modal, download, open task, delete from history.
  * STORY_024 gives it the reference's shape: the three tabs, the chips' shared empty state, the 252 × 182 tile with the
  * ⋯ menu (Locate in task / Send to new task / Star / Delete), the preview's × · name · ⋯ head, and the 390 layout
- * whose Search and Filter buttons live in the Shell's top bar.
+ * whose Search and Filter buttons live in the Shell's top bar. STORY_032 fills Star (the tab, Star / Unstar, a toast),
+ * From you and the Images chip (the reference images kept with each job, previewable, deletable) and the preview's
+ * Copy link.
  */
 export function AssetsPage({ fetchImpl, confirmImpl }: AssetsPageProps) {
   const doFetch = fetchImpl ?? fetch;
   const confirmDelete = confirmImpl ?? ((message: string) => window.confirm(message));
-  const { setPageActions } = useShell();
+  const { setPageActions, notify } = useShell();
   const [entries, setEntries] = useState<readonly HistoryEntry[] | undefined>(undefined);
   const [tab, setTab] = useState<AssetTab>("From agent");
   const [chip, setChip] = useState<AssetChip>("All");
   const [query, setQuery] = useState("");
   const [menuFor, setMenuFor] = useState<string | undefined>(undefined);
   const [previewMenuOpen, setPreviewMenuOpen] = useState(false);
-  const [previewId, setPreviewId] = useState<string | undefined>(undefined);
+  const [previewKey, setPreviewKey] = useState<string | undefined>(undefined);
   // narrow-assets-all@390: the bar's Search shows the field, its Filter shows the tabs
   const [searchShown, setSearchShown] = useState(false);
   const [tabsShown, setTabsShown] = useState(false);
@@ -120,7 +133,9 @@ export function AssetsPage({ fetchImpl, confirmImpl }: AssetsPageProps) {
     };
   }, [menuFor, previewMenuOpen]);
 
-  const preview = entries?.find((e) => e.id === previewId);
+  const shown = entries ? assetItems(entries, { chip, query, tab }) : [];
+  // the preview follows the list, so a star or a delete is reflected in it
+  const preview = previewKey === undefined ? undefined : (entries ? assetItems(entries, { chip: "All", query: "", tab: "From agent" }).concat(assetItems(entries, { chip: "Images", query: "", tab: "From you" })) : []).find((item) => assetKey(item) === previewKey);
   useEffect(() => {
     const el = dialog.current;
     if (!el) return;
@@ -128,25 +143,51 @@ export function AssetsPage({ fetchImpl, confirmImpl }: AssetsPageProps) {
     if (!preview && el.open) el.close();
   }, [preview]);
 
-  const openPreview = (id: string, from: HTMLElement): void => {
+  const openPreview = (item: AssetItem, from: HTMLElement): void => {
     lastTile.current = from;
-    setPreviewId(id);
+    setPreviewKey(assetKey(item));
   };
   const closePreview = (): void => {
-    setPreviewId(undefined);
+    setPreviewKey(undefined);
     setPreviewMenuOpen(false);
     lastTile.current?.focus();
   };
-  const remove = async (entry: HistoryEntry): Promise<void> => {
+  const remove = async (item: AssetItem): Promise<void> => {
     setMenuFor(undefined);
     setPreviewMenuOpen(false);
-    if (!confirmDelete(`Delete "${entry.title}" from history? The file on the Spark is untouched.`)) return;
-    if (previewId === entry.id) setPreviewId(undefined);
-    await doFetch(`/api/history/${encodeURIComponent(entry.id)}`, { method: "DELETE" });
+    if (item.kind === "video") {
+      if (!confirmDelete(`Delete "${item.entry.title}" from history? The file on the Spark is untouched.`)) return;
+      if (previewKey === assetKey(item)) setPreviewKey(undefined);
+      await doFetch(`/api/history/${encodeURIComponent(item.entry.id)}`, { method: "DELETE" });
+    } else {
+      // STORY_032: the reference image only; the task stays
+      if (!confirmDelete(`Delete "${item.ref.name}"? The image is removed; the task stays.`)) return;
+      if (previewKey === assetKey(item)) setPreviewKey(undefined);
+      await doFetch(referenceUrl(item.entry, item.ref), { method: "DELETE" });
+    }
     await load();
   };
-
-  const shown = entries ? filterAssets(entries, { chip, query, tab }) : [];
+  /** STORY_032: Star / Unstar — a PATCH, the list refetched, the reference's "Starred" toast (behaviour-assets-star-01). */
+  const star = async (entry: HistoryEntry): Promise<void> => {
+    const starred = entry.starred !== true;
+    const res = await doFetch(`/api/history/${encodeURIComponent(entry.id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ starred }) }).catch(() => undefined);
+    await load();
+    if (res?.ok === true) notify(starred ? "Starred" : "Unstarred");
+    else notify("That did not save — the app's server did not answer", { tone: "info" });
+  };
+  /** STORY_032: the preview's Copy link — the result's URL on the clipboard. */
+  const copyLink = (entry: HistoryEntry): void => {
+    const link = `${window.location.origin}/api/jobs/${encodeURIComponent(entry.id)}/result`;
+    const clipboard = typeof navigator === "undefined" ? undefined : navigator.clipboard;
+    if (!clipboard) {
+      notify(`Clipboard unavailable — the link is ${link}`, { tone: "info" });
+      return;
+    }
+    clipboard.writeText(link).then(
+      () => { notify("Link copied"); },
+      () => { notify(`Clipboard unavailable — the link is ${link}`, { tone: "info" }); },
+    );
+  };
 
   return (
     <main className={styles.page}>
@@ -181,22 +222,24 @@ export function AssetsPage({ fetchImpl, confirmImpl }: AssetsPageProps) {
         </div>
       ) : (
         <div className={styles.grid}>
-          {shown.map((entry) => {
-            const name = fileNameFor(entry);
+          {shown.map((item) => {
+            const name = assetName(item);
+            const key = assetKey(item);
+            const src = item.kind === "video" ? `/api/jobs/${encodeURIComponent(item.entry.id)}/poster` : referenceUrl(item.entry, item.ref);
             return (
-              <article key={entry.id} className={styles.tile} data-testid="asset-tile" aria-label={name}>
-                <button type="button" className={styles.poster} aria-label={`Preview ${name}`} onClick={(event) => { openPreview(entry.id, event.currentTarget); }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- the adapter's first frame, served by our route */}
-                  <img src={`/api/jobs/${encodeURIComponent(entry.id)}/poster`} alt="" onError={(event) => { event.currentTarget.style.display = "none"; }} />
-                  <span className={styles.posterGlyph} aria-hidden="true"><IconVideo /></span>
-                  <span className={styles.playGlyph} aria-hidden="true"><IconPlay /></span>
+              <article key={key} className={styles.tile} data-testid="asset-tile" data-kind={item.kind} aria-label={name}>
+                <button type="button" className={styles.poster} aria-label={`Preview ${name}`} onClick={(event) => { openPreview(item, event.currentTarget); }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- the adapter's first frame or the kept image, served by our routes */}
+                  <img src={src} alt="" onError={(event) => { event.currentTarget.style.display = "none"; }} />
+                  <span className={styles.posterGlyph} aria-hidden="true">{item.kind === "video" ? <IconVideo /> : <IconImage />}</span>
+                  {item.kind === "video" ? <span className={styles.playGlyph} aria-hidden="true"><IconPlay /></span> : null}
                 </button>
                 <div className={styles.name}>
-                  <span className={styles.nameIcon} aria-hidden="true"><IconVideo /></span>
+                  <span className={styles.nameIcon} aria-hidden="true">{item.kind === "video" ? <IconVideo /> : <IconImage />}</span>
                   <span className={styles.nameText}>{name}</span>
-                  <span className={styles.kebabWrap} data-kebab={entry.id}>
-                    <button type="button" className={styles.kebab} aria-label={`More actions for ${name}`} aria-haspopup="menu" aria-expanded={menuFor === entry.id} onClick={() => { setMenuFor(menuFor === entry.id ? undefined : entry.id); }}><IconMore /></button>
-                    {menuFor === entry.id ? <AssetMenu entry={entry} label={`Actions for ${name}`} onDelete={() => void remove(entry)} onClose={() => { setMenuFor(undefined); }} /> : null}
+                  <span className={styles.kebabWrap} data-kebab={key}>
+                    <button type="button" className={styles.kebab} aria-label={`More actions for ${name}`} aria-haspopup="menu" aria-expanded={menuFor === key} onClick={() => { setMenuFor(menuFor === key ? undefined : key); }}><IconMore /></button>
+                    {menuFor === key ? <AssetMenu item={item} label={`Actions for ${name}`} onDelete={() => void remove(item)} onStar={(entry) => void star(entry)} onCopyLink={copyLink} onClose={() => { setMenuFor(undefined); }} /> : null}
                   </span>
                 </div>
               </article>
@@ -206,21 +249,26 @@ export function AssetsPage({ fetchImpl, confirmImpl }: AssetsPageProps) {
       )}
 
       {/* narrow-assets-video-preview@390: × · the name · ⋯, the video under it (the 1440 dialog was not captured; it takes the same head) */}
-      <dialog ref={dialog} className={styles.dialog} aria-label={preview ? fileNameFor(preview) : "Preview"} onClose={closePreview} onClick={(event) => { if (event.target === dialog.current) closePreview(); }}>
+      <dialog ref={dialog} className={styles.dialog} aria-label={preview ? assetName(preview) : "Preview"} onClose={closePreview} onClick={(event) => { if (event.target === dialog.current) closePreview(); }}>
         {preview ? (
           <>
             <div className={styles.dialogHead}>
               <button type="button" className={styles.dialogButton} aria-label="Close asset preview" onClick={closePreview}><IconClose /></button>
-              <span className={styles.dialogTitle}>{fileNameFor(preview)}</span>
+              <span className={styles.dialogTitle}>{assetName(preview)}</span>
               <span className={styles.kebabWrap} data-kebab="preview">
                 <button type="button" className={styles.dialogButton} aria-label="More actions" aria-haspopup="menu" aria-expanded={previewMenuOpen} onClick={() => { setPreviewMenuOpen((open) => !open); }}><IconMore /></button>
-                {previewMenuOpen ? <AssetMenu entry={preview} label="Preview actions" withDownload onDelete={() => void remove(preview)} onClose={() => { setPreviewMenuOpen(false); }} /> : null}
+                {previewMenuOpen ? <AssetMenu item={preview} label="Preview actions" withDownload onDelete={() => void remove(preview)} onStar={(entry) => void star(entry)} onCopyLink={copyLink} onClose={() => { setPreviewMenuOpen(false); }} /> : null}
               </span>
             </div>
             <div className={styles.dialogBody}>
-              <video className={styles.dialogVideo} controls playsInline preload="metadata" poster={`/api/jobs/${encodeURIComponent(preview.id)}/poster`} src={`/api/jobs/${encodeURIComponent(preview.id)}/result`} data-testid="preview-video">
-                <track kind="captions" />
-              </video>
+              {preview.kind === "video" ? (
+                <video className={styles.dialogVideo} controls playsInline preload="metadata" poster={`/api/jobs/${encodeURIComponent(preview.entry.id)}/poster`} src={`/api/jobs/${encodeURIComponent(preview.entry.id)}/result`} data-testid="preview-video">
+                  <track kind="captions" />
+                </video>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element -- the kept image, served by our route
+                <img className={styles.dialogImage} src={referenceUrl(preview.entry, preview.ref)} alt={preview.ref.name} data-testid="preview-image" />
+              )}
             </div>
           </>
         ) : null}

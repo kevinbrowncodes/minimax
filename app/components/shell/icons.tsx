@@ -150,6 +150,9 @@ export const IconLocate = () => (
 export const IconArrowUpRight = () => (
   <svg {...base}><path d="M4 12 12 4M5.5 4H12v6.5" /></svg>
 );
+export const IconImage = () => (
+  <svg {...base}><rect x="2.5" y="3" width="11" height="10" rx="1.5" /><path d="m3 11.5 3-3 2.5 2.5 2-2 3 3" /><circle cx="10" cy="6.2" r="1" /></svg>
+);
 export const IconStar = () => (
   <svg {...base}><path d="m8 2.2 1.8 3.8 4.1.5-3 2.9.8 4.1L8 11.5l-3.7 2 .8-4.1-3-2.9 4.1-.5z" /></svg>
 );

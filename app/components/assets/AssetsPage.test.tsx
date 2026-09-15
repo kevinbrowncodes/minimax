@@ -10,17 +10,38 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 
 function fetchWith(entries: HistoryEntry[]) {
   const deleted: string[] = [];
+  const deletedRefs: string[] = [];
+  const patches: { id: string; body: unknown }[] = [];
   const impl = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     if (url === "/api/history") return Promise.resolve(json({ entries: entries.filter((e) => !deleted.includes(e.id)) }));
+    if (url.includes("/reference/") && init?.method === "DELETE") {
+      // STORY_032: the reference image only — the store's copy of the entry loses the slot
+      deletedRefs.push(url);
+      const [, id, n] = /\/api\/history\/([^/]+)\/reference\/(\d+)/.exec(url) ?? [];
+      const index = entries.findIndex((e) => e.id === id);
+      const current = entries[index];
+      if (current) entries[index] = { ...current, referenceFiles: (current.referenceFiles ?? []).filter((r) => String(r.n) !== n) };
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
     if (url.startsWith("/api/history/") && init?.method === "DELETE") {
       deleted.push(decodeURIComponent(url.slice("/api/history/".length)));
       return Promise.resolve(new Response(null, { status: 204 }));
     }
+    if (url.startsWith("/api/history/") && init?.method === "PATCH") {
+      const id = decodeURIComponent(url.slice("/api/history/".length));
+      const body = JSON.parse(typeof init.body === "string" ? init.body : "{}") as { starred?: boolean };
+      patches.push({ id, body });
+      const index = entries.findIndex((e) => e.id === id);
+      const current = entries[index];
+      if (current && typeof body.starred === "boolean") entries[index] = { ...current, starred: body.starred };
+      return Promise.resolve(json(entries[index] ?? {}));
+    }
     return Promise.resolve(json({ error: { code: "not_found", message: url } }, 404));
   };
-  return { fetchImpl: vi.fn(impl), deleted };
+  return { fetchImpl: vi.fn(impl), deleted, deletedRefs, patches };
 }
+const ref = (n: number, name: string) => ({ n, name, file: `${String(n)}-${name}`, size: 10, type: "image/png" });
 
 beforeAll(() => {
   // jsdom has no <dialog> implementation of showModal/close
@@ -61,7 +82,7 @@ describe("AssetsPage", () => {
     expect(screen.queryByTestId("preview-video")).not.toBeInTheDocument();
   });
 
-  it("the kebab menu locates the task, sends to a new task, has an inert Star, and deletes from history after a confirm", async () => {
+  it("the kebab menu locates the task, sends to a new task, offers Star, and deletes from history after a confirm", async () => {
     const { fetchImpl, deleted } = fetchWith([entry("a", "Paper boat")]);
     const confirmImpl = vi.fn(() => true);
     render(<AssetsPage fetchImpl={fetchImpl} confirmImpl={confirmImpl} />);
@@ -73,7 +94,7 @@ describe("AssetsPage", () => {
     expect(screen.getAllByRole("menuitem").map((el) => el.textContent.trim())).toEqual(["Locate in task", "Send to new task", "Star", "Delete"]);
     expect(screen.getByRole("menuitem", { name: "Locate in task" })).toHaveAttribute("href", "/task/a");
     expect(screen.getByRole("menuitem", { name: "Send to new task" })).toHaveAttribute("href", "/task/a?extend");
-    expect(screen.getByRole("menuitem", { name: "Star" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("menuitem", { name: "Star" })).not.toHaveAttribute("aria-disabled"); // real since STORY_032
     await act(async () => {
       fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
       await Promise.resolve();
@@ -123,7 +144,7 @@ describe("AssetsPage — the reference's Assets page (STORY_024)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Preview Paper boat.mp4" }));
     fireEvent.click(screen.getByRole("button", { name: "More actions" }));
     const menu = screen.getByRole("menu", { name: "Preview actions" });
-    expect(within(menu).getAllByRole("menuitem").map((el) => el.textContent.trim())).toEqual(["Download", "Locate in task", "Send to new task", "Star", "Delete"]);
+    expect(within(menu).getAllByRole("menuitem").map((el) => el.textContent.trim())).toEqual(["Download", "Copy link", "Locate in task", "Send to new task", "Star", "Delete"]); // Copy link since STORY_032
     await act(async () => {
       fireEvent.click(within(menu).getByRole("menuitem", { name: "Delete" }));
       await Promise.resolve();
@@ -132,6 +153,89 @@ describe("AssetsPage — the reference's Assets page (STORY_024)", () => {
     await waitFor(() => {
       expect(screen.queryByTestId("preview-video")).not.toBeInTheDocument();
     });
+  });
+
+  it("Star patches the entry, the Star tab lists it and its menu reads Unstar; Unstar takes it out again (STORY_032)", async () => {
+    const { fetchImpl, patches } = fetchWith([entry("a", "Paper boat"), entry("b", "Cyberpunk alley")]);
+    render(<AssetsPage fetchImpl={fetchImpl} />);
+    await waitFor(() => {
+      expect(screen.getAllByTestId("asset-tile")).toHaveLength(2);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "More actions for Paper boat.mp4" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: "Star" }));
+      await Promise.resolve();
+    });
+    expect(patches).toEqual([{ id: "a", body: { starred: true } }]);
+    fireEvent.click(screen.getByRole("tab", { name: "Star" }));
+    await waitFor(() => {
+      expect(screen.getAllByTestId("asset-tile")).toHaveLength(1);
+    });
+    expect(screen.getByTestId("asset-tile")).toHaveAttribute("aria-label", "Paper boat.mp4");
+    fireEvent.click(screen.getByRole("button", { name: "More actions for Paper boat.mp4" }));
+    expect(screen.getByRole("menuitem", { name: "Unstar" })).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: "Unstar" }));
+      await Promise.resolve();
+    });
+    expect(patches[1]).toEqual({ id: "a", body: { starred: false } });
+    await waitFor(() => {
+      expect(screen.getByTestId("assets-empty")).toBeInTheDocument();
+    });
+  });
+
+  it("From you lists the reference images as tiles named by their file, previews one as an image, and its menu is Locate in task and Delete (the file only) (STORY_032)", async () => {
+    const { fetchImpl, deletedRefs, deleted } = fetchWith([{ ...entry("a", "Paper boat"), referenceFiles: [ref(1, "boat sketch.png"), ref(2, "second.png")] }, entry("b", "Cyberpunk alley")]);
+    const confirmImpl = vi.fn(() => true);
+    render(<AssetsPage fetchImpl={fetchImpl} confirmImpl={confirmImpl} />);
+    await waitFor(() => {
+      expect(screen.getAllByTestId("asset-tile")).toHaveLength(2); // From agent: the two videos, not the images
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Images" }));
+    expect(screen.getAllByTestId("asset-tile").map((el) => el.getAttribute("aria-label"))).toEqual(["boat sketch.png", "second.png"]); // the Images chip lists them on From agent too
+    fireEvent.click(screen.getByRole("button", { name: "All" }));
+    fireEvent.click(screen.getByRole("tab", { name: "From you" }));
+    const tiles = screen.getAllByTestId("asset-tile");
+    expect(tiles.map((el) => el.getAttribute("data-kind"))).toEqual(["image", "image"]);
+    expect(tiles[0]?.querySelector("img")).toHaveAttribute("src", "/api/history/a/reference/1");
+    fireEvent.click(screen.getByRole("button", { name: "Preview boat sketch.png" }));
+    expect(screen.getByTestId("preview-image")).toHaveAttribute("src", "/api/history/a/reference/1");
+    expect(screen.queryByTestId("preview-video")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    expect(within(screen.getByRole("menu", { name: "Preview actions" })).getAllByRole("menuitem").map((el) => el.textContent.trim())).toEqual(["Locate in task", "Delete"]);
+    fireEvent.click(screen.getByRole("button", { name: "Close asset preview" }));
+    fireEvent.click(screen.getByRole("button", { name: "More actions for boat sketch.png" }));
+    expect(screen.getAllByRole("menuitem").map((el) => el.textContent.trim())).toEqual(["Locate in task", "Delete"]);
+    expect(screen.getByRole("menuitem", { name: "Locate in task" })).toHaveAttribute("href", "/task/a");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+      await Promise.resolve();
+    });
+    expect(confirmImpl).toHaveBeenCalledWith(expect.stringContaining("boat sketch.png"));
+    expect(deletedRefs).toEqual(["/api/history/a/reference/1"]);
+    expect(deleted).toEqual([]); // the task stays
+    await waitFor(() => {
+      expect(screen.getAllByTestId("asset-tile").map((el) => el.getAttribute("aria-label"))).toEqual(["second.png"]);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Videos" }));
+    expect(screen.getByTestId("assets-empty")).toBeInTheDocument(); // no videos under From you
+  });
+
+  it("the preview's Copy link puts the result's URL on the clipboard (STORY_032)", async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<AssetsPage fetchImpl={fetchWith([entry("a", "Paper boat")]).fetchImpl} />);
+    await waitFor(() => {
+      expect(screen.getByTestId("asset-tile")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Preview Paper boat.mp4" }));
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: "Copy link" }));
+      await Promise.resolve();
+    });
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/api/jobs/a/result`);
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 
   it("puts its Search and Filter buttons in the Shell's slot; Search shows the field, Filter shows the tabs", async () => {
