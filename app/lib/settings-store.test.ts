@@ -16,12 +16,14 @@ afterEach(() => {
 
 describe("the server-wide settings (STORY_034)", () => {
   it("default to clean downloads, live beside the history file, round-trip a write, and survive garbage", () => {
-    expect(DEFAULT_SETTINGS).toEqual({ removeWatermark: true });
+    expect(DEFAULT_SETTINGS).toEqual({ removeWatermark: true, videoEnabled: true }); // videoEnabled: STORY_040
     expect(settingsFile()).toBe(path.join(dir, "settings.json"));
     expect(readSettings()).toEqual(DEFAULT_SETTINGS);
-    expect(writeSettings({ removeWatermark: false })).toEqual({ removeWatermark: false });
-    expect(readSettings()).toEqual({ removeWatermark: false });
-    expect(JSON.parse(readFileSync(settingsFile(), "utf8"))).toEqual({ removeWatermark: false });
+    expect(writeSettings({ removeWatermark: false })).toEqual({ removeWatermark: false, videoEnabled: true });
+    expect(readSettings()).toEqual({ removeWatermark: false, videoEnabled: true });
+    expect(JSON.parse(readFileSync(settingsFile(), "utf8"))).toEqual({ removeWatermark: false, videoEnabled: true });
+    expect(writeSettings({ videoEnabled: false })).toEqual({ removeWatermark: false, videoEnabled: false });
+    expect(parseSettings('{"videoEnabled":false}')).toEqual({ removeWatermark: true, videoEnabled: false });
     writeFileSync(settingsFile(), "not json");
     expect(readSettings()).toEqual(DEFAULT_SETTINGS);
     expect(parseSettings('{"removeWatermark":"yes"}')).toEqual(DEFAULT_SETTINGS);

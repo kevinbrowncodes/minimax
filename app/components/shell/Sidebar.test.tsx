@@ -18,7 +18,7 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("href", "/assets");
     expect(screen.getByRole("link", { name: "Plugins" })).toHaveAttribute("href", "/plugins");
     expect(screen.getByRole("link", { name: "Connect mobile" })).toHaveAttribute("href", "/connect-mobile");
-    expect(screen.getByRole("link", { name: "View now" })).toHaveAttribute("href", "/plugins"); // Management lives at /plugins (STORY_026)
+    expect(screen.getByRole("link", { name: "View now" })).toHaveAttribute("href", "/plugins?tab=Agents"); // Management lives at /plugins (STORY_026); the guide promises Agents (STORY_040)
     const search = screen.getByText("Search").closest("[role=link]");
     expect(search).toHaveAttribute("aria-disabled", "true"); // Search without a handler stays inert
     expect(screen.queryByRole("button", { name: "More" })).not.toBeInTheDocument(); // STORY_028: no More section

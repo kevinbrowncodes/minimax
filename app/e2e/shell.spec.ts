@@ -45,6 +45,7 @@ test.describe("shell (STORY_012)", () => {
       await expect(page).toHaveURL(url);
       await expect(page.getByTestId(testid)).toBeVisible();
       await settled(page); // the drawer slides shut on navigation at 390; a forced click through it would land on a row
+      if (row === "Plugins") await page.getByRole("tab", { name: /^Agents/ }).click(); // STORY_040: Plugins opens first; the inert editor is the Agents tab
       const control = page.getByRole("button", { name: inert });
       await expect(control).toHaveAttribute("aria-disabled", "true");
       await control.click({ force: true });
@@ -63,7 +64,7 @@ test.describe("shell (STORY_012)", () => {
       await settled(page);
     }
     await page.getByRole("link", { name: "View now" }).click();
-    await expect(page).toHaveURL(/\/plugins$/);
+    await expect(page).toHaveURL(/\/plugins\?tab=Agents$/); // the guide promises Agents, so it lands on that tab (STORY_040)
     await expect(page.getByRole("heading", { name: "Management" })).toBeVisible();
     await expect(page.getByRole("textbox", { name: "Name" })).toHaveValue("General");
     await expect(page.getByRole("tab", { name: "Personal" })).toBeHidden(); // the marketplace is gone

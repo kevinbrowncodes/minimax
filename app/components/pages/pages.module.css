@@ -744,3 +744,230 @@
     width: 100%;
   }
 }
+
+/* STORY_040 — Management's Plugins / Skills / Apps (behaviour-manage-tabs-02..04@1440): the tabs with a search at the
+   right, 68 px rows with a 40 px glyph, the name and one 13 px line, a switch or the row's buttons at the right */
+.manageHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing_16);
+  margin-bottom: var(--spacing_24);
+}
+.manageHead .manageTabs {
+  margin-bottom: 0;
+}
+.manageSearch {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  width: 160px;
+  height: 32px;
+  padding: 0 var(--spacing_12);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_8);
+  color: var(--icon_default_tertiary);
+}
+.manageSearch input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--text_default_primary);
+}
+.pluginList,
+.skillList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pluginRow,
+.skillRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_16);
+  padding: var(--spacing_12) 0;
+  border-bottom: 1px solid var(--border_default);
+}
+.pluginGlyph {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--icon_default_secondary);
+}
+.pluginText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pluginName {
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  color: var(--text_default_primary);
+}
+.pluginLine {
+  font-size: 13px;
+  color: var(--text_default_secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pluginDetails {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  color: var(--text_default_accent);
+  cursor: pointer;
+}
+.pluginCaps {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 2px var(--spacing_12);
+  margin: var(--spacing_8) 0 0;
+  font-size: 12px;
+  color: var(--text_default_secondary);
+}
+.pluginCaps dt {
+  color: var(--text_default_tertiary);
+}
+.pluginCaps dd {
+  margin: 0;
+}
+.pluginSwitch {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  width: 32px;
+  height: 16px;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--radius_full);
+  background: var(--border_accent);
+  cursor: pointer;
+}
+.pluginKnob {
+  display: block;
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  border-radius: var(--radius_full);
+  background: var(--gray_0);
+  transition: margin var(--duration_fast) var(--ease_standard);
+}
+.pluginSwitchOff {
+  background: var(--bg_interaction_secondary_default);
+}
+.pluginSwitchOff .pluginKnob {
+  margin-left: 0;
+}
+.skillBadge {
+  margin-left: var(--spacing_4);
+  font-size: 11px;
+  color: var(--text_default_tertiary);
+}
+.skillActions {
+  flex: none;
+  display: inline-flex;
+  gap: var(--spacing_4);
+}
+.smallButtonDanger {
+  background: var(--bg_interaction_danger_secondary_default);
+  color: var(--text_label_danger_secondary_default);
+}
+.smallButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.skillCreate {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_6);
+  height: 32px;
+  margin-bottom: var(--spacing_12);
+  padding: 0 var(--spacing_12);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--text_default_primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.skillForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_12);
+  margin-bottom: var(--spacing_16);
+  padding: var(--spacing_16);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_12);
+}
+.skillField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_4);
+  font-size: 12px;
+  color: var(--text_default_secondary);
+}
+.skillField input,
+.skillField textarea {
+  padding: var(--spacing_8) var(--spacing_12);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_8);
+  background: var(--bg_default_primary_elevated);
+  color: var(--text_default_primary);
+  font: inherit;
+  font-size: 14px;
+}
+.skillError {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text_label_danger_secondary_default);
+}
+.skillFormActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing_8);
+}
+.skillFormActions button {
+  border: 0;
+  cursor: pointer;
+}
+.manageEmpty {
+  margin: var(--spacing_64) 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text_default_secondary);
+}
+@media (max-width: 899px) {
+  .manageHead {
+    flex-wrap: wrap;
+  }
+  .manageSearch {
+    width: 100%;
+  }
+  .skillRow {
+    flex-wrap: wrap;
+  }
+  .skillActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .pluginSwitch,
+  .smallButton,
+  .skillCreate,
+  .pluginDetails {
+    min-height: 44px;
+  }
+}

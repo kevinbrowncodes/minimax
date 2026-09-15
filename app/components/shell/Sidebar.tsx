@@ -447,7 +447,7 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
         <div className={styles.guide} data-testid="agents-guide">
           <button type="button" className={styles.guideClose} aria-label="Dismiss Agents guide" onClick={onDismissGuide}><IconClose /></button>
           <p className={styles.guideText}>You can now find Agents in Plugins</p>
-          <Link href="/plugins" className={styles.guideLink} onClick={onNavigate}>View now</Link>
+          <Link href="/plugins?tab=Agents" className={styles.guideLink} onClick={onNavigate}>View now</Link>
           <div className={styles.guideArt} aria-hidden="true">
             <span className={styles.guideArtCard}>
               <span className={styles.guideArtTitle}>Manage</span>

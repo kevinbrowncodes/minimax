@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ExtendSource } from "@/lib/composer-state";
 import type { Capabilities } from "@/lib/job-api";
 import { ProjectsContext } from "@/components/shell/ProjectsContext";
+import { SettingsContext } from "@/components/shell/SettingsContext";
 import { Composer } from "./Composer";
 
 const push = vi.fn();
@@ -17,6 +18,7 @@ function fetchWith(onJobs: (init: RequestInit | undefined) => Response): typeof 
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     if (url.startsWith("/api/capabilities")) return Promise.resolve(json(caps));
     if (url.startsWith("/api/jobs")) return Promise.resolve(onJobs(init));
+    if (url === "/api/skills") return Promise.resolve(json({ skills: [{ id: "short-to-script", name: "Short-to-script", description: "Expands an idea", template: "integrated_multimodal_description: [Shot 1] {{idea}}", builtIn: true }, { id: "loop", name: "Loop", description: "Seamless loops", template: "Loop: {{idea}}" }] }));
     return Promise.resolve(json({ error: { code: "not_found", message: url } }, 404));
   };
   return vi.fn(impl);
@@ -283,6 +285,48 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     expect(puts[1]).toEqual({ vars: {} });
   });
 
+  it("+ › Skills › a skill drops its template into the composer with the typed idea in the slot; Manage skills and Add skill open Management › Skills (STORY_040)", async () => {
+    await renderReady();
+    fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "a paper boat" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
+    const loop = await screen.findByRole("menuitem", { name: "Loop" });
+    fireEvent.click(loop);
+    expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("Loop: a paper boat");
+    expect(screen.queryByRole("menu", { name: "Add attachment" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Manage skills" }));
+    expect(push).toHaveBeenLastCalledWith("/plugins?tab=Skills");
+    fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Add skill" }));
+    expect(push).toHaveBeenLastCalledWith("/plugins?tab=Skills&create=1");
+  });
+
+  it("starts with the skill's template when told to, and hides Video generation when the plugin is off (STORY_040)", () => {
+    render(<Composer fetchImpl={fetchWith(() => json({}))} initialText="Loop: {{idea}}" />);
+    expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("Loop: {{idea}}");
+    expect(screen.getByRole("group", { name: "Modes" })).toBeInTheDocument();
+    cleanup();
+    render(
+      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: false }, update: () => undefined }}>
+        <Composer fetchImpl={fetchWith(() => json({}))} />
+      </SettingsContext.Provider>,
+    );
+    expect(screen.queryByRole("group", { name: "Modes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Video generation/ })).not.toBeInTheDocument();
+    expect(screen.queryByText("video-creator")).not.toBeInTheDocument();
+    cleanup();
+    // the docked composer starts in video mode; with the plugin off it is text-only too (no video parameters)
+    render(
+      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: false }, update: () => undefined }}>
+        <Composer fetchImpl={fetchWith(() => json({}))} variant="docked" />
+      </SettingsContext.Provider>,
+    );
+    expect(screen.queryByRole("button", { name: /^Video parameters:/ })).not.toBeInTheDocument();
+  });
+
   it("the + menu lists the reference's entries with submenus; Add files or photos opens the reference chooser in video mode", async () => {
     await renderReady();
     const input = screen.getByTestId("reference-input");
@@ -293,8 +337,10 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     expect(labels).toEqual(["Add files or photos", "Add to project", "Skills", "Environment variables"]); // STORY_026: no Plugins ›
     fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
     const skills = screen.getByRole("menu", { name: "Skills" });
-    expect(skills).toHaveTextContent("No skills installed");
-    expect(screen.getByRole("menuitem", { name: "Manage skills" })).toHaveAttribute("aria-disabled", "true");
+    await waitFor(() => {
+      expect(within(skills).getAllByRole("menuitem").map((el) => el.textContent.trim())).toEqual(["Short-to-script", "Loop", "Manage skills", "Add skill"]); // STORY_040: the stored skills, then the two links
+    });
+    expect(screen.getByRole("menuitem", { name: "Manage skills" })).not.toHaveAttribute("aria-disabled");
     fireEvent.click(screen.getByRole("menuitem", { name: "Add files or photos" }));
     expect(clickInput).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("menu", { name: "Add attachment" })).not.toBeInTheDocument();

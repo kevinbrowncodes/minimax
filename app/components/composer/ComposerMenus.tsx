@@ -4,6 +4,7 @@ import { cx } from "@/lib/cx";
 import { Inert } from "@/components/shell/Inert";
 import { IconChevronRight, IconMove, IconPlusCircle, IconProject, IconSettings } from "@/components/shell/icons";
 import type { Project } from "@/lib/project-store";
+import type { Skill } from "@/lib/skills";
 import styles from "./menus.module.css";
 
 /**
@@ -34,14 +35,19 @@ export interface AttachMenuProps {
   readonly onNewProject: () => void;
   /** STORY_035: Environment variables opens the dialog; without a handler it keeps the notice. */
   readonly onEnv?: () => void;
+  /** STORY_040: the skills — each drops its template into the composer; Manage skills and Add skill open Management › Skills. */
+  readonly skills?: readonly Skill[];
+  readonly onUseSkill?: (skill: Skill) => void;
+  readonly onManageSkills?: (create: boolean) => void;
 }
 
 /** attach-menu-open@1440 and its submenus: 190 px, 32 px entries; submenus 8 px to the right. */
-export function AttachMenu({ onAddFiles, onClose, projects, projectId, onProject, onNewProject, onEnv }: AttachMenuProps) {
+export function AttachMenu({ onAddFiles, onClose, projects, projectId, onProject, onNewProject, onEnv, skills = [], onUseSkill, onManageSkills }: AttachMenuProps) {
   const [open, setOpen] = useState<Submenu | undefined>(undefined);
   const entry = (id: Submenu, icon: ReactNode, label: string, children: ReactNode) => (
     <div className={styles.entryWrap} onMouseEnter={() => { setOpen(id); }}>
-      <button type="button" role="menuitem" aria-haspopup="menu" aria-expanded={open === id} className={cx(styles.item, open === id && styles.itemOpen)} onClick={() => { setOpen(open === id ? undefined : id); }}>
+      {/* a click opens (never toggles): the pointer's hover has often opened it already, and a tap at 390 would close it again (STORY_040) */}
+      <button type="button" role="menuitem" aria-haspopup="menu" aria-expanded={open === id} className={cx(styles.item, open === id && styles.itemOpen)} onClick={() => { setOpen(id); }}>
         <span className={styles.icon}>{icon}</span>
         <span className={styles.label}>{label}</span>
         <span className={styles.chevron}><IconChevronRight /></span>
@@ -86,10 +92,28 @@ export function AttachMenu({ onAddFiles, onClose, projects, projectId, onProject
       <div className={styles.separator} />
       {entry("skills", <IconSkill />, "Skills", (
         <>
-          <span className={styles.note}>No skills installed</span>
+          {onUseSkill && skills.length > 0 ? (
+            skills.map((skill) => (
+              <button key={skill.id} type="button" role="menuitem" className={styles.item} title={skill.description} onClick={() => { onClose(); onUseSkill(skill); }}>
+                <span className={styles.icon}><IconSkill /></span>
+                <span className={styles.label}>{skill.name}</span>
+              </button>
+            ))
+          ) : (
+            <span className={styles.note}>No skills installed</span>
+          )}
           <div className={styles.separator} />
-          <Inert role="menuitem" label="Manage skills" className={styles.item}><span className={styles.icon}><IconSettings /></span><span className={styles.label}>Manage skills</span></Inert>
-          <Inert role="menuitem" label="Add skill" className={styles.item}><span className={styles.icon}><IconPlusCircle /></span><span className={styles.label}>Add skill</span></Inert>
+          {onManageSkills ? (
+            <>
+              <button type="button" role="menuitem" className={styles.item} onClick={() => { onClose(); onManageSkills(false); }}><span className={styles.icon}><IconSettings /></span><span className={styles.label}>Manage skills</span></button>
+              <button type="button" role="menuitem" className={styles.item} onClick={() => { onClose(); onManageSkills(true); }}><span className={styles.icon}><IconPlusCircle /></span><span className={styles.label}>Add skill</span></button>
+            </>
+          ) : (
+            <>
+              <Inert role="menuitem" label="Manage skills" className={styles.item}><span className={styles.icon}><IconSettings /></span><span className={styles.label}>Manage skills</span></Inert>
+              <Inert role="menuitem" label="Add skill" className={styles.item}><span className={styles.icon}><IconPlusCircle /></span><span className={styles.label}>Add skill</span></Inert>
+            </>
+          )}
         </>
       ))}
       {onEnv ? (

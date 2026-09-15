@@ -14,6 +14,7 @@ import { useThemeChoice } from "@/lib/use-theme";
 import { CreateProjectDialog } from "./CreateProjectDialog";
 import { DeleteProjectDialog } from "./DeleteProjectDialog";
 import { ProjectsContext, type ProjectsState } from "./ProjectsContext";
+import { SettingsContext, type SettingsState } from "./SettingsContext";
 import { PromoCard } from "./PromoCard";
 import { SearchDialog } from "./SearchDialog";
 import { SettingsDialog, type SettingsSection } from "./SettingsDialog";
@@ -112,11 +113,11 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
   }, []);
   useEffect(() => loadSettings(), [loadSettings]);
   useEffect(() => (settingsOpen ? loadSettings() : undefined), [settingsOpen, loadSettings]);
-  const setRemoveWatermark = useCallback(
-    (removeWatermark: boolean) => {
+  const updateSettings = useCallback(
+    (patch: Partial<Settings>) => {
       const before = settings;
-      setSettings({ ...settings, removeWatermark }); // paint at once; the write is under way (CLAUDE.md §4c: send first — it is)
-      fetch("/api/settings", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ removeWatermark }) })
+      setSettings({ ...settings, ...patch }); // paint at once; the write is under way (CLAUDE.md §4c: send first — it is)
+      fetch("/api/settings", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(patch) })
         .then(async (res) => {
           if (res.ok) setSettings((await res.json()) as Settings);
           else throw new Error(String(res.status));
@@ -128,6 +129,8 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
     },
     [settings, notify],
   );
+  const setRemoveWatermark = useCallback((removeWatermark: boolean) => { updateSettings({ removeWatermark }); }, [updateSettings]);
+  const settingsState = useMemo<SettingsState>(() => ({ settings, update: updateSettings }), [settings, updateSettings]);
 
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
@@ -383,7 +386,9 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
           </div>
         </header>
         <div className={styles.content}>
-          <ProjectsContext.Provider value={projectsState}>{children}</ProjectsContext.Provider>
+          <ProjectsContext.Provider value={projectsState}>
+            <SettingsContext.Provider value={settingsState}>{children}</SettingsContext.Provider>
+          </ProjectsContext.Provider>
         </div>
       </div>
       {bar.kind === "home" && !narrow && !prefs.promoDismissed ? (

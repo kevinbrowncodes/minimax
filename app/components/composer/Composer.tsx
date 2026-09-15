@@ -10,6 +10,8 @@ import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
 import { AgentModelMenu, AttachMenu } from "./ComposerMenus";
 import { EnvDialog } from "./EnvDialog";
 import { useProjects } from "@/components/shell/ProjectsContext";
+import { useSettings } from "@/components/shell/SettingsContext";
+import { applySkill, type Skill } from "@/lib/skills";
 import { IconProject } from "@/components/shell/icons";
 import { Showcase } from "./Showcase";
 import styles from "./composer.module.css";
@@ -42,15 +44,20 @@ export interface ComposerProps {
   readonly onStopExtending?: () => void;
   /** STORY_031: start in this project (the row's New task, `/?project=`; a task's own project on its docked composer). */
   readonly initialProjectId?: string;
+  /** STORY_040: start with this text (Management › Skills › Use, `/?skill=`). */
+  readonly initialText?: string;
 }
 
 /** The home composer (STORY_013): text mode, video mode with references, model, parameters, Send; extend mode (STORY_016). */
-export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExtending, initialProjectId }: ComposerProps) {
+export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExtending, initialProjectId, initialText }: ComposerProps) {
   const router = useRouter();
   const docked = variant === "docked";
   const textarea = useRef<HTMLTextAreaElement>(null);
   const { projects, openCreate } = useProjects();
-  const [state, dispatch] = useReducer(reduceComposer, { docked, initialProjectId }, (init) => (init.docked ? reduceComposer(initialComposer(init.initialProjectId), { type: "enter-video-mode" }) : initialComposer(init.initialProjectId)));
+  // STORY_040: the video-creator plugin's switch — off is a text-only workstation: no mode chip, no video controls
+  const videoEnabled = useSettings().settings.videoEnabled;
+  const [state, dispatch] = useReducer(reduceComposer, { docked, initialProjectId, initialText }, (init) => (init.docked ? reduceComposer(initialComposer(init.initialProjectId, init.initialText), { type: "enter-video-mode" }) : initialComposer(init.initialProjectId, init.initialText)));
+  const [skills, setSkills] = useState<readonly Skill[]>([]);
   // STORY_031: the chip names the chosen project; a project that no longer exists shows nothing (the route would refuse it)
   const project = state.projectId === undefined ? undefined : projects.find((p) => p.id === state.projectId);
   const [popover, setPopover] = useState<"params" | "model" | "attach" | "agent" | undefined>(undefined);
@@ -60,6 +67,21 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const fileInput = useRef<HTMLInputElement>(null);
   const urls = useRef(new Map<string, string>());
   const doFetch = fetchImpl ?? fetch;
+
+  // STORY_040: the skills for + › Skills (the built-in first)
+  useEffect(() => {
+    let cancelled = false;
+    void doFetch("/api/skills")
+      .then(async (res) => (res.ok ? ((await res.json()) as { skills: Skill[] }).skills : []))
+      .catch(() => [] as Skill[])
+      .then((list) => {
+        if (!cancelled) setSkills(list);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -165,7 +187,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
     }
   };
 
-  const video = state.mode === "video";
+  const video = state.mode === "video" && videoEnabled;
   const caps = state.capabilities;
   const extending = state.extend;
 
@@ -253,6 +275,9 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 onProject={(projectId) => { dispatch({ type: "project", projectId }); }}
                 onNewProject={() => { openCreate((created) => { dispatch({ type: "project", projectId: created.id }); }); }}
                 onEnv={() => { setEnvOpen(true); }}
+                skills={skills}
+                onUseSkill={(skill) => { dispatch({ type: "text", text: applySkill(skill.template, state.text) }); textarea.current?.focus(); }}
+                onManageSkills={(create) => { router.push(create ? "/plugins?tab=Skills&create=1" : "/plugins?tab=Skills"); }}
               />
             ) : null}
           </span>
@@ -352,7 +377,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
         </div>
       ) : null}
       {state.capabilitiesError ? <div className={styles.error} role="alert">{state.capabilitiesError}</div> : null}
-      {docked || video ? null : (
+      {docked || video || !videoEnabled ? null : (
         // one mode chip (STORY_026): the reference's Document / Website / Image Generation / More are gone
         <div className={styles.chips} role="group" aria-label="Modes">
           <button type="button" className={styles.chip} onClick={() => { dispatch({ type: "enter-video-mode" }); }}>
