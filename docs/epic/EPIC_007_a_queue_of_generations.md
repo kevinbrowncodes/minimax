@@ -59,6 +59,10 @@ Rows 042–044 are candidates written down so they are not lost; each becomes a 
 
 The gate stays model-free (CLAUDE.md § 4a): the stub generation server gains a `busy` hook (`POST /__stub/busy { busy }`) so a spec can make it refuse creates as the adapter would, fill the line, and release it; every queue path — the waiting entry, the runner, reorder, remove, the timed hold and its release — is proven against the stub at both widths. The real thing is a **manual verification** recorded in STORY_041's Done note: two prompts queued on the Spark with ComfyUI up, the second waiting for the first, both finished, with the date, the model and the times (the README's measured table gains a row).
 
+## Remaining work (2026-09-15 13:15 EDT)
+
+**One approved story remains: STORY_041** (stage one landed or in the tree — see its Handover; stages two and three to do). Rows 042–044 are candidates, not stories, until the owner approves a draft. The owner's instruction for the next session: **work one story at a time** — land, deploy and verify STORY_041 before anything else is drafted or started.
+
 ## Working rules carried over
 
 One story at a time, landed and deployed before the next; the story is the spec and its chrome cites the 2026-09-14 capture; explicit paths staged, never a blanket add; the pre-push hook is the gate; every claim about the Spark is verified that session (`/health`, the compose file, the code), never recalled.

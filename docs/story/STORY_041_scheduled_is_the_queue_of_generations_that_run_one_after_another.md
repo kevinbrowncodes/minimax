@@ -68,6 +68,8 @@ Large — a second kind of pending work, a runner, a page with Edit through the 
 
 ## Handover (2026-09-15 13:06 EDT — the session stopped here at the owner's request; the next session continues from this section)
 
+**For the next session (the owner's instruction, 2026-09-15): work one story at a time.** This is the only approved story left — one story, three stages; finish stage two, then stage three, then land and deploy it, and only then read EPIC_007's candidate rows (042–044), which are not stories until the owner approves a draft. Do not open a second story in parallel.
+
 **Where it stands.** Stage one of three — the server side — is written and green at the unit and integration layers (`tools/gate/run.sh typecheck lint test test:integration`); it is landed as a partial commit labelled "stage one" if the full gate passed at the end of the session (see the commit log), otherwise it is in the working tree uncommitted. Stages two (the UI) and three (the e2e and the manual verification) are not started. The estimate in EPIC_007 (≈ 15:20 EDT) no longer holds; the next session sets a new one.
 
 **Stage one — done (files, what each does):**
