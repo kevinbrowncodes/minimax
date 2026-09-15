@@ -157,6 +157,33 @@
   background: var(--bg_interaction_tertiary_hover);
   color: var(--icon_default_secondary);
 }
+/* STORY_029: a pinned row's pin is filled and always shown */
+.recentActionOn {
+  color: var(--icon_default_primary);
+}
+.recentActionOn svg {
+  fill: currentColor;
+}
+.recent:has(.recentActionOn) .recentActions {
+  display: inline-flex;
+}
+/* STORY_029 (behaviour-recents-rename-02): the row as an inline input while renaming */
+.recentEditing {
+  cursor: text;
+}
+.recentInput {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 var(--spacing_6);
+  border: 1px solid var(--border_accent);
+  border-radius: var(--radius_6);
+  background: var(--bg_default_primary_elevated);
+  color: var(--text_default_primary);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
 .dotRead {
   box-sizing: border-box;
   background: transparent;

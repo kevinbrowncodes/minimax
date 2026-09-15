@@ -204,6 +204,81 @@ test.describe("shell (STORY_021)", () => {
     expect(await stubApi.openJobs()).toEqual([]);
   });
 
+  test("a Recents row is renamed inline, pinned into the Pinned section, and its id copied (STORY_029)", async ({ page, stubApi }, testInfo) => {
+    const narrow = testInfo.project.name === "narrow";
+    // the clipboard is stubbed before the app loads: headless browsers deny writeText without a permission grant
+    await page.addInitScript(() => {
+      const copied: string[] = [];
+      Object.defineProperty(window, "__copied", { value: copied });
+      Object.defineProperty(navigator, "clipboard", { value: { writeText: (text: string) => { copied.push(text); return Promise.resolve(); } }, configurable: true });
+    });
+    await page.goto("/?script=done-after-1-poll");
+    await page.getByRole("button", { name: /Video generation/ }).click();
+    await page.getByRole("textbox", { name: "Message" }).fill("Rename me and pin me");
+    const terminal = waitForTerminalStatus(page);
+    await page.getByRole("button", { name: "Send message" }).click();
+    await expect(page).toHaveURL(/\/task\/[^/]+$/);
+    const id = page.url().split("/task/")[1] ?? "";
+    await terminal;
+    // reopened, the task shows its file card and no preview pane, so the narrow bar's Expand sidebar is clickable
+    await page.goto(`/task/${id}`);
+    await settled(page);
+    const toast = page.getByTestId("toast"); // the task page's indicator is a status too
+    const sidebar = page.getByRole("navigation", { name: "Sidebar" });
+    const openSidebar = async (): Promise<void> => {
+      if (narrow && !(await sidebar.isVisible())) {
+        await page.getByRole("button", { name: "Expand sidebar" }).click();
+        await settled(page);
+      }
+    };
+    await openSidebar();
+    const row = sidebar.getByRole("link", { name: /Rename me and pin me/ });
+    const stamp = (await row.textContent()) ?? "";
+    // Rename: the label becomes an input holding the title; Enter commits; the top bar and Search see the new title; the label is still the stamp (CHORE_008)
+    await row.hover();
+    await sidebar.getByRole("button", { name: "More actions for Rename me and pin me" }).click();
+    await page.getByRole("menuitem", { name: "Rename" }).click();
+    const input = sidebar.getByRole("textbox", { name: "Rename Rename me and pin me" });
+    await expect(input).toHaveValue("Rename me and pin me");
+    await input.fill("Renamed by the row");
+    const renamed = page.waitForResponse((r) => r.url().includes(`/api/history/${id}`) && r.request().method() === "PATCH");
+    await input.press("Enter");
+    expect((await renamed).ok()).toBe(true);
+    await expect(toast).toHaveText(/Task renamed/);
+    const renamedRow = sidebar.getByRole("link", { name: /Renamed by the row/ });
+    await expect(renamedRow).toBeVisible();
+    expect(await renamedRow.textContent()).toBe(stamp);
+    await expect(toast).toBeHidden({ timeout: 5000 }); // gone by itself after two seconds
+    await expect(page.getByTestId("topbar-title")).toHaveText("Renamed by the row"); // the top bar names the task by its title
+    // Pin: the hover pin puts the row in a Pinned section above Projects; its entry reads Unpin; the Recents copy stays
+    await renamedRow.hover();
+    const pinned = page.waitForResponse((r) => r.url().includes(`/api/history/${id}`) && r.request().method() === "PATCH");
+    await sidebar.getByRole("button", { name: "Pin Renamed by the row" }).click();
+    expect((await pinned).ok()).toBe(true);
+    await expect(toast).toHaveText(/Task pinned/);
+    const pinnedSection = page.getByTestId("pinned-section");
+    await expect(pinnedSection).toBeVisible();
+    await expect(pinnedSection.getByRole("link", { name: /Renamed by the row/ })).toBeVisible();
+    await expect(sidebar.getByRole("link", { name: /Renamed by the row/ })).toHaveCount(2);
+    expect(await pinnedSection.evaluate((el) => el.nextElementSibling?.textContent.startsWith("Projects"))).toBe(true);
+    expect((await listHistory(page.request)).find((e) => e.id === id)).toMatchObject({ title: "Renamed by the row" });
+    expect(((await (await page.request.get(`/api/history/${id}`)).json()) as { pinned?: boolean }).pinned).toBe(true);
+    // Copy conversation ID: the row's id lands in the clipboard and the toast says so
+    await pinnedSection.getByRole("link", { name: /Renamed by the row/ }).hover();
+    await pinnedSection.getByRole("button", { name: "More actions for Renamed by the row" }).click();
+    await page.getByRole("menuitem", { name: "Copy conversation ID" }).click();
+    await expect(toast).toHaveText(/Conversation ID copied/);
+    expect(await page.evaluate(() => (window as unknown as { __copied: string[] }).__copied)).toEqual([id]);
+    // Unpin from the menu: the section goes away when nothing is pinned
+    await pinnedSection.getByRole("link", { name: /Renamed by the row/ }).hover();
+    await pinnedSection.getByRole("button", { name: "More actions for Renamed by the row" }).click();
+    await page.getByRole("menuitem", { name: "Unpin" }).click();
+    await expect(toast).toHaveText(/Task unpinned/);
+    await expect(page.getByTestId("pinned-section")).toHaveCount(0);
+    await page.request.delete(`/api/history/${id}`);
+    expect(await stubApi.openJobs()).toEqual([]);
+  });
+
   test("the Inbox opens its popover and Escape closes it", async ({ page }, testInfo) => {
     await page.goto("/");
     await settled(page);

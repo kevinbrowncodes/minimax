@@ -84,6 +84,18 @@ describe("history through the app's routes", () => {
     expect(((await patched.json()) as HistoryEntry).openedAt).toBe("2026-09-12T20:00:00Z");
     const refused = await patchHistory(jsonRequest(`/api/history/${id}`, { status: "done" }, "PATCH"), ctx(id));
     expect(refused.status).toBe(400);
+    // STORY_029: a title is trimmed and never blank; pinned is a boolean that stamps and clears pinnedAt
+    const renamed = (await (await patchHistory(jsonRequest(`/api/history/${id}`, { title: "  Renamed boat  " }, "PATCH"), ctx(id))).json()) as HistoryEntry;
+    expect(renamed.title).toBe("Renamed boat");
+    expect((await patchHistory(jsonRequest(`/api/history/${id}`, { title: "   " }, "PATCH"), ctx(id))).status).toBe(400);
+    const pinned = (await (await patchHistory(jsonRequest(`/api/history/${id}`, { pinned: true }, "PATCH"), ctx(id))).json()) as HistoryEntry;
+    expect(pinned.pinned).toBe(true);
+    expect(typeof pinned.pinnedAt).toBe("string");
+    expect((await patchHistory(jsonRequest(`/api/history/${id}`, { pinned: "x" }, "PATCH"), ctx(id))).status).toBe(400);
+    const unpinned = (await (await patchHistory(jsonRequest(`/api/history/${id}`, { pinned: false }, "PATCH"), ctx(id))).json()) as HistoryEntry;
+    expect(unpinned.pinned).toBe(false);
+    expect(unpinned.pinnedAt).toBeUndefined();
+    expect(((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries.find((e) => e.id === id)?.title).toBe("Renamed boat");
     expect((await deleteHistory(new Request(`http://app/api/history/${id}`, { method: "DELETE" }), ctx(id))).status).toBe(204);
     expect((await getHistoryEntry(new Request(`http://app/api/history/${id}`), ctx(id))).status).toBe(404);
     expect((await deleteHistory(new Request(`http://app/api/history/${id}`, { method: "DELETE" }), ctx(id))).status).toBe(404);

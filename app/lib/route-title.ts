@@ -6,6 +6,9 @@ export interface RecentEntry {
   readonly createdAt?: string;
   readonly finishedAt?: string;
   readonly openedAt?: string;
+  /** STORY_029: in the Pinned section. */
+  readonly pinned?: boolean;
+  readonly pinnedAt?: string;
 }
 export type TopBar = { readonly kind: "home" } | { readonly kind: "assets" } | { readonly kind: "task"; readonly title: string } | { readonly kind: "page"; readonly page: ReferencePage } | { readonly kind: "other" };
 

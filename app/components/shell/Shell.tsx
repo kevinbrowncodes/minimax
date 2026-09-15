@@ -11,6 +11,7 @@ import { CreateProjectDialog } from "./CreateProjectDialog";
 import { PromoCard } from "./PromoCard";
 import { SearchDialog } from "./SearchDialog";
 import { SettingsDialog } from "./SettingsDialog";
+import { Toast } from "./Toast";
 import { ShellStateProvider, useShell } from "./ShellContext";
 import { Sidebar } from "./Sidebar";
 import { IconExpand, IconWorkArea } from "./icons";
@@ -40,7 +41,7 @@ export function Shell({ children, confirmImpl }: ShellProps) {
 function ShellFrame({ children, confirmImpl }: ShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { workAreaOpen, toggleWorkArea, pageActions } = useShell();
+  const { workAreaOpen, toggleWorkArea, pageActions, toast, notify, clearToast } = useShell();
   const narrow = useNarrow();
   // BUG_005: hydrate with the defaults, take the stored preferences after — never a mismatch that would drop data-theme
   const prefs = useSyncExternalStore(subscribeShellPrefs, getShellPrefs, getServerShellPrefs);
@@ -104,6 +105,32 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
     [confirmDelete, pathname, router, loadRecents],
   );
 
+  /** STORY_029: the row's Rename / Pin / Copy conversation ID — a PATCH, the list refetched, a toast. */
+  const patchRecent = useCallback(
+    async (entry: RecentEntry, body: Record<string, unknown>, message: string) => {
+      const res = await fetch(`/api/history/${encodeURIComponent(entry.id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).catch(() => undefined);
+      loadRecents();
+      notify(res?.ok ? message : "That did not save — the app's server did not answer");
+    },
+    [loadRecents, notify],
+  );
+  const renameRecent = useCallback((entry: RecentEntry, title: string) => { void patchRecent(entry, { title }, "Task renamed"); }, [patchRecent]);
+  const pinRecent = useCallback((entry: RecentEntry, pinned: boolean) => { void patchRecent(entry, { pinned }, pinned ? "Task pinned" : "Task unpinned"); }, [patchRecent]);
+  const copyRecentId = useCallback(
+    (entry: RecentEntry) => {
+      const clipboard = typeof navigator === "undefined" ? undefined : navigator.clipboard;
+      if (!clipboard) {
+        notify("Clipboard unavailable — the ID is " + entry.id);
+        return;
+      }
+      clipboard.writeText(entry.id).then(
+        () => { notify("Conversation ID copied"); },
+        () => { notify("Clipboard unavailable — the ID is " + entry.id); },
+      );
+    },
+    [notify],
+  );
+
   const bar = topBarFor(pathname, recents);
   const asideOpen = narrow && drawerOpen;
   const rail = !narrow && prefs.collapsed;
@@ -145,6 +172,9 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
           onDeleteRecent={(entry) => {
             void deleteRecent(entry);
           }}
+          onRenameRecent={renameRecent}
+          onPinRecent={pinRecent}
+          onCopyRecentId={copyRecentId}
         />
       </aside>
       <div className={styles.main}>
@@ -154,7 +184,7 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
             }}>
             <IconExpand />
           </button>
-          {bar.kind === "task" ? <span className={styles.topbarTitle}>{bar.title}</span> : null}
+          {bar.kind === "task" ? <span className={styles.topbarTitle} data-testid="topbar-title">{bar.title}</span> : null}
           {/* narrow-assets-all@390: the bar carries the page title centred, with the page's own buttons at the right (STORY_024) */}
           {bar.kind === "assets" && narrow ? <span className={styles.topbarCentre}>Assets</span> : null}
           {/* the pages behind the sidebar put their whole chrome in the bar at every width (STORY_025) */}
@@ -178,6 +208,7 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
           }}
         />
       ) : null}
+      <Toast message={toast} onClose={clearToast} />
       <SettingsDialog open={settingsOpen} choice={themeChoice} onChoose={setThemeChoice} onClose={closeSettings} />
       <SearchDialog open={searchOpen} recents={recents} onClose={closeSearch} />
       <CreateProjectDialog open={createOpen} onClose={closeCreate} />

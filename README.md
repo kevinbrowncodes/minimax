@@ -132,6 +132,7 @@ What the UI does today, each matched to the reference capture the story cites ([
 | Feature | Story |
 | --- | --- |
 | The shell: sidebar, Recents with an unread dot (each row named by the minute the task was created, `26-09-14-1200`, the prompt as its tooltip — CHORE_008), top bar, the reference's measured tokens | STORY_012 |
+| A Recents row's ⋯ menu works: **Rename** (an inline input holding the title; the top bar, the tooltip and Search follow, the label stays the stamp), **Pin / Unpin** (also the row's hover pin) into a **Pinned** section above Projects, newest pin first, remembered as a fold; **Copy conversation ID** (the job id, with a toast); Delete since STORY_021 | STORY_029 |
 | The composer: video mode, reference-image upload (0–2), the model menu and the parameters popover (ratio, resolution, duration) listing exactly what the Spark's adapter reports | STORY_013, STORY_026 |
 | The task page: the prompt bubble, the working indicator, **Stop generation**, Retry, and history that survives a reload | STORY_014 |
 | The task page as the reference draws it: the finished result as a file card (**Open preview**, More ▾ → Open preview / Download / Extend) with a preview pane at the right (opens by itself when the job finishes on the page), the **Work Area** panel (Progress, Deliverables) the top-bar button hides and shows, the Processed N s row that unfolds the steps, Copy and the time, the jump button | STORY_023, STORY_026 |

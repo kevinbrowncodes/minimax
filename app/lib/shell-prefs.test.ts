@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_SHELL_PREFS, SHELL_PREFS_KEY, parseShellPrefs, readShellPrefs, reduceShellPrefs, writeShellPrefs } from "./shell-prefs";
 
 describe("shell preferences (STORY_021)", () => {
-  it("defaults to the reference's 2026-09-14 state: Projects folded, Recents open, expanded, cards shown (no More since STORY_028)", () => {
-    expect(DEFAULT_SHELL_PREFS).toEqual({ folded: { projects: true, recents: false }, collapsed: false, guideDismissed: false, promoDismissed: false });
+  it("defaults to the reference's 2026-09-14 state: Projects folded, Recents open, Pinned open (STORY_029), expanded, cards shown (no More since STORY_028)", () => {
+    expect(DEFAULT_SHELL_PREFS).toEqual({ folded: { pinned: false, projects: true, recents: false }, collapsed: false, guideDismissed: false, promoDismissed: false });
   });
 
   it("toggles a section, sets the rail, and dismisses each card once", () => {
@@ -24,7 +24,8 @@ describe("shell preferences (STORY_021)", () => {
     expect(parseShellPrefs(null)).toEqual(DEFAULT_SHELL_PREFS);
     expect(parseShellPrefs("not json")).toEqual(DEFAULT_SHELL_PREFS);
     expect(parseShellPrefs('"a string"')).toEqual(DEFAULT_SHELL_PREFS);
-    expect(parseShellPrefs('{"collapsed":true,"folded":{"projects":false}}')).toEqual({ ...DEFAULT_SHELL_PREFS, collapsed: true, folded: { projects: false, recents: false } });
+    expect(parseShellPrefs('{"collapsed":true,"folded":{"projects":false}}')).toEqual({ ...DEFAULT_SHELL_PREFS, collapsed: true, folded: { pinned: false, projects: false, recents: false } });
+    expect(parseShellPrefs('{"folded":{"pinned":true}}').folded.pinned).toBe(true); // STORY_029
     expect(parseShellPrefs('{"folded":{"more":false}}')).toEqual(DEFAULT_SHELL_PREFS); // STORY_028: an old stored More fold is ignored
     expect(parseShellPrefs('{"collapsed":"yes","folded":{"recents":1}}')).toEqual(DEFAULT_SHELL_PREFS);
   });

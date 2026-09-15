@@ -16,11 +16,15 @@ export interface ShellState {
   /** What the page puts in the top bar at 390 (STORY_024: the Assets page's Search and Filter buttons); undefined when it has nothing. */
   readonly pageActions: ReactNode;
   readonly setPageActions: (actions: ReactNode) => void;
+  /** STORY_029: the toast at the top of the page ("Task pinned"); the Shell renders it, any page or the sidebar shows one. */
+  readonly toast: string | undefined;
+  readonly notify: (message: string) => void;
+  readonly clearToast: () => void;
 }
 
 const noop = (): void => undefined;
 
-export const ShellContext = createContext<ShellState>({ workAreaOpen: true, toggleWorkArea: noop, previewOpen: false, openPreview: noop, closePreview: noop, pageActions: undefined, setPageActions: noop });
+export const ShellContext = createContext<ShellState>({ workAreaOpen: true, toggleWorkArea: noop, previewOpen: false, openPreview: noop, closePreview: noop, pageActions: undefined, setPageActions: noop, toast: undefined, notify: noop, clearToast: noop });
 
 export function useShell(): ShellState {
   return useContext(ShellContext);
@@ -51,6 +55,13 @@ export function ShellStateProvider({ scope, children }: ShellStateProviderProps)
   const [workAreaOpen, setWorkAreaOpen] = useState(true);
   const [previewFor, setPreviewFor] = useState<string | undefined>(undefined);
   const [pageActions, setPageActions] = useState<ReactNode>(undefined);
+  const [toast, setToast] = useState<string | undefined>(undefined);
+  const notify = useCallback((message: string) => {
+    setToast(message);
+  }, []);
+  const clearToast = useCallback(() => {
+    setToast(undefined);
+  }, []);
   const previewOpen = previewFor === scope;
   const toggleWorkArea = useCallback(() => {
     if (previewFor === scope) {
@@ -66,6 +77,6 @@ export function ShellStateProvider({ scope, children }: ShellStateProviderProps)
   const closePreview = useCallback(() => {
     setPreviewFor(undefined);
   }, []);
-  const value = useMemo<ShellState>(() => ({ workAreaOpen, toggleWorkArea, previewOpen, openPreview, closePreview, pageActions, setPageActions }), [workAreaOpen, toggleWorkArea, previewOpen, openPreview, closePreview, pageActions]);
+  const value = useMemo<ShellState>(() => ({ workAreaOpen, toggleWorkArea, previewOpen, openPreview, closePreview, pageActions, setPageActions, toast, notify, clearToast }), [workAreaOpen, toggleWorkArea, previewOpen, openPreview, closePreview, pageActions, toast, notify, clearToast]);
   return <ShellContext.Provider value={value}>{children}</ShellContext.Provider>;
 }

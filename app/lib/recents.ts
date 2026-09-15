@@ -66,3 +66,8 @@ export function recentName(entry: { readonly title: string; readonly createdAt?:
   const stamp = stampFor(entry.createdAt);
   return stamp === undefined ? entry.title : `${stamp}, ${entry.title}`;
 }
+
+/** STORY_029: the rows of the Pinned section — the pinned entries, newest pin first (the reference's `pinned-items-order`). */
+export function pinnedRecents<T extends { readonly id: string; readonly pinned?: boolean; readonly pinnedAt?: string }>(entries: readonly T[]): readonly T[] {
+  return entries.filter((e) => e.pinned === true).sort((a, b) => Date.parse(b.pinnedAt ?? "") - Date.parse(a.pinnedAt ?? ""));
+}

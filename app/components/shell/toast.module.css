@@ -1,0 +1,36 @@
+/* The toast (STORY_029; behaviour-recents-pin-01-pinned@1440): top-centre, 13 px, a × at the right */
+.toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_12);
+  max-width: min(560px, calc(100vw - 32px));
+  padding: var(--spacing_8) var(--spacing_8) var(--spacing_8) var(--spacing_16);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_12);
+  background: var(--bg_default_tertiary);
+  box-shadow: 0 4px 24px var(--shadow_default);
+  color: var(--text_default_primary);
+  font-size: 13px;
+  line-height: var(--line_height_20);
+}
+.close {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius_6);
+  background: transparent;
+  color: var(--icon_default_tertiary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.close:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}

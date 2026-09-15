@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RECENTS_VISIBLE, groupByAge, hasMoreRecents, searchRecents, visibleRecents, recentLabel, recentName, stampFor } from "./recents";
+import { RECENTS_VISIBLE, groupByAge, hasMoreRecents, pinnedRecents, searchRecents, visibleRecents, recentLabel, recentName, stampFor } from "./recents";
 
 const entry = (id: string, title: string, finishedAt?: string) => ({ id, title, finishedAt });
 
@@ -32,6 +32,20 @@ describe("recents (STORY_021)", () => {
     expect(groups.map((g) => `${g.label}: ${g.entries.map((e) => e.id).join(",")}`)).toEqual(["Previous 7 days: new,edge,running", "Older: old"]);
     expect(groupByAge([entry("x", "X", "2026-01-01T00:00:00Z")], now).map((g) => g.label)).toEqual(["Older"]);
     expect(groupByAge([], now)).toEqual([]);
+  });
+});
+
+describe("pinnedRecents (STORY_029)", () => {
+  it("keeps the pinned rows only, newest pin first, and leaves the input alone", () => {
+    const entries = [
+      { ...entry("a", "A"), pinned: true, pinnedAt: "2026-09-15T10:00:00Z" },
+      { ...entry("b", "B"), pinned: false, pinnedAt: "2026-09-15T12:00:00Z" },
+      { ...entry("c", "C"), pinned: true, pinnedAt: "2026-09-15T11:00:00Z" },
+      entry("d", "D"),
+    ];
+    expect(pinnedRecents(entries).map((e) => e.id)).toEqual(["c", "a"]);
+    expect(entries.map((e) => e.id)).toEqual(["a", "b", "c", "d"]);
+    expect(pinnedRecents([])).toEqual([]);
   });
 });
 

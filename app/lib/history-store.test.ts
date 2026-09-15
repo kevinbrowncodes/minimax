@@ -43,6 +43,9 @@ describe("HistoryStore", () => {
     const later = s.recordStatus("a", { id: "a", status: "running", progress: 1 });
     expect(later?.status).toBe("done");
     expect(s.patch("a", { openedAt: "2026-09-12T20:00:00Z" })?.openedAt).toBe("2026-09-12T20:00:00Z");
+    expect(s.patch("a", { pinned: true, pinnedAt: "2026-09-15T10:00:00Z" })).toMatchObject({ pinned: true, pinnedAt: "2026-09-15T10:00:00Z" }); // STORY_029
+    expect(s.patch("a", { pinned: false, pinnedAt: undefined })?.pinned).toBe(false);
+    expect(s.get("a")?.pinnedAt).toBeUndefined();
     expect(s.patch("zzz", { progress: 1 })).toBeUndefined();
     expect(s.recordStatus("zzz", { id: "zzz", status: "done", progress: 100 })).toBeUndefined();
     expect(s.remove("b")).toBe(true);

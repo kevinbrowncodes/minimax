@@ -31,10 +31,13 @@ export interface HistoryEntry {
   readonly progress: number;
   readonly finishedAt?: string;
   readonly openedAt?: string;
+  /** STORY_029: pinned rows sit in the sidebar's Pinned section, newest pin first. */
+  readonly pinned?: boolean;
+  readonly pinnedAt?: string;
   readonly error?: JobError;
   readonly result?: JobResult;
 }
-export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "overlap">>;
+export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "overlap" | "pinned" | "pinnedAt">>;
 
 const TERMINAL: ReadonlySet<JobStatus> = new Set(["done", "failed", "cancelled"]);
 const TITLE_MAX = 48;

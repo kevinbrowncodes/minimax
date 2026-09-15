@@ -4,8 +4,8 @@
  * defaults are the reference's on 2026-09-14: Projects folded, Recents open, the sidebar expanded, the cards shown.
  */
 
-/** STORY_028 removed the More section; a stored `folded.more` is ignored. */
-export type Section = "projects" | "recents";
+/** STORY_028 removed the More section; a stored `folded.more` is ignored. STORY_029 added the Pinned section (open by default). */
+export type Section = "pinned" | "projects" | "recents";
 
 export interface ShellPrefs {
   readonly folded: Readonly<Record<Section, boolean>>;
@@ -17,7 +17,7 @@ export interface ShellPrefs {
 export const SHELL_PREFS_KEY = "minimax-local.shell";
 
 export const DEFAULT_SHELL_PREFS: ShellPrefs = {
-  folded: { projects: true, recents: false },
+  folded: { pinned: false, projects: true, recents: false },
   collapsed: false,
   guideDismissed: false,
   promoDismissed: false,
@@ -53,6 +53,7 @@ export function parseShellPrefs(raw: string | null | undefined): ShellPrefs {
     const bool = (x: unknown, fallback: boolean) => (typeof x === "boolean" ? x : fallback);
     return {
       folded: {
+        pinned: bool(folded["pinned"], DEFAULT_SHELL_PREFS.folded.pinned),
         projects: bool(folded["projects"], DEFAULT_SHELL_PREFS.folded.projects),
         recents: bool(folded["recents"], DEFAULT_SHELL_PREFS.folded.recents),
       },

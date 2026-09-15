@@ -5,10 +5,9 @@ import { Sidebar } from "./Sidebar";
 
 afterEach(cleanup);
 
-const recents = [
-  { id: "j1", title: "Paper boat on rain puddle", finishedAt: "2026-09-12T18:00:00Z" },
-  { id: "j2", title: "Paper boat in rain puddle", finishedAt: "2026-09-12T18:00:00Z", openedAt: "2026-09-12T19:00:00Z" },
-];
+const first = { id: "j1", title: "Paper boat on rain puddle", finishedAt: "2026-09-12T18:00:00Z" };
+const second = { id: "j2", title: "Paper boat in rain puddle", finishedAt: "2026-09-12T18:00:00Z", openedAt: "2026-09-12T19:00:00Z" };
+const recents = [first, second];
 
 describe("Sidebar", () => {
   it("renders the captured rows in order with More and Projects folded by default (2026-09-14); the rows lead to our pages (STORY_025)", () => {
@@ -33,7 +32,7 @@ describe("Sidebar", () => {
 
   it("unfolded sections show their rows; the header reports the toggle (STORY_021)", () => {
     const onToggleSection = vi.fn();
-    const prefs = { ...DEFAULT_SHELL_PREFS, folded: { projects: false, recents: true } };
+    const prefs = { ...DEFAULT_SHELL_PREFS, folded: { pinned: false, projects: false, recents: true } };
     render(<Sidebar pathname="/" recents={recents} prefs={prefs} onToggleSection={onToggleSection} onOpenCreateProject={() => undefined} />);
     for (const name of ["MaxHermes", "MaxClaw"]) expect(screen.queryByRole("link", { name })).not.toBeInTheDocument(); // STORY_028
     expect(screen.getByRole("button", { name: "Add new project" })).toBeInTheDocument();
@@ -52,7 +51,7 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link", { name: /Paper boat on rain puddle/ })).toHaveAttribute("aria-current", "page");
   });
 
-  it("a Recents row's ⋯ opens the reference's menu; Delete calls the handler, the rest show the notice (STORY_021)", () => {
+  it("a Recents row's ⋯ opens the reference's menu; Delete calls the handler, the unwired entries show the notice (STORY_021)", () => {
     const onDeleteRecent = vi.fn();
     render(<Sidebar pathname="/" recents={recents} onDeleteRecent={onDeleteRecent} />);
     act(() => {
@@ -62,7 +61,7 @@ describe("Sidebar", () => {
     const items = within(menu).getAllByRole("menuitem").map((el) => el.getAttribute("aria-label") ?? el.textContent.trim());
     expect(items).toEqual(["Rename", "Pin", "Copy conversation ID", "Move to project", "Archive", "Delete"]);
     act(() => {
-      within(menu).getByRole("menuitem", { name: "Rename" }).click();
+      within(menu).getByRole("menuitem", { name: "Move to project" }).click();
     });
     expect(within(menu).getByRole("status")).toHaveTextContent("Not part of MiniMax Local");
     act(() => {
@@ -70,6 +69,85 @@ describe("Sidebar", () => {
     });
     expect(onDeleteRecent).toHaveBeenCalledWith(recents[0]);
     expect(screen.queryByRole("menu", { name: /Actions for/ })).not.toBeInTheDocument();
+  });
+
+  it("Rename turns the row into an input holding the title; Enter commits a changed title, Escape cancels, blank is refused (STORY_029)", () => {
+    const onRenameRecent = vi.fn();
+    render(<Sidebar pathname="/" recents={recents} onRenameRecent={onRenameRecent} />);
+    const openRename = (): void => {
+      act(() => {
+        screen.getByRole("button", { name: "More actions for Paper boat on rain puddle" }).click();
+      });
+      act(() => {
+        screen.getByRole("menuitem", { name: "Rename" }).click();
+      });
+    };
+    openRename();
+    const input = screen.getByRole("textbox", { name: "Rename Paper boat on rain puddle" });
+    expect(input).toHaveValue("Paper boat on rain puddle");
+    expect(screen.queryByRole("link", { name: /Paper boat on rain puddle/ })).not.toBeInTheDocument();
+    fireEvent.change(input, { target: { value: "   " } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(screen.getByRole("textbox", { name: "Rename Paper boat on rain puddle" })).toBeInTheDocument(); // an empty title is refused
+    expect(onRenameRecent).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: "Boat, renamed" } });
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(onRenameRecent).not.toHaveBeenCalled(); // Escape keeps the old title
+    openRename();
+    const again = screen.getByRole("textbox", { name: "Rename Paper boat on rain puddle" });
+    fireEvent.change(again, { target: { value: "  Boat, renamed  " } });
+    fireEvent.keyDown(again, { key: "Enter" });
+    expect(onRenameRecent).toHaveBeenCalledWith(recents[0], "Boat, renamed");
+    expect(screen.getByRole("link", { name: /Paper boat on rain puddle/ })).toBeInTheDocument(); // the row is a link again; the list refetch brings the new title
+    openRename();
+    fireEvent.blur(screen.getByRole("textbox", { name: "Rename Paper boat on rain puddle" })); // blur with the same title commits nothing
+    expect(onRenameRecent).toHaveBeenCalledTimes(1);
+  });
+
+  it("Pin is the hover icon and the menu entry; a pinned row sits in the Pinned section above Projects, filled, and reads Unpin (STORY_029)", () => {
+    const onPinRecent = vi.fn();
+    const onCopyRecentId = vi.fn();
+    const { rerender } = render(<Sidebar pathname="/" recents={recents} onPinRecent={onPinRecent} onCopyRecentId={onCopyRecentId} />);
+    expect(screen.queryByTestId("pinned-section")).not.toBeInTheDocument();
+    act(() => {
+      screen.getByRole("button", { name: "Pin Paper boat on rain puddle" }).click();
+    });
+    expect(onPinRecent).toHaveBeenCalledWith(recents[0], true);
+    act(() => {
+      screen.getByRole("button", { name: "More actions for Paper boat in rain puddle" }).click();
+    });
+    act(() => {
+      screen.getByRole("menuitem", { name: "Pin" }).click();
+    });
+    expect(onPinRecent).toHaveBeenCalledWith(recents[1], true);
+    act(() => {
+      screen.getByRole("button", { name: "More actions for Paper boat in rain puddle" }).click();
+    });
+    act(() => {
+      screen.getByRole("menuitem", { name: "Copy conversation ID" }).click();
+    });
+    expect(onCopyRecentId).toHaveBeenCalledWith(recents[1]);
+    const pinnedFirst = { ...first, pinned: true, pinnedAt: "2026-09-15T10:00:00Z" };
+    const pinned = [pinnedFirst, second];
+    rerender(<Sidebar pathname="/" recents={pinned} onPinRecent={onPinRecent} onCopyRecentId={onCopyRecentId} />);
+    const section = screen.getByTestId("pinned-section");
+    expect(within(section).getByRole("button", { name: "Pinned" })).toHaveAttribute("aria-expanded", "true");
+    expect(within(section).getByRole("link", { name: /Paper boat on rain puddle/ })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /Paper boat on rain puddle/ })).toHaveLength(2); // the Recents copy stays (behaviour-recents-pin-01-pinned)
+    const sections = [...document.querySelectorAll('[class*="section"] > button')].map((el) => el.textContent.trim());
+    expect(sections.indexOf("Pinned")).toBeLessThan(sections.indexOf("Projects"));
+    const pinButton = within(section).getByRole("button", { name: "Unpin Paper boat on rain puddle" });
+    expect(pinButton).toHaveAttribute("aria-pressed", "true");
+    act(() => {
+      within(section).getByRole("button", { name: "More actions for Paper boat on rain puddle" }).click();
+    });
+    act(() => {
+      within(section).getByRole("menuitem", { name: "Unpin" }).click();
+    });
+    expect(onPinRecent).toHaveBeenLastCalledWith(pinnedFirst, false);
+    rerender(<Sidebar pathname="/" recents={pinned} prefs={{ ...DEFAULT_SHELL_PREFS, folded: { pinned: true, projects: true, recents: false } }} onPinRecent={onPinRecent} />);
+    expect(within(screen.getByTestId("pinned-section")).queryByRole("link")).not.toBeInTheDocument(); // folded Pinned hides its rows
   });
 
   it("the menu closes on Escape", () => {
