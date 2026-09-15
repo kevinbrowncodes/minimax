@@ -4,6 +4,7 @@ import type { ExtendSource } from "@/lib/composer-state";
 import type { Capabilities } from "@/lib/job-api";
 import { ProjectsContext } from "@/components/shell/ProjectsContext";
 import { SettingsContext } from "@/components/shell/SettingsContext";
+import { ShellContext } from "@/components/shell/ShellContext";
 import { Composer } from "./Composer";
 
 const push = vi.fn();
@@ -18,6 +19,7 @@ function fetchWith(onJobs: (init: RequestInit | undefined) => Response): typeof 
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     if (url.startsWith("/api/capabilities")) return Promise.resolve(json(caps));
     if (url.startsWith("/api/jobs")) return Promise.resolve(onJobs(init));
+    if (url.includes("/reference/")) return Promise.resolve(new Response(new Blob(["png-bytes"], { type: "image/png" }), { status: 200, headers: { "content-type": "image/png" } }));
     if (url === "/api/skills") return Promise.resolve(json({ skills: [{ id: "short-to-script", name: "Short-to-script", description: "Expands an idea", template: "integrated_multimodal_description: [Shot 1] {{idea}}", builtIn: true }, { id: "loop", name: "Loop", description: "Seamless loops", template: "Loop: {{idea}}" }] }));
     return Promise.resolve(json({ error: { code: "not_found", message: url } }, 404));
   };
@@ -325,6 +327,85 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
       </SettingsContext.Provider>,
     );
     expect(screen.queryByRole("button", { name: /^Video parameters:/ })).not.toBeInTheDocument();
+  });
+
+  it("Edit of a queued request (STORY_041): starts in video mode with the request's words, project, time and images once capabilities arrive; Send posts replaces and returns to Scheduled; Cancel editing leads there too", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const fetchImpl = fetchWith((init) => {
+      bodies.push(JSON.parse(typeof init?.body === "string" ? init.body : "{}") as Record<string, unknown>);
+      return json({ id: "q1", status: "queued", progress: 0, position: 2 }, 202);
+    });
+    const notify = vi.fn();
+    const request = { queueId: "q1", prompt: "Same boat, wider", ratio: "9:16", resolution: "768P", durationSeconds: 8, model: "minimax-h3", notBefore: "2026-09-16T06:00:00.000Z", images: [{ n: 1, name: "ref.png", type: "image/png", url: "/api/history/q1/reference/1" }] };
+    render(
+      <ShellContext.Provider value={{ workAreaOpen: false, toggleWorkArea: () => undefined, previewOpen: false, openPreview: () => undefined, closePreview: () => undefined, pageActions: undefined, setPageActions: () => undefined, toast: undefined, notify, clearToast: () => undefined }}>
+        <Composer fetchImpl={fetchImpl} initialRequest={request} />
+      </ShellContext.Provider>,
+    );
+    expect(screen.getByTestId("editing-banner")).toHaveTextContent("Editing a queued job — Send replaces it, Cancel editing keeps it.");
+    expect(screen.getByRole("link", { name: "Cancel editing" })).toHaveAttribute("href", "/scheduled");
+    expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("Same boat, wider");
+    expect(screen.getByText("video-creator")).toBeInTheDocument(); // video mode from the start
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Video parameters: 9:16 768P 8s" })).toBeInTheDocument(); // the request's parameters once capabilities arrived
+    });
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Remove Reference image 1" })).toBeInTheDocument(); // the image came back from its URL
+    });
+    expect(screen.getByRole("button", { name: /^Run at: Not before/ })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "Same boat, much wider" } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith("/scheduled");
+    });
+    expect(notify).toHaveBeenCalledWith("Queued — 2nd in line");
+    // multipart (an image is attached): the fields are in the FormData, not JSON
+    const call = vi.mocked(fetchImpl).mock.calls.find((c) => typeof c[0] === "string" && c[0].startsWith("/api/jobs"));
+    const body = call?.[1]?.body;
+    expect(body).toBeInstanceOf(FormData);
+    expect((body as FormData).get("replaces")).toBe("q1");
+    expect((body as FormData).get("notBefore")).toBe("2026-09-16T06:00:00.000Z");
+    expect((body as FormData).get("prompt")).toBe("Same boat, much wider");
+  });
+
+  it("Run at… beside Send holds the request until a time; the × clears it; a queued Send toasts its place in line (STORY_041)", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const fetchImpl = fetchWith((init) => {
+      bodies.push(JSON.parse(typeof init?.body === "string" ? init.body : "{}") as Record<string, unknown>);
+      return json({ id: "q2", status: "queued", progress: 0, position: 1 }, 202);
+    });
+    const notify = vi.fn();
+    render(
+      <ShellContext.Provider value={{ workAreaOpen: false, toggleWorkArea: () => undefined, previewOpen: false, openPreview: () => undefined, closePreview: () => undefined, pageActions: undefined, setPageActions: () => undefined, toast: undefined, notify, clearToast: () => undefined }}>
+        <Composer fetchImpl={fetchImpl} />
+      </ShellContext.Provider>,
+    );
+    expect(screen.queryByRole("button", { name: "Run at" })).not.toBeInTheDocument(); // text mode: no queue controls
+    fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Run at" }));
+    fireEvent.change(screen.getByLabelText("Run at time"), { target: { value: "2026-09-16T02:00" } });
+    expect(screen.getByRole("button", { name: /^Run at: Not before/ })).toHaveTextContent("Not before");
+    fireEvent.click(screen.getByRole("button", { name: "Clear the run-at time" }));
+    expect(screen.getByRole("button", { name: "Run at" })).toHaveTextContent("Run at…");
+    fireEvent.click(screen.getByRole("button", { name: "Run at" }));
+    fireEvent.change(screen.getByLabelText("Run at time"), { target: { value: "2026-09-16T02:00" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "Overnight boat" } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith("/task/q2");
+    });
+    expect(notify).toHaveBeenCalledWith("Queued — 1st in line");
+    expect(bodies[0]).toMatchObject({ prompt: "Overnight boat", notBefore: new Date("2026-09-16T02:00").toISOString() });
+    expect(bodies[0]).not.toHaveProperty("replaces");
   });
 
   it("the + menu lists the reference's entries with submenus; Add files or photos opens the reference chooser in video mode", async () => {

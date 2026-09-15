@@ -42,6 +42,7 @@ Create = the composer as it is: Send queues (a toast "Queued — 3rd in line" wh
 - [ ] Cancel of a running job (the task page's Stop, the queue's Stop) frees the slot and the next waiting request goes; Remove of a waiting one never touches the adapter.
 - [ ] The Inbox (STORY_033) gets the same events as today when a queued job finishes; the queue survives an app restart (the file) and a job that the adapter no longer knows is marked failed with the reason.
 - [ ] Both widths (the page at 390 with the bar's Search as Assets has it), both themes; the STORY_026 e2e sweep is updated: `/scheduled` is back, Scheduled is no longer in the removed list; every other e2e stays green.
+  *Corrected 2026-09-15, before the page was built (CLAUDE.md §3.8):* `narrow-page-scheduled@390` shows the search field on the page at 390 (full width, the status filter beside it) and only the heading and Create moved into the bar — not the Assets page's bar Search. The page follows the capture: heading in the bar at 390, Create in the bar at both widths, the search field on the page at both.
 
 ## Departures from the reference
 

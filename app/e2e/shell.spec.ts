@@ -55,7 +55,7 @@ test.describe("shell (STORY_012)", () => {
     }
   });
 
-  test("the Agents guide's View now opens the Management page at /plugins; /plugins/manage redirects there; /scheduled, /max-hermes and /max-claw are gone (STORY_025, STORY_026, STORY_028)", async ({ page }, testInfo) => {
+  test("the Agents guide's View now opens the Management page at /plugins; /plugins/manage redirects there; /max-hermes and /max-claw are gone and /scheduled is back (STORY_025, STORY_026, STORY_028, STORY_041)", async ({ page }, testInfo) => {
     await page.goto("/");
     await settled(page);
     if (testInfo.project.name === "narrow") {
@@ -69,7 +69,8 @@ test.describe("shell (STORY_012)", () => {
     await expect(page.getByRole("tab", { name: "Personal" })).toBeHidden(); // the marketplace is gone
     await page.goto("/plugins/manage");
     await expect(page).toHaveURL(/\/plugins$/);
-    for (const path of ["/scheduled", "/max-hermes", "/max-claw", "/connect-mobile"]) expect((await page.request.get(path)).status(), path).toBe(404); // /connect-mobile: CHORE_010
+    for (const path of ["/max-hermes", "/max-claw", "/connect-mobile"]) expect((await page.request.get(path)).status(), path).toBe(404); // /connect-mobile: CHORE_010; /scheduled is back (STORY_041)
+    expect((await page.request.get("/scheduled")).status()).toBe(200);
     await page.goto("/");
     await settled(page);
     if (testInfo.project.name === "narrow") {

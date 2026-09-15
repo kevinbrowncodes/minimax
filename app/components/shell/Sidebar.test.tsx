@@ -13,7 +13,8 @@ describe("Sidebar", () => {
   it("renders the captured rows in order with More and Projects folded by default (2026-09-14); the rows lead to our pages (STORY_025)", () => {
     const { container } = render(<Sidebar pathname="/" recents={[]} />);
     const texts = [...container.querySelectorAll('[class*="rowLabel"]')].map((el) => el.textContent);
-    expect(texts).toEqual(["New task", "Search", "Plugins", "Assets"]); // STORY_026: no Scheduled; CHORE_010: no Connect mobile
+    expect(texts).toEqual(["New task", "Search", "Plugins", "Scheduled", "Assets"]); // STORY_041: Scheduled is back (the queue); CHORE_010: no Connect mobile
+    expect(screen.getByRole("link", { name: "Scheduled" })).toHaveAttribute("href", "/scheduled");
     expect(screen.getByRole("link", { name: "New task" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("href", "/assets");
     expect(screen.getByRole("link", { name: "Plugins" })).toHaveAttribute("href", "/plugins");
@@ -382,8 +383,8 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link", { name: "Plugins" })).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("button", { name: "Download desktop" })).not.toBeInTheDocument(); // STORY_026
     cleanup();
-    render(<Sidebar pathname="/assets" recents={[]} rail />);
-    expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("aria-current", "page");
+    render(<Sidebar pathname="/scheduled" recents={[]} rail />);
+    expect(screen.getByRole("link", { name: "Scheduled" })).toHaveAttribute("aria-current", "page"); // STORY_041: the rail pill too
   });
 });
 

@@ -48,6 +48,23 @@ export interface ComposerState {
   readonly submitting: boolean;
   /** STORY_031: the project the task starts in (+ › Add to project, or the row's New task); undefined = No project. */
   readonly projectId: string | undefined;
+  /** STORY_041: Send holds the request in the queue until this time (ISO); undefined = the next free slot. */
+  readonly notBefore?: string;
+  /** STORY_041: Edit of a waiting request — Send replaces this queue entry instead of creating a job. */
+  readonly queueId?: string;
+}
+
+/** STORY_041: a waiting request as the composer reopens it (Edit), from `GET /api/queue/:id`. */
+export interface InitialRequest {
+  readonly queueId: string;
+  readonly prompt: string;
+  readonly ratio: string;
+  readonly resolution: string;
+  readonly durationSeconds: number;
+  readonly model: string;
+  readonly projectId?: string;
+  readonly notBefore?: string;
+  readonly images: readonly { readonly n: number; readonly name: string; readonly type: string; readonly url: string }[];
 }
 export type ComposerAction =
   | { readonly type: "capabilities"; readonly capabilities: Capabilities }
@@ -70,7 +87,8 @@ export type ComposerAction =
   | { readonly type: "clear-error" }
   | { readonly type: "submit-start" }
   | { readonly type: "submit-end" }
-  | { readonly type: "project"; readonly projectId: string | undefined };
+  | { readonly type: "project"; readonly projectId: string | undefined }
+  | { readonly type: "not-before"; readonly notBefore: string | undefined };
 
 /**
  * The reference's defaults (composer-video-mode@1440: 16:9, 5 s). The models, ratios and resolutions on offer are
@@ -80,8 +98,8 @@ export const DEFAULT_RATIO = "16:9";
 export const DEFAULT_DURATION = 5;
 const DEFAULT_EXTENSION: ExtensionCapabilities = { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30 };
 
-export function initialComposer(projectId?: string, text = ""): ComposerState {
-  return { mode: "text", text, images: [], capabilities: undefined, capabilitiesError: undefined, model: "", ratio: DEFAULT_RATIO, resolution: "", durationSeconds: DEFAULT_DURATION, extend: undefined, overlapFrames: DEFAULT_EXTENSION.overlapFrames.default, error: undefined, submitting: false, projectId };
+export function initialComposer(projectId?: string, text = "", more: Pick<ComposerState, "notBefore" | "queueId"> = {}): ComposerState {
+  return { mode: "text", text, images: [], capabilities: undefined, capabilitiesError: undefined, model: "", ratio: DEFAULT_RATIO, resolution: "", durationSeconds: DEFAULT_DURATION, extend: undefined, overlapFrames: DEFAULT_EXTENSION.overlapFrames.default, error: undefined, submitting: false, projectId, ...more };
 }
 
 /** The server's extension limits, or the contract's defaults while capabilities are unknown or lack them. */
@@ -192,6 +210,8 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
       return { ...state, submitting: false };
     case "project":
       return state.projectId === action.projectId ? state : { ...state, projectId: action.projectId };
+    case "not-before":
+      return state.notBefore === action.notBefore ? state : { ...state, notBefore: action.notBefore };
   }
 }
 

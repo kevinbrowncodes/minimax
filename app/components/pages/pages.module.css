@@ -722,3 +722,208 @@
     min-height: 44px;
   }
 }
+
+/* STORY_041 — Scheduled (page-scheduled@1440 / narrow-page-scheduled@390): the heading is on the page at 1440 and in the
+   bar at 390; the search field is full width at both; the rows are ours — 48 px, a position or a dot, the stamp and
+   title as a link, the status, the row's buttons at the right */
+.wideOnly {
+  display: block;
+}
+.narrowOnly {
+  display: none;
+}
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text_default_primary);
+}
+.searchInput::placeholder {
+  color: var(--text_default_tertiary);
+}
+.selectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: var(--icon_default_secondary);
+}
+.selectWrap svg {
+  position: absolute;
+  right: var(--spacing_8);
+  pointer-events: none;
+}
+.select {
+  appearance: none;
+  padding-right: var(--spacing_32);
+}
+.emptyCreate {
+  margin-top: var(--spacing_16);
+}
+.scheduleSection {
+  margin-top: var(--spacing_24);
+}
+.scheduleHeading {
+  margin: 0 0 var(--spacing_8);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: var(--line_height_20);
+  color: var(--text_default_tertiary);
+}
+.scheduleList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.scheduleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing_12);
+  min-height: 48px;
+  padding: var(--spacing_8) var(--spacing_8);
+  border-bottom: 1px solid var(--border_default);
+}
+.schedulePosition {
+  flex: none;
+  width: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text_default_tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.scheduleDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: 0 6px;
+  border-radius: var(--radius_full);
+  border: 1px solid var(--border_default);
+}
+.scheduleDotOn {
+  background: var(--text_status_error);
+  border-color: transparent;
+}
+.scheduleDotDone {
+  background: var(--icon_default_primary);
+  border-color: transparent;
+}
+.scheduleDotFailed {
+  background: var(--text_label_danger_secondary_default);
+  border-color: transparent;
+}
+.scheduleText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing_8);
+  color: var(--text_default_primary);
+  text-decoration: none;
+}
+.scheduleStamp {
+  flex: none;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text_default_secondary);
+}
+.scheduleTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.scheduleStatus {
+  flex: none;
+  font-size: 13px;
+  color: var(--text_default_secondary);
+  white-space: nowrap;
+}
+.scheduleActions {
+  flex: none;
+  display: inline-flex;
+  gap: var(--spacing_4);
+}
+/* the plain small button (CHORE_010 took the Connect mobile one with it): a 24 px text button */
+.smallButtonPlain {
+  flex: none;
+  height: 24px;
+  padding: 0 var(--spacing_8);
+  border: 1px solid var(--border_default);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text_default_primary);
+  font-size: 12px;
+  line-height: var(--line_height_20);
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+.smallButtonPlain:hover:not(:disabled) {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.smallButtonDangerPlain {
+  color: var(--text_label_danger_secondary_default);
+}
+.smallButtonPlain:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.runAt {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing_12);
+  padding: var(--spacing_4) 0 var(--spacing_4) 32px;
+}
+.runAtField {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  font-size: 13px;
+  color: var(--text_default_secondary);
+}
+.runAtField input {
+  height: 32px;
+  padding: 0 var(--spacing_8);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_8);
+  background: var(--bg_default_primary_elevated);
+  color: var(--text_default_primary);
+  font: inherit;
+  font-size: 13px;
+}
+.runAtNote {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--text_default_tertiary);
+}
+@media (max-width: 899px) {
+  .wideOnly {
+    display: none;
+  }
+  .narrowOnly {
+    display: block;
+  }
+  .scheduledPage {
+    padding: var(--spacing_16) var(--spacing_16) var(--spacing_48);
+  }
+  .scheduledToolbar {
+    margin-top: var(--spacing_8);
+  }
+  .scheduleActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .scheduleActions button,
+  .runAtField input {
+    min-height: 44px;
+  }
+  .runAt {
+    padding-left: 0;
+  }
+}

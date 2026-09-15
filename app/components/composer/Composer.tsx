@@ -1,7 +1,10 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
-import { canSend, durationOptions, initialComposer, modelLabel, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ExtendSource } from "@/lib/composer-state";
+import Link from "next/link";
+import { canSend, durationOptions, initialComposer, modelLabel, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ExtendSource, type InitialRequest } from "@/lib/composer-state";
+import { formatNotBefore, toLocalInput } from "@/lib/queue-view";
+import { ordinal } from "@/lib/todo-steps";
 import { cx } from "@/lib/cx";
 import { overlapSeconds } from "@/lib/extend";
 import type { Capabilities } from "@/lib/job-api";
@@ -11,6 +14,7 @@ import { AgentModelMenu, AttachMenu } from "./ComposerMenus";
 import { EnvDialog } from "./EnvDialog";
 import { useProjects } from "@/components/shell/ProjectsContext";
 import { useSettings } from "@/components/shell/SettingsContext";
+import { useShell } from "@/components/shell/ShellContext";
 import { applySkill, type Skill } from "@/lib/skills";
 import { IconProject } from "@/components/shell/icons";
 import { Showcase } from "./Showcase";
@@ -46,17 +50,27 @@ export interface ComposerProps {
   readonly initialProjectId?: string;
   /** STORY_040: start with this text (Management › Skills › Use, `/?skill=`). */
   readonly initialText?: string;
+  /** STORY_041: Edit of a waiting request (`/?queue=`) — the request as sent; Send replaces its queue entry. */
+  readonly initialRequest?: InitialRequest;
 }
 
 /** The home composer (STORY_013): text mode, video mode with references, model, parameters, Send; extend mode (STORY_016). */
-export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExtending, initialProjectId, initialText }: ComposerProps) {
+export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExtending, initialProjectId, initialText, initialRequest }: ComposerProps) {
   const router = useRouter();
   const docked = variant === "docked";
   const textarea = useRef<HTMLTextAreaElement>(null);
   const { projects, openCreate } = useProjects();
+  const { notify } = useShell();
   // STORY_040: the video-creator plugin's switch — off is a text-only workstation: no mode chip, no video controls
   const videoEnabled = useSettings().settings.videoEnabled;
-  const [state, dispatch] = useReducer(reduceComposer, { docked, initialProjectId, initialText }, (init) => (init.docked ? reduceComposer(initialComposer(init.initialProjectId, init.initialText), { type: "enter-video-mode" }) : initialComposer(init.initialProjectId, init.initialText)));
+  const [state, dispatch] = useReducer(reduceComposer, { docked, initialProjectId, initialText, initialRequest }, (init) => {
+    // STORY_041: an Edit starts in video mode with the request's words, project and run-at; its parameters and images follow once capabilities arrive
+    const request = init.initialRequest;
+    const base = initialComposer(init.initialProjectId ?? request?.projectId, init.initialText ?? request?.prompt ?? "", request ? { queueId: request.queueId, ...(request.notBefore === undefined ? {} : { notBefore: request.notBefore }) } : {});
+    return init.docked || request ? reduceComposer(base, { type: "enter-video-mode" }) : base;
+  });
+  const [runAtOpen, setRunAtOpen] = useState(false); // STORY_041: the Run at… control beside Send
+  const requestApplied = useRef(false);
   const [skills, setSkills] = useState<readonly Skill[]>([]);
   // STORY_031: the chip names the chosen project; a project that no longer exists shows nothing (the route would refuse it)
   const project = state.projectId === undefined ? undefined : projects.find((p) => p.id === state.projectId);
@@ -125,10 +139,10 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   useEffect(() => {
     if (!popover) return;
     const onKey = (event: globalThis.KeyboardEvent): void => {
-      if (event.key === "Escape") setPopover(undefined);
+      if (event.key === "Escape") { setPopover(undefined); setRunAtOpen(false); }
     };
     const onClick = (event: MouseEvent): void => {
-      if (!(event.target instanceof Element) || !event.target.closest("[data-popover]")) setPopover(undefined);
+      if (!(event.target instanceof Element) || !event.target.closest("[data-popover]")) { setPopover(undefined); setRunAtOpen(false); }
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("mousedown", onClick);
@@ -153,6 +167,28 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
     addFiles(Array.from(event.target.files ?? []));
     event.target.value = "";
   };
+
+  // STORY_041: once the Spark's capabilities are known, an Edit takes the request's parameters (clamped as a scene is) and its images
+  useEffect(() => {
+    if (!initialRequest || requestApplied.current || state.capabilities === undefined) return;
+    requestApplied.current = true;
+    dispatch({ type: "scene", prompt: initialRequest.prompt, ratio: initialRequest.ratio, resolution: initialRequest.resolution, durationSeconds: initialRequest.durationSeconds });
+    dispatch({ type: "model", model: initialRequest.model });
+    let cancelled = false;
+    void Promise.all(initialRequest.images.map(async (image) => {
+      const res = await doFetch(image.url).catch(() => undefined);
+      if (!res?.ok) return undefined;
+      return new File([await res.blob()], image.name, { type: image.type });
+    })).then((files) => {
+      if (cancelled) return;
+      const present = files.filter((f): f is File => f !== undefined);
+      if (present.length > 0) addFiles(present);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, when capabilities arrive
+  }, [state.capabilities]);
   const onDrop = (event: DragEvent<HTMLDivElement>): void => {
     event.preventDefault();
     setDragging(false);
@@ -174,7 +210,9 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
     dispatch({ type: "submit-start" });
     const result = await submitJob(state, doFetch);
     if (result.ok) {
-      router.push(`/task/${encodeURIComponent(result.id)}`);
+      // STORY_041: a request that went into the line says where it stands; an Edit returns to the queue
+      if (result.position !== undefined) notify(`Queued — ${ordinal(result.position)} in line`);
+      router.push(state.queueId === undefined ? `/task/${encodeURIComponent(result.id)}` : "/scheduled");
       return;
     }
     dispatch({ type: "error", error: { message: result.message, ...(result.field === undefined ? {} : { field: result.field }) } });
@@ -194,6 +232,12 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   return (
     <>
       <EnvDialog open={envOpen} onClose={() => { setEnvOpen(false); }} fetchImpl={fetchImpl} />
+      {state.queueId !== undefined ? (
+        // STORY_041: Edit of a waiting request
+        <div className={styles.editing} role="status" data-testid="editing-banner">
+          Editing a queued job — Send replaces it, Cancel editing keeps it. <Link href="/scheduled" className={styles.editingCancel}>Cancel editing</Link>
+        </div>
+      ) : null}
     <div className={styles.wrap}>
       <div
         className={cx(styles.card, docked && styles.cardDocked, dragging && styles.cardDrop)}
@@ -359,6 +403,30 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
               <button type="button" className={styles.inertModel} aria-label="MiniMax-M3" aria-haspopup="menu" aria-expanded={popover === "agent"} onClick={() => { setPopover(popover === "agent" ? undefined : "agent"); }}>MiniMax-M3 <span aria-hidden="true">⌄</span></button>
               {popover === "agent" ? <AgentModelMenu onClose={() => { setPopover(undefined); }} /> : null}
             </span>
+            {video && !docked && !extending ? (
+              // STORY_041: Run at… — hold the request in the queue until a time; set, it reads "Not before …" with a ×
+              <span className={styles.runAtWrap} data-popover="run-at">
+                <button type="button" className={cx(styles.runAtButton, state.notBefore !== undefined && styles.runAtButtonOn)} aria-label={state.notBefore === undefined ? "Run at" : `Run at: ${formatNotBefore(state.notBefore)}`} aria-expanded={runAtOpen} onClick={() => { setRunAtOpen((o) => !o); }}>
+                  {state.notBefore === undefined ? "Run at…" : formatNotBefore(state.notBefore)}
+                </button>
+                {state.notBefore !== undefined ? <button type="button" className={styles.runAtClear} aria-label="Clear the run-at time" onClick={() => { dispatch({ type: "not-before", notBefore: undefined }); setRunAtOpen(false); }}>×</button> : null}
+                {runAtOpen ? (
+                  <span className={styles.runAtPopover} data-testid="run-at-picker">
+                    <input
+                      type="datetime-local"
+                      aria-label="Run at time"
+                      defaultValue={toLocalInput(state.notBefore)}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        if (value === "" || Number.isNaN(Date.parse(value))) return;
+                        dispatch({ type: "not-before", notBefore: new Date(value).toISOString() });
+                      }}
+                    />
+                    <span className={styles.runAtNote}>Waits in the queue until then — the queue runs inside MiniMax Local while it is open.</span>
+                  </span>
+                ) : null}
+              </span>
+            ) : null}
             {stop ? (
               <button type="button" className={styles.send} aria-label="Stop generation" disabled={stop.pending} onClick={stop.onStop}>
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" /></svg>

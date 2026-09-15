@@ -46,10 +46,30 @@ describe("buildJobRequest in extend mode (STORY_017)", () => {
   });
 });
 
+describe("buildJobRequest with a run-at time or an Edit (STORY_041)", () => {
+  it("posts notBefore and replaces when set, in JSON and in the multipart fields, and nothing otherwise", () => {
+    const jsonOf = (state: ComposerState): unknown => {
+      const body = buildJobRequest(state).init.body;
+      return JSON.parse(typeof body === "string" ? body : "{}");
+    };
+    const timed = reduceComposer(typed(), { type: "not-before", notBefore: "2026-09-16T06:00:00.000Z" });
+    expect(jsonOf(timed)).toMatchObject({ notBefore: "2026-09-16T06:00:00.000Z" });
+    expect(jsonOf(typed())).not.toHaveProperty("notBefore");
+    const editing: ComposerState = { ...typed(), queueId: "q1" };
+    expect(jsonOf(editing)).toMatchObject({ replaces: "q1" });
+    const form = buildJobRequest(reduceComposer({ ...timed, queueId: "q1" }, { type: "add-images", images: [img] })).init.body;
+    expect(form).toBeInstanceOf(FormData);
+    expect((form as FormData).get("notBefore")).toBe("2026-09-16T06:00:00.000Z");
+    expect((form as FormData).get("replaces")).toBe("q1");
+  });
+});
+
 describe("submitJob", () => {
   it("returns the id on 202, the server's message and field on 400, a busy message on 503, and unreachable on a network error", async () => {
     const ok = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "j1", status: "queued", progress: 0 }), { status: 202 }));
     expect(await submitJob(typed(), ok)).toEqual({ ok: true, id: "j1" });
+    const queued = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "q1", status: "queued", progress: 0, position: 3 }), { status: 202 }));
+    expect(await submitJob(typed(), queued)).toEqual({ ok: true, id: "q1", position: 3 }); // STORY_041: the line's position comes back
     const bad = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { code: "unsupported_option", message: "no 2K", field: "resolution" } }), { status: 400 }));
     expect(await submitJob(typed(), bad)).toEqual({ ok: false, status: 400, message: "no 2K", field: "resolution" });
     const busy = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { code: "busy", message: "ComfyUI is not running on the Spark — start it with spark/comfyui/run.sh" } }), { status: 503 }));

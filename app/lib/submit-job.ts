@@ -2,7 +2,7 @@
 import type { ApiError, CreateJobResponse } from "./job-api";
 import type { ComposerState } from "./composer-state";
 
-export type SubmitResult = { readonly ok: true; readonly id: string } | { readonly ok: false; readonly status: number; readonly message: string; readonly field?: string };
+export type SubmitResult = { readonly ok: true; readonly id: string; readonly position?: number } | { readonly ok: false; readonly status: number; readonly message: string; readonly field?: string };
 
 export function buildJobRequest(state: ComposerState): { readonly url: string; readonly init: RequestInit } {
   const fields = {
@@ -13,6 +13,9 @@ export function buildJobRequest(state: ComposerState): { readonly url: string; r
     model: state.model,
     // STORY_031: the project the task starts in; the route keeps it and never forwards it.
     ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
+    // STORY_041: a run-at time holds the request in the app's queue; an Edit replaces its entry. Never forwarded.
+    ...(state.notBefore === undefined ? {} : { notBefore: state.notBefore }),
+    ...(state.queueId === undefined ? {} : { replaces: state.queueId }),
     // STORY_016: an extension names its source and the context; it never carries images.
     ...(state.extend ? { continueFrom: state.extend.id, overlapFrames: state.overlapFrames } : {}),
   };
@@ -38,7 +41,7 @@ export async function submitJob(state: ComposerState, fetchImpl: typeof fetch = 
   }
   if (response.status === 202) {
     const body = (await response.json()) as CreateJobResponse;
-    return { ok: true, id: body.id };
+    return { ok: true, id: body.id, ...(body.position === undefined ? {} : { position: body.position }) };
   }
   let message = `The generation server answered ${String(response.status)}`;
   let field: string | undefined;

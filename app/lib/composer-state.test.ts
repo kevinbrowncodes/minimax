@@ -75,6 +75,20 @@ describe("the project choice (STORY_031)", () => {
   });
 });
 
+describe("the run-at time and an Edit's queue id (STORY_041)", () => {
+  it("start from initialComposer's extras, change with the action, and survive mode changes", () => {
+    const s = initialComposer("p1", "A boat", { queueId: "q1", notBefore: "2026-09-16T06:00:00.000Z" });
+    expect(s).toMatchObject({ projectId: "p1", text: "A boat", queueId: "q1", notBefore: "2026-09-16T06:00:00.000Z" });
+    expect(initialComposer().queueId).toBeUndefined();
+    let t = reduceComposer(initialComposer(), { type: "not-before", notBefore: "2026-09-16T06:00:00.000Z" });
+    expect(t.notBefore).toBe("2026-09-16T06:00:00.000Z");
+    expect(reduceComposer(t, { type: "not-before", notBefore: "2026-09-16T06:00:00.000Z" })).toBe(t);
+    t = reduceComposer(reduceComposer(t, { type: "enter-video-mode" }), { type: "leave-video-mode" });
+    expect(t.notBefore).toBe("2026-09-16T06:00:00.000Z");
+    expect(reduceComposer(t, { type: "not-before", notBefore: undefined }).notBefore).toBeUndefined();
+  });
+});
+
 describe("reduceComposer edge branches", () => {
   it("keeps state identity for no-op actions and falls back when capabilities omit the current ratio", () => {
     const s = ready();

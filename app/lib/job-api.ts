@@ -57,6 +57,8 @@ export interface CreateJobResponse {
   readonly id: string;
   readonly status: "queued";
   readonly progress: number;
+  /** STORY_041: the request went into the app's queue — 1 = next. */
+  readonly position?: number;
 }
 export interface Capabilities {
   readonly models: readonly { readonly id: string; readonly label: string }[];

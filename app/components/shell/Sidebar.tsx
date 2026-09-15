@@ -17,6 +17,7 @@ import {
   IconBell,
   IconChevronDown,
   IconClose,
+  IconClock,
   IconCollapse,
   IconCopy,
   IconFolder,
@@ -349,6 +350,7 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
         {pill("/", "new-task", <IconPlusCircle />, "New task")}
         <Inert label="Search" className={styles.railPill} align="start"><IconSearch /></Inert>
         {pill("/plugins", "plugins", <IconPlugins />, "Plugins")}
+        {pill("/scheduled", "scheduled", <IconClock />, "Scheduled")}
         {pill("/assets", "assets", <IconFolder />, "Assets")}
         <div className={styles.spacer} />
         <div className={styles.railFooter}><span className={styles.railAvatar} aria-label="Owner"><IconAvatar /></span></div>
@@ -406,6 +408,7 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
       {onOpenSearch ? <ActionRow icon={<IconSearch />} label="Search" onClick={onOpenSearch} /> : <InertRow icon={<IconSearch />} label="Search" />}
       {/* STORY_025: the rows lead to our renderings of the reference's pages; STORY_026 removed Scheduled and the marketplace (Plugins is Management) */}
       {link("/plugins", "plugins", <IconPlugins />, "Plugins")}
+      {link("/scheduled", "scheduled", <IconClock />, "Scheduled")}
       {link("/assets", "assets", <IconFolder />, "Assets")}
 
       {/* STORY_029 (behaviour-recents-pin-01-pinned@1440): the Pinned section sits above Projects while anything is pinned */}

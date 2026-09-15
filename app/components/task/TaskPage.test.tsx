@@ -49,6 +49,26 @@ afterEach(() => {
   push.mockReset();
 });
 
+describe("TaskPage — a request waiting in the queue (STORY_041)", () => {
+  it("reads its place in line while the status answers queued with a position, then follows the job as usual", async () => {
+    const waitingStep: { status: string; progress: number; position: number } = { status: "queued", progress: 0, position: 2 };
+    const script = fetchScript([waitingStep, { status: "running", progress: 10 }, { status: "done", progress: 100, result: { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 2, width: 320, height: 180, sizeBytes: 40157 } }]);
+    render(shell(<TaskPage entry={entry()} fetchImpl={script.fetchImpl} />));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(screen.getByTestId("indicator")).toHaveTextContent("Waiting — 2nd in line");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.getByTestId("indicator")).toHaveTextContent("Generating… 10 %");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+    expect(screen.getByTestId("indicator")).toHaveTextContent(/Done/);
+  });
+});
+
 describe("TaskPage", () => {
   it("polls a queued job under StrictMode, re-renders each response and stops at the terminal one", async () => {
     const script = fetchScript([{ status: "running", progress: 33 }, { status: "running", progress: 66 }, { status: "done", progress: 100, result: { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 2, width: 320, height: 180, sizeBytes: 40157 } }]);
