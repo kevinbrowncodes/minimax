@@ -1,3 +1,5 @@
+import type { JobError, JobResult, JobStatus } from "./job-api";
+
 /** What the top bar shows for a path (STORY_012): the reference shows nothing on Assets, a title on a task, icons on home. */
 export interface RecentEntry {
   readonly id: string;
@@ -14,6 +16,11 @@ export interface RecentEntry {
   readonly archivedAt?: string;
   /** STORY_031: the project the task belongs to. */
   readonly projectId?: string;
+  /** STORY_033: the job's outcome, from which the Inbox draws its events (the list is the history store's entries). */
+  readonly status?: JobStatus;
+  readonly progress?: number;
+  readonly error?: JobError;
+  readonly result?: JobResult;
 }
 export type TopBar = { readonly kind: "home" } | { readonly kind: "assets" } | { readonly kind: "task"; readonly title: string } | { readonly kind: "page"; readonly page: ReferencePage } | { readonly kind: "other" };
 

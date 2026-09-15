@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import type { Project } from "@/lib/project-store";
+import { eventsFor, unreadCount, type InboxEvent } from "@/lib/inbox";
 import { activeRecents, hasMoreRecents, pinnedRecents, recentLabel, recentName, tasksOf, visibleRecents } from "@/lib/recents";
 import { activeRow, isUnread, type RecentEntry } from "@/lib/route-title";
 import { DEFAULT_SHELL_PREFS, type Section, type ShellPrefs } from "@/lib/shell-prefs";
@@ -54,6 +55,11 @@ export interface SidebarProps {
   readonly onDeleteProject?: (project: Project) => void;
   readonly onNewTask?: (project: Project) => void;
   readonly onMoveRecent?: (entry: RecentEntry, projectId: string | undefined) => void;
+  /** STORY_033: the Inbox — the browser's Read all stamp, Read all, a row's task, and a refetch when the bell opens. */
+  readonly inboxReadAt?: string;
+  readonly onInboxReadAll?: () => void;
+  readonly onOpenInboxEvent?: (event: InboxEvent) => void;
+  readonly onInboxOpen?: () => void;
   readonly onDeleteRecent?: (entry: RecentEntry) => void;
   /** STORY_029: the row's Rename (a new title), Pin / Unpin and Copy conversation ID. */
   readonly onRenameRecent?: (entry: RecentEntry, title: string) => void;
@@ -325,7 +331,7 @@ function ProjectRow({ project, tasks, active, expanded, onToggle, onNavigate, on
   );
 }
 
-export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail = false, onNavigate, onCollapse, onExpand, onToggleSection, onDismissGuide, onOpenSettings, onOpenSearch, onOpenCreateProject, onDeleteRecent, onRenameRecent, onPinRecent, onCopyRecentId, onArchiveRecent, projects = [], onRenameProject, onPinProject, onDeleteProject, onNewTask, onMoveRecent }: SidebarProps) {
+export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail = false, onNavigate, onCollapse, onExpand, onToggleSection, onDismissGuide, onOpenSettings, onOpenSearch, onOpenCreateProject, onDeleteRecent, onRenameRecent, onPinRecent, onCopyRecentId, onArchiveRecent, projects = [], onRenameProject, onPinProject, onDeleteProject, onNewTask, onMoveRecent, inboxReadAt, onInboxReadAll, onOpenInboxEvent, onInboxOpen }: SidebarProps) {
   const active = activeRow(pathname);
   const [showAll, setShowAll] = useState(false);
   // STORY_031: which project rows are expanded to their tasks (a click on the row toggles; not remembered)
@@ -358,6 +364,9 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
       <span className={styles.rowLabel}>{label}</span>
     </Link>
   );
+  // STORY_033: the Inbox's events come from every entry, archived ones included — the job happened either way
+  const inboxEvents = eventsFor(recents);
+  const unread = unreadCount(inboxEvents, inboxReadAt);
   const listed = activeRecents(recents); // STORY_030: archived rows live under Settings › Archived tasks
   const shown = visibleRecents(listed, showAll);
   const row = (entry: RecentEntry) => <RecentRow key={entry.id} entry={entry} active={active === `task:${entry.id}`} projects={projects} onNavigate={onNavigate} onDelete={onDeleteRecent} onRename={onRenameRecent} onPin={onPinRecent} onCopyId={onCopyRecentId} onArchive={onArchiveRecent} onMove={onMoveRecent} onCreateProject={onOpenCreateProject} />;
@@ -452,10 +461,18 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
         <UserMenu onOpenSettings={onOpenSettings ?? (() => undefined)} />
         <span className={styles.footerActions}>
           <span className={styles.inboxWrap}>
-            <button type="button" className={styles.iconButton} aria-label="Inbox, no unread messages" title="Inbox" aria-haspopup="dialog" aria-expanded={inboxOpen} onClick={() => { setInboxOpen((o) => !o); }}>
+            <button type="button" className={styles.iconButton} aria-label={unread === 0 ? "Inbox, no unread messages" : `Inbox, ${String(unread)} unread`} title="Inbox" aria-haspopup="dialog" aria-expanded={inboxOpen} onClick={() => { if (!inboxOpen) onInboxOpen?.(); setInboxOpen((o) => !o); }}>
               <IconBell />
+              {unread > 0 ? <span className={styles.badge} aria-hidden="true" data-testid="inbox-badge">{unread > 99 ? "99+" : String(unread)}</span> : null}
             </button>
-            <InboxPopover open={inboxOpen} onClose={() => { setInboxOpen(false); }} />
+            <InboxPopover
+              open={inboxOpen}
+              onClose={() => { setInboxOpen(false); }}
+              events={inboxEvents}
+              readAt={inboxReadAt}
+              onReadAll={onInboxReadAll}
+              onOpen={(event) => { setInboxOpen(false); onOpenInboxEvent?.(event); }}
+            />
           </span>
         </span>
       </div>

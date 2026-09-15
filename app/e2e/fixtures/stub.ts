@@ -5,6 +5,7 @@ export const STUB_URL = "http://127.0.0.1:4010";
 export type StubScript =
   | "done-after-3-polls"
   | "done-after-1-poll"
+  | "done-with-cut"
   | "slow-done-after-10-polls"
   | "fails-after-2-polls"
   | "moderated"

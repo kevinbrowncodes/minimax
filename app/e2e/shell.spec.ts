@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures/test";
-import { listHistory } from "./fixtures/history";
+import { clearHistory, listHistory } from "./fixtures/history";
 import { waitForTerminalStatus } from "./fixtures/job";
 import { settled } from "./fixtures/settle";
 
@@ -373,7 +373,57 @@ test.describe("shell (STORY_021)", () => {
     expect(await stubApi.openJobs()).toEqual([]);
   });
 
-  test("the Inbox opens its popover and Escape closes it", async ({ page }, testInfo) => {
+  test("the Inbox carries the job events: a finished job with a shot change makes two, the bell counts them, Read all clears the count, a row opens the task (STORY_033)", async ({ page, request }, testInfo) => {
+    const narrow = testInfo.project.name === "narrow";
+    await clearHistory(request); // the count is asserted, so the list must be this test's own (CLAUDE.md §6b)
+    await page.goto("/?script=done-with-cut");
+    await page.getByRole("button", { name: /Video generation/ }).click();
+    await page.getByRole("textbox", { name: "Message" }).fill("Tell me when done");
+    const terminal = waitForTerminalStatus(page);
+    await page.getByRole("button", { name: "Send message" }).click();
+    await expect(page).toHaveURL(/\/task\/[^/]+$/);
+    const id = page.url().split("/task/")[1] ?? "";
+    await terminal;
+    await page.goto("/");
+    await settled(page);
+    if (narrow) {
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
+      await settled(page);
+    }
+    const bell = page.getByRole("button", { name: "Inbox, 2 unread" });
+    await expect(bell).toBeVisible();
+    await expect(page.getByTestId("inbox-badge")).toHaveText("2");
+    await bell.click();
+    const inbox = page.getByRole("dialog", { name: "Inbox" });
+    await expect(inbox).toBeVisible();
+    const rows = inbox.getByTestId("inbox-row");
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText("Your video is ready");
+    await expect(rows.nth(0)).toContainText("Tell me when done");
+    await expect(rows.nth(1)).toContainText("The shot changed at 00:11");
+    await expect(rows.nth(0)).toHaveAttribute("data-read", "false");
+    await inbox.getByRole("tab", { name: "Messages" }).click();
+    await expect(inbox).toHaveText(/No messages yet/);
+    await inbox.getByRole("tab", { name: "All" }).click();
+    await inbox.getByRole("button", { name: "Read all" }).click();
+    await expect(page.getByRole("button", { name: "Inbox, no unread messages" })).toBeVisible();
+    await expect(page.getByTestId("inbox-badge")).toHaveCount(0);
+    await expect(rows.nth(0)).toHaveAttribute("data-read", "true");
+    await rows.nth(1).click();
+    await expect(page).toHaveURL(new RegExp(`/task/${id}$`));
+    await expect(inbox).toBeHidden();
+    await page.reload();
+    await settled(page);
+    if (narrow) {
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
+      await settled(page);
+    }
+    await expect(page.getByRole("button", { name: "Inbox, no unread messages" })).toBeVisible(); // the Read all stamp survives a reload
+    await request.delete(`/api/history/${id}`);
+  });
+
+  test("the Inbox opens its popover and Escape closes it", async ({ page, request }, testInfo) => {
+    await clearHistory(request);
     await page.goto("/");
     await settled(page);
     if (testInfo.project.name === "narrow") {

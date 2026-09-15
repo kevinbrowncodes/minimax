@@ -19,6 +19,7 @@
   margin-bottom: var(--spacing_32);
 }
 .iconButton {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -246,6 +247,22 @@
 .menuDanger,
 .menuDanger .menuIcon {
   color: var(--text_label_danger_secondary_default);
+}
+/* STORY_033: the bell's unread count — a 16 px red pill at the top right */
+.badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius_full);
+  background: var(--text_status_error);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
 }
 /* STORY_031 (behaviour-project-move-01): Move to project › opens to the right of the entry; below it in the 390 drawer */
 .submenuWrap {

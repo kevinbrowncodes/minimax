@@ -20,6 +20,14 @@ describe("shell preferences (STORY_021)", () => {
     expect(DEFAULT_SHELL_PREFS.collapsed).toBe(false); // the reducer never mutates
   });
 
+  it("remembers the Inbox's Read all stamp (STORY_033) and drops one that is not a date", () => {
+    const read = reduceShellPrefs(DEFAULT_SHELL_PREFS, { type: "inbox-read", at: "2026-09-15T12:41:00.000Z" });
+    expect(read.inboxReadAt).toBe("2026-09-15T12:41:00.000Z");
+    expect(parseShellPrefs(JSON.stringify(read)).inboxReadAt).toBe("2026-09-15T12:41:00.000Z");
+    expect(parseShellPrefs('{"inboxReadAt":"not a date"}').inboxReadAt).toBeUndefined();
+    expect(parseShellPrefs('{"inboxReadAt":42}').inboxReadAt).toBeUndefined();
+  });
+
   it("merges a stored value over the defaults field by field and ignores garbage", () => {
     expect(parseShellPrefs(null)).toEqual(DEFAULT_SHELL_PREFS);
     expect(parseShellPrefs("not json")).toEqual(DEFAULT_SHELL_PREFS);

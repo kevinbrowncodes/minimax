@@ -45,8 +45,77 @@
   border-bottom-color: var(--text_default_primary);
 }
 .readAll {
+  padding: 0;
+  border: 0;
+  background: transparent;
   font-size: 13px;
+  color: var(--text_default_secondary);
+  cursor: pointer;
+}
+.readAllQuiet {
   color: var(--text_default_tertiary);
+  cursor: default;
+}
+/* STORY_033: the rows — 40 px, a dot while unread, 13 px event, 12 px task and time in tertiary */
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: var(--spacing_8);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  width: 100%;
+  min-height: 40px;
+  padding: var(--spacing_6) var(--spacing_8);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--text_default_primary);
+  text-align: left;
+  cursor: pointer;
+}
+.row:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius_full);
+  background: var(--text_status_error);
+}
+.dotRead {
+  background: transparent;
+  border: 1px solid var(--border_default);
+}
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rowTitle {
+  font-size: 13px;
+  line-height: var(--line_height_20);
+}
+.rowTask {
+  font-size: 12px;
+  color: var(--text_default_tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rowTime {
+  flex: none;
+  font-size: 12px;
+  color: var(--text_default_tertiary);
+  font-variant-numeric: tabular-nums;
 }
 .empty {
   flex: 1;
@@ -67,6 +136,9 @@
   }
   .tab,
   .tabActive {
+    min-height: 44px;
+  }
+  .row {
     min-height: 44px;
   }
 }

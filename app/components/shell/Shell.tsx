@@ -1,6 +1,7 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import type { InboxEvent } from "@/lib/inbox";
 import type { Project } from "@/lib/project-store";
 import { archivedRecents, tasksOf } from "@/lib/recents";
 import { topBarFor, type RecentEntry } from "@/lib/route-title";
@@ -260,6 +261,17 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
     [patchRecent, projects],
   );
   const projectsState = useMemo<ProjectsState>(() => ({ projects, openCreate: openCreateProject }), [projects, openCreateProject]);
+  /** STORY_033: the Inbox — Read all stamps the browser's prefs; a row opens its task. */
+  const inboxReadAll = useCallback(() => {
+    dispatchPrefs({ type: "inbox-read", at: new Date().toISOString() });
+  }, [dispatchPrefs]);
+  const openInboxEvent = useCallback(
+    (event: InboxEvent) => {
+      if (narrow) closeDrawer();
+      router.push(`/task/${encodeURIComponent(event.taskId)}`);
+    },
+    [narrow, closeDrawer, router],
+  );
 
   const bar = topBarFor(pathname, recents);
   const asideOpen = narrow && drawerOpen;
@@ -302,6 +314,10 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
           onDeleteProject={setDeleting}
           onNewTask={newTask}
           onMoveRecent={moveRecent}
+          inboxReadAt={prefs.inboxReadAt}
+          onInboxReadAll={inboxReadAll}
+          onOpenInboxEvent={openInboxEvent}
+          onInboxOpen={loadRecents}
           onDeleteRecent={(entry) => {
             void deleteRecent(entry);
           }}

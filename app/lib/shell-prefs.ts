@@ -12,6 +12,8 @@ export interface ShellPrefs {
   readonly collapsed: boolean;
   readonly guideDismissed: boolean;
   readonly promoDismissed: boolean;
+  /** STORY_033: when the Inbox's Read all was last pressed (ISO); events before it are read. Per browser. */
+  readonly inboxReadAt?: string;
 }
 
 export const SHELL_PREFS_KEY = "minimax-local.shell";
@@ -27,7 +29,8 @@ export type ShellPrefsAction =
   | { readonly type: "toggle-section"; readonly section: Section }
   | { readonly type: "set-collapsed"; readonly collapsed: boolean }
   | { readonly type: "dismiss-guide" }
-  | { readonly type: "dismiss-promo" };
+  | { readonly type: "dismiss-promo" }
+  | { readonly type: "inbox-read"; readonly at: string };
 
 export function reduceShellPrefs(prefs: ShellPrefs, action: ShellPrefsAction): ShellPrefs {
   switch (action.type) {
@@ -39,6 +42,8 @@ export function reduceShellPrefs(prefs: ShellPrefs, action: ShellPrefsAction): S
       return { ...prefs, guideDismissed: true };
     case "dismiss-promo":
       return { ...prefs, promoDismissed: true };
+    case "inbox-read":
+      return { ...prefs, inboxReadAt: action.at };
   }
 }
 
@@ -60,6 +65,7 @@ export function parseShellPrefs(raw: string | null | undefined): ShellPrefs {
       collapsed: bool(v["collapsed"], false),
       guideDismissed: bool(v["guideDismissed"], false),
       promoDismissed: bool(v["promoDismissed"], false),
+      ...(typeof v["inboxReadAt"] === "string" && !Number.isNaN(Date.parse(v["inboxReadAt"])) ? { inboxReadAt: v["inboxReadAt"] } : {}),
     };
   } catch {
     return DEFAULT_SHELL_PREFS;

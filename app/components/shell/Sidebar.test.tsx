@@ -233,6 +233,35 @@ describe("Sidebar", () => {
     expect(onMoveRecent).toHaveBeenLastCalledWith(second, "p9"); // the project just made receives the task
   });
 
+  it("the bell counts the unread job events, opens the popover with them, refetches on open, and a row opens its task (STORY_033)", () => {
+    const onInboxReadAll = vi.fn();
+    const onOpenInboxEvent = vi.fn();
+    const onInboxOpen = vi.fn();
+    const done = { ...first, status: "done" as const, progress: 100, result: { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 5, width: 1, height: 1, sizeBytes: 1, cuts: [{ frame: 270, seconds: 11.25 }] } };
+    const { rerender } = render(<Sidebar pathname="/" recents={[done, { ...second, status: "cancelled" as const, progress: 41 }]} onInboxReadAll={onInboxReadAll} onOpenInboxEvent={onOpenInboxEvent} onInboxOpen={onInboxOpen} />);
+    // three events, but the second row was opened after it finished, so its cancellation reads as seen (the sidebar dot's rule)
+    const bell = screen.getByRole("button", { name: "Inbox, 2 unread" });
+    expect(screen.getByTestId("inbox-badge")).toHaveTextContent("2");
+    act(() => {
+      bell.click();
+    });
+    expect(onInboxOpen).toHaveBeenCalledTimes(1);
+    const rows = screen.getAllByTestId("inbox-row");
+    expect(rows.map((row) => row.textContent)).toEqual(expect.arrayContaining([expect.stringContaining("Your video is ready"), expect.stringContaining("The shot changed at 00:11"), expect.stringContaining("Cancelled at 41 %")]));
+    act(() => {
+      screen.getByRole("button", { name: "Read all" }).click();
+    });
+    expect(onInboxReadAll).toHaveBeenCalledTimes(1);
+    act(() => {
+      (rows[0] as HTMLElement).click();
+    });
+    expect(onOpenInboxEvent).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("dialog", { name: "Inbox" })).not.toBeInTheDocument(); // a row closes the popover
+    rerender(<Sidebar pathname="/" recents={[done, second]} inboxReadAt="2026-09-15T23:00:00Z" />);
+    expect(screen.getByRole("button", { name: "Inbox, no unread messages" })).toBeInTheDocument();
+    expect(screen.queryByTestId("inbox-badge")).not.toBeInTheDocument();
+  });
+
   it("Pin is the hover icon and the menu entry; a pinned row sits in the Pinned section above Projects, filled, and reads Unpin (STORY_029)", () => {
     const onPinRecent = vi.fn();
     const onCopyRecentId = vi.fn();
