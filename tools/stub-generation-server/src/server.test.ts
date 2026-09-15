@@ -58,6 +58,22 @@ describe("contract: create and poll", () => {
   });
 });
 
+describe("STORY_041: the busy hook", () => {
+  it("refuses creates with 503 busy while set — by the hook or in process — and reset clears it", async () => {
+    expect((await api("/__stub/busy", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ busy: true }) })).status).toBe(200);
+    const refused = await json("/jobs", valid);
+    expect(refused.status).toBe(503);
+    expect(((await refused.json()) as { error: { code: string } }).error.code).toBe("busy");
+    expect((await api("/__stub/busy", { method: "POST", body: "nope" })).status).toBe(400);
+    stub.reset();
+    expect((await json("/jobs", valid)).status).toBe(202);
+    stub.setBusy(true);
+    expect((await json("/jobs", valid)).status).toBe(503);
+    stub.setBusy(false);
+    expect((await json("/jobs", valid)).status).toBe(202);
+  });
+});
+
 describe("contract: cancel", () => {
   it("cancel-midway stays running until DELETE, then is cancelled, and a second DELETE is 409", async () => {
     const id = await create("cancel-midway");

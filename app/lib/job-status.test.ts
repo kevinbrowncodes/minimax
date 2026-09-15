@@ -5,6 +5,14 @@ import { initialJob, reduceJob } from "./job-status";
 const res = (over: Partial<JobStatusResponse>): JobStatusResponse => ({ id: "j1", status: "running", progress: 0, ...over });
 const status = (over: Partial<JobStatusResponse>) => ({ type: "status" as const, response: res(over) });
 
+describe("the queue's position (STORY_041)", () => {
+  it("is carried by a queued status and dropped once the job runs", () => {
+    const waiting = reduceJob(initialJob("q1"), { type: "status", response: { id: "q1", status: "queued", progress: 0, position: 3 } });
+    expect(waiting.position).toBe(3);
+    expect(reduceJob(waiting, { type: "status", response: { id: "q1", status: "running", progress: 10 } }).position).toBeUndefined();
+  });
+});
+
 describe("reduceJob", () => {
   it("walks queued → running → done and pins progress to 100 on done", () => {
     let s = initialJob("j1");

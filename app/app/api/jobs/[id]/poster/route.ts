@@ -1,4 +1,5 @@
 import { forward, guarded, relayBytes, relayJson } from "@/lib/model-client";
+import { upstreamJobId } from "@/lib/queue-runner";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ type Context = { readonly params: Promise<{ readonly id: string }> };
 export function GET(_request: Request, context: Context): Promise<Response> {
   return guarded(async () => {
     const { id } = await context.params;
-    const response = await forward(`/jobs/${encodeURIComponent(id)}/poster`);
+    const response = await forward(`/jobs/${encodeURIComponent(upstreamJobId(id))}/poster`);
     return response.ok ? relayBytes(response) : relayJson(response);
   });
 }

@@ -1,6 +1,7 @@
 import { historyStore } from "@/lib/history-store";
 import { errorResponse, guarded } from "@/lib/model-client";
 import { projectStore } from "@/lib/project-store";
+import { removeQueued } from "@/lib/queue-store";
 import { removeUploads } from "@/lib/uploads";
 
 export const dynamic = "force-dynamic";
@@ -74,6 +75,7 @@ export function DELETE(_request: Request, context: Context): Promise<Response> {
   return guarded(async () => {
     const { id } = await context.params;
     removeUploads(id); // STORY_032: the reference images go with the entry
+    removeQueued(id); // STORY_041: and its place in the queue
     return historyStore().remove(id) ? new Response(null, { status: 204 }) : errorResponse({ status: 404, code: "not_found", message: `no history entry ${id}` });
   });
 }

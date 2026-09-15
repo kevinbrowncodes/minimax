@@ -28,10 +28,17 @@ export function stepsFor(job: Pick<JobSnapshot, "status" | "progress" | "error">
 }
 
 /** The working indicator's text (task-generating-*@1440 show the agent's; ours shows the job's). */
-export function indicatorFor(job: Pick<JobSnapshot, "status" | "progress" | "error">): string {
+/** "1st", "2nd", "3rd", "4th"… for the queue's position (STORY_041). */
+export function ordinal(n: number): string {
+  const rem100 = n % 100;
+  const suffix = rem100 >= 11 && rem100 <= 13 ? "th" : n % 10 === 1 ? "st" : n % 10 === 2 ? "nd" : n % 10 === 3 ? "rd" : "th";
+  return `${String(n)}${suffix}`;
+}
+
+export function indicatorFor(job: Pick<JobSnapshot, "status" | "progress" | "error" | "position">): string {
   switch (job.status) {
     case "queued":
-      return "Queued…";
+      return job.position === undefined ? "Queued…" : `Waiting — ${ordinal(job.position)} in line`; // STORY_041: still in the app's queue
     case "running":
       return `Generating… ${String(job.progress)} %`;
     case "done":

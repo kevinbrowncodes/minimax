@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { indicatorFor, stepsFor } from "./todo-steps";
+import { ordinal, indicatorFor, stepsFor } from "./todo-steps";
 
 describe("stepsFor", () => {
   it("ticks the first two, makes Generate active with the progress, and Deliver done only at the end", () => {
@@ -23,5 +23,19 @@ describe("indicatorFor", () => {
     expect(indicatorFor({ status: "failed", progress: 0, error: { code: "moderated", message: "" } })).toMatch(/content grounds/);
     expect(indicatorFor({ status: "failed", progress: 0, error: { code: "unreachable", message: "" } })).toMatch(/stopped answering/);
     expect(indicatorFor({ status: "failed", progress: 0, error: { code: "generation_failed", message: "" } })).toBe("Request failed");
+  });
+});
+
+describe("the waiting indicator (STORY_041)", () => {
+  it("names the place in line, with the right ordinal", () => {
+    expect(ordinal(1)).toBe("1st");
+    expect(ordinal(2)).toBe("2nd");
+    expect(ordinal(3)).toBe("3rd");
+    expect(ordinal(4)).toBe("4th");
+    expect(ordinal(11)).toBe("11th");
+    expect(ordinal(12)).toBe("12th");
+    expect(ordinal(21)).toBe("21st");
+    expect(indicatorFor({ status: "queued", progress: 0, position: 2 })).toBe("Waiting — 2nd in line");
+    expect(indicatorFor({ status: "queued", progress: 0 })).toBe("Queued…");
   });
 });

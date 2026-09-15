@@ -2,6 +2,7 @@ import { fileNameFor } from "@/lib/assets-filter";
 import { contentDisposition } from "@/lib/content-disposition";
 import { historyStore } from "@/lib/history-store";
 import { forward, guarded, relayBytes, relayJson } from "@/lib/model-client";
+import { upstreamJobId } from "@/lib/queue-runner";
 import { readSettings } from "@/lib/settings-store";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ export function GET(request: Request, context: Context): Promise<Response> {
     const range = request.headers.get("range");
     const download = new URL(request.url).searchParams.has("download");
     const watermark = download && !readSettings().removeWatermark;
-    const response = await forward(`/jobs/${encodeURIComponent(id)}/result${watermark ? "?watermark=1" : ""}`, { headers: range === null ? {} : { range } });
+    const response = await forward(`/jobs/${encodeURIComponent(upstreamJobId(id))}/result${watermark ? "?watermark=1" : ""}`, { headers: range === null ? {} : { range } }); // STORY_041: a queued job's id maps to the model server's
     if (!(response.ok || response.status === 206)) return relayJson(response);
     const relayed = relayBytes(response);
     const entry = historyStore().get(id);

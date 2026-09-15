@@ -45,6 +45,8 @@ export interface JobStatusResponse {
   readonly id: string;
   readonly status: JobStatus;
   readonly progress: number;
+  /** STORY_041 (ours, never from the model server): a request still in the app's queue — 1 = next. */
+  readonly position?: number;
   readonly createdAt?: string;
   readonly updatedAt?: string;
   readonly request?: JobRequest;

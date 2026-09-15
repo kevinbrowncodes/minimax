@@ -86,6 +86,8 @@ export interface StubServer {
   listen(port?: number, host?: string): Promise<number>;
   close(): Promise<void>;
   reset(): void;
+  /** STORY_041: while busy, POST /jobs answers 503 busy as the adapter does at its open-job limit. */
+  setBusy(busy: boolean): void;
 }
 
 class HttpError extends Error {
@@ -238,6 +240,7 @@ export function createStubServer(options: StubOptions = {}): StubServer {
   const fixturesDir = options.fixturesDir ?? DEFAULT_FIXTURES_DIR;
   const { video, poster } = loadFixture(fixturesDir, options.fixture ?? "mp4");
   const jobs = new Map<string, Job>();
+  let busy = false; // STORY_041: POST /__stub/busy { busy } — creates answer 503 busy while set; reset clears it
 
   const stateOf = (job: Job): JobState => (job.cancelledAt ? { status: "cancelled", progress: job.cancelledAt.progress } : stepFor(job.script, job.pollCount));
   const jobOr404 = (id: string): Job => {
@@ -367,8 +370,20 @@ export function createStubServer(options: StubOptions = {}): StubServer {
     if (method === "GET" && p === "/health") { sendJson(res, 200, { ok: true, server: "stub", version: VERSION }); return; }
     if (method === "GET" && p === "/capabilities") { sendJson(res, 200, CAPABILITIES); return; }
     if (method === "POST" && p === "/jobs") {
+      if (busy) throw new HttpError(503, "busy", "the stub is busy (scripted): the Spark already has its jobs open; try again later");
       const job = await createJob(req, url);
       sendJson(res, 202, { id: job.id, status: "queued", progress: 0 }); return;
+    }
+    if (method === "POST" && p === "/__stub/busy") {
+      const raw = (await readBody(req)).toString("utf8");
+      let parsed: unknown = {};
+      try {
+        parsed = raw === "" ? {} : JSON.parse(raw);
+      } catch {
+        throw new HttpError(400, "validation", "body is not valid JSON");
+      }
+      busy = isRecord(parsed) && parsed["busy"] === true;
+      sendJson(res, 200, { busy }); return;
     }
     if ((m = /^\/jobs\/([^/]+)$/.exec(p)) && m[1] !== undefined) {
       const job = jobOr404(m[1]);
@@ -400,6 +415,7 @@ export function createStubServer(options: StubOptions = {}): StubServer {
     }
     if (method === "POST" && p === "/__stub/reset") {
       jobs.clear();
+      busy = false;
       sendJson(res, 200, { ok: true }); return;
     }
     if (method === "GET" && p === "/__stub/jobs") {
@@ -445,6 +461,7 @@ export function createStubServer(options: StubOptions = {}): StubServer {
           else resolve();
         });
       }),
-    reset: () => { jobs.clear(); },
+    reset: () => { jobs.clear(); busy = false; },
+    setBusy: (value: boolean) => { busy = value; },
   };
 }

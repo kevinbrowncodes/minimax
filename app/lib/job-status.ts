@@ -8,6 +8,8 @@ import { isTerminal, type JobError, type JobResult, type JobStatus, type JobStat
 export interface JobSnapshot {
   readonly id: string;
   readonly status: JobStatus;
+  /** STORY_041: while the request waits in the app's queue. */
+  readonly position?: number;
   readonly progress: number;
   readonly error?: JobError;
   readonly result?: JobResult;
@@ -40,6 +42,7 @@ export function reduceJob(state: JobSnapshot, event: JobEvent): JobSnapshot {
     progress: response.status === "done" ? 100 : progress,
     ...(response.error ? { error: response.error } : {}),
     ...(response.result ? { result: response.result } : {}),
+    ...(response.position !== undefined ? { position: response.position } : {}),
     cancelRequested: terminal ? false : state.cancelRequested,
   };
 }

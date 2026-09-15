@@ -51,10 +51,12 @@ export interface HistoryEntry {
   readonly starred?: boolean;
   /** STORY_032: the reference images attached to the job, kept under `uploads/<id>/` beside the history file. */
   readonly referenceFiles?: readonly ReferenceFile[];
+  /** STORY_041: a request that waited in the app's queue keeps its id; once submitted, the model server's job id lives here. */
+  readonly jobId?: string;
   readonly error?: JobError;
   readonly result?: JobResult;
 }
-export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "overlap" | "pinned" | "pinnedAt" | "archived" | "archivedAt" | "projectId" | "starred" | "referenceFiles">>;
+export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "overlap" | "pinned" | "pinnedAt" | "archived" | "archivedAt" | "projectId" | "starred" | "referenceFiles" | "jobId" | "prompt" | "params" | "referenceImages">>;
 
 const TERMINAL: ReadonlySet<JobStatus> = new Set(["done", "failed", "cancelled"]);
 const TITLE_MAX = 48;
@@ -114,7 +116,7 @@ export class HistoryStore {
     const index = entries.findIndex((e) => e.id === id);
     const current = entries[index];
     if (index === -1 || !current) return undefined;
-    const next: HistoryEntry = { ...current, ...patch };
+    const next: HistoryEntry = { ...current, ...patch, ...(patch.prompt !== undefined && patch.title === undefined ? { title: titleFor(patch.prompt) } : {}) };
     entries[index] = next;
     this.#write(entries);
     return next;

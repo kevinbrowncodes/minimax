@@ -27,6 +27,11 @@ export interface Received {
 
 export function stub(request: APIRequestContext) {
   return {
+    /** STORY_041: make POST /jobs answer 503 busy (or stop). Reset clears it. */
+    busy: async (busy: boolean): Promise<void> => {
+      const res = await request.post(`${STUB_URL}/__stub/busy`, { data: { busy } });
+      if (!res.ok()) throw new Error(`stub busy failed: ${String(res.status())}`);
+    },
     /** Forget every job. Call in beforeEach. */
     reset: async (): Promise<void> => {
       const res = await request.post(`${STUB_URL}/__stub/reset`);
