@@ -55,7 +55,7 @@ test.describe("shell (STORY_012)", () => {
     }
   });
 
-  test("the Agents guide's View now opens the Management page at /plugins; /plugins/manage redirects there; /scheduled is gone; More › MaxHermes at desktop (STORY_025, STORY_026)", async ({ page }, testInfo) => {
+  test("the Agents guide's View now opens the Management page at /plugins; /plugins/manage redirects there; /scheduled, /max-hermes and /max-claw are gone (STORY_025, STORY_026, STORY_028)", async ({ page }, testInfo) => {
     await page.goto("/");
     await settled(page);
     if (testInfo.project.name === "narrow") {
@@ -69,17 +69,16 @@ test.describe("shell (STORY_012)", () => {
     await expect(page.getByRole("tab", { name: "Personal" })).toBeHidden(); // the marketplace is gone
     await page.goto("/plugins/manage");
     await expect(page).toHaveURL(/\/plugins$/);
-    const gone = await page.request.get("/scheduled");
-    expect(gone.status()).toBe(404);
-    if (testInfo.project.name === "narrow") return; // More cannot unfold in the drawer (its header closes it), as on the reference
+    for (const path of ["/scheduled", "/max-hermes", "/max-claw"]) expect((await page.request.get(path)).status(), path).toBe(404);
+    await page.goto("/");
+    await settled(page);
+    if (testInfo.project.name === "narrow") {
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
+      await settled(page);
+    }
     const sidebar = page.getByRole("navigation", { name: "Sidebar" });
-    await sidebar.getByRole("button", { name: "More", exact: true }).click();
-    await sidebar.getByRole("link", { name: "MaxHermes" }).click();
-    await expect(page).toHaveURL(/\/max-hermes$/);
-    await expect(page.getByRole("heading", { name: "An Agent That Grows With You." })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Start now" })).toHaveAttribute("aria-disabled", "true");
-    await page.goto("/max-claw");
-    await expect(page.getByRole("heading", { name: "Your 24/7 personal assistant." })).toBeVisible();
+    await expect(sidebar.getByRole("button", { name: "More", exact: true })).toHaveCount(0); // STORY_028: no More section
+    await expect(sidebar.getByRole("button", { name: "Projects", exact: true })).toBeVisible();
   });
 
   test("what STORY_026 removed is absent at both widths: the home bar's Changelog and Download, the footer's Download desktop, the user menu's entries but Settings, the credits and thumbs, the office chips", async ({ page }, testInfo) => {
@@ -148,45 +147,21 @@ test.describe("shell (STORY_021)", () => {
     expect(await sidebarWidth(page)).toBe(260);
   });
 
-  test("More starts folded, a click unfolds it, and the fold survives a reload", async ({ page }, testInfo) => {
-    const narrow = testInfo.project.name === "narrow";
-    const openDrawer = async () => {
-      if (narrow) {
-        await page.getByRole("button", { name: "Expand sidebar" }).click();
-        await settled(page);
-      }
-    };
-    await page.goto("/");
-    await settled(page);
-    await openDrawer();
-    const sidebar = page.getByRole("navigation", { name: "Sidebar" });
-    await expect(sidebar.getByRole("button", { name: "More", exact: true })).toHaveAttribute("aria-expanded", "false");
-    await expect(sidebar.getByText("MaxHermes")).toBeHidden();
-    await sidebar.getByRole("button", { name: "More", exact: true }).click();
-    await settled(page);
-    await expect(sidebar.getByText("MaxHermes")).toBeVisible();
-    await page.reload();
-    await settled(page);
-    await openDrawer();
-    await expect(sidebar.getByRole("button", { name: "More", exact: true })).toHaveAttribute("aria-expanded", "true");
-    await expect(sidebar.getByText("MaxHermes")).toBeVisible();
-  });
-
-  test("Dark mode survives a reload with More unfolded — a stored preference must not undo the theme (BUG_005)", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "desktop", "More unfolds in the desktop sidebar (the drawer's header closes it at 390)");
+  test("Dark mode survives a reload with a stored sidebar preference — the preference must not undo the theme (BUG_005)", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "the sidebar collapses to a rail only at 1440");
     await page.addInitScript(() => {
       localStorage.setItem("minimax-local.theme", "dark");
     });
     await page.goto("/");
     await settled(page);
-    const sidebar = page.getByRole("navigation", { name: "Sidebar" });
-    await sidebar.getByRole("button", { name: "More", exact: true }).click();
-    await expect(sidebar.getByRole("link", { name: "MaxHermes" })).toBeVisible();
+    await page.getByRole("button", { name: "Collapse sidebar" }).click(); // a stored preference (STORY_028 removed the More fold this test used)
+    await expect(page.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
     await page.reload();
     await settled(page);
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(28, 28, 28)");
-    await expect(sidebar.getByRole("link", { name: "MaxHermes" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
+    await page.getByRole("button", { name: "Expand sidebar" }).click();
   });
 
   test("Search finds a job by title and opens it; the Recents menu's Delete forgets it", async ({ page, stubApi }, testInfo) => {

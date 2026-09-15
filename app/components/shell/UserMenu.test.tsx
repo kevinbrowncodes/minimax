@@ -75,7 +75,8 @@ describe("SettingsDialog (STORY_019; settings-general@1440)", () => {
     // STORY_021 filled the other sections (dialogs.test.tsx); STORY_026 left General and Archived tasks.
     expect(screen.getByRole("button", { name: "Archived tasks" })).not.toHaveAttribute("aria-disabled");
     for (const name of ["Account", "Usage"]) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("switch")).toHaveLength(2);
+    expect(screen.getAllByRole("switch")).toHaveLength(1); // STORY_028: the consent switch is gone
+    expect(screen.queryByText("Help improve our services")).not.toBeInTheDocument();
     act(() => {
       screen.getByRole("switch", { name: "Remove watermark setting" }).click();
     });

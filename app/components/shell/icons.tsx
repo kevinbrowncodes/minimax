@@ -152,13 +152,7 @@ export const IconStar = () => (
 export const IconPlay = () => (
   <svg {...base}><circle cx="8" cy="8" r="6.3" /><path d="m6.5 5.5 4 2.5-4 2.5z" fill="currentColor" stroke="none" /></svg>
 );
-/* STORY_025 — the pages behind the sidebar: the More rows' glyphs, the bar's chrome and the pages' small marks */
-export const IconHermes = () => (
-  <svg {...base}><path d="M8 13.5V6M5 8.5 8 6l3 2.5" /><path d="M3 4.5c1.5 0 2.5-1 2.5-2M13 4.5c-1.5 0-2.5-1-2.5-2" /><path d="M5.5 11H4.2a1.7 1.7 0 0 1 0-3.4H5M10.5 11h1.3a1.7 1.7 0 0 0 0-3.4H11" /></svg>
-);
-export const IconClaw = () => (
-  <svg {...base}><path d="M4 12.5c0-2.5 1.5-4.5 4-4.5s4 2 4 4.5" /><path d="M5 8.5 3.5 4M8 8V3M11 8.5 12.5 4" /></svg>
-);
+/* STORY_025 — the pages behind the sidebar: the bar's chrome and the pages' small marks */
 export const IconRefresh = () => (
   <svg {...base}><path d="M13 8a5 5 0 0 1-8.7 3.4M3 8a5 5 0 0 1 8.7-3.4" /><path d="M11.5 2v2.8h-2.8M4.5 14v-2.8h2.8" /></svg>
 );
@@ -168,9 +162,6 @@ export const IconGear = () => (
 export const IconPlus = () => (
   <svg {...base}><path d="M8 3v10M3 8h10" /></svg>
 );
-export const IconHelp = () => (
-  <svg {...base}><circle cx="8" cy="8" r="6.3" /><path d="M6.2 6.3a1.8 1.8 0 1 1 2.6 1.6c-.6.3-.8.7-.8 1.3M8 11.3v.2" /></svg>
-);
 export const IconPlane = () => (
   <svg {...base}><path d="m2.5 7.5 11-5-3 11-3-4.5z" /><path d="m7.5 9 6-6.5" /></svg>
 );
@@ -179,15 +170,6 @@ export const IconAgent = () => (
 );
 export const IconSkill = () => (
   <svg {...base}><path d="M4 2.5h6l3 3v8H4z" /><path d="M10 2.5v3h3M6.2 8.5h3.6M6.2 11h3.6" /></svg>
-);
-export const IconSparkle = () => (
-  <svg {...base}><path d="M8 2.5 9.4 6.6 13.5 8l-4.1 1.4L8 13.5 6.6 9.4 2.5 8l4.1-1.4z" /></svg>
-);
-export const IconCloud = () => (
-  <svg {...base}><path d="M5 12.5a3 3 0 0 1-.4-6 4 4 0 0 1 7.6 1 2.5 2.5 0 0 1 .3 5z" /></svg>
-);
-export const IconDevice = () => (
-  <svg {...base}><rect x="4.5" y="2" width="7" height="12" rx="1.5" /><path d="M7 12h2" /></svg>
 );
 export const IconBack = () => (
   <svg {...base}><path d="m10 3.5-4.5 4.5 4.5 4.5" /></svg>

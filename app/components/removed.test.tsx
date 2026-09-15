@@ -30,13 +30,14 @@ afterEach(() => {
 /** What STORY_026 removed, by the accessible name or text each control carried; none may come back on any surface. */
 // ("More" and "Plugins" are not listed: the sidebar's More section, the result card's More ▾ and the Plugins row stay — the
 // removed More chip and Plugins submenu are pinned by Composer.test.tsx.)
-const REMOVED_CONTROLS = ["Scheduled", "Download desktop", "Changelog", "Download", "Subscribe", "Switch to classic", "Daily check-in", "Usage", "Contact us", "Learn more", "Logout", "Account", "Document", "Website", "Image Generation", "Like", "Dislike", "Buy Credits", "Dismiss usage notice", "Websites", "Documents", "Excel", "PPT", "Install Excel", "Refresh", "Create"];
-const REMOVED_TEXT = ["Fewer than 1,000 Credits remain.", "MiniMax Agent is AI and can make mistakes", "MiniMax Local only generates videos"];
+const REMOVED_CONTROLS = ["Scheduled", "MaxHermes", "MaxClaw", "Help improve our services setting", "Download desktop", "Changelog", "Download", "Subscribe", "Switch to classic", "Daily check-in", "Usage", "Contact us", "Learn more", "Logout", "Account", "Document", "Website", "Image Generation", "Like", "Dislike", "Buy Credits", "Dismiss usage notice", "Websites", "Documents", "Excel", "PPT", "Install Excel", "Refresh", "Create"];
+const REMOVED_TEXT = ["Fewer than 1,000 Credits remain.", "MiniMax Agent is AI and can make mistakes", "MiniMax Local only generates videos", "Help improve our services"];
 
 function expectNothingRemoved(): void {
   for (const name of REMOVED_CONTROLS) expect(screen.queryByRole("button", { name }), name).not.toBeInTheDocument();
   for (const name of REMOVED_CONTROLS) expect(screen.queryByRole("menuitem", { name }), name).not.toBeInTheDocument();
   for (const name of REMOVED_CONTROLS) expect(screen.queryByRole("link", { name }), name).not.toBeInTheDocument();
+  for (const name of REMOVED_CONTROLS) expect(screen.queryByRole("switch", { name }), name).not.toBeInTheDocument();
   for (const text of REMOVED_TEXT) expect(screen.queryByText(text), text).not.toBeInTheDocument();
 }
 

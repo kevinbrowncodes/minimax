@@ -22,7 +22,7 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link", { name: "View now" })).toHaveAttribute("href", "/plugins"); // Management lives at /plugins (STORY_026)
     const search = screen.getByText("Search").closest("[role=link]");
     expect(search).toHaveAttribute("aria-disabled", "true"); // Search without a handler stays inert
-    expect(screen.getByRole("button", { name: "More" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: "More" })).not.toBeInTheDocument(); // STORY_028: no More section
     expect(screen.getByRole("button", { name: "Projects" })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("button", { name: "Recents" })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("No task history.")).toBeInTheDocument();
@@ -33,14 +33,13 @@ describe("Sidebar", () => {
 
   it("unfolded sections show their rows; the header reports the toggle (STORY_021)", () => {
     const onToggleSection = vi.fn();
-    const prefs = { ...DEFAULT_SHELL_PREFS, folded: { more: false, projects: false, recents: true } };
+    const prefs = { ...DEFAULT_SHELL_PREFS, folded: { projects: false, recents: true } };
     render(<Sidebar pathname="/" recents={recents} prefs={prefs} onToggleSection={onToggleSection} onOpenCreateProject={() => undefined} />);
-    expect(screen.getByRole("link", { name: "MaxHermes" })).toHaveAttribute("href", "/max-hermes");
-    expect(screen.getByRole("link", { name: "MaxClaw" })).toHaveAttribute("href", "/max-claw");
+    for (const name of ["MaxHermes", "MaxClaw"]) expect(screen.queryByRole("link", { name })).not.toBeInTheDocument(); // STORY_028
     expect(screen.getByRole("button", { name: "Add new project" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Paper boat/ })).not.toBeInTheDocument();
-    screen.getByRole("button", { name: "More" }).click();
-    expect(onToggleSection).toHaveBeenCalledWith("more");
+    screen.getByRole("button", { name: "Recents" }).click();
+    expect(onToggleSection).toHaveBeenCalledWith("recents");
   });
 
   it("marks the active row from the path and lists recents with the unread dot", () => {

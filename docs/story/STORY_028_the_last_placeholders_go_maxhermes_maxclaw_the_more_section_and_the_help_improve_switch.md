@@ -1,7 +1,7 @@
 # STORY_028 — The last placeholders go: MaxHermes, MaxClaw, the More section and the "Help improve" switch
 
 **Epic:** [EPIC_006](../epic/EPIC_006_what_minimax_local_kept_from_the_reference_works_for_the_video_workflow.md) — the first wiring story: a removal, so that every story after it wires something real
-**Status:** Approved (2026-09-15 — the owner: "Please proceed with creating all the stories then proceed with the implementation and completing epic 6")
+**Status:** Done (2026-09-15; approved by the owner's "proceed with … completing epic 6")
 **Created:** 2026-09-15 — the owner, on the recon's findings: cut MaxHermes / MaxClaw and the More section ("Start now does nothing even there"), cut the "Help improve our services" switch, ignore the reference's new Daily check-in card
 
 As the owner, I want the two product pages and the section that only held them gone, and the consent switch gone from Settings, so that what remains in the UI is either real or on EPIC_006's list to be made real.
@@ -27,10 +27,10 @@ sidebar (1440)                         Settings › General › Preferences
 
 ## Acceptance Criteria
 
-- [ ] `/max-hermes` and `/max-claw` answer Next's 404; the sidebar has no **More** section (Projects follows Connect mobile directly at 1440 and in the 390 drawer); `shell-prefs` no longer stores `folded.more` (an old stored value still parses).
-- [ ] Settings › General › Preferences shows the watermark row only; "Help improve our services" is gone.
-- [ ] Nothing else changes: the Projects section, the guide and promo cards, the Recents menu, the rail, the theme and every real flow behave as before; `shell.spec.ts` and `dialogs.test.tsx` cover the "unchanged" halves.
-- [ ] No Daily check-in card is added (recorded here so nobody adds it for fidelity later).
+- [x] `/max-hermes` and `/max-claw` answer Next's 404; the sidebar has no **More** section (Projects follows Connect mobile directly at 1440 and in the 390 drawer); `shell-prefs` no longer stores `folded.more` (an old stored value still parses).
+- [x] Settings › General › Preferences shows the watermark row only; "Help improve our services" is gone.
+- [x] Nothing else changes: the Projects section, the guide and promo cards, the Recents menu, the rail, the theme and every real flow behave as before; `shell.spec.ts` and `dialogs.test.tsx` cover the "unchanged" halves.
+- [x] No Daily check-in card is added (recorded here so nobody adds it for fidelity later).
 
 ## Departures from the reference
 
@@ -51,3 +51,7 @@ The reference shows MaxHermes / MaxClaw under More, the consent switch and the c
 ## Estimated Complexity
 
 Small — a deletion in five files and the tests that named them.
+
+## Done (2026-09-15)
+
+**Landed:** `/max-hermes`, `/max-claw`, `ProductPage.tsx`, the `PRODUCTS` content and their icons are gone; the sidebar has no More section (`shell-prefs`' `folded` is `{ projects, recents }`; a stored `more` is ignored, pinned by a unit test); Settings › General keeps the watermark row alone; `removed.test.tsx` and the `shell.spec.ts` sweep name MaxHermes, MaxClaw and the consent switch; the BUG_005 reload test now stores the collapsed sidebar instead of the More fold. No check-in card. Gate green by hand (typecheck, lint, 146 unit) and in the pre-push hook; deployed.

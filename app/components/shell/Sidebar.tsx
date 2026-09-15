@@ -14,12 +14,10 @@ import {
   IconAvatar,
   IconBell,
   IconChevronDown,
-  IconClaw,
   IconClose,
   IconCollapse,
   IconCopy,
   IconFolder,
-  IconHermes,
   IconLogo,
   IconMore,
   IconMove,
@@ -70,7 +68,7 @@ function ActionRow({ icon, label, muted = false, onClick }: { readonly icon?: Re
   );
 }
 
-/** More / Projects / Recents: a header button that folds its section (STORY_021; sidebar-more-expanded@1440). */
+/** Projects / Recents: a header button that folds its section (STORY_021; sidebar-more-expanded@1440; the More section left with STORY_028). */
 function SectionHeader({ label, section, folded, onToggle }: { readonly label: string; readonly section: Section; readonly folded: boolean; readonly onToggle?: (section: Section) => void }) {
   return (
     <button type="button" className={styles.sectionHeader} aria-expanded={!folded} onClick={() => onToggle?.(section)}>
@@ -200,15 +198,6 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
       {link("/assets", "assets", <IconFolder />, "Assets")}
       {link("/connect-mobile", "connect-mobile", <IconPhone />, "Connect mobile")}
 
-      <div className={styles.section}>
-        <SectionHeader label="More" section="more" folded={prefs.folded.more} onToggle={onToggleSection} />
-        {prefs.folded.more ? null : (
-          <>
-            {link("/max-hermes", "max-hermes", <IconHermes />, "MaxHermes", true)}
-            {link("/max-claw", "max-claw", <IconClaw />, "MaxClaw", true)}
-          </>
-        )}
-      </div>
       <div className={styles.section}>
         <SectionHeader label="Projects" section="projects" folded={prefs.folded.projects} onToggle={onToggleSection} />
         {prefs.folded.projects ? null : onOpenCreateProject ? <ActionRow icon={<IconProject />} label="Add new project" muted onClick={onOpenCreateProject} /> : <InertRow icon={<IconProject />} label="Add new project" muted />}

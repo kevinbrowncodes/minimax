@@ -13,8 +13,6 @@ export type TopBar = { readonly kind: "home" } | { readonly kind: "assets" } | {
 export const REFERENCE_PAGES = {
   "/plugins": "plugins",
   "/connect-mobile": "connect-mobile",
-  "/max-hermes": "max-hermes",
-  "/max-claw": "max-claw",
 } as const;
 export type ReferencePage = (typeof REFERENCE_PAGES)[keyof typeof REFERENCE_PAGES];
 
@@ -42,7 +40,7 @@ export function isUnread(entry: RecentEntry): boolean {
   return Date.parse(entry.openedAt) < Date.parse(entry.finishedAt);
 }
 
-export type ActiveRow = "new-task" | "assets" | "plugins" | "connect-mobile" | "max-hermes" | "max-claw" | `task:${string}`;
+export type ActiveRow = "new-task" | "assets" | "plugins" | "connect-mobile" | `task:${string}`;
 
 export function activeRow(pathname: string): ActiveRow | undefined {
   if (pathname === "/") return "new-task";

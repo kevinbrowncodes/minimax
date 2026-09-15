@@ -9,10 +9,10 @@ afterEach(() => {
 
 describe("the shell preferences store (BUG_005)", () => {
   it("serves the defaults to the server, reads the storage once on the client, and keeps the same object until a dispatch", () => {
-    localStorage.setItem(SHELL_PREFS_KEY, JSON.stringify({ ...DEFAULT_SHELL_PREFS, folded: { more: false, projects: true, recents: false } }));
+    localStorage.setItem(SHELL_PREFS_KEY, JSON.stringify({ ...DEFAULT_SHELL_PREFS, folded: { projects: false, recents: false } }));
     expect(getServerShellPrefs()).toBe(DEFAULT_SHELL_PREFS);
     const first = getShellPrefs();
-    expect(first.folded.more).toBe(false);
+    expect(first.folded.projects).toBe(false);
     localStorage.setItem(SHELL_PREFS_KEY, JSON.stringify(DEFAULT_SHELL_PREFS)); // a later external write is not re-read
     expect(getShellPrefs()).toBe(first);
   });

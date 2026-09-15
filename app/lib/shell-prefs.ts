@@ -1,11 +1,11 @@
 /**
  * What the shell remembers per browser (STORY_021): which sidebar sections are folded, whether the sidebar is collapsed
  * to its rail, and which one-off cards were dismissed. Pure reducer + a storage adapter, like lib/theme.ts. The
- * defaults are the reference's on 2026-09-14: More and Projects folded, Recents open, the sidebar expanded, the cards
- * shown.
+ * defaults are the reference's on 2026-09-14: Projects folded, Recents open, the sidebar expanded, the cards shown.
  */
 
-export type Section = "more" | "projects" | "recents";
+/** STORY_028 removed the More section; a stored `folded.more` is ignored. */
+export type Section = "projects" | "recents";
 
 export interface ShellPrefs {
   readonly folded: Readonly<Record<Section, boolean>>;
@@ -17,7 +17,7 @@ export interface ShellPrefs {
 export const SHELL_PREFS_KEY = "minimax-local.shell";
 
 export const DEFAULT_SHELL_PREFS: ShellPrefs = {
-  folded: { more: true, projects: true, recents: false },
+  folded: { projects: true, recents: false },
   collapsed: false,
   guideDismissed: false,
   promoDismissed: false,
@@ -53,7 +53,6 @@ export function parseShellPrefs(raw: string | null | undefined): ShellPrefs {
     const bool = (x: unknown, fallback: boolean) => (typeof x === "boolean" ? x : fallback);
     return {
       folded: {
-        more: bool(folded["more"], DEFAULT_SHELL_PREFS.folded.more),
         projects: bool(folded["projects"], DEFAULT_SHELL_PREFS.folded.projects),
         recents: bool(folded["recents"], DEFAULT_SHELL_PREFS.folded.recents),
       },

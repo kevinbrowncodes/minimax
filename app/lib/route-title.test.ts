@@ -15,8 +15,7 @@ describe("topBarFor", () => {
     expect(topBarFor("/plugins", recents)).toEqual({ kind: "page", page: "plugins" });
     expect(topBarFor("/scheduled", recents)).toEqual({ kind: "other" }); // STORY_026 removed Scheduled
     expect(topBarFor("/connect-mobile", recents)).toEqual({ kind: "page", page: "connect-mobile" });
-    expect(topBarFor("/max-hermes", recents)).toEqual({ kind: "page", page: "max-hermes" });
-    expect(topBarFor("/max-claw", recents)).toEqual({ kind: "page", page: "max-claw" });
+    for (const path of ["/max-hermes", "/max-claw"]) expect(topBarFor(path, recents)).toEqual({ kind: "other" }); // STORY_028
   });
 });
 
@@ -30,8 +29,7 @@ describe("activeRow and isUnread", () => {
     expect(activeRow("/plugins")).toBe("plugins");
     expect(activeRow("/scheduled")).toBeUndefined();
     expect(activeRow("/connect-mobile")).toBe("connect-mobile");
-    expect(activeRow("/max-hermes")).toBe("max-hermes");
-    expect(activeRow("/max-claw")).toBe("max-claw");
+    for (const path of ["/max-hermes", "/max-claw"]) expect(activeRow(path)).toBeUndefined(); // STORY_028
   });
   it("shows the dot only for a finished job not opened since", () => {
     expect(isUnread({ id: "a", title: "a" })).toBe(false);

@@ -4,7 +4,6 @@ import { ShellStateProvider, useShell } from "@/components/shell/ShellContext";
 import { AGENT_SYSTEM_PROMPT } from "@/lib/reference-pages";
 import { ConnectMobilePage } from "./ConnectMobilePage";
 import { ManagePage } from "./ManagePage";
-import { ProductPage } from "./ProductPage";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }), usePathname: () => "/plugins" }));
 
@@ -43,20 +42,5 @@ describe("the pages behind the sidebar (STORY_025; STORY_026 removed the marketp
     expect(screen.getByRole("textbox", { name: "Enter Bot Token" })).toHaveAttribute("readonly");
     expect(screen.getByText("Get a token from @BotFather on Telegram.")).toBeInTheDocument();
     expect(screen.getByText("Not bound")).toBeInTheDocument();
-  });
-
-  it("MaxHermes and MaxClaw: the name in colour, the line, an inert Start now, three features; MaxClaw adds Available on Telegram", () => {
-    render(inShell(<ProductPage product="max-hermes" />));
-    expect(screen.getByText("MaxHermes")).toHaveStyle({ color: "#f5a623" });
-    expect(screen.getByRole("heading", { name: "An Agent That Grows With You." })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Start now" })).toHaveAttribute("aria-disabled", "true");
-    expect(within(screen.getByTestId("bar")).getByRole("button", { name: "Help" })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getAllByRole("listitem")).toHaveLength(3);
-    expect(screen.queryByText("Available on")).not.toBeInTheDocument();
-    cleanup();
-    render(inShell(<ProductPage product="max-claw" />));
-    expect(screen.getByRole("heading", { name: "Your 24/7 personal assistant." })).toBeInTheDocument();
-    expect(screen.getByText("What you get")).toBeInTheDocument();
-    expect(screen.getByText("Available on")).toBeInTheDocument();
   });
 });

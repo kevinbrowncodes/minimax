@@ -23,7 +23,7 @@ export interface SettingsDialogProps {
 /**
  * User menu › Settings (STORY_019; settings-general@1440 / -dark, narrow-settings-general@390): a modal with a left
  * nav (General, Archived tasks) and the General section — Appearance (Light mode / Dark mode / System
- * cards; the chosen one outlined in the accent) and the two Preferences rows, rendered inert. At 390 it is a bottom
+ * cards; the chosen one outlined in the accent) and the watermark Preferences row (STORY_028 removed the consent one). At 390 it is a bottom
  * sheet with the nav as horizontal tabs and no ×: the backdrop closes it, as on the reference. The other sections are
  * nav entries that show the notice until the shell rebuild story fills them.
  */
@@ -110,11 +110,6 @@ function GeneralSection({ choice, onChoose }: { readonly choice: ThemeChoice; re
           title={'Remove an "AI-generated" watermark'}
           description="When off, downloads will include a visible AI-generated watermark. To remove this watermark, please confirm that your generated content does not involve deepfakes—that is, media that convincingly mimics reality and creates a false impression of authenticity."
           label="Remove watermark setting"
-        />
-        <PreferenceRow
-          title="Help improve our services"
-          description="Allow your content to help improve our products and services. You can turn this off at any time."
-          label="Help improve our services setting"
         />
       </div>
     </>
