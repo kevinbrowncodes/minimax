@@ -45,6 +45,7 @@ The UI and the adapter are always up; **ComfyUI is started per session**, becaus
 | +10 s extension of a 10 s clip (STORY_017, 1.6 s overlap) | ≈ 67 min | 89 GiB |
 | +10 s extension of a 20 s clip (STORY_017, 1.6 s overlap) | ≈ 71 min | 87 GiB |
 | A 30 s chain: 10 s from an image, then +10 s twice (STORY_020, 2026-09-14/15) | ≈ 3 h 5 min | 82 GiB |
+| Two 5 s text-to-video, one after another through the queue (STORY_041, 2026-09-15): the first at once, the second held by a run-at and submitted 17 s after its time by the runner, once the first was done | 17 min 17 s + 17 min 33 s | not sampled (a 5 s job is 64 GiB above) |
 
 **Does extending hold the scene?** On the night of 2026-09-14/15 three 31 s chains were generated from `01.jpg` with the three scripts in [docs/scripts/](docs/scripts/) (the scene paragraph plus each script): ten generations for nine segments, one draw rejected by the shot-change check and regenerated with a new seed, every seam continuous, no set or framing change in any accepted segment ([STORY_020](docs/story/STORY_020_a_video_stays_in_one_shot_to_the_end_and_a_cut_the_model_makes_anyway_is_flagged_before_the_owner_sees_it.md) has the tables). Write the scene at the top of the script, keep the camera static in words, and let the check's Retry redraw the rare segment that still wanders.
 
