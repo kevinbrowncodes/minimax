@@ -32,10 +32,12 @@ export interface AttachMenuProps {
   readonly projectId: string | undefined;
   readonly onProject: (projectId: string | undefined) => void;
   readonly onNewProject: () => void;
+  /** STORY_035: Environment variables opens the dialog; without a handler it keeps the notice. */
+  readonly onEnv?: () => void;
 }
 
 /** attach-menu-open@1440 and its submenus: 190 px, 32 px entries; submenus 8 px to the right. */
-export function AttachMenu({ onAddFiles, onClose, projects, projectId, onProject, onNewProject }: AttachMenuProps) {
+export function AttachMenu({ onAddFiles, onClose, projects, projectId, onProject, onNewProject, onEnv }: AttachMenuProps) {
   const [open, setOpen] = useState<Submenu | undefined>(undefined);
   const entry = (id: Submenu, icon: ReactNode, label: string, children: ReactNode) => (
     <div className={styles.entryWrap} onMouseEnter={() => { setOpen(id); }}>
@@ -90,10 +92,17 @@ export function AttachMenu({ onAddFiles, onClose, projects, projectId, onProject
           <Inert role="menuitem" label="Add skill" className={styles.item}><span className={styles.icon}><IconPlusCircle /></span><span className={styles.label}>Add skill</span></Inert>
         </>
       ))}
-      <Inert role="menuitem" label="Environment variables" className={styles.item}>
-        <span className={styles.icon}><IconKey /></span>
-        <span className={styles.label}>Environment variables</span>
-      </Inert>
+      {onEnv ? (
+        <button type="button" role="menuitem" className={styles.item} onClick={() => { onClose(); onEnv(); }}>
+          <span className={styles.icon}><IconKey /></span>
+          <span className={styles.label}>Environment variables</span>
+        </button>
+      ) : (
+        <Inert role="menuitem" label="Environment variables" className={styles.item}>
+          <span className={styles.icon}><IconKey /></span>
+          <span className={styles.label}>Environment variables</span>
+        </Inert>
+      )}
     </div>
   );
 }

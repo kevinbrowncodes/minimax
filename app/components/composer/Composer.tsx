@@ -8,6 +8,7 @@ import type { Capabilities } from "@/lib/job-api";
 import { submitJob } from "@/lib/submit-job";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
 import { AgentModelMenu, AttachMenu } from "./ComposerMenus";
+import { EnvDialog } from "./EnvDialog";
 import { useProjects } from "@/components/shell/ProjectsContext";
 import { IconProject } from "@/components/shell/icons";
 import { Showcase } from "./Showcase";
@@ -53,6 +54,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   // STORY_031: the chip names the chosen project; a project that no longer exists shows nothing (the route would refuse it)
   const project = state.projectId === undefined ? undefined : projects.find((p) => p.id === state.projectId);
   const [popover, setPopover] = useState<"params" | "model" | "attach" | "agent" | undefined>(undefined);
+  const [envOpen, setEnvOpen] = useState(false); // STORY_035
   const [showcaseDismissed, setShowcaseDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -168,6 +170,8 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const extending = state.extend;
 
   return (
+    <>
+      <EnvDialog open={envOpen} onClose={() => { setEnvOpen(false); }} fetchImpl={fetchImpl} />
     <div className={styles.wrap}>
       <div
         className={cx(styles.card, docked && styles.cardDocked, dragging && styles.cardDrop)}
@@ -248,6 +252,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 projectId={state.projectId}
                 onProject={(projectId) => { dispatch({ type: "project", projectId }); }}
                 onNewProject={() => { openCreate((created) => { dispatch({ type: "project", projectId: created.id }); }); }}
+                onEnv={() => { setEnvOpen(true); }}
               />
             ) : null}
           </span>
@@ -363,5 +368,6 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
         />
       )}
     </div>
+    </>
   );
 }

@@ -223,6 +223,66 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     expect(screen.getByTestId("project-chip")).toHaveTextContent("Second");
   });
 
+  it("+ › Environment variables opens the dialog: stored keys masked, Add Variables, a bad name refused inline, Save PUTs and closes, a trash removes (STORY_035)", async () => {
+    const puts: unknown[] = [];
+    const fetchImpl = vi.fn((input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.startsWith("/api/capabilities")) return Promise.resolve(json(caps));
+      if (url === "/api/env" && init?.method === "PUT") {
+        puts.push(JSON.parse(typeof init.body === "string" ? init.body : "{}"));
+        return Promise.resolve(json({ vars: [] }));
+      }
+      if (url === "/api/env") return Promise.resolve(json({ vars: [{ key: "TELEGRAM_BOT_TOKEN", masked: "••••••••" }] }));
+      return Promise.resolve(json({ error: { code: "not_found", message: url } }, 404));
+    });
+    render(<Composer fetchImpl={fetchImpl} />);
+    fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Environment variables" }));
+    const dialog = await screen.findByRole("dialog", { name: "Environment variables" });
+    expect(screen.queryByRole("menu", { name: "Add attachment" })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(within(dialog).getAllByTestId("env-row")).toHaveLength(1);
+    });
+    expect(within(dialog).getByText(/not encrypted/)).toBeInTheDocument();
+    const stored = within(dialog).getAllByTestId("env-row")[0] as HTMLElement;
+    expect(within(stored).getByRole("textbox", { name: "key name" })).toHaveValue("TELEGRAM_BOT_TOKEN");
+    expect(within(stored).getByLabelText("Key value")).toHaveAttribute("placeholder", "••••••••"); // masked; the value never came
+    expect(within(stored).getByLabelText("Key value")).toHaveAttribute("type", "password");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add Variables" }));
+    const added = within(dialog).getAllByTestId("env-row")[1] as HTMLElement;
+    fireEvent.change(within(added).getByRole("textbox", { name: "key name" }), { target: { value: "bad-name" } });
+    fireEvent.change(within(added).getByLabelText("Key value"), { target: { value: "secret" } });
+    fireEvent.click(within(added).getByRole("button", { name: "Show value" }));
+    expect(within(added).getByLabelText("Key value")).toHaveAttribute("type", "text");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(within(added).getByRole("alert")).toHaveTextContent(/A name is A-Z/);
+    expect(puts).toEqual([]);
+    fireEvent.change(within(added).getByRole("textbox", { name: "key name" }), { target: { value: "api_key" } }); // upper-cased as typed
+    expect(within(added).getByRole("textbox", { name: "key name" })).toHaveValue("API_KEY");
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+      await Promise.resolve();
+    });
+    expect(puts).toEqual([{ vars: { TELEGRAM_BOT_TOKEN: null, API_KEY: "secret" } }]); // null keeps the stored value
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Environment variables" })).not.toBeInTheDocument();
+    });
+    // a trash removes a row; Save then sends the set without it
+    fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Environment variables" }));
+    const again = await screen.findByRole("dialog", { name: "Environment variables" });
+    await waitFor(() => {
+      expect(within(again).getAllByTestId("env-row")).toHaveLength(1);
+    });
+    fireEvent.click(within(again).getByRole("button", { name: "Remove TELEGRAM_BOT_TOKEN" }));
+    expect(within(again).queryAllByTestId("env-row")).toHaveLength(0);
+    await act(async () => {
+      fireEvent.click(within(again).getByRole("button", { name: "Save" }));
+      await Promise.resolve();
+    });
+    expect(puts[1]).toEqual({ vars: {} });
+  });
+
   it("the + menu lists the reference's entries with submenus; Add files or photos opens the reference chooser in video mode", async () => {
     await renderReady();
     const input = screen.getByTestId("reference-input");

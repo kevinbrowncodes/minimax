@@ -70,6 +70,40 @@ test.describe("composer and video mode (STORY_013)", () => {
   });
 });
 
+test.describe("environment variables (STORY_035)", () => {
+  test("a variable added through + › Environment variables survives a reload, listed by name and masked; removing it and saving clears it", async ({ page, request }) => {
+    await request.put("/api/env", { data: { vars: {} } });
+    await page.goto("/");
+    await settled(page);
+    await page.getByRole("button", { name: "Add attachment" }).click();
+    await page.getByRole("menuitem", { name: "Environment variables" }).click();
+    const dialog = page.getByRole("dialog", { name: "Environment variables" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByTestId("env-row")).toHaveCount(1);
+    await dialog.getByRole("textbox", { name: "key name" }).fill("telegram_bot_token");
+    await expect(dialog.getByRole("textbox", { name: "key name" })).toHaveValue("TELEGRAM_BOT_TOKEN");
+    await dialog.getByLabel("Key value").fill("123456:not-a-real-token");
+    const saved = page.waitForResponse((r) => r.url().endsWith("/api/env") && r.request().method() === "PUT");
+    await dialog.getByRole("button", { name: "Save" }).click();
+    expect((await saved).ok()).toBe(true);
+    await expect(dialog).toBeHidden();
+    const listed = (await (await request.get("/api/env")).json()) as { vars: { key: string; masked: string }[] };
+    expect(listed).toEqual({ vars: [{ key: "TELEGRAM_BOT_TOKEN", masked: "••••••••" }] });
+    await page.reload();
+    await settled(page);
+    await page.getByRole("button", { name: "Add attachment" }).click();
+    await page.getByRole("menuitem", { name: "Environment variables" }).click();
+    await expect(dialog.getByRole("textbox", { name: "key name" })).toHaveValue("TELEGRAM_BOT_TOKEN");
+    await expect(dialog.getByLabel("Key value")).toHaveAttribute("placeholder", "••••••••");
+    await expect(dialog.getByLabel("Key value")).toHaveValue(""); // the value never reaches the browser
+    await dialog.getByRole("button", { name: "Remove TELEGRAM_BOT_TOKEN" }).click();
+    const cleared = page.waitForResponse((r) => r.url().endsWith("/api/env") && r.request().method() === "PUT");
+    await dialog.getByRole("button", { name: "Save" }).click();
+    expect((await cleared).ok()).toBe(true);
+    expect(await (await request.get("/api/env")).json()).toEqual({ vars: [] });
+  });
+});
+
 test.describe("the home and composer match the reference (STORY_022)", () => {
   test("desktop: the heading and the composer card sit where the capture has them", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "positions are the 1440 × 900 capture's");
