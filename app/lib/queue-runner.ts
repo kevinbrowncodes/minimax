@@ -12,7 +12,10 @@ import { referenceFilePath } from "./uploads";
 
 export type Submit = (entry: QueueEntry) => Promise<Response>;
 
-/** What the model server is sent for a queued request: JSON without images, multipart with them, never our own fields. */
+/**
+ * What the model server is sent for a queued request: JSON without images, multipart with them, never our own fields.
+ * BUG_007: a source is named by the server's own job id (the source may itself have gone through the queue).
+ */
 export function upstreamFields(request: QueueEntry["request"]): Record<string, string | number> {
   return {
     prompt: request.prompt,
@@ -20,7 +23,7 @@ export function upstreamFields(request: QueueEntry["request"]): Record<string, s
     resolution: request.resolution,
     durationSeconds: request.durationSeconds,
     model: request.model,
-    ...(request.continueFrom === undefined ? {} : { continueFrom: request.continueFrom }),
+    ...(request.continueFrom === undefined ? {} : { continueFrom: upstreamJobId(request.continueFrom) }),
     ...(request.overlapFrames === undefined ? {} : { overlapFrames: request.overlapFrames }),
   };
 }

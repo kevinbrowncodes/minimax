@@ -21,9 +21,11 @@ afterEach(() => {
 });
 
 describe("the queue runner (STORY_041)", () => {
-  it("sends the model server only its own fields", () => {
+  it("sends the model server only its own fields, naming a source by the server's job id (BUG_007)", () => {
     expect(upstreamFields(request)).toEqual({ prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: 5, model: "minimax-h3" });
-    expect(upstreamFields({ ...request, continueFrom: "src", overlapFrames: 39 })).toMatchObject({ continueFrom: "src", overlapFrames: 39 });
+    expect(upstreamFields({ ...request, continueFrom: "src", overlapFrames: 39 })).toMatchObject({ continueFrom: "src", overlapFrames: 39 }); // a source created directly keeps its id
+    historyStore().patch("a", { jobId: "job-a" });
+    expect(upstreamFields({ ...request, continueFrom: "a" })).toMatchObject({ continueFrom: "job-a" }); // a source that went through the queue is named by the server's id
   });
 
   it("submits the due requests in line order, stops at busy, skips a timed one, and records the model server's id", async () => {

@@ -3,6 +3,7 @@ import type { CreateJobResponse } from "@/lib/job-api";
 import { errorResponse, forward, guarded, relayJson } from "@/lib/model-client";
 import { projectStore } from "@/lib/project-store";
 import { randomUUID } from "node:crypto";
+import { upstreamJobId } from "@/lib/queue-runner";
 import { enqueue, getQueued, replaceQueued, type QueueEntry } from "@/lib/queue-store";
 import { removeUploads, saveReferenceFiles } from "@/lib/uploads";
 import { validateReferenceImages } from "@/lib/upload-validation";
@@ -49,6 +50,13 @@ function fieldsFrom(source: Record<string, unknown>): Fields {
 
 /** The app's own fields never reach the model server (STORY_031, STORY_041). */
 const APP_ONLY = new Set(["projectId", "notBefore", "replaces"]);
+
+/** BUG_007: what goes up names the model server's own job — a source that went through the queue has a different id there. */
+function upstreamBody(source: Record<string, unknown>): Record<string, unknown> {
+  const out = Object.fromEntries(Object.entries(source).filter(([key]) => !APP_ONLY.has(key)));
+  if (typeof out["continueFrom"] === "string" && out["continueFrom"] !== "") out["continueFrom"] = upstreamJobId(out["continueFrom"]);
+  return out;
+}
 
 function queuedRequest(fields: Fields, script: string | null): QueueEntry["request"] {
   return {
@@ -171,8 +179,9 @@ export function POST(request: Request): Promise<Response> {
       if (refused) return refused;
       if (fields.replaces !== undefined) return replaced(fields, [], script);
       if (fields.notBefore !== undefined) return queued(fields, [], script);
-      // the model never sees our own fields: the body goes up as sent unless it carried one
-      const body = source && Object.keys(source).some((key) => APP_ONLY.has(key)) ? JSON.stringify(Object.fromEntries(Object.entries(source).filter(([key]) => !APP_ONLY.has(key)))) : text;
+      // the model never sees our own fields, and a source's id is mapped to the server's (BUG_007): the body goes up as sent unless either applies
+      const needsRewrite = source !== undefined && (Object.keys(source).some((key) => APP_ONLY.has(key)) || typeof source["continueFrom"] === "string");
+      const body = source && needsRewrite ? JSON.stringify(upstreamBody(source)) : text;
       return accepted(await forward(path, { method: "POST", headers: { "content-type": "application/json" }, body }), fields, [], script);
     }
     if (contentType.startsWith("multipart/form-data")) {
@@ -185,7 +194,7 @@ export function POST(request: Request): Promise<Response> {
       for (const [key, value] of form.entries()) {
         if (key === "referenceImage") continue;
         if (typeof value === "string") {
-          if (!APP_ONLY.has(key)) out.set(key, value);
+          if (!APP_ONLY.has(key)) out.set(key, key === "continueFrom" && value !== "" ? upstreamJobId(value) : value); // BUG_007
           source[key] = value;
         }
       }

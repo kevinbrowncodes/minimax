@@ -83,6 +83,24 @@ describe("the queue through the app's routes", () => {
     expect(result.status).toBe(200);
     expect(Buffer.from(await result.arrayBuffer()).equals(readFileSync(`${DEFAULT_FIXTURES_DIR}/fixture.mp4`))).toBe(true);
     expect(submitted.entries.find((e) => e.id === first.id)?.title).toBe("A small paper boat");
+    // BUG_007: an extension of the queued job names it by our id; the stub receives its own id; history keeps ours
+    const extended = await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, prompt: "And on", continueFrom: first.id, overlapFrames: 39 }));
+    expect(extended.status).toBe(202);
+    const ext = (await extended.json()) as CreateJobResponse;
+    const received = (await (await fetch(`${stubUrl}/__stub/jobs/${ext.id}/received`)).json()) as { request: { continueFrom?: string } };
+    expect(received.request.continueFrom).toBe(entry?.jobId);
+    expect(received.request.continueFrom).not.toBe(first.id);
+    const extEntry = ((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries.find((e) => e.id === ext.id);
+    expect(extEntry?.continuesFrom?.id).toBe(first.id);
+    // the same through the queue: an extension queued while the stub is busy is submitted with the mapped id
+    stub.setBusy(true);
+    const queuedExt = (await (await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, prompt: "And on again", continueFrom: first.id, overlapFrames: 39 }))).json()) as Queued;
+    expect(queuedExt.position).toBe(1);
+    stub.setBusy(false);
+    await listHistory();
+    const qe = ((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries.find((e) => e.id === queuedExt.id);
+    const receivedQ = (await (await fetch(`${stubUrl}/__stub/jobs/${qe?.jobId ?? ""}/received`)).json()) as { request: { continueFrom?: string } };
+    expect(receivedQ.request.continueFrom).toBe(entry?.jobId);
   });
 
   it("a timed request waits even when the server is free, does not block the line, and goes when its time is cleared; the images travel with it", async () => {
