@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { CAPABILITIES, ValidationError, validateRequest, type JobRequest } from "./capabilities.ts";
 import { ComfyClient, ComfyEvents, ComfyError, type HistoryEntry } from "./comfy.ts";
@@ -16,8 +17,9 @@ import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type Multip
 import { interpret, type ComfyEvent } from "./progress.ts";
 import { buildPrompt } from "./prompt.ts";
 import { detectCuts, parseFrameChanges } from "./cuts.ts";
+import { WatermarkCache, type WatermarkRunner } from "./watermark.ts";
 
-export const VERSION = "1.3.0";
+export const VERSION = "1.4.0";
 
 export interface AdapterOptions {
   /** ComfyUI's base URL, e.g. http://comfyui:8188. */
@@ -47,6 +49,9 @@ export interface AdapterOptions {
    *  capabilities and health regardless; jobs answer 503 until ComfyUI is reachable and its node classes verified. */
   readonly startupWaitMs?: number;
   readonly log?: (message: string) => void;
+  /** STORY_034: where the marked download copies are cached (default: `watermarked/` beside the store file); the ffmpeg call, injectable for tests. */
+  readonly watermarkDir?: string;
+  readonly watermark?: WatermarkRunner;
 }
 
 export interface AdapterServer {
@@ -102,6 +107,7 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
   const clientId = options.clientId ?? `adapter-${randomUUID()}`;
   const comfy = new ComfyClient(options.comfyUrl, clientId);
   const store = new JobStore(options.storeFile);
+  const watermarks = new WatermarkCache(options.watermarkDir ?? path.join(options.storeFile === undefined ? tmpdir() : path.dirname(options.storeFile), "watermarked"), options.watermark);
   const pollIntervalMs = options.pollIntervalMs ?? 5000;
   const jobTimeoutMs = options.jobTimeoutMs ?? 12 * 3_600_000;
   const orphanTimeoutMs = options.orphanTimeoutMs ?? 600_000;
@@ -502,7 +508,7 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
     return cancelled;
   };
 
-  const sendFile = (req: IncomingMessage, res: ServerResponse, file: string, mimeType: string, ranges: boolean): void => {
+  const sendFile = (req: IncomingMessage, res: ServerResponse, file: string, mimeType: string, ranges: boolean, extra: Record<string, string> = {}): void => {
     const size = statSync(file).size;
     const range = ranges ? /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? "") : null;
     if (range) {
@@ -513,11 +519,11 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
         res.end();
         return;
       }
-      res.writeHead(206, { "content-type": mimeType, "content-length": end - start + 1, "accept-ranges": "bytes", "content-range": `bytes ${String(start)}-${String(end)}/${String(size)}` });
+      res.writeHead(206, { "content-type": mimeType, "content-length": end - start + 1, "accept-ranges": "bytes", "content-range": `bytes ${String(start)}-${String(end)}/${String(size)}`, ...extra });
       createReadStream(file, { start, end }).pipe(res);
       return;
     }
-    res.writeHead(200, { "content-type": mimeType, "content-length": size, ...(ranges ? { "accept-ranges": "bytes" } : {}) });
+    res.writeHead(200, { "content-type": mimeType, "content-length": size, ...(ranges ? { "accept-ranges": "bytes" } : {}), ...extra });
     createReadStream(file).pipe(res);
   };
 
@@ -561,6 +567,17 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
       if (!ref) throw new HttpError(404, "not_found", "no poster for this job");
       const file = safeOutputPath(ref.subfolder, ref.filename);
       if (!file || !existsSync(file)) throw new HttpError(404, "not_found", "the output file is gone from ComfyUI's output directory");
+      if (m[2] === "result" && url.searchParams.get("watermark") === "1") {
+        // STORY_034: the marked copy — its own file, so its own size and ranges (the original stays untouched)
+        let marked: string;
+        try {
+          marked = await watermarks.ensure(job.id, file);
+        } catch (error) {
+          throw new HttpError(500, "watermark_failed", `the watermark could not be made: ${error instanceof Error ? error.message : String(error)}`);
+        }
+        sendFile(req, res, marked, job.result.mimeType, true, { "x-watermark": "1" });
+        return;
+      }
       sendFile(req, res, file, m[2] === "result" ? job.result.mimeType : "image/png", m[2] === "result");
       return;
     }

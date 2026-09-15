@@ -61,7 +61,7 @@ Everything is defined in the repo under [`spark/comfyui/`](comfyui/) and runs in
 spark/comfyui/
   Dockerfile                  nvidia/cuda:13.0.2-runtime-ubuntu24.04 + venv + PyTorch 2.11.0+cu130 (aarch64) + ComfyUI at COMFYUI_TAG (v0.35.1)
   compose.yaml                services: comfyui (GPU, 127.0.0.1:8188), adapter (STORY_006, 127.0.0.1:4020 and http://adapter:4020 on the shared "minimax" network), fetch (one-shot, profile "tools")
-spark/adapter/                the job-API adapter (STORY_006): zero-dependency TypeScript on Node 26, its own Dockerfile, unit + integration tests against a fake ComfyUI
+spark/adapter/                the job-API adapter (STORY_006): TypeScript on Node 26 with no npm runtime dependencies, its own Dockerfile, unit + integration tests against a fake ComfyUI. STORY_034 put ffmpeg (Debian's, with fonts-dejavu-core) in the image — the one runtime dependency, an exception to the zero-dependency rule made on purpose: a download with Settings › General's watermark switch off is served as a copy with "AI-generated" burned in, made once per job and cached at data/adapter/watermarked/<job>.mp4 (the output mount is read-only). The adapter's tests inject the ffmpeg call and never need the binary
   container/comfyui-entrypoint.sh   python main.py --disable-mmap --disable-async-offload --disable-pinned-memory --cache-none [COMFY_EXTRA_ARGS]
   container/fetch-h3.sh       runs inside the image: disk gate, hf download, size check against the Hub, template copy
   h3.sh                       file names per precision, the 17k+5 frame rule (shared by host and image)

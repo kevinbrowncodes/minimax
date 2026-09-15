@@ -57,7 +57,7 @@ export async function relayJson(response: Response): Promise<Response> {
   }
 }
 
-const PASS_THROUGH = ["content-type", "content-length", "accept-ranges", "content-range", "etag", "last-modified", "cache-control"];
+const PASS_THROUGH = ["content-type", "content-length", "accept-ranges", "content-range", "etag", "last-modified", "cache-control", "x-watermark"]; // x-watermark: STORY_034
 
 /** Relay a binary upstream response (video, poster) streaming, with the headers a `<video>` element needs. */
 export function relayBytes(response: Response): Response {

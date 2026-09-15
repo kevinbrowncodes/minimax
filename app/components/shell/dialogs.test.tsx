@@ -156,6 +156,23 @@ describe("SettingsDialog sections (STORY_021; settings-archived-tasks@1440; STOR
   });
 });
 
+describe("SettingsDialog › General's watermark switch (STORY_034)", () => {
+  it("reflects the setting and asks for the flipped value; without a handler it keeps the notice", () => {
+    const onRemoveWatermark = vi.fn();
+    const { rerender } = render(<SettingsDialog open removeWatermark onRemoveWatermark={onRemoveWatermark} choice="system" onChoose={() => undefined} onClose={() => undefined} />);
+    const toggle = screen.getByRole("switch", { name: "Remove watermark setting" });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(toggle);
+    expect(onRemoveWatermark).toHaveBeenCalledWith(false);
+    rerender(<SettingsDialog open removeWatermark={false} onRemoveWatermark={onRemoveWatermark} choice="system" onChoose={() => undefined} onClose={() => undefined} />);
+    expect(screen.getByRole("switch", { name: "Remove watermark setting" })).toHaveAttribute("aria-checked", "false");
+    fireEvent.click(screen.getByRole("switch", { name: "Remove watermark setting" }));
+    expect(onRemoveWatermark).toHaveBeenLastCalledWith(true);
+    rerender(<SettingsDialog open choice="system" onChoose={() => undefined} onClose={() => undefined} />);
+    expect(screen.getByRole("switch", { name: "Remove watermark setting" })).toHaveAttribute("aria-disabled", "true");
+  });
+});
+
 describe("SettingsDialog › Archived tasks (STORY_030; behaviour-recents-archive-03…05)", () => {
   const archived = [
     { id: "late", title: "Single candle on wooden table", createdAt: new Date(2026, 8, 15, 12, 24).toISOString(), finishedAt: "2026-09-15T12:30:00Z", archived: true, archivedAt: new Date(2026, 8, 15, 14, 0).toISOString() },

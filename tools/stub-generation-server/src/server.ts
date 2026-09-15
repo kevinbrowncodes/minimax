@@ -270,7 +270,7 @@ export function createStubServer(options: StubOptions = {}): StubServer {
       : {}),
   });
 
-  const sendBytes = (req: IncomingMessage, res: ServerResponse, mimeType: string, bytes: Buffer, ranges: boolean): void => {
+  const sendBytes = (req: IncomingMessage, res: ServerResponse, mimeType: string, bytes: Buffer, ranges: boolean, extra: Record<string, string> = {}): void => {
     const range = ranges ? /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? "") : null;
     if (range) {
       const start = range[1] === "" ? Math.max(bytes.length - Number(range[2]), 0) : Number(range[1]);
@@ -281,11 +281,11 @@ export function createStubServer(options: StubOptions = {}): StubServer {
         return;
       }
       const slice = bytes.subarray(start, end + 1);
-      res.writeHead(206, { "content-type": mimeType, "content-length": slice.length, "accept-ranges": "bytes", "content-range": `bytes ${String(start)}-${String(end)}/${String(bytes.length)}` });
+      res.writeHead(206, { "content-type": mimeType, "content-length": slice.length, "accept-ranges": "bytes", "content-range": `bytes ${String(start)}-${String(end)}/${String(bytes.length)}`, ...extra });
       res.end(slice);
       return;
     }
-    res.writeHead(200, { "content-type": mimeType, "content-length": bytes.length, ...(ranges ? { "accept-ranges": "bytes" } : {}) });
+    res.writeHead(200, { "content-type": mimeType, "content-length": bytes.length, ...(ranges ? { "accept-ranges": "bytes" } : {}), ...extra });
     res.end(bytes);
   };
 
@@ -391,7 +391,8 @@ export function createStubServer(options: StubOptions = {}): StubServer {
       const state = stateOf(job);
       if (state.status !== "done") throw new HttpError(409, "not_done", `job ${job.id} is ${state.status}`);
       if (m[2] === "result") {
-        sendBytes(req, res, video.mimeType, video.bytes, true);
+        // STORY_034: `?watermark=1` asks for the marked copy; the stub serves the same fixture and says so in a header
+        sendBytes(req, res, video.mimeType, video.bytes, true, url.searchParams.get("watermark") === "1" ? { "x-watermark": "1" } : {});
       } else {
         sendBytes(req, res, poster.mimeType, poster.bytes, false);
       }

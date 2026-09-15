@@ -31,6 +31,9 @@ export interface SettingsDialogProps {
   readonly onDeleteAllArchived?: () => void;
   /** STORY_031: the projects — the archived list groups by them and the All projects filter narrows to one. */
   readonly projects?: readonly Project[];
+  /** STORY_034: General › the watermark switch — the server-wide setting and its change; without a handler the switch keeps the notice. */
+  readonly removeWatermark?: boolean;
+  readonly onRemoveWatermark?: (value: boolean) => void;
 }
 
 /**
@@ -46,7 +49,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
   return <SettingsBody {...props} />;
 }
 
-function SettingsBody({ choice, onChoose, onClose, initialSection = "General", archived = [], onUnarchive, onDeleteArchived, onDeleteAllArchived, projects = [] }: SettingsDialogProps) {
+function SettingsBody({ choice, onChoose, onClose, initialSection = "General", archived = [], onUnarchive, onDeleteArchived, onDeleteAllArchived, projects = [], removeWatermark = true, onRemoveWatermark }: SettingsDialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [section, setSection] = useState<SettingsSection>(initialSection);
   const narrow = useNarrow();
@@ -86,7 +89,7 @@ function SettingsBody({ choice, onChoose, onClose, initialSection = "General", a
             <button type="button" className={styles.close} aria-label="Close settings" onClick={onClose}><IconClose /></button>
           </div>
           <div className={styles.panelBody}>
-            {section === "General" ? <GeneralSection choice={choice} onChoose={onChoose} /> : null}
+            {section === "General" ? <GeneralSection choice={choice} onChoose={onChoose} removeWatermark={removeWatermark} onRemoveWatermark={onRemoveWatermark} /> : null}
             {section === "Archived tasks" ? <ArchivedSection entries={archived} projects={projects} onUnarchive={onUnarchive} onDelete={onDeleteArchived} toolbarExtra={narrow ? deleteAll : null} /> : null}
           </div>
         </div>
@@ -95,7 +98,7 @@ function SettingsBody({ choice, onChoose, onClose, initialSection = "General", a
   );
 }
 
-function GeneralSection({ choice, onChoose }: { readonly choice: ThemeChoice; readonly onChoose: (choice: ThemeChoice) => void }) {
+function GeneralSection({ choice, onChoose, removeWatermark, onRemoveWatermark }: { readonly choice: ThemeChoice; readonly onChoose: (choice: ThemeChoice) => void; readonly removeWatermark: boolean; readonly onRemoveWatermark?: (value: boolean) => void }) {
   return (
     <>
       <h3 className={styles.sectionTitle}>Appearance</h3>
@@ -131,6 +134,8 @@ function GeneralSection({ choice, onChoose }: { readonly choice: ThemeChoice; re
           title={'Remove an "AI-generated" watermark'}
           description="When off, downloads will include a visible AI-generated watermark. To remove this watermark, please confirm that your generated content does not involve deepfakes—that is, media that convincingly mimics reality and creates a false impression of authenticity."
           label="Remove watermark setting"
+          checked={removeWatermark}
+          onToggle={onRemoveWatermark}
         />
       </div>
     </>
@@ -204,16 +209,23 @@ function ArchivedSection({ entries, projects, onUnarchive, onDelete, toolbarExtr
   );
 }
 
-function PreferenceRow({ title, description, label }: { readonly title: string; readonly description: string; readonly label: string }) {
+/** A Preferences row (settings-general@1440). STORY_034: with a handler the switch is real — on = the accent track, knob right; off = the grey track, knob left. */
+function PreferenceRow({ title, description, label, checked, onToggle }: { readonly title: string; readonly description: string; readonly label: string; readonly checked: boolean; readonly onToggle?: (value: boolean) => void }) {
   return (
     <div className={styles.preference}>
       <div className={styles.preferenceText}>
         <span className={styles.preferenceTitle}>{title}</span>
         <span className={styles.preferenceDescription}>{description}</span>
       </div>
-      <Inert role="switch" ariaChecked label={label} className={styles.switch} align="end">
-        <span className={styles.switchKnob} />
-      </Inert>
+      {onToggle ? (
+        <button type="button" role="switch" aria-checked={checked} aria-label={label} className={cx(styles.switch, !checked && styles.switchOff)} onClick={() => { onToggle(!checked); }}>
+          <span className={styles.switchKnob} />
+        </button>
+      ) : (
+        <Inert role="switch" ariaChecked={checked} label={label} className={styles.switch} align="end">
+          <span className={styles.switchKnob} />
+        </Inert>
+      )}
     </div>
   );
 }

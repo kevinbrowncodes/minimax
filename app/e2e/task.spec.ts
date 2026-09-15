@@ -135,6 +135,35 @@ test.describe("task page (STORY_014)", () => {
     expect(await page.evaluate(() => (window as unknown as { __copied: string[] }).__copied)).toEqual([`${new URL(page.url()).origin}/api/jobs/${id}/result`]);
   });
 
+  test("Settings › General's watermark switch decides whether a download is marked (STORY_034)", async ({ page, request }, testInfo) => {
+    const narrow = testInfo.project.name === "narrow";
+    const { id, terminal } = await submit(page, "done-after-1-poll", "Mark me maybe");
+    await terminal;
+    await page.getByTestId("preview-pane").getByRole("button", { name: "Close" }).click();
+    const clean = await request.get(`/api/jobs/${id}/result?download`);
+    expect(clean.headers()["x-watermark"]).toBeUndefined(); // the default: clean downloads
+    if (narrow) {
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
+      await settled(page);
+    }
+    await page.getByRole("button", { name: "Owner" }).click();
+    await page.getByRole("menuitem", { name: "Settings" }).click();
+    const toggle = page.getByRole("switch", { name: "Remove watermark setting" });
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    const saved = page.waitForResponse((r) => r.url().endsWith("/api/settings") && r.request().method() === "PATCH");
+    await toggle.click();
+    expect((await saved).ok()).toBe(true);
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    const marked = await request.get(`/api/jobs/${id}/result?download`);
+    expect(marked.headers()["x-watermark"]).toBe("1");
+    expect((await request.get(`/api/jobs/${id}/result`)).headers()["x-watermark"]).toBeUndefined(); // playback stays clean
+    const restored = page.waitForResponse((r) => r.url().endsWith("/api/settings") && r.request().method() === "PATCH");
+    await toggle.click();
+    expect((await restored).ok()).toBe(true);
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    expect((await request.get(`/api/jobs/${id}/result?download`)).headers()["x-watermark"]).toBeUndefined();
+  });
+
   test("image-to-video: the uploaded reference reaches the server and the bubble says so", async ({ page, stubApi }) => {
     const { id, terminal } = await submit(page, "done-after-1-poll", "Animate this", { withImage: true });
     await terminal;

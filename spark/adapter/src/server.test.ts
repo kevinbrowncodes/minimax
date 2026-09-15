@@ -1,5 +1,5 @@
 /** STORY_006 integration lane: the adapter against the fake ComfyUI (test/fake-comfy.ts), in-process. */
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -94,6 +94,49 @@ describe("create → status → result", () => {
     const poster = await api(`/jobs/${id}/poster`);
     expect(poster.status).toBe(200);
     expect(poster.headers.get("content-type")).toBe("image/png");
+  });
+
+  it("serves the marked copy with ?watermark=1 — made once, its own size and ranges, x-watermark: 1 — and the clean file without (STORY_034)", async () => {
+    await adapter?.close();
+    let runs = 0;
+    adapter = await startAdapter({
+      watermarkDir: path.join(dir, "adapter", "watermarked"),
+      watermark: (from, to) => {
+        runs += 1;
+        writeFileSync(to, Buffer.concat([readFileSync(from), Buffer.from("MARK")]));
+        return Promise.resolve();
+      },
+    });
+    const id = await create();
+    await waitFor(id, (s) => s["status"] === "done");
+    const fixture = readFileSync(path.join(FIXTURES, "fixture.mp4"));
+    const marked = await api(`/jobs/${id}/result?watermark=1`);
+    expect(marked.status).toBe(200);
+    expect(marked.headers.get("x-watermark")).toBe("1");
+    expect(marked.headers.get("content-type")).toBe("video/mp4");
+    expect(Number(marked.headers.get("content-length"))).toBe(fixture.length + 4);
+    expect(Buffer.from(await marked.arrayBuffer()).subarray(-4).toString()).toBe("MARK");
+    expect(existsSync(path.join(dir, "adapter", "watermarked", `${id}.mp4`))).toBe(true);
+    const ranged = await api(`/jobs/${id}/result?watermark=1`, { headers: { range: "bytes=0-9" } });
+    expect(ranged.status).toBe(206);
+    expect(ranged.headers.get("content-range")).toBe(`bytes 0-9/${String(fixture.length + 4)}`);
+    expect(ranged.headers.get("x-watermark")).toBe("1");
+    expect(runs).toBe(1);
+    const clean = await api(`/jobs/${id}/result`);
+    expect(clean.headers.get("x-watermark")).toBeNull();
+    expect(Number(clean.headers.get("content-length"))).toBe(fixture.length);
+    expect(Buffer.from(await clean.arrayBuffer()).equals(fixture)).toBe(true); // the original is untouched
+  });
+
+  it("answers 500 watermark_failed when ffmpeg fails, and the clean result still serves (STORY_034)", async () => {
+    await adapter?.close();
+    adapter = await startAdapter({ watermarkDir: path.join(dir, "adapter", "watermarked"), watermark: () => Promise.reject(new Error("ffmpeg exited 1")) });
+    const id = await create();
+    await waitFor(id, (s) => s["status"] === "done");
+    const failed = await api(`/jobs/${id}/result?watermark=1`);
+    expect(failed.status).toBe(500);
+    expect(await failed.json()).toMatchObject({ error: { code: "watermark_failed" } });
+    expect((await api(`/jobs/${id}/result`)).status).toBe(200);
   });
 
   it("refuses the result before the job is done and 404s an unknown job", async () => {

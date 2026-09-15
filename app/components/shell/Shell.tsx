@@ -3,6 +3,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { InboxEvent } from "@/lib/inbox";
 import type { Project } from "@/lib/project-store";
+import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
 import { archivedRecents, tasksOf } from "@/lib/recents";
 import { topBarFor, type RecentEntry } from "@/lib/route-title";
 import { type Section } from "@/lib/shell-prefs";
@@ -61,6 +62,7 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
   const createFor = useRef<((project: Project) => void) | undefined>(undefined);
   const [deleting, setDeleting] = useState<Project | undefined>(undefined);
   const [projects, setProjects] = useState<readonly Project[]>([]);
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [themeChoice, setThemeChoice] = useThemeChoice();
   const [recents, setRecents] = useState<readonly RecentEntry[]>([]);
   const confirmDelete = useCallback((message: string) => (confirmImpl ? confirmImpl(message) : window.confirm(message)), [confirmImpl]);
@@ -95,6 +97,37 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
   // Recents follow the history store; refetched on every navigation so a new job or a finished one shows up.
   useEffect(() => loadRecents(), [pathname, loadRecents]);
   useEffect(() => loadProjects(), [pathname, loadProjects]);
+  /** STORY_034: the server-wide settings, read once and whenever Settings opens. */
+  const loadSettings = useCallback(() => {
+    let cancelled = false;
+    fetch("/api/settings")
+      .then(async (res) => (res.ok ? ((await res.json()) as Settings) : DEFAULT_SETTINGS))
+      .then((value) => {
+        if (!cancelled) setSettings(value);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  useEffect(() => loadSettings(), [loadSettings]);
+  useEffect(() => (settingsOpen ? loadSettings() : undefined), [settingsOpen, loadSettings]);
+  const setRemoveWatermark = useCallback(
+    (removeWatermark: boolean) => {
+      const before = settings;
+      setSettings({ ...settings, removeWatermark }); // paint at once; the write is under way (CLAUDE.md §4c: send first — it is)
+      fetch("/api/settings", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ removeWatermark }) })
+        .then(async (res) => {
+          if (res.ok) setSettings((await res.json()) as Settings);
+          else throw new Error(String(res.status));
+        })
+        .catch(() => {
+          setSettings(before);
+          notify("That did not save — the app's server did not answer", { tone: "info" });
+        });
+    },
+    [settings, notify],
+  );
 
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
@@ -369,6 +402,8 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
         initialSection={settingsSection}
         archived={archivedRecents(recents)}
         projects={projects}
+        removeWatermark={settings.removeWatermark}
+        onRemoveWatermark={setRemoveWatermark}
         onUnarchive={unarchiveRecent}
         onDeleteArchived={(entry) => {
           void deleteRecent(entry);

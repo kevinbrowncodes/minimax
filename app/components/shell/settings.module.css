@@ -247,6 +247,18 @@
   margin-left: auto;
   border-radius: var(--radius_full);
   background: var(--gray_0);
+  transition: margin var(--duration_fast) var(--ease_standard);
+}
+/* STORY_034: the real switch — a button; off is the grey track with the knob at the left */
+button.switch {
+  border: 0;
+  cursor: pointer;
+}
+.switchOff {
+  background: var(--bg_interaction_secondary_default);
+}
+.switchOff .switchKnob {
+  margin-left: 0;
 }
 @media (max-width: 899px) {
   /* narrow-settings-general@390: a sheet 356 wide, 123 px from the top; the page behind is dimmed as at 1440. */
