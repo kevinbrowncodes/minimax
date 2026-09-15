@@ -123,7 +123,7 @@ describe("ScheduledPage (STORY_041)", () => {
     const waiting = await screen.findByRole("region", { name: "Waiting" });
     fireEvent.click(within(waiting).getByRole("button", { name: "Run Same boat, wider at" }));
     const picker = screen.getByTestId("run-at");
-    expect(picker).toHaveTextContent("the queue runs inside the app");
+    expect(picker).toHaveTextContent("browser or no browser"); // STORY_042
     await act(async () => {
       fireEvent.change(within(picker).getByLabelText("Run at time for Same boat, wider"), { target: { value: "2026-09-16T02:00" } });
       await Promise.resolve();

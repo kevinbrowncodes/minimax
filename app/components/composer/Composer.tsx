@@ -422,7 +422,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                         dispatch({ type: "not-before", notBefore: new Date(value).toISOString() });
                       }}
                     />
-                    <span className={styles.runAtNote}>Waits in the queue until then — the queue runs inside MiniMax Local while it is open.</span>
+                    <span className={styles.runAtNote}>Waits in the queue until then — the queue runs inside MiniMax Local&apos;s server, browser or no browser.</span>
                   </span>
                 ) : null}
               </span>

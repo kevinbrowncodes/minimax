@@ -182,7 +182,7 @@ export function ScheduledPage({ fetchImpl, now, pollMs = SCHEDULED_POLL_MS }: Sc
                         />
                       </label>
                       {row.notBefore !== undefined ? <button type="button" className={styles.smallButtonPlain} aria-label={`Clear the time for ${row.title}`} onClick={() => { setTiming(undefined); void patchQueue(row.id, { notBefore: null }); }}>Clear</button> : null}
-                      <span className={styles.runAtNote}>Goes on the first check after this time while MiniMax Local is open — the queue runs inside the app.</span>
+                      <span className={styles.runAtNote}>Goes within half a minute of this time — the queue runs inside MiniMax Local&apos;s server, browser or no browser.</span>
                     </div>
                   ) : null}
                 </li>
