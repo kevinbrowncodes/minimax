@@ -9,6 +9,9 @@ export interface RecentEntry {
   /** STORY_029: in the Pinned section. */
   readonly pinned?: boolean;
   readonly pinnedAt?: string;
+  /** STORY_030: out of Recents, under Settings › Archived tasks. */
+  readonly archived?: boolean;
+  readonly archivedAt?: string;
 }
 export type TopBar = { readonly kind: "home" } | { readonly kind: "assets" } | { readonly kind: "task"; readonly title: string } | { readonly kind: "page"; readonly page: ReferencePage } | { readonly kind: "other" };
 

@@ -1,9 +1,12 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cx } from "@/lib/cx";
+import { formatArchivedAt, recentLabel, searchRecents } from "@/lib/recents";
+import type { RecentEntry } from "@/lib/route-title";
 import { THEME_CHOICES, type ThemeChoice } from "@/lib/theme";
+import { useNarrow } from "@/lib/use-narrow";
 import { Inert } from "./Inert";
-import { IconArchive, IconChevronDown, IconClose, IconGeneral, IconMonitor, IconMoon, IconSearch, IconSun } from "./icons";
+import { IconArchive, IconChevronDown, IconClose, IconFolder, IconGeneral, IconMonitor, IconMoon, IconSearch, IconSun, IconTrash } from "./icons";
 import styles from "./settings.module.css";
 
 /** General and Archived tasks; STORY_026 removed the reference's Account and Usage (no accounts, plans or credits locally). */
@@ -18,6 +21,13 @@ export interface SettingsDialogProps {
   readonly choice: ThemeChoice;
   readonly onChoose: (choice: ThemeChoice) => void;
   readonly onClose: () => void;
+  /** STORY_030: the section to open on (the archive toast's Settings link lands on Archived tasks). */
+  readonly initialSection?: SettingsSection;
+  /** STORY_030: Archived tasks — the archived entries (newest archive first) and their Unarchive / trash / Delete all. */
+  readonly archived?: readonly RecentEntry[];
+  readonly onUnarchive?: (entry: RecentEntry) => void;
+  readonly onDeleteArchived?: (entry: RecentEntry) => void;
+  readonly onDeleteAllArchived?: () => void;
 }
 
 /**
@@ -33,9 +43,14 @@ export function SettingsDialog(props: SettingsDialogProps) {
   return <SettingsBody {...props} />;
 }
 
-function SettingsBody({ choice, onChoose, onClose }: SettingsDialogProps) {
+function SettingsBody({ choice, onChoose, onClose, initialSection = "General", archived = [], onUnarchive, onDeleteArchived, onDeleteAllArchived }: SettingsDialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [section, setSection] = useState<SettingsSection>("General");
+  const [section, setSection] = useState<SettingsSection>(initialSection);
+  const narrow = useNarrow();
+  // behaviour-recents-archive-03: Delete all sits beside the title; at 390 the head is hidden, so it joins the toolbar
+  const deleteAll = section === "Archived tasks" && archived.length > 0 ? (
+    <button type="button" className={styles.deleteAll} onClick={onDeleteAllArchived}><IconTrash /> Delete all</button>
+  ) : null;
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === "Escape") onClose();
@@ -61,12 +76,15 @@ function SettingsBody({ choice, onChoose, onClose }: SettingsDialogProps) {
         </nav>
         <div className={styles.panel}>
           <div className={styles.panelHead}>
-            <h2 id="settings-title" className={styles.panelTitle}>{section}</h2>
+            <div className={styles.panelHeadLeft}>
+              <h2 id="settings-title" className={styles.panelTitle}>{section}</h2>
+              {narrow ? null : deleteAll}
+            </div>
             <button type="button" className={styles.close} aria-label="Close settings" onClick={onClose}><IconClose /></button>
           </div>
           <div className={styles.panelBody}>
             {section === "General" ? <GeneralSection choice={choice} onChoose={onChoose} /> : null}
-            {section === "Archived tasks" ? <ArchivedSection /> : null}
+            {section === "Archived tasks" ? <ArchivedSection entries={archived} onUnarchive={onUnarchive} onDelete={onDeleteArchived} toolbarExtra={narrow ? deleteAll : null} /> : null}
           </div>
         </div>
       </div>
@@ -116,18 +134,55 @@ function GeneralSection({ choice, onChoose }: { readonly choice: ThemeChoice; re
   );
 }
 
-/** settings-archived-tasks@1440: a search field and an All projects filter over an empty list. */
-function ArchivedSection() {
+interface ArchivedSectionProps {
+  readonly entries: readonly RecentEntry[];
+  readonly onUnarchive?: (entry: RecentEntry) => void;
+  readonly onDelete?: (entry: RecentEntry) => void;
+  readonly toolbarExtra?: ReactNode;
+}
+
+/**
+ * settings-archived-tasks@1440 (the chrome) and behaviour-recents-archive-03…05 (STORY_030): a search field that filters
+ * live, the All projects filter (inert until STORY_031), the rows under a **No project** folder heading — the stamp and
+ * title, the archive time, a trash and **Unarchive** — "No archived tasks." when nothing is archived, "No archived tasks
+ * match." when the search finds nothing.
+ */
+function ArchivedSection({ entries, onUnarchive, onDelete, toolbarExtra }: ArchivedSectionProps) {
+  const [query, setQuery] = useState("");
+  const shown = searchRecents(entries, query);
   return (
     <>
       <div className={styles.archivedToolbar}>
         <label className={styles.searchField}>
           <IconSearch />
-          <input className={styles.searchInput} placeholder="Search archived tasks" aria-label="Search archived tasks" />
+          <input className={styles.searchInput} placeholder="Search archived tasks" aria-label="Search archived tasks" value={query} onChange={(event) => { setQuery(event.target.value); }} />
         </label>
         <Inert label="All projects" className={styles.secondaryButton} align="end">All projects <IconChevronDown /></Inert>
+        {toolbarExtra}
       </div>
-      <p className={styles.archivedEmpty}>No archived tasks.</p>
+      {entries.length === 0 ? (
+        <p className={styles.archivedEmpty}>No archived tasks.</p>
+      ) : shown.length === 0 ? (
+        <p className={styles.archivedEmpty}>No archived tasks match.</p>
+      ) : (
+        <section className={styles.archivedGroup} aria-label="No project">
+          <h3 className={styles.archivedGroupTitle}><IconFolder /> No project</h3>
+          <ul className={styles.archivedList}>
+            {shown.map((entry) => (
+              <li key={entry.id} className={styles.archivedRow} data-testid="archived-row">
+                <div className={styles.archivedText}>
+                  <span className={styles.archivedTitle} title={entry.title}><span className={styles.archivedStamp}>{recentLabel(entry)}</span> — {entry.title}</span>
+                  <span className={styles.archivedDate}>{formatArchivedAt(entry.archivedAt)}</span>
+                </div>
+                <div className={styles.archivedActions}>
+                  <button type="button" className={styles.iconButton} aria-label={`Delete ${entry.title}`} onClick={() => onDelete?.(entry)}><IconTrash /></button>
+                  <button type="button" className={styles.secondaryButton} aria-label={`Unarchive ${entry.title}`} onClick={() => onUnarchive?.(entry)}>Unarchive</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </>
   );
 }

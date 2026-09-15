@@ -46,6 +46,9 @@ describe("HistoryStore", () => {
     expect(s.patch("a", { pinned: true, pinnedAt: "2026-09-15T10:00:00Z" })).toMatchObject({ pinned: true, pinnedAt: "2026-09-15T10:00:00Z" }); // STORY_029
     expect(s.patch("a", { pinned: false, pinnedAt: undefined })?.pinned).toBe(false);
     expect(s.get("a")?.pinnedAt).toBeUndefined();
+    expect(s.patch("a", { archived: true, archivedAt: "2026-09-15T12:11:00Z" })).toMatchObject({ archived: true, archivedAt: "2026-09-15T12:11:00Z" }); // STORY_030
+    expect(s.patch("a", { archived: false, archivedAt: undefined })?.archived).toBe(false);
+    expect(s.get("a")?.archivedAt).toBeUndefined();
     expect(s.patch("zzz", { progress: 1 })).toBeUndefined();
     expect(s.recordStatus("zzz", { id: "zzz", status: "done", progress: 100 })).toBeUndefined();
     expect(s.remove("b")).toBe(true);
@@ -53,6 +56,16 @@ describe("HistoryStore", () => {
     expect(s.list().map((e) => e.id)).toEqual(["a"]);
     expect(readdirSync(path.dirname(s.file)).filter((f) => f.endsWith(".tmp"))).toEqual([]);
     expect(existsSync(s.file)).toBe(true);
+  });
+
+  it("removeMany forgets every listed id in one write and reports the count (STORY_030)", () => {
+    const s = store();
+    for (const id of ["a", "b", "c"]) s.create({ id, prompt: `${id} boat`, params, referenceImages: 0, createdAt: "2026-09-12T18:00:00Z" });
+    expect(s.removeMany(["a", "c", "nope"])).toBe(2);
+    expect(s.list().map((e) => e.id)).toEqual(["b"]);
+    expect(s.removeMany([])).toBe(0);
+    expect(s.removeMany(["zzz"])).toBe(0);
+    expect(s.list().map((e) => e.id)).toEqual(["b"]);
   });
 
   it("starts empty when the file does not exist and survives a new instance", () => {

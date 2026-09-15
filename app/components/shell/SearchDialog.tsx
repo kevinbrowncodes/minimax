@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { groupByAge, recentLabel, recentName, searchRecents } from "@/lib/recents";
+import { activeRecents, groupByAge, recentLabel, recentName, searchRecents } from "@/lib/recents";
 import type { RecentEntry } from "@/lib/route-title";
 import { IconClose } from "./icons";
 import styles from "./search-dialog.module.css";
@@ -38,7 +38,7 @@ function SearchDialogBody({ recents, onClose, now = () => new Date() }: SearchDi
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);
-  const groups = groupByAge(searchRecents(recents, query), now());
+  const groups = groupByAge(searchRecents(activeRecents(recents), query), now()); // STORY_030: archived tasks are found under Settings
   return (
     <div className={styles.backdrop} data-testid="search-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <div className={styles.dialog} role="dialog" aria-label="Search tasks">

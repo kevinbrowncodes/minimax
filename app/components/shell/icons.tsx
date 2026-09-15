@@ -124,6 +124,10 @@ export const IconBell = () => (
 export const IconExpand = () => (
   <svg {...base}><rect x="2" y="2.5" width="12" height="11" rx="2" /><path d="M6 2.5v11" /></svg>
 );
+/** The success toast's mark (STORY_030; behaviour-recents-pin-01-pinned@1440: a filled green circle with a check). */
+export const IconCheckCircle = () => (
+  <svg {...base}><circle cx="8" cy="8" r="6.3" /><path d="m5.3 8.2 1.9 1.9 3.6-4" /></svg>
+);
 export const IconInfo = () => (
   <svg {...base}><circle cx="8" cy="8" r="6.3" /><path d="M8 7.2v4M8 5v.2" /></svg>
 );

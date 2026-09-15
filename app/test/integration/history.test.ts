@@ -5,7 +5,7 @@ import path from "node:path";
 import { createStubServer, type StubServer } from "stub-generation-server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { DELETE as deleteHistory, GET as getHistoryEntry, PATCH as patchHistory } from "@/app/api/history/[id]/route";
-import { GET as listHistory } from "@/app/api/history/route";
+import { DELETE as deleteMany, GET as listHistory } from "@/app/api/history/route";
 import { DELETE as cancelJob, GET as getJob } from "@/app/api/jobs/[id]/route";
 import { POST as createJob } from "@/app/api/jobs/route";
 import type { HistoryEntry } from "@/lib/history-store";
@@ -96,9 +96,33 @@ describe("history through the app's routes", () => {
     expect(unpinned.pinned).toBe(false);
     expect(unpinned.pinnedAt).toBeUndefined();
     expect(((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries.find((e) => e.id === id)?.title).toBe("Renamed boat");
+    // STORY_030: archived is a boolean that stamps and clears archivedAt; the entry is still listed (the UI decides where)
+    const archived = (await (await patchHistory(jsonRequest(`/api/history/${id}`, { archived: true }, "PATCH"), ctx(id))).json()) as HistoryEntry;
+    expect(archived.archived).toBe(true);
+    expect(typeof archived.archivedAt).toBe("string");
+    expect((await patchHistory(jsonRequest(`/api/history/${id}`, { archived: "yes" }, "PATCH"), ctx(id))).status).toBe(400);
+    expect(((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries.find((e) => e.id === id)?.archived).toBe(true);
+    const restored = (await (await patchHistory(jsonRequest(`/api/history/${id}`, { archived: false }, "PATCH"), ctx(id))).json()) as HistoryEntry;
+    expect(restored.archived).toBe(false);
+    expect(restored.archivedAt).toBeUndefined();
     expect((await deleteHistory(new Request(`http://app/api/history/${id}`, { method: "DELETE" }), ctx(id))).status).toBe(204);
     expect((await getHistoryEntry(new Request(`http://app/api/history/${id}`), ctx(id))).status).toBe(404);
     expect((await deleteHistory(new Request(`http://app/api/history/${id}`, { method: "DELETE" }), ctx(id))).status).toBe(404);
     expect((await patchHistory(jsonRequest(`/api/history/nope`, { openedAt: "x" }, "PATCH"), ctx("nope"))).status).toBe(404);
+  });
+
+  it("DELETE /api/history?ids=… forgets every listed entry in one call and refuses an empty list (STORY_030)", async () => {
+    const a = ((await (await createJob(jsonRequest("/api/jobs", valid))).json()) as CreateJobResponse).id;
+    const b = ((await (await createJob(jsonRequest("/api/jobs", valid))).json()) as CreateJobResponse).id;
+    const c = ((await (await createJob(jsonRequest("/api/jobs", valid))).json()) as CreateJobResponse).id;
+    expect((await deleteMany(new Request("http://app/api/history", { method: "DELETE" }))).status).toBe(400);
+    expect((await deleteMany(new Request("http://app/api/history?ids=,", { method: "DELETE" }))).status).toBe(400);
+    const res = await deleteMany(new Request(`http://app/api/history?ids=${a},${c},nope`, { method: "DELETE" }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ removed: 2 });
+    const left = ((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries.map((e) => e.id);
+    expect(left).toContain(b);
+    expect(left).not.toContain(a);
+    expect(left).not.toContain(c);
   });
 });

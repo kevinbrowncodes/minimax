@@ -1,6 +1,7 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { archivedRecents } from "@/lib/recents";
 import { topBarFor, type RecentEntry } from "@/lib/route-title";
 import { type Section } from "@/lib/shell-prefs";
 import { dispatchShellPrefs, getServerShellPrefs, getShellPrefs, subscribeShellPrefs } from "@/lib/shell-prefs-store";
@@ -10,9 +11,9 @@ import { useThemeChoice } from "@/lib/use-theme";
 import { CreateProjectDialog } from "./CreateProjectDialog";
 import { PromoCard } from "./PromoCard";
 import { SearchDialog } from "./SearchDialog";
-import { SettingsDialog } from "./SettingsDialog";
-import { Toast } from "./Toast";
-import { ShellStateProvider, useShell } from "./ShellContext";
+import { SettingsDialog, type SettingsSection } from "./SettingsDialog";
+import { Toast, ToastLink } from "./Toast";
+import { ShellStateProvider, UNDO_TOAST_MS, useShell } from "./ShellContext";
 import { Sidebar } from "./Sidebar";
 import { IconExpand, IconWorkArea } from "./icons";
 import styles from "./shell.module.css";
@@ -48,6 +49,7 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
   const dispatchPrefs = dispatchShellPrefs;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>("General");
   const [searchOpen, setSearchOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [themeChoice, setThemeChoice] = useThemeChoice();
@@ -75,6 +77,7 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
   }, []);
   const closeSettings = useCallback(() => {
     setSettingsOpen(false);
+    setSettingsSection("General");
   }, []);
   const closeSearch = useCallback(() => {
     setSearchOpen(false);
@@ -105,15 +108,48 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
     [confirmDelete, pathname, router, loadRecents],
   );
 
-  /** STORY_029: the row's Rename / Pin / Copy conversation ID — a PATCH, the list refetched, a toast. */
+  /** STORY_029: the row's Rename / Pin / Copy conversation ID — a PATCH, the list refetched, a toast when asked for. */
   const patchRecent = useCallback(
-    async (entry: RecentEntry, body: Record<string, unknown>, message: string) => {
+    async (entry: RecentEntry, body: Record<string, unknown>, message?: string): Promise<boolean> => {
       const res = await fetch(`/api/history/${encodeURIComponent(entry.id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).catch(() => undefined);
       loadRecents();
-      notify(res?.ok ? message : "That did not save — the app's server did not answer");
+      const ok = res?.ok === true;
+      if (!ok) notify("That did not save — the app's server did not answer", { tone: "info" });
+      else if (message !== undefined) notify(message);
+      return ok;
     },
     [loadRecents, notify],
   );
+  /** STORY_030: Archive — no confirmation; the reference's toast offers Undo and a link to Settings › Archived tasks. */
+  const openSettingsAt = useCallback((section: SettingsSection) => {
+    setSettingsSection(section);
+    setSettingsOpen(true);
+  }, []);
+  const unarchiveRecent = useCallback((entry: RecentEntry) => { void patchRecent(entry, { archived: false }); }, [patchRecent]);
+  const archiveRecent = useCallback(
+    (entry: RecentEntry) => {
+      void patchRecent(entry, { archived: true }).then((ok) => {
+        if (!ok) return;
+        notify(
+          <>
+            <ToastLink onClick={() => { clearToast(); unarchiveRecent(entry); }}>Undo</ToastLink> or view archived tasks in{" "}
+            <ToastLink onClick={() => { clearToast(); openSettingsAt("Archived tasks"); }}>Settings</ToastLink>
+          </>,
+          { tone: "info", durationMs: UNDO_TOAST_MS },
+        );
+      });
+    },
+    [patchRecent, notify, clearToast, unarchiveRecent, openSettingsAt],
+  );
+  /** STORY_030: Archived tasks › Delete all — one confirm naming the count, one DELETE, the task page left if it was one of them. */
+  const deleteAllArchived = useCallback(async () => {
+    const list = archivedRecents(recents);
+    if (list.length === 0) return;
+    if (!confirmDelete(`Delete all ${String(list.length)} archived ${list.length === 1 ? "task" : "tasks"} from history? The files on the Spark are untouched.`)) return;
+    await fetch(`/api/history?ids=${list.map((e) => encodeURIComponent(e.id)).join(",")}`, { method: "DELETE" }).catch(() => undefined);
+    if (list.some((e) => pathname === `/task/${encodeURIComponent(e.id)}`)) router.push("/");
+    loadRecents();
+  }, [recents, confirmDelete, pathname, router, loadRecents]);
   const renameRecent = useCallback((entry: RecentEntry, title: string) => { void patchRecent(entry, { title }, "Task renamed"); }, [patchRecent]);
   const pinRecent = useCallback((entry: RecentEntry, pinned: boolean) => { void patchRecent(entry, { pinned }, pinned ? "Task pinned" : "Task unpinned"); }, [patchRecent]);
   const copyRecentId = useCallback(
@@ -175,6 +211,7 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
           onRenameRecent={renameRecent}
           onPinRecent={pinRecent}
           onCopyRecentId={copyRecentId}
+          onArchiveRecent={archiveRecent}
         />
       </aside>
       <div className={styles.main}>
@@ -208,8 +245,22 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
           }}
         />
       ) : null}
-      <Toast message={toast} onClose={clearToast} />
-      <SettingsDialog open={settingsOpen} choice={themeChoice} onChoose={setThemeChoice} onClose={closeSettings} />
+      <Toast toast={toast} onClose={clearToast} />
+      <SettingsDialog
+        open={settingsOpen}
+        choice={themeChoice}
+        onChoose={setThemeChoice}
+        onClose={closeSettings}
+        initialSection={settingsSection}
+        archived={archivedRecents(recents)}
+        onUnarchive={unarchiveRecent}
+        onDeleteArchived={(entry) => {
+          void deleteRecent(entry);
+        }}
+        onDeleteAllArchived={() => {
+          void deleteAllArchived();
+        }}
+      />
       <SearchDialog open={searchOpen} recents={recents} onClose={closeSearch} />
       <CreateProjectDialog open={createOpen} onClose={closeCreate} />
     </div>

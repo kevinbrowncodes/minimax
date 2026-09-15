@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { hasMoreRecents, pinnedRecents, recentLabel, recentName, visibleRecents } from "@/lib/recents";
+import { activeRecents, hasMoreRecents, pinnedRecents, recentLabel, recentName, visibleRecents } from "@/lib/recents";
 import { activeRow, isUnread, type RecentEntry } from "@/lib/route-title";
 import { DEFAULT_SHELL_PREFS, type Section, type ShellPrefs } from "@/lib/shell-prefs";
 import { cx } from "@/lib/cx";
@@ -50,6 +50,8 @@ export interface SidebarProps {
   readonly onRenameRecent?: (entry: RecentEntry, title: string) => void;
   readonly onPinRecent?: (entry: RecentEntry, pinned: boolean) => void;
   readonly onCopyRecentId?: (entry: RecentEntry) => void;
+  /** STORY_030: the row's Archive — no confirmation; the row leaves Recents. */
+  readonly onArchiveRecent?: (entry: RecentEntry) => void;
 }
 
 /** A sidebar row the reference has and we do not implement: looks like the others, answers a click with the notice (STORY_019). */
@@ -90,6 +92,7 @@ type RecentRowProps = {
   readonly onRename?: (entry: RecentEntry, title: string) => void;
   readonly onPin?: (entry: RecentEntry, pinned: boolean) => void;
   readonly onCopyId?: (entry: RecentEntry) => void;
+  readonly onArchive?: (entry: RecentEntry) => void;
 };
 
 /**
@@ -98,7 +101,7 @@ type RecentRowProps = {
  * Delete. Rename turns the label into an inline input holding the title (behaviour-recents-rename-02): Enter commits,
  * Escape cancels, an empty title is refused. The visible label stays the creation stamp (CHORE_008).
  */
-function RecentRow({ entry, active, onNavigate, onDelete, onRename, onPin, onCopyId }: RecentRowProps) {
+function RecentRow({ entry, active, onNavigate, onDelete, onRename, onPin, onCopyId, onArchive }: RecentRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [draft, setDraft] = useState<string | undefined>(undefined);
   const rootRef = useRef<HTMLLIElement>(null);
@@ -188,10 +191,7 @@ function RecentRow({ entry, active, onNavigate, onDelete, onRename, onPin, onCop
             <span className={styles.menuChevron} aria-hidden="true">›</span>
           </Inert>
           <div className={styles.menuSeparator} />
-          <Inert role="menuitem" label="Archive" className={styles.menuItem}>
-            <span className={styles.menuIcon}><IconArchive /></span>
-            <span className={styles.menuLabel}>Archive</span>
-          </Inert>
+          {onArchive ? menuButton("Archive", <IconArchive />, () => { onArchive(entry); }) : <Inert role="menuitem" label="Archive" className={styles.menuItem}><span className={styles.menuIcon}><IconArchive /></span><span className={styles.menuLabel}>Archive</span></Inert>}
           <button
             type="button"
             role="menuitem"
@@ -210,7 +210,7 @@ function RecentRow({ entry, active, onNavigate, onDelete, onRename, onPin, onCop
   );
 }
 
-export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail = false, onNavigate, onCollapse, onExpand, onToggleSection, onDismissGuide, onOpenSettings, onOpenSearch, onOpenCreateProject, onDeleteRecent, onRenameRecent, onPinRecent, onCopyRecentId }: SidebarProps) {
+export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail = false, onNavigate, onCollapse, onExpand, onToggleSection, onDismissGuide, onOpenSettings, onOpenSearch, onOpenCreateProject, onDeleteRecent, onRenameRecent, onPinRecent, onCopyRecentId, onArchiveRecent }: SidebarProps) {
   const active = activeRow(pathname);
   const [showAll, setShowAll] = useState(false);
   const [inboxOpen, setInboxOpen] = useState(false);
@@ -241,9 +241,10 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
       <span className={styles.rowLabel}>{label}</span>
     </Link>
   );
-  const shown = visibleRecents(recents, showAll);
-  const pinned = pinnedRecents(recents);
-  const row = (entry: RecentEntry) => <RecentRow key={entry.id} entry={entry} active={active === `task:${entry.id}`} onNavigate={onNavigate} onDelete={onDeleteRecent} onRename={onRenameRecent} onPin={onPinRecent} onCopyId={onCopyRecentId} />;
+  const listed = activeRecents(recents); // STORY_030: archived rows live under Settings › Archived tasks
+  const shown = visibleRecents(listed, showAll);
+  const pinned = pinnedRecents(listed);
+  const row = (entry: RecentEntry) => <RecentRow key={entry.id} entry={entry} active={active === `task:${entry.id}`} onNavigate={onNavigate} onDelete={onDeleteRecent} onRename={onRenameRecent} onPin={onPinRecent} onCopyId={onCopyRecentId} onArchive={onArchiveRecent} />;
   return (
     <nav className={styles.sidebar} aria-label="Sidebar">
       <div className={styles.head}>
@@ -270,12 +271,12 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
       </div>
       <div className={styles.section}>
         <SectionHeader label="Recents" section="recents" folded={prefs.folded.recents} onToggle={onToggleSection} />
-        {prefs.folded.recents ? null : recents.length === 0 ? (
+        {prefs.folded.recents ? null : listed.length === 0 ? (
           <p className={styles.empty}>No task history.</p>
         ) : (
           <>
             <ul className={styles.recents}>{shown.map(row)}</ul>
-            {hasMoreRecents(recents) && !showAll ? (
+            {hasMoreRecents(listed) && !showAll ? (
               <button type="button" className={cx(styles.row, styles.rowMuted, styles.showMore)} onClick={() => { setShowAll(true); }}>
                 <span className={styles.rowIcon}><IconMore /></span>
                 <span className={styles.rowLabel}>Show more</span>

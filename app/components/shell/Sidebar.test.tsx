@@ -65,6 +65,10 @@ describe("Sidebar", () => {
     });
     expect(within(menu).getByRole("status")).toHaveTextContent("Not part of MiniMax Local");
     act(() => {
+      within(menu).getByRole("menuitem", { name: "Archive" }).click(); // no handler → a second notice (STORY_030 wires it in the Shell)
+    });
+    expect(within(menu).getAllByRole("status")).toHaveLength(2);
+    act(() => {
       within(menu).getByRole("menuitem", { name: "Delete" }).click();
     });
     expect(onDeleteRecent).toHaveBeenCalledWith(recents[0]);
@@ -103,6 +107,25 @@ describe("Sidebar", () => {
     openRename();
     fireEvent.blur(screen.getByRole("textbox", { name: "Rename Paper boat on rain puddle" })); // blur with the same title commits nothing
     expect(onRenameRecent).toHaveBeenCalledTimes(1);
+  });
+
+  it("Archive calls its handler with no confirmation; archived rows are listed neither in Recents nor in Pinned (STORY_030)", () => {
+    const onArchiveRecent = vi.fn();
+    const { rerender } = render(<Sidebar pathname="/" recents={recents} onArchiveRecent={onArchiveRecent} />);
+    act(() => {
+      screen.getByRole("button", { name: "More actions for Paper boat on rain puddle" }).click();
+    });
+    act(() => {
+      screen.getByRole("menuitem", { name: "Archive" }).click();
+    });
+    expect(onArchiveRecent).toHaveBeenCalledWith(first);
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    rerender(<Sidebar pathname="/" recents={[{ ...first, archived: true, archivedAt: "2026-09-15T12:11:00Z", pinned: true, pinnedAt: "2026-09-15T10:00:00Z" }, second]} onArchiveRecent={onArchiveRecent} />);
+    expect(screen.queryByRole("link", { name: /Paper boat on rain puddle/ })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("pinned-section")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Paper boat in rain puddle/ })).toBeInTheDocument();
+    rerender(<Sidebar pathname="/" recents={[{ ...first, archived: true }, { ...second, archived: true }]} />);
+    expect(screen.getByText("No task history.")).toBeInTheDocument(); // everything archived reads as empty Recents
   });
 
   it("Pin is the hover icon and the menu entry; a pinned row sits in the Pinned section above Projects, filled, and reads Unpin (STORY_029)", () => {

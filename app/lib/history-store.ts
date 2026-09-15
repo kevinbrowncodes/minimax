@@ -34,10 +34,13 @@ export interface HistoryEntry {
   /** STORY_029: pinned rows sit in the sidebar's Pinned section, newest pin first. */
   readonly pinned?: boolean;
   readonly pinnedAt?: string;
+  /** STORY_030: archived rows leave Recents and Search and live under Settings › Archived tasks, newest archive first. */
+  readonly archived?: boolean;
+  readonly archivedAt?: string;
   readonly error?: JobError;
   readonly result?: JobResult;
 }
-export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "overlap" | "pinned" | "pinnedAt">>;
+export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "overlap" | "pinned" | "pinnedAt" | "archived" | "archivedAt">>;
 
 const TERMINAL: ReadonlySet<JobStatus> = new Set(["done", "failed", "cancelled"]);
 const TITLE_MAX = 48;
@@ -125,6 +128,14 @@ export class HistoryStore {
     if (next.length === entries.length) return false;
     this.#write(next);
     return true;
+  }
+  /** STORY_030: Archived tasks › Delete all — one write; returns how many entries went. */
+  removeMany(ids: readonly string[]): number {
+    const gone = new Set(ids);
+    const entries = this.#read();
+    const next = entries.filter((e) => !gone.has(e.id));
+    if (next.length !== entries.length) this.#write(next);
+    return entries.length - next.length;
   }
 }
 

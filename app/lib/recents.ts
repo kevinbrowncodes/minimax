@@ -71,3 +71,25 @@ export function recentName(entry: { readonly title: string; readonly createdAt?:
 export function pinnedRecents<T extends { readonly id: string; readonly pinned?: boolean; readonly pinnedAt?: string }>(entries: readonly T[]): readonly T[] {
   return entries.filter((e) => e.pinned === true).sort((a, b) => Date.parse(b.pinnedAt ?? "") - Date.parse(a.pinnedAt ?? ""));
 }
+
+/** STORY_030: what Recents, the Pinned section and Search list — every entry that is not archived. */
+export function activeRecents<T extends { readonly id: string; readonly archived?: boolean }>(entries: readonly T[]): readonly T[] {
+  return entries.filter((e) => e.archived !== true);
+}
+
+/** STORY_030: Settings › Archived tasks — the archived entries, newest archive first (the reference's `archived-items`). */
+export function archivedRecents<T extends { readonly id: string; readonly archived?: boolean; readonly archivedAt?: string }>(entries: readonly T[]): readonly T[] {
+  return entries.filter((e) => e.archived === true).sort((a, b) => Date.parse(b.archivedAt ?? "") - Date.parse(a.archivedAt ?? ""));
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+
+/** "Sep 15, 2026, 12:11 PM" — the archive time as the reference writes it (behaviour-recents-archive-03-archived-tasks), local time. */
+export function formatArchivedAt(iso: string | undefined): string {
+  if (iso === undefined) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const hours = date.getHours();
+  const twelve = hours % 12 === 0 ? 12 : hours % 12;
+  return `${MONTHS[date.getMonth()] ?? ""} ${String(date.getDate())}, ${String(date.getFullYear())}, ${String(twelve)}:${String(date.getMinutes()).padStart(2, "0")} ${hours < 12 ? "AM" : "PM"}`;
+}

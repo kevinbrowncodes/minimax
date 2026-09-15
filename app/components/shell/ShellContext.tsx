@@ -1,5 +1,21 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+
+/** The toast's life: two seconds for a confirmation (STORY_029); longer when it carries an Undo (STORY_030, unmeasured). */
+export const TOAST_MS = 2000;
+export const UNDO_TOAST_MS = 6000;
+export type ToastTone = "success" | "info";
+export interface ToastState {
+  /** Changes on every notify so an identical message restarts the clock. */
+  readonly id: number;
+  readonly content: ReactNode;
+  readonly tone: ToastTone;
+  readonly durationMs: number;
+}
+export interface NotifyOptions {
+  readonly tone?: ToastTone;
+  readonly durationMs?: number;
+}
 
 /**
  * What the Shell shares with the task page it frames (STORY_023): whether the Work Area panel is shown — the top bar's
@@ -16,9 +32,12 @@ export interface ShellState {
   /** What the page puts in the top bar at 390 (STORY_024: the Assets page's Search and Filter buttons); undefined when it has nothing. */
   readonly pageActions: ReactNode;
   readonly setPageActions: (actions: ReactNode) => void;
-  /** STORY_029: the toast at the top of the page ("Task pinned"); the Shell renders it, any page or the sidebar shows one. */
-  readonly toast: string | undefined;
-  readonly notify: (message: string) => void;
+  /**
+   * STORY_029: the toast at the top of the page ("Task pinned"); the Shell renders it, any page or the sidebar shows one.
+   * STORY_030: a tone (green ✓ or the ℹ info pill), a duration, and content that may hold links (Undo / Settings).
+   */
+  readonly toast: ToastState | undefined;
+  readonly notify: (content: ReactNode, options?: NotifyOptions) => void;
   readonly clearToast: () => void;
 }
 
@@ -55,9 +74,11 @@ export function ShellStateProvider({ scope, children }: ShellStateProviderProps)
   const [workAreaOpen, setWorkAreaOpen] = useState(true);
   const [previewFor, setPreviewFor] = useState<string | undefined>(undefined);
   const [pageActions, setPageActions] = useState<ReactNode>(undefined);
-  const [toast, setToast] = useState<string | undefined>(undefined);
-  const notify = useCallback((message: string) => {
-    setToast(message);
+  const [toast, setToast] = useState<ToastState | undefined>(undefined);
+  const toastCount = useRef(0);
+  const notify = useCallback((content: ReactNode, options?: NotifyOptions) => {
+    toastCount.current += 1;
+    setToast({ id: toastCount.current, content, tone: options?.tone ?? "success", durationMs: options?.durationMs ?? TOAST_MS });
   }, []);
   const clearToast = useCallback(() => {
     setToast(undefined);

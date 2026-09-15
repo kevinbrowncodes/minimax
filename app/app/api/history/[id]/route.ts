@@ -14,7 +14,7 @@ export function GET(_request: Request, context: Context): Promise<Response> {
   });
 }
 
-/** PATCH /api/history/:id — the page's own marks (openedAt, title, pinned — STORY_029); job state comes from the jobs routes. */
+/** PATCH /api/history/:id — the page's own marks (openedAt, title, pinned — STORY_029, archived — STORY_030); job state comes from the jobs routes. */
 export function PATCH(request: Request, context: Context): Promise<Response> {
   return guarded(async () => {
     const { id } = await context.params;
@@ -25,12 +25,18 @@ export function PATCH(request: Request, context: Context): Promise<Response> {
       return errorResponse({ status: 400, code: "validation", message: "body is not valid JSON" });
     }
     if (typeof body !== "object" || body === null) return errorResponse({ status: 400, code: "validation", message: "body must be an object" });
-    const patch: { openedAt?: string; title?: string; pinned?: boolean; pinnedAt?: string } = {};
+    const patch: { openedAt?: string; title?: string; pinned?: boolean; pinnedAt?: string; archived?: boolean; archivedAt?: string } = {};
     for (const [key, value] of Object.entries(body)) {
-      if (key === "pinned") {
-        if (typeof value !== "boolean") return errorResponse({ status: 400, code: "validation", message: "pinned must be a boolean", field: key });
-        patch.pinned = value;
-        patch.pinnedAt = value ? new Date().toISOString() : undefined;
+      if (key === "pinned" || key === "archived") {
+        if (typeof value !== "boolean") return errorResponse({ status: 400, code: "validation", message: `${key} must be a boolean`, field: key });
+        const at = value ? new Date().toISOString() : undefined;
+        if (key === "pinned") {
+          patch.pinned = value;
+          patch.pinnedAt = at;
+        } else {
+          patch.archived = value;
+          patch.archivedAt = at;
+        }
         continue;
       }
       if (typeof value !== "string") return errorResponse({ status: 400, code: "validation", message: `${key} must be a string`, field: key });

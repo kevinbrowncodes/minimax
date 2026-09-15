@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RECENTS_VISIBLE, groupByAge, hasMoreRecents, pinnedRecents, searchRecents, visibleRecents, recentLabel, recentName, stampFor } from "./recents";
+import { RECENTS_VISIBLE, activeRecents, archivedRecents, formatArchivedAt, groupByAge, hasMoreRecents, pinnedRecents, searchRecents, visibleRecents, recentLabel, recentName, stampFor } from "./recents";
 
 const entry = (id: string, title: string, finishedAt?: string) => ({ id, title, finishedAt });
 
@@ -46,6 +46,30 @@ describe("pinnedRecents (STORY_029)", () => {
     expect(pinnedRecents(entries).map((e) => e.id)).toEqual(["c", "a"]);
     expect(entries.map((e) => e.id)).toEqual(["a", "b", "c", "d"]);
     expect(pinnedRecents([])).toEqual([]);
+  });
+});
+
+describe("archived entries (STORY_030)", () => {
+  it("activeRecents drops the archived rows; archivedRecents keeps them newest archive first; neither touches the input", () => {
+    const entries = [
+      { ...entry("a", "A"), archived: true, archivedAt: "2026-09-15T10:00:00Z" },
+      { ...entry("b", "B"), archived: false },
+      { ...entry("c", "C"), archived: true, archivedAt: "2026-09-15T11:00:00Z" },
+      entry("d", "D"),
+    ];
+    expect(activeRecents(entries).map((e) => e.id)).toEqual(["b", "d"]);
+    expect(archivedRecents(entries).map((e) => e.id)).toEqual(["c", "a"]);
+    expect(entries.map((e) => e.id)).toEqual(["a", "b", "c", "d"]);
+    expect(activeRecents([])).toEqual([]);
+    expect(archivedRecents([])).toEqual([]);
+  });
+
+  it("formatArchivedAt writes the reference's 'Sep 15, 2026, 12:11 PM' in local time, twelve-hour, and nothing for a missing or broken stamp", () => {
+    expect(formatArchivedAt(new Date(2026, 8, 15, 12, 11).toISOString())).toBe("Sep 15, 2026, 12:11 PM");
+    expect(formatArchivedAt(new Date(2026, 0, 3, 0, 5).toISOString())).toBe("Jan 3, 2026, 12:05 AM");
+    expect(formatArchivedAt(new Date(2027, 11, 31, 13, 7).toISOString())).toBe("Dec 31, 2027, 1:07 PM");
+    expect(formatArchivedAt(undefined)).toBe("");
+    expect(formatArchivedAt("not a date")).toBe("");
   });
 });
 

@@ -279,6 +279,100 @@ test.describe("shell (STORY_021)", () => {
     expect(await stubApi.openJobs()).toEqual([]);
   });
 
+  test("Archive takes a task out of Recents and Search into Settings › Archived tasks, where it is searched, restored, and Delete all forgets the rest (STORY_030)", async ({ page, stubApi }, testInfo) => {
+    const narrow = testInfo.project.name === "narrow";
+    const sidebar = page.getByRole("navigation", { name: "Sidebar" });
+    const toast = page.getByTestId("toast");
+    const openSidebar = async (): Promise<void> => {
+      if (narrow && !(await sidebar.isVisible())) {
+        await page.getByRole("button", { name: "Expand sidebar" }).click();
+        await settled(page);
+      }
+    };
+    const makeJob = async (prompt: string): Promise<string> => {
+      await page.goto("/?script=done-after-1-poll");
+      await page.getByRole("button", { name: /Video generation/ }).click();
+      await page.getByRole("textbox", { name: "Message" }).fill(prompt);
+      const terminal = waitForTerminalStatus(page);
+      await page.getByRole("button", { name: "Send message" }).click();
+      await expect(page).toHaveURL(/\/task\/[^/]+$/);
+      const id = page.url().split("/task/")[1] ?? "";
+      await terminal;
+      return id;
+    };
+    const first = await makeJob("Archive me first");
+    const second = await makeJob("Archive me second");
+    await page.goto("/");
+    await settled(page);
+    await openSidebar();
+    // Archive from the ⋯: no confirm, the row leaves Recents, the reference's toast offers Undo and Settings
+    const row = sidebar.getByRole("link", { name: /Archive me first/ });
+    await row.hover();
+    await sidebar.getByRole("button", { name: "More actions for Archive me first" }).click();
+    const archived = page.waitForResponse((r) => r.url().includes(`/api/history/${first}`) && r.request().method() === "PATCH");
+    await page.getByRole("menuitem", { name: "Archive" }).click();
+    expect((await archived).ok()).toBe(true);
+    await expect(toast).toHaveText(/Undo or view archived tasks in Settings/);
+    await expect(sidebar.getByRole("link", { name: /Archive me first/ })).toHaveCount(0);
+    await expect(sidebar.getByRole("link", { name: /Archive me second/ })).toBeVisible();
+    // the task still opens by URL, and Search no longer finds it
+    await page.goto(`/task/${first}`);
+    await settled(page);
+    await expect(page.getByTestId("topbar-title")).toHaveText("Archive me first");
+    await openSidebar();
+    await sidebar.getByRole("button", { name: "Search" }).click();
+    const search = page.getByRole("dialog", { name: "Search tasks" });
+    await search.getByRole("searchbox").fill("archive me");
+    await expect(search.getByRole("button", { name: /Archive me second/ })).toBeVisible();
+    await expect(search.getByRole("button", { name: /Archive me first/ })).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(search).toBeHidden();
+    // Settings › Archived tasks lists it with the archive time; the search filters; Unarchive puts it back
+    await openSettings(page, narrow);
+    await page.getByRole("button", { name: "Archived tasks" }).click();
+    const rowsOf = page.getByTestId("archived-row");
+    await expect(rowsOf).toHaveCount(1);
+    await expect(rowsOf.first()).toContainText("Archive me first");
+    await expect(rowsOf.first()).toContainText(/[A-Z][a-z]{2} \d{1,2}, \d{4}, \d{1,2}:\d{2} [AP]M/);
+    await page.getByRole("textbox", { name: "Search archived tasks" }).fill("nothing like this");
+    await expect(page.getByText("No archived tasks match.")).toBeVisible();
+    await page.getByRole("textbox", { name: "Search archived tasks" }).fill("me first");
+    await expect(rowsOf).toHaveCount(1);
+    const restored = page.waitForResponse((r) => r.url().includes(`/api/history/${first}`) && r.request().method() === "PATCH");
+    await page.getByRole("button", { name: "Unarchive Archive me first" }).click();
+    expect((await restored).ok()).toBe(true);
+    await expect(page.getByText("No archived tasks.")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog", { name: "Archived tasks" })).toBeHidden();
+    await openSidebar();
+    await expect(sidebar.getByRole("link", { name: /Archive me first/ })).toBeVisible();
+    // the toast's Undo restores too; its Settings link lands on Archived tasks; Delete all forgets what is listed
+    await sidebar.getByRole("link", { name: /Archive me second/ }).hover();
+    await sidebar.getByRole("button", { name: "More actions for Archive me second" }).click();
+    await page.getByRole("menuitem", { name: "Archive" }).click();
+    await expect(toast).toBeVisible();
+    const undone = page.waitForResponse((r) => r.url().includes(`/api/history/${second}`) && r.request().method() === "PATCH");
+    await toast.getByRole("button", { name: "Undo" }).click();
+    expect((await undone).ok()).toBe(true);
+    await expect(sidebar.getByRole("link", { name: /Archive me second/ })).toBeVisible();
+    await sidebar.getByRole("link", { name: /Archive me second/ }).hover();
+    await sidebar.getByRole("button", { name: "More actions for Archive me second" }).click();
+    await page.getByRole("menuitem", { name: "Archive" }).click();
+    await toast.getByRole("button", { name: "Settings" }).click();
+    await expect(page.getByRole("dialog", { name: "Archived tasks" })).toBeVisible();
+    await expect(rowsOf).toHaveCount(1);
+    page.once("dialog", (d) => void d.accept());
+    const bulk = page.waitForResponse((r) => r.url().includes("/api/history?ids=") && r.request().method() === "DELETE");
+    await page.getByRole("button", { name: "Delete all" }).click();
+    expect((await bulk).ok()).toBe(true);
+    await expect(page.getByText("No archived tasks.")).toBeVisible();
+    const left = await listHistory(page.request);
+    expect(left.find((e) => e.id === second)).toBeUndefined();
+    expect(left.find((e) => e.id === first)).toBeDefined();
+    await page.request.delete(`/api/history/${first}`);
+    expect(await stubApi.openJobs()).toEqual([]);
+  });
+
   test("the Inbox opens its popover and Escape closes it", async ({ page }, testInfo) => {
     await page.goto("/");
     await settled(page);

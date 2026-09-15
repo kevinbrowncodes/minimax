@@ -118,6 +118,62 @@ describe("SettingsDialog sections (STORY_021; settings-archived-tasks@1440; STOR
   });
 });
 
+describe("SettingsDialog › Archived tasks (STORY_030; behaviour-recents-archive-03…05)", () => {
+  const archived = [
+    { id: "late", title: "Single candle on wooden table", createdAt: new Date(2026, 8, 15, 12, 24).toISOString(), finishedAt: "2026-09-15T12:30:00Z", archived: true, archivedAt: new Date(2026, 8, 15, 14, 0).toISOString() },
+    { id: "early", title: "Paper boat on rain puddle", createdAt: new Date(2026, 8, 15, 12, 11).toISOString(), finishedAt: "2026-09-15T12:20:00Z", archived: true, archivedAt: new Date(2026, 8, 15, 12, 11).toISOString() },
+  ];
+
+  it("opens on the section it is told to, lists the rows with stamp, title and archive time, and Unarchive / trash / Delete all call their handlers", () => {
+    const onUnarchive = vi.fn();
+    const onDeleteArchived = vi.fn();
+    const onDeleteAllArchived = vi.fn();
+    render(<SettingsDialog open initialSection="Archived tasks" archived={archived} onUnarchive={onUnarchive} onDeleteArchived={onDeleteArchived} onDeleteAllArchived={onDeleteAllArchived} choice="system" onChoose={() => undefined} onClose={() => undefined} />);
+    expect(screen.getByRole("dialog", { name: "Archived tasks" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "No project" })).toBeInTheDocument();
+    const rows = screen.getAllByTestId("archived-row");
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "26-09-15-1224 — Single candle on wooden tableSep 15, 2026, 2:00 PMUnarchive",
+      "26-09-15-1211 — Paper boat on rain puddleSep 15, 2026, 12:11 PMUnarchive",
+    ]);
+    act(() => {
+      screen.getByRole("button", { name: "Unarchive Paper boat on rain puddle" }).click();
+    });
+    expect(onUnarchive).toHaveBeenCalledWith(archived[1]);
+    act(() => {
+      screen.getByRole("button", { name: "Delete Single candle on wooden table" }).click();
+    });
+    expect(onDeleteArchived).toHaveBeenCalledWith(archived[0]);
+    act(() => {
+      screen.getByRole("button", { name: "Delete all" }).click();
+    });
+    expect(onDeleteAllArchived).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "All projects" })).toHaveAttribute("aria-disabled", "true"); // STORY_031
+  });
+
+  it("the search filters the rows live by title and says when nothing matches; an empty archive says so and has no Delete all", () => {
+    const { rerender } = render(<SettingsDialog open initialSection="Archived tasks" archived={archived} choice="system" onChoose={() => undefined} onClose={() => undefined} />);
+    fireEvent.change(screen.getByRole("textbox", { name: "Search archived tasks" }), { target: { value: "candle" } });
+    expect(screen.getAllByTestId("archived-row")).toHaveLength(1);
+    expect(screen.getByText(/Single candle/)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: "Search archived tasks" }), { target: { value: "nothing here" } });
+    expect(screen.queryAllByTestId("archived-row")).toHaveLength(0);
+    expect(screen.getByText("No archived tasks match.")).toBeInTheDocument();
+    rerender(<SettingsDialog open initialSection="Archived tasks" archived={[]} choice="system" onChoose={() => undefined} onClose={() => undefined} />);
+    expect(screen.getByText("No archived tasks.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete all" })).not.toBeInTheDocument();
+  });
+});
+
+describe("SearchDialog leaves archived tasks to Settings (STORY_030)", () => {
+  it("does not list an archived entry even when the query matches it", () => {
+    render(<SearchDialog open recents={[...recents, { id: "gone", title: "Paper boat, archived", finishedAt: "2026-09-13T12:00:00Z", archived: true }]} onClose={() => undefined} now={now} />);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "paper boat" } });
+    expect(screen.getByRole("button", { name: /Paper boat on rain puddle/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /archived/ })).not.toBeInTheDocument();
+  });
+});
+
 describe("SearchDialog rows named by creation minute (CHORE_008)", () => {
   it("shows the stamp, keeps the title as tooltip and accessible name, and still matches the title when searching", () => {
     const created = new Date(2026, 8, 14, 18, 30).toISOString();

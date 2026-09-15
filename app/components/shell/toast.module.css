@@ -1,4 +1,5 @@
-/* The toast (STORY_029; behaviour-recents-pin-01-pinned@1440): top-centre, 13 px, a × at the right */
+/* The toast (STORY_029 / STORY_030; behaviour-recents-pin-01-pinned@1440, behaviour-recents-archive-01@1440): top-centre,
+   a 36 px pill — icon · sentence · × — green for a confirmation, neutral with an ℹ when it carries links */
 .toast {
   position: fixed;
   top: 16px;
@@ -7,16 +8,44 @@
   z-index: 60;
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing_12);
+  gap: var(--spacing_8);
   max-width: min(560px, calc(100vw - 32px));
-  padding: var(--spacing_8) var(--spacing_8) var(--spacing_8) var(--spacing_16);
+  min-height: 36px;
+  padding: var(--spacing_6) var(--spacing_6) var(--spacing_6) var(--spacing_12);
   border: 1px solid var(--border_default);
-  border-radius: var(--radius_12);
-  background: var(--bg_default_tertiary);
+  border-radius: var(--radius_8);
+  background: var(--bg_default_primary_elevated);
   box-shadow: 0 4px 24px var(--shadow_default);
   color: var(--text_default_primary);
   font-size: 13px;
   line-height: var(--line_height_20);
+}
+.success {
+  border-color: transparent;
+  background: var(--bg_status_positive);
+}
+.info {
+  background: var(--bg_default_primary_elevated);
+}
+.icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--icon_default_tertiary);
+}
+.success .icon {
+  color: var(--text_default_primary);
+}
+.body {
+  min-width: 0;
+}
+.link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text_default_accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 .close {
   width: 24px;
