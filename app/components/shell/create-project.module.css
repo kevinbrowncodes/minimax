@@ -79,9 +79,59 @@
   font-size: 14px;
   font-weight: 500;
 }
+.createInactive {
+  background: var(--bg_interaction_primary_inactive);
+  cursor: default;
+}
+.error {
+  margin: var(--spacing_8) 0 0;
+  font-size: 13px;
+  color: var(--text_label_danger_secondary_default);
+}
+/* STORY_031 (behaviour-project-delete-04): the Delete project confirm — 340 wide, the text at 14 px, Cancel and a red Delete */
+.confirm {
+  width: min(340px, calc(100vw - 32px));
+}
+.text {
+  margin: var(--spacing_12) 0 0;
+  font-size: 14px;
+  line-height: var(--line_height_22);
+  color: var(--text_default_secondary);
+}
+.confirm .actions {
+  gap: var(--spacing_8);
+}
+.cancel {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 var(--spacing_16);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: var(--bg_interaction_secondary_default);
+  color: var(--text_default_primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.danger {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 var(--spacing_16);
+  border: 0;
+  border-radius: var(--radius_8);
+  background: var(--text_status_error);
+  color: var(--text_label_primary_default);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
 @media (max-width: 899px) {
   .close,
-  .create {
+  .create,
+  .cancel,
+  .danger {
     min-height: 44px;
   }
 }

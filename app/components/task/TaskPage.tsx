@@ -352,7 +352,7 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
               <span className={cx(styles.jumpArrow, !atBottom && styles.jumpArrowDown)} aria-hidden="true">↑</span>
             </button>
           ) : null}
-          <Composer variant="docked" fetchImpl={fetchImpl} stop={running ? { pending: busy === "stop", onStop: () => void stop() } : undefined} extend={extendSource} onStopExtending={() => { setExtending(false); }} />
+          <Composer variant="docked" fetchImpl={fetchImpl} initialProjectId={entry.projectId} stop={running ? { pending: busy === "stop", onStop: () => void stop() } : undefined} extend={extendSource} onStopExtending={() => { setExtending(false); }} />
         </div>
       </div>
 

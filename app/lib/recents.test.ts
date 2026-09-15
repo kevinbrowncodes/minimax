@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RECENTS_VISIBLE, activeRecents, archivedRecents, formatArchivedAt, groupByAge, hasMoreRecents, pinnedRecents, searchRecents, visibleRecents, recentLabel, recentName, stampFor } from "./recents";
+import { RECENTS_VISIBLE, activeRecents, archivedRecents, formatArchivedAt, groupByAge, groupByProject, hasMoreRecents, pinnedRecents, searchRecents, tasksOf, visibleRecents, recentLabel, recentName, stampFor } from "./recents";
 
 const entry = (id: string, title: string, finishedAt?: string) => ({ id, title, finishedAt });
 
@@ -70,6 +70,30 @@ describe("archived entries (STORY_030)", () => {
     expect(formatArchivedAt(new Date(2027, 11, 31, 13, 7).toISOString())).toBe("Dec 31, 2027, 1:07 PM");
     expect(formatArchivedAt(undefined)).toBe("");
     expect(formatArchivedAt("not a date")).toBe("");
+  });
+});
+
+describe("projects (STORY_031)", () => {
+  const entries = [
+    { ...entry("a", "A"), projectId: "p1" },
+    { ...entry("b", "B"), projectId: "p1", archived: true },
+    { ...entry("c", "C") },
+    { ...entry("d", "D"), projectId: "gone" },
+    { ...entry("e", "E"), projectId: "p2" },
+  ];
+  const projects = [{ id: "p1", name: "My film" }, { id: "p2", name: "Second" }, { id: "p3", name: "Empty" }];
+
+  it("tasksOf lists a project's active tasks in order", () => {
+    expect(tasksOf(entries, "p1").map((e) => e.id)).toEqual(["a"]);
+    expect(tasksOf(entries, "p3")).toEqual([]);
+  });
+
+  it("groupByProject puts No project first (including a project that no longer exists), then the projects in order, omitting empty ones", () => {
+    const groups = groupByProject(entries, projects);
+    expect(groups.map((g) => `${g.name}: ${g.entries.map((e) => e.id).join(",")}`)).toEqual(["No project: c,d", "My film: a,b", "Second: e"]);
+    expect(groups[0]?.id).toBeUndefined();
+    expect(groupByProject(entries.slice(0, 1), projects).map((g) => g.name)).toEqual(["My film"]);
+    expect(groupByProject([], projects)).toEqual([]);
   });
 });
 

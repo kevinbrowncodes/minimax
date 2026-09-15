@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cx } from "@/lib/cx";
-import { formatArchivedAt, recentLabel, searchRecents } from "@/lib/recents";
+import type { Project } from "@/lib/project-store";
+import { formatArchivedAt, groupByProject, recentLabel, searchRecents } from "@/lib/recents";
 import type { RecentEntry } from "@/lib/route-title";
 import { THEME_CHOICES, type ThemeChoice } from "@/lib/theme";
 import { useNarrow } from "@/lib/use-narrow";
@@ -28,6 +29,8 @@ export interface SettingsDialogProps {
   readonly onUnarchive?: (entry: RecentEntry) => void;
   readonly onDeleteArchived?: (entry: RecentEntry) => void;
   readonly onDeleteAllArchived?: () => void;
+  /** STORY_031: the projects — the archived list groups by them and the All projects filter narrows to one. */
+  readonly projects?: readonly Project[];
 }
 
 /**
@@ -43,7 +46,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
   return <SettingsBody {...props} />;
 }
 
-function SettingsBody({ choice, onChoose, onClose, initialSection = "General", archived = [], onUnarchive, onDeleteArchived, onDeleteAllArchived }: SettingsDialogProps) {
+function SettingsBody({ choice, onChoose, onClose, initialSection = "General", archived = [], onUnarchive, onDeleteArchived, onDeleteAllArchived, projects = [] }: SettingsDialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [section, setSection] = useState<SettingsSection>(initialSection);
   const narrow = useNarrow();
@@ -84,7 +87,7 @@ function SettingsBody({ choice, onChoose, onClose, initialSection = "General", a
           </div>
           <div className={styles.panelBody}>
             {section === "General" ? <GeneralSection choice={choice} onChoose={onChoose} /> : null}
-            {section === "Archived tasks" ? <ArchivedSection entries={archived} onUnarchive={onUnarchive} onDelete={onDeleteArchived} toolbarExtra={narrow ? deleteAll : null} /> : null}
+            {section === "Archived tasks" ? <ArchivedSection entries={archived} projects={projects} onUnarchive={onUnarchive} onDelete={onDeleteArchived} toolbarExtra={narrow ? deleteAll : null} /> : null}
           </div>
         </div>
       </div>
@@ -136,6 +139,7 @@ function GeneralSection({ choice, onChoose }: { readonly choice: ThemeChoice; re
 
 interface ArchivedSectionProps {
   readonly entries: readonly RecentEntry[];
+  readonly projects: readonly Project[];
   readonly onUnarchive?: (entry: RecentEntry) => void;
   readonly onDelete?: (entry: RecentEntry) => void;
   readonly toolbarExtra?: ReactNode;
@@ -147,9 +151,13 @@ interface ArchivedSectionProps {
  * title, the archive time, a trash and **Unarchive** — "No archived tasks." when nothing is archived, "No archived tasks
  * match." when the search finds nothing.
  */
-function ArchivedSection({ entries, onUnarchive, onDelete, toolbarExtra }: ArchivedSectionProps) {
+function ArchivedSection({ entries, projects, onUnarchive, onDelete, toolbarExtra }: ArchivedSectionProps) {
   const [query, setQuery] = useState("");
-  const shown = searchRecents(entries, query);
+  // STORY_031: "all", "none" (No project) or a project's id
+  const [projectFilter, setProjectFilter] = useState("all");
+  const searched = searchRecents(entries, query);
+  const shown = projectFilter === "all" ? searched : projectFilter === "none" ? searched.filter((e) => e.projectId === undefined || !projects.some((p) => p.id === e.projectId)) : searched.filter((e) => e.projectId === projectFilter);
+  const groups = groupByProject(shown, projects);
   return (
     <>
       <div className={styles.archivedToolbar}>
@@ -157,7 +165,14 @@ function ArchivedSection({ entries, onUnarchive, onDelete, toolbarExtra }: Archi
           <IconSearch />
           <input className={styles.searchInput} placeholder="Search archived tasks" aria-label="Search archived tasks" value={query} onChange={(event) => { setQuery(event.target.value); }} />
         </label>
-        <Inert label="All projects" className={styles.secondaryButton} align="end">All projects <IconChevronDown /></Inert>
+        <span className={styles.selectWrap}>
+          <select className={cx(styles.secondaryButton, styles.select)} aria-label="Project filter" value={projectFilter} onChange={(event) => { setProjectFilter(event.target.value); }}>
+            <option value="all">All projects</option>
+            <option value="none">No project</option>
+            {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+          </select>
+          <IconChevronDown />
+        </span>
         {toolbarExtra}
       </div>
       {entries.length === 0 ? (
@@ -165,10 +180,11 @@ function ArchivedSection({ entries, onUnarchive, onDelete, toolbarExtra }: Archi
       ) : shown.length === 0 ? (
         <p className={styles.archivedEmpty}>No archived tasks match.</p>
       ) : (
-        <section className={styles.archivedGroup} aria-label="No project">
-          <h3 className={styles.archivedGroupTitle}><IconFolder /> No project</h3>
+        groups.map((group) => (
+        <section key={group.id ?? "none"} className={styles.archivedGroup} aria-label={group.name}>
+          <h3 className={styles.archivedGroupTitle}><IconFolder /> {group.name}</h3>
           <ul className={styles.archivedList}>
-            {shown.map((entry) => (
+            {group.entries.map((entry) => (
               <li key={entry.id} className={styles.archivedRow} data-testid="archived-row">
                 <div className={styles.archivedText}>
                   <span className={styles.archivedTitle} title={entry.title}><span className={styles.archivedStamp}>{recentLabel(entry)}</span> — {entry.title}</span>
@@ -182,6 +198,7 @@ function ArchivedSection({ entries, onUnarchive, onDelete, toolbarExtra }: Archi
             ))}
           </ul>
         </section>
+        ))
       )}
     </>
   );

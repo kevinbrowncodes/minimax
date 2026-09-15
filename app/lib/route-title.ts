@@ -12,6 +12,8 @@ export interface RecentEntry {
   /** STORY_030: out of Recents, under Settings › Archived tasks. */
   readonly archived?: boolean;
   readonly archivedAt?: string;
+  /** STORY_031: the project the task belongs to. */
+  readonly projectId?: string;
 }
 export type TopBar = { readonly kind: "home" } | { readonly kind: "assets" } | { readonly kind: "task"; readonly title: string } | { readonly kind: "page"; readonly page: ReferencePage } | { readonly kind: "other" };
 
@@ -46,7 +48,7 @@ export function isUnread(entry: RecentEntry): boolean {
   return Date.parse(entry.openedAt) < Date.parse(entry.finishedAt);
 }
 
-export type ActiveRow = "new-task" | "assets" | "plugins" | "connect-mobile" | `task:${string}`;
+export type ActiveRow = "new-task" | "assets" | "plugins" | "connect-mobile" | `task:${string}` | `project:${string}`;
 
 export function activeRow(pathname: string): ActiveRow | undefined {
   if (pathname === "/") return "new-task";
@@ -55,5 +57,7 @@ export function activeRow(pathname: string): ActiveRow | undefined {
   if (page) return page;
   const task = /^\/task\/([^/]+)/.exec(pathname);
   if (task) return `task:${decodeURIComponent(task[1] ?? "")}`;
+  const project = /^\/project\/([^/]+)/.exec(pathname);
+  if (project) return `project:${decodeURIComponent(project[1] ?? "")}`; // STORY_031
   return undefined;
 }

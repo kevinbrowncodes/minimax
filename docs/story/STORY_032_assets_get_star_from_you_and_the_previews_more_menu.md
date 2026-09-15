@@ -23,7 +23,8 @@ preview ⋯ (top right of the preview): Download · Copy link · Star/Unstar    
 
 ## Acceptance Criteria
 
-- [ ] **Star:** the tile ⋯ and the preview ⋯ toggle **Star / Unstar** (`PATCH /api/history/:id { starred }`); the **Star** tab lists starred videos; the tile shows a small star badge while starred.
+- [ ] **Star:** the tile ⋯ and the preview ⋯ toggle **Star / Unstar** (`PATCH /api/history/:id { starred }`); the **Star** tab lists starred videos; a toast says "Starred" / "Unstarred".
+  *Corrected 2026-09-15, before implementation (CLAUDE.md §3.8):* `behaviour-assets-star-01-starred` shows the tile unchanged after Star — no badge — and a green "Starred" toast; the signals are the toast, the Star tab and the ⋯ reading Unstar. The badge first drafted here is dropped. Also, `behaviour-preview-more-03` places the "preview ⋯" on the **task page's preview pane** (its Download ▾ opens Download · Copy · Refresh · Star), so the third AC applies to that pane's menu as well as to the Assets preview modal's ⋯ (whose Star becomes real too).
 - [ ] **From you:** the reference images attached to a job are kept as files with the job; **From you** lists them (and the **Images** chip filters to them, on both tabs) as tiles named by the original file name, previewable (an image in the preview), with Locate in task and Delete (deletes the file only); **Audio** stays empty with the shared empty state.
 - [ ] **The preview ⋯:** Download (as today), **Copy link** (the result URL on the clipboard, a toast), Star / Unstar; Refresh is not offered.
 - [ ] Both widths (the 390 Filter button shows the tabs as today), both themes; `assets.spec.ts` / `extend.spec.ts` green.

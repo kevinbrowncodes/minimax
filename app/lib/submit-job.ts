@@ -11,6 +11,8 @@ export function buildJobRequest(state: ComposerState): { readonly url: string; r
     resolution: state.resolution,
     durationSeconds: state.durationSeconds,
     model: state.model,
+    // STORY_031: the project the task starts in; the route keeps it and never forwards it.
+    ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
     // STORY_016: an extension names its source and the context; it never carries images.
     ...(state.extend ? { continueFrom: state.extend.id, overlapFrames: state.overlapFrames } : {}),
   };

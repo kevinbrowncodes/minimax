@@ -1,5 +1,6 @@
 import { historyStore } from "@/lib/history-store";
 import { errorResponse, guarded } from "@/lib/model-client";
+import { projectStore } from "@/lib/project-store";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export function GET(_request: Request, context: Context): Promise<Response> {
   });
 }
 
-/** PATCH /api/history/:id — the page's own marks (openedAt, title, pinned — STORY_029, archived — STORY_030); job state comes from the jobs routes. */
+/** PATCH /api/history/:id — the page's own marks (openedAt, title, pinned — STORY_029, archived — STORY_030, projectId — STORY_031); job state comes from the jobs routes. */
 export function PATCH(request: Request, context: Context): Promise<Response> {
   return guarded(async () => {
     const { id } = await context.params;
@@ -25,8 +26,18 @@ export function PATCH(request: Request, context: Context): Promise<Response> {
       return errorResponse({ status: 400, code: "validation", message: "body is not valid JSON" });
     }
     if (typeof body !== "object" || body === null) return errorResponse({ status: 400, code: "validation", message: "body must be an object" });
-    const patch: { openedAt?: string; title?: string; pinned?: boolean; pinnedAt?: string; archived?: boolean; archivedAt?: string } = {};
+    const patch: { openedAt?: string; title?: string; pinned?: boolean; pinnedAt?: string; archived?: boolean; archivedAt?: string; projectId?: string } = {};
     for (const [key, value] of Object.entries(body)) {
+      if (key === "projectId") {
+        // Move to project › (STORY_031): a project's id, or null for No project
+        if (value === null) {
+          patch.projectId = undefined;
+          continue;
+        }
+        if (typeof value !== "string" || !projectStore().get(value)) return errorResponse({ status: 400, code: "validation", message: "projectId must name a project, or be null", field: key });
+        patch.projectId = value;
+        continue;
+      }
       if (key === "pinned" || key === "archived") {
         if (typeof value !== "boolean") return errorResponse({ status: 400, code: "validation", message: `${key} must be a boolean`, field: key });
         const at = value ? new Date().toISOString() : undefined;

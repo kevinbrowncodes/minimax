@@ -247,6 +247,38 @@
 .menuDanger .menuIcon {
   color: var(--text_label_danger_secondary_default);
 }
+/* STORY_031 (behaviour-project-move-01): Move to project › opens to the right of the entry; below it in the 390 drawer */
+.submenuWrap {
+  position: relative;
+}
+.submenu {
+  top: 0;
+  margin: 0 0 0 var(--spacing_4);
+}
+.menuCheck {
+  color: var(--icon_default_primary);
+}
+/* STORY_031: a project row — the folder and name like the fixed rows; expanded, its tasks indented beneath */
+.project .rowIcon {
+  color: var(--icon_default_secondary);
+}
+.projectTasks {
+  margin: 0 0 var(--spacing_4) var(--spacing_16);
+}
+.projectEmpty {
+  margin: 0 0 var(--spacing_4);
+  padding: 0 var(--spacing_8) 0 var(--spacing_32);
+  font-size: 14px;
+  line-height: 30px;
+  color: var(--text_default_tertiary);
+}
+@media (max-width: 899px) {
+  .submenu {
+    left: 0;
+    top: 100%;
+    margin: var(--spacing_4) 0 0;
+  }
+}
 /* The Agents guide card (home-signed-in@1440): a grouped card with a link and an illustration strip. */
 .guide {
   position: relative;

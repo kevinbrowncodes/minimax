@@ -38,3 +38,10 @@ describe("activeRow and isUnread", () => {
     expect(isUnread({ id: "a", title: "a", finishedAt: "2026-09-12T18:00:00Z", openedAt: "2026-09-12T18:30:00Z" })).toBe(false);
   });
 });
+
+describe("the project page (STORY_031)", () => {
+  it("is the active row of its project and has no top bar title of its own", () => {
+    expect(activeRow("/project/p%201")).toBe("project:p 1");
+    expect(topBarFor("/project/p1", [])).toEqual({ kind: "other" });
+  });
+});

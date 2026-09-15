@@ -4,6 +4,7 @@ import { INERT_NOTICE } from "./Inert";
 import { CreateProjectDialog } from "./CreateProjectDialog";
 import { PromoCard } from "./PromoCard";
 import { SearchDialog } from "./SearchDialog";
+import { DeleteProjectDialog } from "./DeleteProjectDialog";
 import { SettingsDialog } from "./SettingsDialog";
 
 const push = vi.fn();
@@ -64,6 +65,46 @@ describe("SearchDialog (STORY_021; page-search@1440)", () => {
   });
 });
 
+describe("CreateProjectDialog with a handler (STORY_031; behaviour-project-create-01..02)", () => {
+  it("Create is inactive until a name is typed, then posts the trimmed name on the button or Enter; an error shows", () => {
+    const onCreate = vi.fn();
+    const { rerender } = render(<CreateProjectDialog open onClose={() => undefined} onCreate={onCreate} />);
+    const create = screen.getByRole("button", { name: "Create" });
+    expect(create).toBeDisabled();
+    fireEvent.change(screen.getByPlaceholderText("Final Essay"), { target: { value: "  My film " } });
+    expect(create).toBeEnabled();
+    fireEvent.click(create);
+    expect(onCreate).toHaveBeenCalledWith("My film");
+    fireEvent.submit(screen.getByRole("dialog", { name: "Create project" }));
+    expect(onCreate).toHaveBeenCalledTimes(2);
+    rerender(<CreateProjectDialog open onClose={() => undefined} onCreate={onCreate} busy error="That did not save" />);
+    expect(screen.getByRole("button", { name: "Create" })).toBeDisabled();
+    expect(screen.getByRole("alert")).toHaveTextContent("That did not save");
+  });
+});
+
+describe("DeleteProjectDialog (STORY_031; behaviour-project-delete-04)", () => {
+  it("asks the reference's question, says the tasks stay, and Cancel / Delete / Escape do their jobs", () => {
+    const onCancel = vi.fn();
+    const onConfirm = vi.fn();
+    const project = { id: "p1", name: "My film", createdAt: "2026-09-15T09:00:00Z" };
+    const { rerender } = render(<DeleteProjectDialog project={project} taskCount={3} onCancel={onCancel} onConfirm={onConfirm} />);
+    const dialog = screen.getByRole("dialog", { name: "Delete project" });
+    expect(dialog).toHaveTextContent('Are you sure you want to delete project "My film"? This action cannot be undone. Its 3 tasks stay in Recents.');
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(onConfirm).toHaveBeenCalledWith(project);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onCancel).toHaveBeenCalledTimes(2);
+    rerender(<DeleteProjectDialog project={{ ...project, name: "Empty" }} taskCount={0} onCancel={onCancel} onConfirm={onConfirm} />);
+    expect(screen.getByRole("dialog")).not.toHaveTextContent("stay in Recents");
+    rerender(<DeleteProjectDialog project={undefined} taskCount={0} onCancel={onCancel} onConfirm={onConfirm} />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+});
+
 describe("CreateProjectDialog (STORY_021; page-add-new-project@1440)", () => {
   it("renders the reference's dialog with Create inert", () => {
     const onClose = vi.fn();
@@ -98,7 +139,7 @@ describe("PromoCard (STORY_021; home-signed-in@1440, promo-carousel-page-2@1440)
 });
 
 describe("SettingsDialog sections (STORY_021; settings-archived-tasks@1440; STORY_026 removed Account and Usage)", () => {
-  it("the nav is General and Archived tasks; Archived tasks' controls are inert", () => {
+  it("the nav is General and Archived tasks; Archived tasks has its search and the project filter (real since STORY_031)", () => {
     render(<SettingsDialog open choice="system" onChoose={() => undefined} onClose={() => undefined} />);
     expect(screen.getAllByRole("button", { name: /^(General|Account|Usage|Archived tasks)$/ }).map((el) => el.textContent.trim())).toEqual(["General", "Archived tasks"]);
     act(() => {
@@ -106,11 +147,8 @@ describe("SettingsDialog sections (STORY_021; settings-archived-tasks@1440; STOR
     });
     expect(screen.getByRole("dialog", { name: "Archived tasks" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Search archived tasks")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "All projects" })).toHaveAttribute("aria-disabled", "true");
-    act(() => {
-      screen.getByRole("button", { name: "All projects" }).click();
-    });
-    expect(screen.getByRole("status")).toHaveTextContent(INERT_NOTICE);
+    expect(screen.getByRole("combobox", { name: "Project filter" })).toHaveDisplayValue("All projects");
+    expect(screen.getByText("No archived tasks.")).toBeInTheDocument();
     act(() => {
       screen.getByRole("button", { name: "General" }).click();
     });
@@ -148,7 +186,24 @@ describe("SettingsDialog › Archived tasks (STORY_030; behaviour-recents-archiv
       screen.getByRole("button", { name: "Delete all" }).click();
     });
     expect(onDeleteAllArchived).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("button", { name: "All projects" })).toHaveAttribute("aria-disabled", "true"); // STORY_031
+  });
+
+  it("groups the rows by project with No project first and the All projects filter narrows to one (STORY_031)", () => {
+    const projects = [{ id: "p1", name: "My film", createdAt: "2026-09-15T09:00:00Z" }, { id: "p2", name: "Second", createdAt: "2026-09-15T09:30:00Z" }];
+    const [late, early] = archived;
+    if (!late || !early) throw new Error("fixture");
+    const rows = [late, { ...early, projectId: "p1" }, { id: "x", title: "In the second", createdAt: new Date(2026, 8, 15, 13, 0).toISOString(), archived: true, archivedAt: new Date(2026, 8, 15, 13, 5).toISOString(), projectId: "p2" }];
+    render(<SettingsDialog open initialSection="Archived tasks" archived={rows} projects={projects} choice="system" onChoose={() => undefined} onClose={() => undefined} />);
+    expect(screen.getAllByRole("region").map((el) => el.getAttribute("aria-label"))).toEqual(["No project", "My film", "Second"]);
+    expect(within(screen.getByRole("region", { name: "My film" })).getAllByTestId("archived-row")).toHaveLength(1);
+    const filter = screen.getByRole("combobox", { name: "Project filter" });
+    expect(within(filter).getAllByRole("option").map((o) => o.textContent)).toEqual(["All projects", "No project", "My film", "Second"]);
+    fireEvent.change(filter, { target: { value: "p1" } });
+    expect(screen.getAllByRole("region").map((el) => el.getAttribute("aria-label"))).toEqual(["My film"]);
+    fireEvent.change(filter, { target: { value: "none" } });
+    expect(screen.getAllByRole("region").map((el) => el.getAttribute("aria-label"))).toEqual(["No project"]);
+    fireEvent.change(screen.getByRole("textbox", { name: "Search archived tasks" }), { target: { value: "second" } });
+    expect(screen.getByText("No archived tasks match.")).toBeInTheDocument(); // the search and the filter combine
   });
 
   it("the search filters the rows live by title and says when nothing matches; an empty archive says so and has no Delete all", () => {

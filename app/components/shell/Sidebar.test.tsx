@@ -128,6 +128,111 @@ describe("Sidebar", () => {
     expect(screen.getByText("No task history.")).toBeInTheDocument(); // everything archived reads as empty Recents
   });
 
+  it("project rows: the name, expand to its tasks or No tasks, hover New task and ⋯ with New task · Rename · Pin · Delete; a pinned project sits in Pinned (STORY_031)", () => {
+    const projects = [{ id: "p1", name: "My film", createdAt: "2026-09-15T09:00:00Z" }, { id: "p2", name: "Second", createdAt: "2026-09-15T09:30:00Z", pinned: true, pinnedAt: "2026-09-15T12:00:00Z" }];
+    const onRenameProject = vi.fn();
+    const onPinProject = vi.fn();
+    const onDeleteProject = vi.fn();
+    const onNewTask = vi.fn();
+    const prefs = { ...DEFAULT_SHELL_PREFS, folded: { pinned: false, projects: false, recents: false } };
+    render(<Sidebar pathname="/project/p1" recents={[{ ...first, projectId: "p1" }, second]} projects={projects} prefs={prefs} onRenameProject={onRenameProject} onPinProject={onPinProject} onDeleteProject={onDeleteProject} onNewTask={onNewTask} onOpenCreateProject={() => undefined} />);
+    const list = screen.getByRole("list", { name: "Projects" });
+    expect(within(list).getAllByTestId("project-row").map((row) => row.textContent)).toEqual(["My film", "Second"]);
+    const film = within(list).getByRole("link", { name: "My film" });
+    expect(film).toHaveAttribute("href", "/project/p1");
+    expect(film).toHaveAttribute("aria-current", "page");
+    expect(film).toHaveAttribute("aria-expanded", "false");
+    act(() => {
+      film.click();
+    });
+    expect(within(list).getByRole("list", { name: "Tasks in My film" })).toBeInTheDocument();
+    expect(within(list).getByRole("link", { name: /Paper boat on rain puddle/ })).toBeInTheDocument(); // the project's task, as a Recents row
+    act(() => {
+      within(list).getByRole("link", { name: "Second" }).click();
+    });
+    expect(within(list).getByText("No tasks")).toBeInTheDocument();
+    act(() => {
+      within(list).getByRole("button", { name: "New task in My film" }).click();
+    });
+    expect(onNewTask).toHaveBeenCalledWith(projects[0]);
+    act(() => {
+      within(list).getByRole("button", { name: "Project actions for My film" }).click();
+    });
+    const menu = screen.getByRole("menu", { name: "Actions for My film" });
+    expect(within(menu).getAllByRole("menuitem").map((el) => el.textContent.trim())).toEqual(["New task", "Rename", "Pin", "Delete"]);
+    act(() => {
+      within(menu).getByRole("menuitem", { name: "Rename" }).click();
+    });
+    const input = screen.getByRole("textbox", { name: "Rename My film" });
+    fireEvent.change(input, { target: { value: " Our film " } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onRenameProject).toHaveBeenCalledWith(projects[0], "Our film");
+    act(() => {
+      within(list).getByRole("button", { name: "Project actions for My film" }).click();
+    });
+    act(() => {
+      screen.getByRole("menuitem", { name: "Pin" }).click();
+    });
+    expect(onPinProject).toHaveBeenCalledWith(projects[0], true);
+    act(() => {
+      within(list).getByRole("button", { name: "Project actions for My film" }).click();
+    });
+    act(() => {
+      screen.getByRole("menuitem", { name: "Delete" }).click();
+    });
+    expect(onDeleteProject).toHaveBeenCalledWith(projects[0]);
+    // the pinned project is in the Pinned section too, with Unpin in its menu
+    const pinnedSection = screen.getByTestId("pinned-section");
+    expect(within(pinnedSection).getByRole("link", { name: "Second" })).toBeInTheDocument();
+    act(() => {
+      within(pinnedSection).getByRole("button", { name: "Project actions for Second" }).click();
+    });
+    expect(within(screen.getByRole("menu", { name: "Actions for Second" })).getByRole("menuitem", { name: "Unpin" })).toBeInTheDocument();
+  });
+
+  it("a Recents row's Move to project › lists Add new project, the projects and No project with the current one checked (STORY_031)", () => {
+    const projects = [{ id: "p1", name: "My film", createdAt: "2026-09-15T09:00:00Z" }];
+    const onMoveRecent = vi.fn();
+    const onOpenCreateProject = vi.fn();
+    render(<Sidebar pathname="/" recents={[{ ...first, projectId: "p1" }, second]} projects={projects} onMoveRecent={onMoveRecent} onOpenCreateProject={onOpenCreateProject} />);
+    act(() => {
+      screen.getByRole("button", { name: "More actions for Paper boat on rain puddle" }).click();
+    });
+    act(() => {
+      screen.getByRole("menuitem", { name: "Move to project" }).click();
+    });
+    const sub = screen.getByRole("menu", { name: "Move to project" });
+    expect(within(sub).getAllByRole("menuitem").map((el) => el.textContent.trim())).toEqual(["Add new project", "My film✓", "No project"]);
+    act(() => {
+      within(sub).getByRole("menuitem", { name: /No project/ }).click();
+    });
+    expect(onMoveRecent).toHaveBeenCalledWith({ ...first, projectId: "p1" }, undefined);
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    act(() => {
+      screen.getByRole("button", { name: "More actions for Paper boat in rain puddle" }).click();
+    });
+    act(() => {
+      screen.getByRole("menuitem", { name: "Move to project" }).click();
+    });
+    act(() => {
+      screen.getByRole("menuitem", { name: /My film/ }).click();
+    });
+    expect(onMoveRecent).toHaveBeenLastCalledWith(second, "p1");
+    act(() => {
+      screen.getByRole("button", { name: "More actions for Paper boat in rain puddle" }).click();
+    });
+    act(() => {
+      screen.getByRole("menuitem", { name: "Move to project" }).click();
+    });
+    act(() => {
+      screen.getByRole("menuitem", { name: "Add new project" }).click();
+    });
+    expect(onOpenCreateProject).toHaveBeenCalledTimes(1);
+    const onCreated = onOpenCreateProject.mock.calls[0]?.[0] as (project: { id: string }) => void;
+    onCreated({ id: "p9" });
+    expect(onMoveRecent).toHaveBeenLastCalledWith(second, "p9"); // the project just made receives the task
+  });
+
   it("Pin is the hover icon and the menu entry; a pinned row sits in the Pinned section above Projects, filled, and reads Unpin (STORY_029)", () => {
     const onPinRecent = vi.fn();
     const onCopyRecentId = vi.fn();

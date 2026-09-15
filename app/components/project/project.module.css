@@ -1,0 +1,89 @@
+/* The project page (STORY_031): the name as a 24 px heading, the tasks as 44 px rows on the secondary ground */
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--spacing_32) var(--spacing_24) var(--spacing_64);
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing_16);
+  margin-bottom: var(--spacing_24);
+}
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: var(--line_height_32);
+  color: var(--text_default_primary);
+}
+.newTask {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 var(--spacing_16);
+  border-radius: var(--radius_8);
+  background: var(--bg_interaction_primary_default);
+  color: var(--text_label_primary_default);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.empty {
+  margin: var(--spacing_48) 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text_default_tertiary);
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_8);
+}
+.task {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_12);
+  min-height: 44px;
+  padding: var(--spacing_8) var(--spacing_16);
+  border-radius: var(--radius_12);
+  background: var(--bg_default_secondary);
+  color: var(--text_default_primary);
+  text-decoration: none;
+}
+.task:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.stamp {
+  flex: none;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text_default_secondary);
+}
+.taskTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+@media (max-width: 899px) {
+  .page {
+    padding: var(--spacing_16) var(--spacing_16) var(--spacing_48);
+  }
+  .head {
+    flex-wrap: wrap;
+  }
+  .newTask {
+    min-height: 44px;
+  }
+}

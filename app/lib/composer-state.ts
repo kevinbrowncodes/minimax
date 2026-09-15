@@ -46,6 +46,8 @@ export interface ComposerState {
   readonly overlapFrames: number;
   readonly error: ComposerError | undefined;
   readonly submitting: boolean;
+  /** STORY_031: the project the task starts in (+ › Add to project, or the row's New task); undefined = No project. */
+  readonly projectId: string | undefined;
 }
 export type ComposerAction =
   | { readonly type: "capabilities"; readonly capabilities: Capabilities }
@@ -67,7 +69,8 @@ export type ComposerAction =
   | { readonly type: "error"; readonly error: ComposerError }
   | { readonly type: "clear-error" }
   | { readonly type: "submit-start" }
-  | { readonly type: "submit-end" };
+  | { readonly type: "submit-end" }
+  | { readonly type: "project"; readonly projectId: string | undefined };
 
 /**
  * The reference's defaults (composer-video-mode@1440: 16:9, 5 s). The models, ratios and resolutions on offer are
@@ -77,8 +80,8 @@ export const DEFAULT_RATIO = "16:9";
 export const DEFAULT_DURATION = 5;
 const DEFAULT_EXTENSION: ExtensionCapabilities = { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30 };
 
-export function initialComposer(): ComposerState {
-  return { mode: "text", text: "", images: [], capabilities: undefined, capabilitiesError: undefined, model: "", ratio: DEFAULT_RATIO, resolution: "", durationSeconds: DEFAULT_DURATION, extend: undefined, overlapFrames: DEFAULT_EXTENSION.overlapFrames.default, error: undefined, submitting: false };
+export function initialComposer(projectId?: string): ComposerState {
+  return { mode: "text", text: "", images: [], capabilities: undefined, capabilitiesError: undefined, model: "", ratio: DEFAULT_RATIO, resolution: "", durationSeconds: DEFAULT_DURATION, extend: undefined, overlapFrames: DEFAULT_EXTENSION.overlapFrames.default, error: undefined, submitting: false, projectId };
 }
 
 /** The server's extension limits, or the contract's defaults while capabilities are unknown or lack them. */
@@ -187,6 +190,8 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
       return { ...state, submitting: true, error: undefined };
     case "submit-end":
       return { ...state, submitting: false };
+    case "project":
+      return state.projectId === action.projectId ? state : { ...state, projectId: action.projectId };
   }
 }
 

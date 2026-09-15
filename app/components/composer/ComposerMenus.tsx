@@ -2,7 +2,8 @@
 import { useState, type ReactNode } from "react";
 import { cx } from "@/lib/cx";
 import { Inert } from "@/components/shell/Inert";
-import { IconChevronRight, IconMove, IconPlusCircle, IconSettings } from "@/components/shell/icons";
+import { IconChevronRight, IconMove, IconPlusCircle, IconProject, IconSettings } from "@/components/shell/icons";
+import type { Project } from "@/lib/project-store";
 import styles from "./menus.module.css";
 
 /**
@@ -26,10 +27,15 @@ export interface AttachMenuProps {
   /** In video mode, Add files or photos opens the reference-image chooser; elsewhere it shows the notice. */
   readonly onAddFiles?: () => void;
   readonly onClose: () => void;
+  /** STORY_031 (behaviour-project-move-02-attach-add-to-project-submenu): No project ✓ · Add new project · the projects. */
+  readonly projects: readonly Project[];
+  readonly projectId: string | undefined;
+  readonly onProject: (projectId: string | undefined) => void;
+  readonly onNewProject: () => void;
 }
 
 /** attach-menu-open@1440 and its submenus: 190 px, 32 px entries; submenus 8 px to the right. */
-export function AttachMenu({ onAddFiles, onClose }: AttachMenuProps) {
+export function AttachMenu({ onAddFiles, onClose, projects, projectId, onProject, onNewProject }: AttachMenuProps) {
   const [open, setOpen] = useState<Submenu | undefined>(undefined);
   const entry = (id: Submenu, icon: ReactNode, label: string, children: ReactNode) => (
     <div className={styles.entryWrap} onMouseEnter={() => { setOpen(id); }}>
@@ -56,8 +62,23 @@ export function AttachMenu({ onAddFiles, onClose }: AttachMenuProps) {
       )}
       {entry("project", <IconMove />, "Add to project", (
         <>
-          <Inert role="menuitem" label="No project" className={styles.item}><span className={styles.label}>No project</span><span className={styles.check} aria-hidden="true">✓</span></Inert>
-          <Inert role="menuitem" label="Add new project" className={styles.item}><span className={styles.icon}><IconPlusCircle /></span><span className={styles.label}>Add new project</span></Inert>
+          <button type="button" role="menuitemradio" aria-checked={projectId === undefined} className={styles.item} onClick={() => { onClose(); onProject(undefined); }}>
+            <span className={styles.icon}><IconProject /></span>
+            <span className={styles.label}>No project</span>
+            {projectId === undefined ? <span className={styles.check} aria-hidden="true">✓</span> : null}
+          </button>
+          <button type="button" role="menuitem" className={styles.item} onClick={() => { onClose(); onNewProject(); }}>
+            <span className={styles.icon}><IconPlusCircle /></span>
+            <span className={styles.label}>Add new project</span>
+          </button>
+          {projects.length > 0 ? <div className={styles.separator} /> : null}
+          {projects.map((project) => (
+            <button key={project.id} type="button" role="menuitemradio" aria-checked={projectId === project.id} className={styles.item} onClick={() => { onClose(); onProject(project.id); }}>
+              <span className={styles.icon}><IconProject /></span>
+              <span className={styles.label}>{project.name}</span>
+              {projectId === project.id ? <span className={styles.check} aria-hidden="true">✓</span> : null}
+            </button>
+          ))}
         </>
       ))}
       <div className={styles.separator} />

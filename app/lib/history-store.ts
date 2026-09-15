@@ -37,10 +37,12 @@ export interface HistoryEntry {
   /** STORY_030: archived rows leave Recents and Search and live under Settings › Archived tasks, newest archive first. */
   readonly archived?: boolean;
   readonly archivedAt?: string;
+  /** STORY_031: the project the task was started in or moved to (`lib/project-store`); absent = No project. */
+  readonly projectId?: string;
   readonly error?: JobError;
   readonly result?: JobResult;
 }
-export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "overlap" | "pinned" | "pinnedAt" | "archived" | "archivedAt">>;
+export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "overlap" | "pinned" | "pinnedAt" | "archived" | "archivedAt" | "projectId">>;
 
 const TERMINAL: ReadonlySet<JobStatus> = new Set(["done", "failed", "cancelled"]);
 const TITLE_MAX = 48;
@@ -128,6 +130,20 @@ export class HistoryStore {
     if (next.length === entries.length) return false;
     this.#write(next);
     return true;
+  }
+  /** STORY_031: a deleted project's tasks stay, unassigned — one write; returns how many entries it touched. */
+  unassignProject(projectId: string): number {
+    const entries = this.#read();
+    let touched = 0;
+    const next = entries.map((e) => {
+      if (e.projectId !== projectId) return e;
+      touched += 1;
+      const rest: HistoryEntry = { ...e };
+      delete (rest as { projectId?: string }).projectId;
+      return rest;
+    });
+    if (touched > 0) this.#write(next);
+    return touched;
   }
   /** STORY_030: Archived tasks › Delete all — one write; returns how many entries went. */
   removeMany(ids: readonly string[]): number {

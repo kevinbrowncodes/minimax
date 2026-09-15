@@ -1,7 +1,8 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
-import { archivedRecents } from "@/lib/recents";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import type { Project } from "@/lib/project-store";
+import { archivedRecents, tasksOf } from "@/lib/recents";
 import { topBarFor, type RecentEntry } from "@/lib/route-title";
 import { type Section } from "@/lib/shell-prefs";
 import { dispatchShellPrefs, getServerShellPrefs, getShellPrefs, subscribeShellPrefs } from "@/lib/shell-prefs-store";
@@ -9,6 +10,8 @@ import { useNarrow } from "@/lib/use-narrow";
 import { cx } from "@/lib/cx";
 import { useThemeChoice } from "@/lib/use-theme";
 import { CreateProjectDialog } from "./CreateProjectDialog";
+import { DeleteProjectDialog } from "./DeleteProjectDialog";
+import { ProjectsContext, type ProjectsState } from "./ProjectsContext";
 import { PromoCard } from "./PromoCard";
 import { SearchDialog } from "./SearchDialog";
 import { SettingsDialog, type SettingsSection } from "./SettingsDialog";
@@ -52,6 +55,11 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
   const [settingsSection, setSettingsSection] = useState<SettingsSection>("General");
   const [searchOpen, setSearchOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [createBusy, setCreateBusy] = useState(false);
+  const [createError, setCreateError] = useState<string | undefined>(undefined);
+  const createFor = useRef<((project: Project) => void) | undefined>(undefined);
+  const [deleting, setDeleting] = useState<Project | undefined>(undefined);
+  const [projects, setProjects] = useState<readonly Project[]>([]);
   const [themeChoice, setThemeChoice] = useThemeChoice();
   const [recents, setRecents] = useState<readonly RecentEntry[]>([]);
   const confirmDelete = useCallback((message: string) => (confirmImpl ? confirmImpl(message) : window.confirm(message)), [confirmImpl]);
@@ -69,8 +77,23 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
     };
   }, []);
 
+  /** STORY_031: the projects, from the project store; refetched with the recents. */
+  const loadProjects = useCallback(() => {
+    let cancelled = false;
+    fetch("/api/projects")
+      .then(async (res) => (res.ok ? ((await res.json()) as { projects: Project[] }).projects : []))
+      .then((list) => {
+        if (!cancelled) setProjects(list);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Recents follow the history store; refetched on every navigation so a new job or a finished one shows up.
   useEffect(() => loadRecents(), [pathname, loadRecents]);
+  useEffect(() => loadProjects(), [pathname, loadProjects]);
 
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
@@ -84,6 +107,8 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
   }, []);
   const closeCreate = useCallback(() => {
     setCreateOpen(false);
+    setCreateError(undefined);
+    createFor.current = undefined;
   }, []);
 
   useEffect(() => {
@@ -167,6 +192,75 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
     [notify],
   );
 
+  /**
+   * STORY_031: projects — Create (the dialog, with a callback for whoever asked: Move / Add to project › Add new project),
+   * Rename, Pin, Delete (the dialog; its tasks stay), New task (the home composer in the project), Move to project.
+   */
+  const openCreateProject = useCallback(
+    (onCreated?: (project: Project) => void) => {
+      if (narrow) closeDrawer();
+      createFor.current = onCreated;
+      setCreateError(undefined);
+      setCreateOpen(true);
+    },
+    [narrow, closeDrawer],
+  );
+  const createProject = useCallback(
+    async (name: string) => {
+      setCreateBusy(true);
+      const res = await fetch("/api/projects", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name }) }).catch(() => undefined);
+      setCreateBusy(false);
+      if (!res?.ok) {
+        setCreateError("That did not save — the app's server did not answer");
+        return;
+      }
+      const { project } = (await res.json()) as { project: Project };
+      loadProjects();
+      setCreateOpen(false);
+      if (prefs.folded.projects) dispatchPrefs({ type: "toggle-section", section: "projects" }); // the new row is visible at once
+      const onCreated = createFor.current;
+      createFor.current = undefined;
+      onCreated?.(project);
+    },
+    [loadProjects, prefs.folded.projects, dispatchPrefs],
+  );
+  const patchProject = useCallback(
+    async (project: Project, body: Record<string, unknown>, message: string) => {
+      const res = await fetch(`/api/projects/${encodeURIComponent(project.id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).catch(() => undefined);
+      loadProjects();
+      if (res?.ok === true) notify(message);
+      else notify("That did not save — the app's server did not answer", { tone: "info" });
+    },
+    [loadProjects, notify],
+  );
+  const renameProject = useCallback((project: Project, name: string) => { void patchProject(project, { name }, "Project renamed"); }, [patchProject]);
+  const pinProject = useCallback((project: Project, pinned: boolean) => { void patchProject(project, { pinned }, pinned ? "Project pinned" : "Project unpinned"); }, [patchProject]);
+  const deleteProject = useCallback(
+    async (project: Project) => {
+      setDeleting(undefined);
+      await fetch(`/api/projects/${encodeURIComponent(project.id)}`, { method: "DELETE" }).catch(() => undefined);
+      if (pathname === `/project/${encodeURIComponent(project.id)}`) router.push("/");
+      loadProjects();
+      loadRecents();
+    },
+    [pathname, router, loadProjects, loadRecents],
+  );
+  const newTask = useCallback(
+    (project: Project) => {
+      if (narrow) closeDrawer();
+      router.push(`/?project=${encodeURIComponent(project.id)}`);
+    },
+    [narrow, closeDrawer, router],
+  );
+  const moveRecent = useCallback(
+    (entry: RecentEntry, projectId: string | undefined) => {
+      const target = projectId === undefined ? undefined : projects.find((p) => p.id === projectId);
+      void patchRecent(entry, { projectId: projectId ?? null }, target ? `Task moved to ${target.name}` : "Task moved out of its project");
+    },
+    [patchRecent, projects],
+  );
+  const projectsState = useMemo<ProjectsState>(() => ({ projects, openCreate: openCreateProject }), [projects, openCreateProject]);
+
   const bar = topBarFor(pathname, recents);
   const asideOpen = narrow && drawerOpen;
   const rail = !narrow && prefs.collapsed;
@@ -201,10 +295,13 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
             if (narrow) closeDrawer();
             setSearchOpen(true);
           }}
-          onOpenCreateProject={() => {
-            if (narrow) closeDrawer();
-            setCreateOpen(true);
-          }}
+          onOpenCreateProject={openCreateProject}
+          projects={projects}
+          onRenameProject={renameProject}
+          onPinProject={pinProject}
+          onDeleteProject={setDeleting}
+          onNewTask={newTask}
+          onMoveRecent={moveRecent}
           onDeleteRecent={(entry) => {
             void deleteRecent(entry);
           }}
@@ -236,7 +333,9 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
             ) : null}
           </div>
         </header>
-        <div className={styles.content}>{children}</div>
+        <div className={styles.content}>
+          <ProjectsContext.Provider value={projectsState}>{children}</ProjectsContext.Provider>
+        </div>
       </div>
       {bar.kind === "home" && !narrow && !prefs.promoDismissed ? (
         <PromoCard
@@ -253,6 +352,7 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
         onClose={closeSettings}
         initialSection={settingsSection}
         archived={archivedRecents(recents)}
+        projects={projects}
         onUnarchive={unarchiveRecent}
         onDeleteArchived={(entry) => {
           void deleteRecent(entry);
@@ -262,7 +362,8 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
         }}
       />
       <SearchDialog open={searchOpen} recents={recents} onClose={closeSearch} />
-      <CreateProjectDialog open={createOpen} onClose={closeCreate} />
+      <CreateProjectDialog open={createOpen} onClose={closeCreate} onCreate={(name) => { void createProject(name); }} busy={createBusy} error={createError} />
+      <DeleteProjectDialog project={deleting} taskCount={deleting ? tasksOf(recents, deleting.id).length : 0} onCancel={() => { setDeleting(undefined); }} onConfirm={(project) => { void deleteProject(project); }} />
     </div>
   );
 }

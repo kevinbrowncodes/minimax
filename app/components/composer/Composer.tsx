@@ -8,6 +8,8 @@ import type { Capabilities } from "@/lib/job-api";
 import { submitJob } from "@/lib/submit-job";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
 import { AgentModelMenu, AttachMenu } from "./ComposerMenus";
+import { useProjects } from "@/components/shell/ProjectsContext";
+import { IconProject } from "@/components/shell/icons";
 import { Showcase } from "./Showcase";
 import styles from "./composer.module.css";
 
@@ -37,14 +39,19 @@ export interface ComposerProps {
   /** Extend mode (STORY_016): the finished video to continue; the page owns the flag and clears it through onStopExtending. */
   readonly extend?: ExtendSource;
   readonly onStopExtending?: () => void;
+  /** STORY_031: start in this project (the row's New task, `/?project=`; a task's own project on its docked composer). */
+  readonly initialProjectId?: string;
 }
 
 /** The home composer (STORY_013): text mode, video mode with references, model, parameters, Send; extend mode (STORY_016). */
-export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExtending }: ComposerProps) {
+export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExtending, initialProjectId }: ComposerProps) {
   const router = useRouter();
   const docked = variant === "docked";
   const textarea = useRef<HTMLTextAreaElement>(null);
-  const [state, dispatch] = useReducer(reduceComposer, docked, (startInVideoMode) => (startInVideoMode ? reduceComposer(initialComposer(), { type: "enter-video-mode" }) : initialComposer()));
+  const { projects, openCreate } = useProjects();
+  const [state, dispatch] = useReducer(reduceComposer, { docked, initialProjectId }, (init) => (init.docked ? reduceComposer(initialComposer(init.initialProjectId), { type: "enter-video-mode" }) : initialComposer(init.initialProjectId)));
+  // STORY_031: the chip names the chosen project; a project that no longer exists shows nothing (the route would refuse it)
+  const project = state.projectId === undefined ? undefined : projects.find((p) => p.id === state.projectId);
   const [popover, setPopover] = useState<"params" | "model" | "attach" | "agent" | undefined>(undefined);
   const [showcaseDismissed, setShowcaseDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -212,6 +219,13 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
               <button type="button" className={styles.tagRemove} aria-label="Remove video-creator" onClick={() => { dispatch({ type: "leave-video-mode" }); }}>×</button>
             </span>
           ) : null}
+          {project && !docked ? (
+            <span className={cx(styles.tag, styles.projectTag)} data-testid="project-chip">
+              <IconProject />
+              {project.name}
+              <button type="button" className={styles.tagRemove} aria-label={`Remove project ${project.name}`} onClick={() => { dispatch({ type: "project", projectId: undefined }); }}>×</button>
+            </span>
+          ) : null}
           <textarea
             ref={textarea}
             className={styles.editor}
@@ -226,7 +240,16 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
         <div className={styles.bar}>
           <span style={{ position: "relative" }} data-popover="attach">
             <button type="button" className={styles.iconButton} aria-label="Add attachment" aria-haspopup="menu" aria-expanded={popover === "attach"} onClick={() => { setPopover(popover === "attach" ? undefined : "attach"); }}>+</button>
-            {popover === "attach" ? <AttachMenu onAddFiles={video && !extending ? () => fileInput.current?.click() : undefined} onClose={() => { setPopover(undefined); }} /> : null}
+            {popover === "attach" ? (
+              <AttachMenu
+                onAddFiles={video && !extending ? () => fileInput.current?.click() : undefined}
+                onClose={() => { setPopover(undefined); }}
+                projects={projects}
+                projectId={state.projectId}
+                onProject={(projectId) => { dispatch({ type: "project", projectId }); }}
+                onNewProject={() => { openCreate((created) => { dispatch({ type: "project", projectId: created.id }); }); }}
+              />
+            ) : null}
           </span>
           {video ? (
             <>

@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, within, waitFor } from "@testi
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ExtendSource } from "@/lib/composer-state";
 import type { Capabilities } from "@/lib/job-api";
+import { ProjectsContext } from "@/components/shell/ProjectsContext";
 import { Composer } from "./Composer";
 
 const push = vi.fn();
@@ -177,6 +178,51 @@ describe("Composer — extend mode (STORY_016, STORY_017)", () => {
 });
 
 describe("Composer — the reference's menus, the mode chip and the Showcase (STORY_022, STORY_026)", () => {
+  it("+ › Add to project picks a project (a removable chip; the id is posted), No project clears it, Add new project asks the shell and takes what it makes (STORY_031)", async () => {
+    const projects = [{ id: "p1", name: "My film", createdAt: "2026-09-15T09:00:00Z" }, { id: "p2", name: "Second", createdAt: "2026-09-15T09:30:00Z" }];
+    const openCreate = vi.fn();
+    const bodies: unknown[] = [];
+    const fetchImpl = fetchWith((init) => {
+      bodies.push(JSON.parse(typeof init?.body === "string" ? init.body : "{}"));
+      return json({ id: "j1", status: "queued", progress: 0 }, 202);
+    });
+    render(
+      <ProjectsContext.Provider value={{ projects, openCreate }}>
+        <Composer fetchImpl={fetchImpl} initialProjectId="p2" />
+      </ProjectsContext.Provider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled();
+    });
+    expect(screen.getByTestId("project-chip")).toHaveTextContent("Second"); // the row's New task lands here
+    fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Add to project" }));
+    const sub = screen.getByRole("menu", { name: "Add to project" });
+    expect(within(sub).getAllByRole("menuitemradio").map((el) => `${el.textContent.trim()}:${el.getAttribute("aria-checked") ?? ""}`)).toEqual(["No project:false", "My film:false", "Second✓:true"]);
+    fireEvent.click(within(sub).getByRole("menuitemradio", { name: /My film/ }));
+    expect(screen.getByTestId("project-chip")).toHaveTextContent("My film");
+    expect(screen.queryByRole("menu", { name: "Add attachment" })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "A boat in the film" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith("/task/j1");
+    });
+    expect(bodies[0]).toMatchObject({ projectId: "p1" });
+    fireEvent.click(screen.getByRole("button", { name: "Remove project My film" }));
+    expect(screen.queryByTestId("project-chip")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Add to project" }));
+    expect(screen.getByRole("menuitemradio", { name: /No project/ })).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Add new project" }));
+    expect(openCreate).toHaveBeenCalledTimes(1);
+    const onCreated = openCreate.mock.calls[0]?.[0] as (project: { id: string }) => void;
+    act(() => {
+      onCreated({ id: "p2" });
+    });
+    expect(screen.getByTestId("project-chip")).toHaveTextContent("Second");
+  });
+
   it("the + menu lists the reference's entries with submenus; Add files or photos opens the reference chooser in video mode", async () => {
     await renderReady();
     const input = screen.getByTestId("reference-input");

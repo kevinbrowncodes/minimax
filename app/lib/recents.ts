@@ -93,3 +93,30 @@ export function formatArchivedAt(iso: string | undefined): string {
   const twelve = hours % 12 === 0 ? 12 : hours % 12;
   return `${MONTHS[date.getMonth()] ?? ""} ${String(date.getDate())}, ${String(date.getFullYear())}, ${String(twelve)}:${String(date.getMinutes()).padStart(2, "0")} ${hours < 12 ? "AM" : "PM"}`;
 }
+
+/** STORY_031: a project's tasks — the active entries that point at it, in the list's order. */
+export function tasksOf<T extends { readonly id: string; readonly archived?: boolean; readonly projectId?: string }>(entries: readonly T[], projectId: string): readonly T[] {
+  return activeRecents(entries).filter((e) => e.projectId === projectId);
+}
+
+export interface ProjectGroup<T> {
+  /** undefined = No project. */
+  readonly id: string | undefined;
+  readonly name: string;
+  readonly entries: readonly T[];
+}
+
+/**
+ * STORY_031: Settings › Archived tasks' folder headings — **No project** first, then each project in the given order;
+ * empty groups are omitted; an entry whose project no longer exists counts as No project.
+ */
+export function groupByProject<T extends { readonly id: string; readonly projectId?: string }>(entries: readonly T[], projects: readonly { readonly id: string; readonly name: string }[]): readonly ProjectGroup<T>[] {
+  const known = new Set(projects.map((p) => p.id));
+  const none = entries.filter((e) => e.projectId === undefined || !known.has(e.projectId));
+  const groups: ProjectGroup<T>[] = none.length > 0 ? [{ id: undefined, name: "No project", entries: none }] : [];
+  for (const project of projects) {
+    const own = entries.filter((e) => e.projectId === project.id);
+    if (own.length > 0) groups.push({ id: project.id, name: project.name, entries: own });
+  }
+  return groups;
+}

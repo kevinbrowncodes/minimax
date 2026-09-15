@@ -439,6 +439,23 @@
 .searchInput::placeholder {
   color: var(--text_default_tertiary);
 }
+/* STORY_031: the All projects filter is a select in the secondary button's clothes, the chevron drawn beside it */
+.selectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: var(--icon_default_secondary);
+}
+.selectWrap svg {
+  position: absolute;
+  right: var(--spacing_8);
+  pointer-events: none;
+}
+.select {
+  appearance: none;
+  padding-right: var(--spacing_32);
+  cursor: pointer;
+}
 .archivedEmpty {
   margin: var(--spacing_64) 0;
   text-align: center;

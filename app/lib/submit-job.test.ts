@@ -7,6 +7,21 @@ const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" 
 const typed = (): ComposerState => reduceComposer(reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: caps }), { type: "enter-video-mode" }), { type: "text", text: " A boat " });
 const img: ComposerImage = { id: "a", file: new File(["png"], "a.png", { type: "image/png" }), url: "", name: "a.png", type: "image/png", size: 3 };
 
+describe("buildJobRequest with a project (STORY_031)", () => {
+  it("posts projectId in JSON and in the multipart fields, and nothing without one", () => {
+    const inProject = reduceComposer(typed(), { type: "project", projectId: "p1" });
+    const jsonOf = (state: ComposerState): unknown => {
+      const body = buildJobRequest(state).init.body;
+      return JSON.parse(typeof body === "string" ? body : "{}");
+    };
+    expect(jsonOf(inProject)).toMatchObject({ projectId: "p1" });
+    expect(jsonOf(typed())).not.toHaveProperty("projectId");
+    const form = buildJobRequest(reduceComposer(inProject, { type: "add-images", images: [img] })).init.body;
+    expect(form).toBeInstanceOf(FormData);
+    expect((form as FormData).get("projectId")).toBe("p1");
+  });
+});
+
 describe("buildJobRequest", () => {
   it("sends JSON without images and multipart with them, forwarding ?script= from the page URL", () => {
     const json = buildJobRequest(typed());

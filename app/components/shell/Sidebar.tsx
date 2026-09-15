@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { activeRecents, hasMoreRecents, pinnedRecents, recentLabel, recentName, visibleRecents } from "@/lib/recents";
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import type { Project } from "@/lib/project-store";
+import { activeRecents, hasMoreRecents, pinnedRecents, recentLabel, recentName, tasksOf, visibleRecents } from "@/lib/recents";
 import { activeRow, isUnread, type RecentEntry } from "@/lib/route-title";
 import { DEFAULT_SHELL_PREFS, type Section, type ShellPrefs } from "@/lib/shell-prefs";
 import { cx } from "@/lib/cx";
@@ -24,7 +25,7 @@ import {
   IconPhone,
   IconPin,
   IconPlugins,
-  IconPlusCircle,
+  IconPlus, IconPlusCircle,
   IconProject,
   IconRename,
   IconSearch,
@@ -44,7 +45,15 @@ export interface SidebarProps {
   readonly onDismissGuide?: () => void;
   readonly onOpenSettings?: () => void;
   readonly onOpenSearch?: () => void;
-  readonly onOpenCreateProject?: () => void;
+  /** STORY_031: opens the Create project dialog; the callback receives the project it makes (Move / Add to project › Add new project). */
+  readonly onOpenCreateProject?: (onCreated?: (project: Project) => void) => void;
+  /** STORY_031: the projects and their rows' actions; Move to project on a Recents row. */
+  readonly projects?: readonly Project[];
+  readonly onRenameProject?: (project: Project, name: string) => void;
+  readonly onPinProject?: (project: Project, pinned: boolean) => void;
+  readonly onDeleteProject?: (project: Project) => void;
+  readonly onNewTask?: (project: Project) => void;
+  readonly onMoveRecent?: (entry: RecentEntry, projectId: string | undefined) => void;
   readonly onDeleteRecent?: (entry: RecentEntry) => void;
   /** STORY_029: the row's Rename (a new title), Pin / Unpin and Copy conversation ID. */
   readonly onRenameRecent?: (entry: RecentEntry, title: string) => void;
@@ -84,31 +93,13 @@ function SectionHeader({ label, section, folded, onToggle }: { readonly label: s
   );
 }
 
-type RecentRowProps = {
-  readonly entry: RecentEntry;
-  readonly active: boolean;
-  readonly onNavigate?: () => void;
-  readonly onDelete?: (entry: RecentEntry) => void;
-  readonly onRename?: (entry: RecentEntry, title: string) => void;
-  readonly onPin?: (entry: RecentEntry, pinned: boolean) => void;
-  readonly onCopyId?: (entry: RecentEntry) => void;
-  readonly onArchive?: (entry: RecentEntry) => void;
-};
-
-/**
- * A Recents (or Pinned) row (STORY_021; recents-row-menu-open@1440): dot, label, hover Pin + ⋯, the ⋯ menu — Rename,
- * Pin / Unpin, Copy conversation ID (STORY_029, behaviour-recents-*), Move to project › (STORY_031), Archive (STORY_030),
- * Delete. Rename turns the label into an inline input holding the title (behaviour-recents-rename-02): Enter commits,
- * Escape cancels, an empty title is refused. The visible label stays the creation stamp (CHORE_008).
- */
-function RecentRow({ entry, active, onNavigate, onDelete, onRename, onPin, onCopyId, onArchive }: RecentRowProps) {
+/** A row's ⋯ menu: open / closed, closed by Escape or a press outside the row (STORY_021). */
+function useRowMenu(rootRef: RefObject<HTMLLIElement | null>, onClosed?: () => void) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [draft, setDraft] = useState<string | undefined>(undefined);
-  const rootRef = useRef<HTMLLIElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const close = useCallback(() => {
     setMenuOpen(false);
-  }, []);
+    onClosed?.();
+  }, [onClosed]);
   useEffect(() => {
     if (!menuOpen) return undefined;
     const onKey = (event: KeyboardEvent): void => {
@@ -123,52 +114,103 @@ function RecentRow({ entry, active, onNavigate, onDelete, onRename, onPin, onCop
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("mousedown", onPointer);
     };
-  }, [menuOpen, close]);
+  }, [menuOpen, close, rootRef]);
+  return { menuOpen, setMenuOpen, close };
+}
+
+/**
+ * The inline rename (STORY_029; behaviour-recents-rename-02): an input holding the current name, selected; Enter or
+ * blur commits, Escape cancels, an empty name is refused (the input stays). Commits once — the blur a commit's unmount
+ * may fire is ignored.
+ */
+function RenameInput({ initial, label, onCommit, onCancel }: { readonly initial: string; readonly label: string; readonly onCommit: (name: string) => void; readonly onCancel: () => void }) {
+  const [draft, setDraft] = useState(initial);
+  const ref = useRef<HTMLInputElement>(null);
+  const done = useRef(false);
   useEffect(() => {
-    if (draft !== undefined) inputRef.current?.select();
-  }, [draft]);
-  const unread = isUnread(entry);
-  const pinned = entry.pinned === true;
-  const commitRename = (): void => {
-    const title = (draft ?? "").trim();
-    if (title === "") {
-      inputRef.current?.focus();
+    ref.current?.select();
+  }, []);
+  const commit = (): void => {
+    if (done.current) return;
+    const name = draft.trim();
+    if (name === "") {
+      ref.current?.focus();
       return;
     }
-    setDraft(undefined);
-    if (title !== entry.title) onRename?.(entry, title);
+    done.current = true;
+    onCommit(name);
   };
-  const menuButton = (label: string, icon: ReactNode, onClick: () => void, extra?: ReactNode) => (
-    <button type="button" role="menuitem" className={styles.menuItem} onClick={() => { close(); onClick(); }}>
+  return (
+    <input
+      ref={ref}
+      className={styles.recentInput}
+      aria-label={label}
+      value={draft}
+      onChange={(event) => { setDraft(event.target.value); }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") { event.preventDefault(); commit(); }
+        if (event.key === "Escape") { event.preventDefault(); done.current = true; onCancel(); }
+      }}
+      onBlur={commit}
+    />
+  );
+}
+
+function MenuButton({ label, icon, onClick, danger = false, extra }: { readonly label: string; readonly icon: ReactNode; readonly onClick: () => void; readonly danger?: boolean; readonly extra?: ReactNode }) {
+  return (
+    <button type="button" role="menuitem" className={cx(styles.menuItem, danger && styles.menuDanger)} onClick={onClick}>
       <span className={styles.menuIcon}>{icon}</span>
       <span className={styles.menuLabel}>{label}</span>
       {extra}
     </button>
   );
+}
+
+type RecentRowProps = {
+  readonly entry: RecentEntry;
+  readonly active: boolean;
+  readonly projects: readonly Project[];
+  readonly onNavigate?: () => void;
+  readonly onDelete?: (entry: RecentEntry) => void;
+  readonly onRename?: (entry: RecentEntry, title: string) => void;
+  readonly onPin?: (entry: RecentEntry, pinned: boolean) => void;
+  readonly onCopyId?: (entry: RecentEntry) => void;
+  readonly onArchive?: (entry: RecentEntry) => void;
+  readonly onMove?: (entry: RecentEntry, projectId: string | undefined) => void;
+  readonly onCreateProject?: (onCreated?: (project: Project) => void) => void;
+};
+
+/**
+ * A Recents (or Pinned, or a project's) row (STORY_021; recents-row-menu-open@1440): dot, label, hover Pin + ⋯, the ⋯
+ * menu — Rename, Pin / Unpin, Copy conversation ID (STORY_029, behaviour-recents-*), Move to project › (STORY_031,
+ * behaviour-project-move-01: Add new project · the projects · No project), Archive (STORY_030), Delete. Rename turns
+ * the label into an inline input holding the title. The visible label stays the creation stamp (CHORE_008).
+ */
+function RecentRow({ entry, active, projects, onNavigate, onDelete, onRename, onPin, onCopyId, onArchive, onMove, onCreateProject }: RecentRowProps) {
+  const rootRef = useRef<HTMLLIElement>(null);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const closeMove = useCallback(() => {
+    setMoveOpen(false);
+  }, []);
+  const { menuOpen, setMenuOpen, close } = useRowMenu(rootRef, closeMove);
+  const [renaming, setRenaming] = useState(false);
+  const unread = isUnread(entry);
+  const pinned = entry.pinned === true;
+  const item = (label: string, icon: ReactNode, onClick: () => void) => <MenuButton label={label} icon={icon} onClick={() => { close(); onClick(); }} />;
+  const inert = (label: string, icon: ReactNode) => <Inert role="menuitem" label={label} className={styles.menuItem}><span className={styles.menuIcon}>{icon}</span><span className={styles.menuLabel}>{label}</span></Inert>;
   return (
     <li ref={rootRef} className={cx(styles.recent, menuOpen && styles.recentMenuOpen)}>
-      {draft === undefined ? (
+      {renaming ? (
+        <span className={cx(styles.row, styles.recentLink, styles.recentEditing)}>
+          <span className={cx(styles.dot, unread ? styles.dotUnread : styles.dotRead)} />
+          <RenameInput initial={entry.title} label={`Rename ${entry.title}`} onCancel={() => { setRenaming(false); }} onCommit={(title) => { setRenaming(false); if (title !== entry.title) onRename?.(entry, title); }} />
+        </span>
+      ) : (
         <Link href={`/task/${encodeURIComponent(entry.id)}`} className={cx(styles.row, styles.recentLink, active && styles.rowActive)} aria-current={active ? "page" : undefined} aria-label={recentName(entry)} onClick={onNavigate}>
           <span className={cx(styles.dot, unread ? styles.dotUnread : styles.dotRead)} aria-label={unread ? "New result" : undefined} />
           {/* CHORE_008: the row is named by its creation minute; the prompt's first words are the tooltip and the accessible name */}
           <span className={styles.rowLabel} title={entry.title}>{recentLabel(entry)}</span>
         </Link>
-      ) : (
-        <span className={cx(styles.row, styles.recentLink, styles.recentEditing)}>
-          <span className={cx(styles.dot, unread ? styles.dotUnread : styles.dotRead)} />
-          <input
-            ref={inputRef}
-            className={styles.recentInput}
-            aria-label={`Rename ${entry.title}`}
-            value={draft}
-            onChange={(event) => { setDraft(event.target.value); }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") { event.preventDefault(); commitRename(); }
-              if (event.key === "Escape") { event.preventDefault(); setDraft(undefined); }
-            }}
-            onBlur={commitRename}
-          />
-        </span>
       )}
       <span className={styles.recentActions}>
         {onPin ? (
@@ -176,43 +218,118 @@ function RecentRow({ entry, active, onNavigate, onDelete, onRename, onPin, onCop
         ) : (
           <Inert label="Pin" className={styles.recentAction}><IconPin /></Inert>
         )}
-        <button type="button" className={styles.recentAction} aria-label={`More actions for ${entry.title}`} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => { setMenuOpen((o) => !o); }}>
+        <button type="button" className={styles.recentAction} aria-label={`More actions for ${entry.title}`} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => { setMoveOpen(false); setMenuOpen((o) => !o); }}>
           <IconMore />
         </button>
       </span>
       {menuOpen ? (
         <div className={styles.menu} role="menu" aria-label={`Actions for ${entry.title}`}>
-          {onRename ? menuButton("Rename", <IconRename />, () => { setDraft(entry.title); }) : <Inert role="menuitem" label="Rename" className={styles.menuItem}><span className={styles.menuIcon}><IconRename /></span><span className={styles.menuLabel}>Rename</span></Inert>}
-          {onPin ? menuButton(pinned ? "Unpin" : "Pin", <IconPin />, () => { onPin(entry, !pinned); }) : <Inert role="menuitem" label="Pin" className={styles.menuItem}><span className={styles.menuIcon}><IconPin /></span><span className={styles.menuLabel}>Pin</span></Inert>}
-          {onCopyId ? menuButton("Copy conversation ID", <IconCopy />, () => { onCopyId(entry); }) : <Inert role="menuitem" label="Copy conversation ID" className={styles.menuItem}><span className={styles.menuIcon}><IconCopy /></span><span className={styles.menuLabel}>Copy conversation ID</span></Inert>}
-          <Inert role="menuitem" label="Move to project" className={styles.menuItem}>
-            <span className={styles.menuIcon}><IconMove /></span>
-            <span className={styles.menuLabel}>Move to project</span>
-            <span className={styles.menuChevron} aria-hidden="true">›</span>
-          </Inert>
+          {onRename ? item("Rename", <IconRename />, () => { setRenaming(true); }) : inert("Rename", <IconRename />)}
+          {onPin ? item(pinned ? "Unpin" : "Pin", <IconPin />, () => { onPin(entry, !pinned); }) : inert("Pin", <IconPin />)}
+          {onCopyId ? item("Copy conversation ID", <IconCopy />, () => { onCopyId(entry); }) : inert("Copy conversation ID", <IconCopy />)}
+          {onMove ? (
+            <div className={styles.submenuWrap}>
+              <button type="button" role="menuitem" aria-haspopup="menu" aria-expanded={moveOpen} className={styles.menuItem} onClick={() => { setMoveOpen((o) => !o); }}>
+                <span className={styles.menuIcon}><IconMove /></span>
+                <span className={styles.menuLabel}>Move to project</span>
+                <span className={styles.menuChevron} aria-hidden="true">›</span>
+              </button>
+              {moveOpen ? (
+                <div className={cx(styles.menu, styles.submenu)} role="menu" aria-label="Move to project">
+                  <MenuButton label="Add new project" icon={<IconPlusCircle />} onClick={() => { close(); onCreateProject?.((project) => { onMove(entry, project.id); }); }} />
+                  {projects.length > 0 ? <div className={styles.menuSeparator} /> : null}
+                  {projects.map((project) => (
+                    <MenuButton key={project.id} label={project.name} icon={<IconProject />} onClick={() => { close(); onMove(entry, project.id); }} extra={entry.projectId === project.id ? <span className={styles.menuCheck} aria-hidden="true">✓</span> : null} />
+                  ))}
+                  <div className={styles.menuSeparator} />
+                  <MenuButton label="No project" icon={<IconProject />} onClick={() => { close(); onMove(entry, undefined); }} extra={entry.projectId === undefined ? <span className={styles.menuCheck} aria-hidden="true">✓</span> : null} />
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <Inert role="menuitem" label="Move to project" className={styles.menuItem}>
+              <span className={styles.menuIcon}><IconMove /></span>
+              <span className={styles.menuLabel}>Move to project</span>
+              <span className={styles.menuChevron} aria-hidden="true">›</span>
+            </Inert>
+          )}
           <div className={styles.menuSeparator} />
-          {onArchive ? menuButton("Archive", <IconArchive />, () => { onArchive(entry); }) : <Inert role="menuitem" label="Archive" className={styles.menuItem}><span className={styles.menuIcon}><IconArchive /></span><span className={styles.menuLabel}>Archive</span></Inert>}
-          <button
-            type="button"
-            role="menuitem"
-            className={cx(styles.menuItem, styles.menuDanger)}
-            onClick={() => {
-              close();
-              onDelete?.(entry);
-            }}
-          >
-            <span className={styles.menuIcon}><IconTrash /></span>
-            <span className={styles.menuLabel}>Delete</span>
-          </button>
+          {onArchive ? item("Archive", <IconArchive />, () => { onArchive(entry); }) : inert("Archive", <IconArchive />)}
+          <MenuButton label="Delete" icon={<IconTrash />} danger onClick={() => { close(); onDelete?.(entry); }} />
         </div>
       ) : null}
     </li>
   );
 }
 
-export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail = false, onNavigate, onCollapse, onExpand, onToggleSection, onDismissGuide, onOpenSettings, onOpenSearch, onOpenCreateProject, onDeleteRecent, onRenameRecent, onPinRecent, onCopyRecentId, onArchiveRecent }: SidebarProps) {
+type ProjectRowProps = {
+  readonly project: Project;
+  readonly tasks: readonly RecentEntry[];
+  readonly active: boolean;
+  readonly expanded: boolean;
+  readonly onToggle: () => void;
+  readonly onNavigate?: () => void;
+  readonly onRename?: (project: Project, name: string) => void;
+  readonly onPin?: (project: Project, pinned: boolean) => void;
+  readonly onDelete?: (project: Project) => void;
+  readonly onNewTask?: (project: Project) => void;
+  readonly renderTask: (entry: RecentEntry) => ReactNode;
+};
+
+/**
+ * A project row (STORY_031; behaviour-project-create-04, -move-04-project-row-hover, -delete-03): the folder and the
+ * name; on hover **Project actions** (⋯) and **New task** (+); a click opens the project's page and expands the row to
+ * its tasks, or "No tasks". The ⋯ menu: New task · Rename · Pin / Unpin · ─ · Delete (ours opens on a click; the
+ * reference's needed a right-click — Departures).
+ */
+function ProjectRow({ project, tasks, active, expanded, onToggle, onNavigate, onRename, onPin, onDelete, onNewTask, renderTask }: ProjectRowProps) {
+  const rootRef = useRef<HTMLLIElement>(null);
+  const { menuOpen, setMenuOpen, close } = useRowMenu(rootRef);
+  const [renaming, setRenaming] = useState(false);
+  const pinned = project.pinned === true;
+  const item = (label: string, icon: ReactNode, onClick: () => void, danger = false) => <MenuButton label={label} icon={icon} danger={danger} onClick={() => { close(); onClick(); }} />;
+  return (
+    <li ref={rootRef} className={cx(styles.recent, styles.project, menuOpen && styles.recentMenuOpen)} data-testid="project-row">
+      {renaming ? (
+        <span className={cx(styles.row, styles.recentLink, styles.recentEditing)}>
+          <span className={styles.rowIcon}><IconProject /></span>
+          <RenameInput initial={project.name} label={`Rename ${project.name}`} onCancel={() => { setRenaming(false); }} onCommit={(name) => { setRenaming(false); if (name !== project.name) onRename?.(project, name); }} />
+        </span>
+      ) : (
+        <Link href={`/project/${encodeURIComponent(project.id)}`} className={cx(styles.row, styles.recentLink, active && styles.rowActive)} aria-current={active ? "page" : undefined} aria-expanded={expanded} onClick={() => { onToggle(); onNavigate?.(); }}>
+          <span className={styles.rowIcon}><IconProject /></span>
+          <span className={styles.rowLabel} title={project.name}>{project.name}</span>
+        </Link>
+      )}
+      <span className={styles.recentActions}>
+        <button type="button" className={styles.recentAction} aria-label={`Project actions for ${project.name}`} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => { setMenuOpen((o) => !o); }}><IconMore /></button>
+        <button type="button" className={styles.recentAction} aria-label={`New task in ${project.name}`} onClick={() => { onNewTask?.(project); }}><IconPlus /></button>
+      </span>
+      {menuOpen ? (
+        <div className={styles.menu} role="menu" aria-label={`Actions for ${project.name}`}>
+          {item("New task", <IconPlus />, () => { onNewTask?.(project); })}
+          {item("Rename", <IconRename />, () => { setRenaming(true); })}
+          {item(pinned ? "Unpin" : "Pin", <IconPin />, () => { onPin?.(project, !pinned); })}
+          <div className={styles.menuSeparator} />
+          {item("Delete", <IconTrash />, () => { onDelete?.(project); }, true)}
+        </div>
+      ) : null}
+      {expanded ? (
+        tasks.length === 0 ? (
+          <p className={styles.projectEmpty}>No tasks</p>
+        ) : (
+          <ul className={cx(styles.recents, styles.projectTasks)} aria-label={`Tasks in ${project.name}`}>{tasks.map(renderTask)}</ul>
+        )
+      ) : null}
+    </li>
+  );
+}
+
+export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail = false, onNavigate, onCollapse, onExpand, onToggleSection, onDismissGuide, onOpenSettings, onOpenSearch, onOpenCreateProject, onDeleteRecent, onRenameRecent, onPinRecent, onCopyRecentId, onArchiveRecent, projects = [], onRenameProject, onPinProject, onDeleteProject, onNewTask, onMoveRecent }: SidebarProps) {
   const active = activeRow(pathname);
   const [showAll, setShowAll] = useState(false);
+  // STORY_031: which project rows are expanded to their tasks (a click on the row toggles; not remembered)
+  const [expandedProjects, setExpandedProjects] = useState<ReadonlySet<string>>(() => new Set());
   const [inboxOpen, setInboxOpen] = useState(false);
 
   if (rail) {
@@ -243,8 +360,35 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
   );
   const listed = activeRecents(recents); // STORY_030: archived rows live under Settings › Archived tasks
   const shown = visibleRecents(listed, showAll);
-  const pinned = pinnedRecents(listed);
-  const row = (entry: RecentEntry) => <RecentRow key={entry.id} entry={entry} active={active === `task:${entry.id}`} onNavigate={onNavigate} onDelete={onDeleteRecent} onRename={onRenameRecent} onPin={onPinRecent} onCopyId={onCopyRecentId} onArchive={onArchiveRecent} />;
+  const row = (entry: RecentEntry) => <RecentRow key={entry.id} entry={entry} active={active === `task:${entry.id}`} projects={projects} onNavigate={onNavigate} onDelete={onDeleteRecent} onRename={onRenameRecent} onPin={onPinRecent} onCopyId={onCopyRecentId} onArchive={onArchiveRecent} onMove={onMoveRecent} onCreateProject={onOpenCreateProject} />;
+  const projectRow = (project: Project) => (
+    <ProjectRow
+      key={project.id}
+      project={project}
+      tasks={tasksOf(recents, project.id)}
+      active={active === `project:${project.id}`}
+      expanded={expandedProjects.has(project.id)}
+      onToggle={() => {
+        setExpandedProjects((open) => {
+          const next = new Set(open);
+          if (next.has(project.id)) next.delete(project.id);
+          else next.add(project.id);
+          return next;
+        });
+      }}
+      onNavigate={onNavigate}
+      onRename={onRenameProject}
+      onPin={onPinProject}
+      onDelete={onDeleteProject}
+      onNewTask={onNewTask}
+      renderTask={row}
+    />
+  );
+  // STORY_029 / STORY_031: the Pinned section holds tasks and projects alike, newest pin first
+  const pinned = [
+    ...pinnedRecents(listed).map((entry) => ({ at: entry.pinnedAt, node: row(entry) })),
+    ...projects.filter((p) => p.pinned === true).map((project) => ({ at: project.pinnedAt, node: projectRow(project) })),
+  ].sort((a, b) => Date.parse(b.at ?? "") - Date.parse(a.at ?? ""));
   return (
     <nav className={styles.sidebar} aria-label="Sidebar">
       <div className={styles.head}>
@@ -262,12 +406,17 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
       {pinned.length > 0 ? (
         <div className={styles.section} data-testid="pinned-section">
           <SectionHeader label="Pinned" section="pinned" folded={prefs.folded.pinned} onToggle={onToggleSection} />
-          {prefs.folded.pinned ? null : <ul className={styles.recents}>{pinned.map(row)}</ul>}
+          {prefs.folded.pinned ? null : <ul className={styles.recents}>{pinned.map((p) => p.node)}</ul>}
         </div>
       ) : null}
       <div className={styles.section}>
         <SectionHeader label="Projects" section="projects" folded={prefs.folded.projects} onToggle={onToggleSection} />
-        {prefs.folded.projects ? null : onOpenCreateProject ? <ActionRow icon={<IconProject />} label="Add new project" muted onClick={onOpenCreateProject} /> : <InertRow icon={<IconProject />} label="Add new project" muted />}
+        {prefs.folded.projects ? null : (
+          <>
+            {projects.length > 0 ? <ul className={styles.recents} aria-label="Projects">{projects.map(projectRow)}</ul> : null}
+            {onOpenCreateProject ? <ActionRow icon={<IconProject />} label="Add new project" muted onClick={() => { onOpenCreateProject(); }} /> : <InertRow icon={<IconProject />} label="Add new project" muted />}
+          </>
+        )}
       </div>
       <div className={styles.section}>
         <SectionHeader label="Recents" section="recents" folded={prefs.folded.recents} onToggle={onToggleSection} />

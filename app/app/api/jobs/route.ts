@@ -1,6 +1,7 @@
 import { historyStore } from "@/lib/history-store";
 import type { CreateJobResponse } from "@/lib/job-api";
 import { errorResponse, forward, guarded, relayJson } from "@/lib/model-client";
+import { projectStore } from "@/lib/project-store";
 import { validateReferenceImages } from "@/lib/upload-validation";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,8 @@ interface Fields {
   /** STORY_016/017: an extension's source and requested overlap. */
   readonly continueFrom?: string;
   readonly overlapFrames?: number;
+  /** STORY_031: the project the task starts in; ours alone, never forwarded to the model. */
+  readonly projectId?: string;
 }
 
 function fieldsFrom(source: Record<string, unknown>): Fields {
@@ -21,6 +24,7 @@ function fieldsFrom(source: Record<string, unknown>): Fields {
   const num = (v: unknown): number => (typeof v === "number" ? v : Number(str(v)));
   const continueFrom = str(source["continueFrom"]).trim();
   const overlap = source["overlapFrames"];
+  const projectId = str(source["projectId"]).trim();
   return {
     prompt: str(source["prompt"]),
     ratio: str(source["ratio"]),
@@ -29,7 +33,14 @@ function fieldsFrom(source: Record<string, unknown>): Fields {
     model: str(source["model"]) || "minimax-h3",
     ...(continueFrom === "" ? {} : { continueFrom }),
     ...(continueFrom !== "" && overlap !== undefined && overlap !== null && overlap !== "" ? { overlapFrames: num(overlap) } : {}),
+    ...(projectId === "" ? {} : { projectId }),
   };
+}
+
+/** STORY_031: a named project must exist before a job is created in it. */
+function unknownProject(fields: Fields): Response | undefined {
+  if (fields.projectId !== undefined && !projectStore().get(fields.projectId)) return errorResponse({ status: 400, code: "validation", message: "projectId must name a project", field: "projectId" });
+  return undefined;
 }
 
 /** After the server accepted the job, record it in history BEFORE answering the browser (STORY_014). */
@@ -46,6 +57,7 @@ async function accepted(response: Response, fields: Fields, referenceImages: num
     params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model, ...(fields.overlapFrames === undefined ? {} : { overlapFrames: fields.overlapFrames }) },
     referenceImages,
     ...(continuesFrom ? { continuesFrom } : {}),
+    ...(fields.projectId === undefined ? {} : { projectId: fields.projectId }),
   });
   return Response.json(body, { status: 202 });
 }
@@ -65,8 +77,13 @@ export function POST(request: Request): Promise<Response> {
       } catch {
         // the upstream validates and answers 400
       }
-      const fields = fieldsFrom(typeof parsed === "object" && parsed !== null ? (parsed as Record<string, unknown>) : {});
-      return accepted(await forward(path, { method: "POST", headers: { "content-type": "application/json" }, body: text }), fields, 0);
+      const source = typeof parsed === "object" && parsed !== null ? (parsed as Record<string, unknown>) : undefined;
+      const fields = fieldsFrom(source ?? {});
+      const refused = unknownProject(fields);
+      if (refused) return refused;
+      // the model never sees the project: the body goes up as sent unless it carried one
+      const body = source && "projectId" in source ? JSON.stringify(Object.fromEntries(Object.entries(source).filter(([key]) => key !== "projectId"))) : text;
+      return accepted(await forward(path, { method: "POST", headers: { "content-type": "application/json" }, body }), fields, 0);
     }
     if (contentType.startsWith("multipart/form-data")) {
       const form = await request.formData();
@@ -78,12 +95,15 @@ export function POST(request: Request): Promise<Response> {
       for (const [key, value] of form.entries()) {
         if (key === "referenceImage") continue;
         if (typeof value === "string") {
-          out.set(key, value);
+          if (key !== "projectId") out.set(key, value);
           source[key] = value;
         }
       }
       for (const file of files) out.append("referenceImage", file, file.name);
-      return accepted(await forward(path, { method: "POST", body: out }), fieldsFrom(source), files.length);
+      const fields = fieldsFrom(source);
+      const refused = unknownProject(fields);
+      if (refused) return refused;
+      return accepted(await forward(path, { method: "POST", body: out }), fields, files.length);
     }
     return errorResponse({ status: 415, code: "unsupported_media_type", message: "send application/json or multipart/form-data" });
   });

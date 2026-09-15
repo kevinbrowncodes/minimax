@@ -122,6 +122,15 @@
   line-height: var(--line_height_20);
   white-space: nowrap;
 }
+/* STORY_031: the project chip beside the tag — the tag's shape on the secondary ground */
+.projectTag {
+  gap: var(--spacing_6);
+  background: var(--bg_default_secondary);
+  color: var(--text_default_primary);
+}
+.projectTag .tagRemove {
+  color: var(--text_default_secondary);
+}
 /* The tag's × shows on hover or focus (composer-video-mode@1440 shows the tag without it). */
 .tagRemove {
   border: 0;

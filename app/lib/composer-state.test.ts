@@ -60,6 +60,21 @@ describe("reduceComposer", () => {
   });
 });
 
+describe("the project choice (STORY_031)", () => {
+  it("starts from initialComposer's project, changes with the action, survives mode changes and Stop extending, clears with No project", () => {
+    expect(initialComposer().projectId).toBeUndefined();
+    let s = reduceComposer(initialComposer("p1"), { type: "capabilities", capabilities: caps });
+    expect(s.projectId).toBe("p1");
+    expect(reduceComposer(s, { type: "project", projectId: "p1" })).toBe(s); // no-op keeps identity
+    s = reduceComposer(s, { type: "project", projectId: "p2" });
+    s = reduceComposer(s, { type: "enter-video-mode" });
+    s = reduceComposer(s, { type: "leave-video-mode" });
+    s = reduceComposer(s, { type: "clear-extend" });
+    expect(s.projectId).toBe("p2");
+    expect(reduceComposer(s, { type: "project", projectId: undefined }).projectId).toBeUndefined();
+  });
+});
+
 describe("reduceComposer edge branches", () => {
   it("keeps state identity for no-op actions and falls back when capabilities omit the current ratio", () => {
     const s = ready();
