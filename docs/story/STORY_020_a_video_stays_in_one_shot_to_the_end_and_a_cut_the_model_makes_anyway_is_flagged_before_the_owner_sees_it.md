@@ -129,6 +129,18 @@ The borrowed control (step 0 above) ran on the Spark the same afternoon: ComfyUI
 - **What the control cannot say:** his prompts never ask for a held static shot, and his camera moves throughout, so it does not test "one shot for ten seconds" directly. The border-based shot-change rule flagged five events in his clip, all of them prompted POV motion (the landing, the bank, the train), which confirms the rule is for static-camera content like the owner's scripts and must not be applied to prompts that move the camera; the Technical Notes say so.
 - **The second half is blocked by our own limit:** his prompts are 1,888 / 2,423 / 2,066 characters and `MAX_PROMPT_CHARS` is 2,000, so two of the three cannot be submitted to our adapter until this story raises the limit to 6,000 — one more reason for that AC. Running the same three prompts through our adapter is therefore part of this story's verification, after the limit change, not before it.
 
+## The overnight chain (2026-09-14/15) — the owner's verification, in progress
+
+Owner, 2026-09-14 evening: "try 3 successful attempts at video extension for 01.jpg and the three scripts which are each 10 seconds each and should result in a 30 second video… I really hope to see this working in tomorrow morning". Run through the UI's own API (the same route the composer uses), 01.jpg + [docs/scripts/scene.txt](../scripts/scene.txt) + the script, 10 s per segment, overlap 39, a fresh seed per attempt; every segment checked by the adapter's `result.cuts` (from 1.3.0 on), by the same border scan run outside the pipeline, by `seam-check.sh`'s seam ratio, and by frames viewed across the seam and through the new footage; a segment that changes shot is regenerated with a new seed, up to three tries.
+
+| Chain 1 | Job | Seed | Result | Shot changes | Seam | Frames viewed |
+| --- | --- | --- | --- | --- | --- | --- |
+| Segment 1 — 01.jpg + script1, 10 s | `9504c191` | 2917339670 | done 18:59, 243 frames (10.13 s), on the 1.2.0 adapter (built prompt, no measure yet) | none (border max 2.5 over a second) | — | 0 / 60 / 120 / 180 / 242: palms on thighs, chest out, hands on hips, eyes to the lens; set, lamps, stanchions, framing unchanged |
+| Segment 2 — +10 s, script2 | `40ea4550` | 4011782692 | done 20:08, 498 frames (20.75 s), adapter 1.3.0 | `result.cuts: []`; scan none (border max 5.8) | frame 243: 3.93 vs 4.17 largest elsewhere, ratio **0.94**, border step 2.8 | 241 / 243 / 280 / 340 / 420 / 497: the seam invisible, the three-quarter pivot, the arm across the torso, the waistband hook, square to camera at the end; same set throughout |
+| Segment 3 — +10 s, script3 | `c00b63a3` | 2965241935 | done 21:15, **753 frames (31.38 s)**, adapter 1.3.0 | `result.cuts: []`; scan none (border max 6.1) | frame 243: ratio **0.87** (border step 2.7); frame 498: 2.34 vs 4.33, ratio **0.54** (border step 1.6) | 496 / 498 / 540 / 600 / 660 / 752: the seam invisible, the first squat, the rise, the deep squat, tall and square to camera at the end; the curtain, both lamps, the stanchions and the framing unchanged for all 31 s |
+
+**Chain 1: clean at the first try of every segment** — three generations, no retry, 3 h 6 min wall time (18:09 → 21:15), peak 80.9 GiB. The whole 31.4 s clip is one shot; the only frame-to-frame changes above 4.2 are the squats' own motion. This is the result the owner asked for; chains 2 and 3 follow with fresh seeds because three successes say more than one.
+
 ## Estimated Complexity
 
 M — one prompt builder and its tests, one small custom node and a pure rule, one contract field on two servers, one notice on the task page, and two ~1 h verification runs.
