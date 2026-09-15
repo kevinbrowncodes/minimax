@@ -305,7 +305,7 @@
   font-weight: 500;
   cursor: pointer;
 }
-/* the docked stack: credits notice, composer, disclaimer (task-page@1440: 768 wide, centred); the jump button floats above it */
+/* the docked stack: the composer (task-page@1440: 768 wide, centred); the jump button floats above it */
 .docked {
   position: relative;
   flex: none;
@@ -340,82 +340,6 @@
 }
 .jumpArrowDown {
   transform: rotate(180deg);
-}
-/* credits-notice@1440: 768 × 50, padding 8 16, radius 16, the same 20 px glow as the composer */
-.credits {
-  width: 100%;
-  max-width: 768px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing_8);
-  padding: var(--spacing_8) var(--spacing_16);
-  border: 1px solid var(--border_default);
-  border-radius: var(--radius_16);
-  background: var(--bg_default_tertiary);
-  box-shadow: rgba(10, 10, 10, 0.08) 0 0 20px 0;
-  font-size: 13px;
-  line-height: var(--line_height_20);
-  color: var(--text_default_primary);
-}
-.creditsIcon {
-  flex: none;
-  display: inline-flex;
-  color: var(--icon_default_secondary);
-}
-.creditsText {
-  flex: 1;
-  min-width: 0;
-}
-.creditsActions {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing_8);
-}
-.creditsSecondary,
-.creditsPrimary {
-  height: 32px;
-  padding: 0 var(--spacing_12);
-  border: 0;
-  border-radius: var(--radius_8);
-  font-size: 14px;
-  line-height: var(--line_height_20);
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-.creditsSecondary {
-  background: var(--bg_interaction_tertiary_hover);
-  color: var(--text_default_primary);
-}
-.creditsPrimary {
-  background: var(--bg_interaction_primary_default);
-  color: var(--text_label_primary_default);
-}
-.creditsClose {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius_8);
-  background: transparent;
-  color: var(--icon_default_tertiary);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-.creditsClose:hover {
-  background: var(--bg_interaction_tertiary_hover);
-}
-/* footer-disclaimer@1440: 10 px tertiary, centred */
-.footer {
-  margin: 0;
-  font-size: 10px;
-  line-height: 14px;
-  color: var(--text_default_tertiary);
-  text-align: center;
 }
 /* preview pane (task-result-preview-open@1440): 590 at the right, full height, head 56, the video 556 wide centred */
 .preview {
@@ -696,7 +620,6 @@
   .action,
   .retry,
   .processed,
-  .creditsClose,
   .previewIcon,
   .deliverable,
   .cardMenuItem {
@@ -704,20 +627,6 @@
   }
   .action {
     width: 44px;
-  }
-  /* narrow-task-page@390: the notice wraps — ⓘ text × on the first row, the buttons right-aligned under it */
-  .credits {
-    height: auto;
-    flex-wrap: wrap;
-  }
-  .creditsActions {
-    order: 3;
-    flex: 1 0 100%;
-    justify-content: flex-end;
-  }
-  .creditsSecondary,
-  .creditsPrimary {
-    min-height: 44px;
   }
   /* departure: the reference squeezes the thread to ≈ 150 px beside a 238 px pane at 390; ours covers the page */
   .pagePreview {

@@ -97,28 +97,20 @@ describe("PromoCard (STORY_021; home-signed-in@1440, promo-carousel-page-2@1440)
   });
 });
 
-describe("SettingsDialog sections (STORY_021; settings-account/usage/archived-tasks@1440)", () => {
-  it("the nav switches sections and every control in them is inert", () => {
+describe("SettingsDialog sections (STORY_021; settings-archived-tasks@1440; STORY_026 removed Account and Usage)", () => {
+  it("the nav is General and Archived tasks; Archived tasks' controls are inert", () => {
     render(<SettingsDialog open choice="system" onChoose={() => undefined} onClose={() => undefined} />);
-    act(() => {
-      screen.getByRole("button", { name: "Account" }).click();
-    });
-    expect(screen.getByRole("dialog", { name: "Account" })).toBeInTheDocument();
-    for (const name of ["Edit avatar", "Edit nickname", "Manage", "Delete account", "Cancel", "Save"]) expect(screen.getByRole("button", { name })).toHaveAttribute("aria-disabled", "true");
-    act(() => {
-      screen.getByRole("button", { name: "Usage" }).click();
-    });
-    expect(screen.getByText("No Token Plan subscribed")).toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: "Use Credits after Token Plan limit" })).toHaveAttribute("aria-disabled", "true");
-    act(() => {
-      screen.getByRole("button", { name: "Recharge" }).click();
-    });
-    expect(screen.getByRole("status")).toHaveTextContent(INERT_NOTICE);
+    expect(screen.getAllByRole("button", { name: /^(General|Account|Usage|Archived tasks)$/ }).map((el) => el.textContent.trim())).toEqual(["General", "Archived tasks"]);
     act(() => {
       screen.getByRole("button", { name: "Archived tasks" }).click();
     });
+    expect(screen.getByRole("dialog", { name: "Archived tasks" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Search archived tasks")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "All projects" })).toHaveAttribute("aria-disabled", "true");
+    act(() => {
+      screen.getByRole("button", { name: "All projects" }).click();
+    });
+    expect(screen.getByRole("status")).toHaveTextContent(INERT_NOTICE);
     act(() => {
       screen.getByRole("button", { name: "General" }).click();
     });

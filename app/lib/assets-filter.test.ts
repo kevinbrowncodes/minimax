@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fileNameFor, filterAssets, narrowChipLabel } from "./assets-filter";
+import { ASSET_CHIPS, fileNameFor, filterAssets } from "./assets-filter";
 import type { HistoryEntry } from "./history-store";
 
 const result = { url: "/jobs/x/result", posterUrl: "/jobs/x/poster", mimeType: "video/mp4", durationSeconds: 5, width: 1344, height: 768, sizeBytes: 1 };
@@ -13,22 +13,14 @@ describe("filterAssets", () => {
     expect(filterAssets(entries, { chip: "All", query: "alley.mp4" }).map((e) => e.id)).toEqual(["b"]);
     expect(filterAssets(entries, { chip: "All", query: "nothing" })).toEqual([]);
   });
-  it("yields nothing for the chips that have no local content", () => {
-    for (const chip of ["Websites", "Documents", "Excel", "PPT", "Images", "Audio"] as const) expect(filterAssets(entries, { chip, query: "" })).toEqual([]);
+  it("offers All · Images · Videos · Audio (STORY_026) and yields nothing for the two with no local content yet", () => {
+    expect(ASSET_CHIPS).toEqual(["All", "Images", "Videos", "Audio"]);
+    for (const chip of ["Images", "Audio"] as const) expect(filterAssets(entries, { chip, query: "" })).toEqual([]);
   });
   it("From you and Star hold nothing; From agent is the default tab (STORY_024)", () => {
     expect(filterAssets(entries, { chip: "All", query: "", tab: "From you" })).toEqual([]);
     expect(filterAssets(entries, { chip: "Videos", query: "", tab: "Star" })).toEqual([]);
     expect(filterAssets(entries, { chip: "All", query: "", tab: "From agent" }).map((e) => e.id)).toEqual(["a", "b"]);
-  });
-});
-
-describe("narrowChipLabel (STORY_024): the 390 chip row's wording", () => {
-  it("singularises Websites and Documents and leaves the rest", () => {
-    expect(narrowChipLabel("Websites")).toBe("Website");
-    expect(narrowChipLabel("Documents")).toBe("Document");
-    expect(narrowChipLabel("PPT")).toBe("PPT");
-    expect(narrowChipLabel("All")).toBe("All");
   });
 });
 

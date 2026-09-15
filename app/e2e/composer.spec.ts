@@ -12,7 +12,7 @@ test.describe("composer and video mode (STORY_013)", () => {
     await expect(params).toHaveAccessibleName("Video parameters: 16:9 768P 5s");
     await params.click();
     await settled(page);
-    await expect(page.getByRole("radio", { name: /2K/ })).toBeDisabled();
+    await expect(page.getByRole("radiogroup", { name: "Resolution" }).getByRole("radio")).toHaveText(["768P"]); // STORY_026: no greyed 2K
     await page.getByRole("radio", { name: "9:16" }).click();
     await page.getByRole("radio", { name: "10s" }).click();
     await expect(page.getByRole("button", { name: "Video parameters: 9:16 768P 10s" })).toBeVisible();
@@ -25,8 +25,7 @@ test.describe("composer and video mode (STORY_013)", () => {
     }
     await page.getByRole("button", { name: /^Model:/ }).click();
     await settled(page);
-    await expect(page.getByRole("menuitemradio", { name: /Hailuo-2.3/ })).toBeDisabled();
-    await expect(page.getByRole("menuitemradio", { name: /MiniMax-H3-Max/ })).toBeDisabled();
+    await expect(page.getByRole("menuitemradio")).toHaveText(["● MiniMax-H3"]); // STORY_026: only what the Spark reports
     await page.keyboard.press("Escape");
   });
 
@@ -62,12 +61,12 @@ test.describe("composer and video mode (STORY_013)", () => {
     expect(((await status.json()) as { status: string }).status).toBe("done");
   });
 
-  test("Send outside video mode explains that only videos are generated", async ({ page }) => {
+  test("Send outside video mode says text chat is not connected to the Spark yet (STORY_026)", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("textbox", { name: "Message" }).fill("hello");
     await page.getByRole("button", { name: "Send message" }).click();
     // Next's route announcer is also role=alert; pick ours by its text.
-    await expect(page.getByRole("alert").filter({ hasText: "only generates videos" })).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: "Text chat is not connected to the Spark yet" })).toBeVisible();
   });
 });
 
@@ -100,17 +99,14 @@ test.describe("the home and composer match the reference (STORY_022)", () => {
     expect(((await status.json()) as { status: string }).status).toBe("done");
   });
 
-  test("Document mode shows the pill and its Showcase, Send shows the notice, the pill leaves the mode", async ({ page }) => {
+  test("one mode chip (STORY_026): Video generation alone, no Document / Website / Image Generation / More; the + menu has no Plugins submenu", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Document" }).click();
-    await expect(page.getByRole("group", { name: "Modes" })).toBeHidden();
-    await expect(page.getByTestId("showcase")).toContainText("Regulation Overview Report");
-    await page.getByRole("textbox", { name: "Message" }).fill("write a report");
-    await page.getByRole("button", { name: "Send message" }).click({ force: true });
-    await expect(page.getByRole("status")).toHaveText(/video generation only/);
-    await expect(page).toHaveURL(/\/$/);
-    await page.getByRole("button", { name: "Document: leave this mode" }).click();
-    await expect(page.getByRole("group", { name: "Modes" })).toBeVisible();
+    await settled(page);
+    await expect(page.getByRole("group", { name: "Modes" }).getByRole("button")).toHaveText([/Video generation/]);
+    await page.getByRole("button", { name: /Video generation/ }).click();
+    await page.getByRole("button", { name: "Add attachment" }).click();
+    await expect(page.getByRole("menu", { name: "Add attachment" }).getByRole("menuitem")).toHaveText(["Add files or photos", "Add to project", "Skills", "Environment variables"]);
+    await page.keyboard.press("Escape");
   });
 
   test("the + menu's Add files or photos opens the reference chooser in video mode", async ({ page }) => {

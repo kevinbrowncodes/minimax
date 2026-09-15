@@ -70,6 +70,7 @@ test.describe("assets (STORY_015)", () => {
   test("search filters by title and the other chips show their empty state", async ({ page }, testInfo) => {
     await finishOneJob(page, "Find me by name");
     await page.goto("/assets");
+    await settled(page); // the bar's Search button mounts with the page (a click before that was flaky)
     if (testInfo.project.name === "narrow") await page.getByRole("button", { name: "Search" }).click(); // the bar's Search shows the field (STORY_024)
     await page.getByRole("searchbox").fill("nothing like it");
     await expect(page.getByTestId("assets-empty")).toBeVisible();

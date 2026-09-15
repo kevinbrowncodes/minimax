@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Capabilities } from "./job-api";
-import { canSend, durationOptions, initialComposer, isLookOnlyMode, isModelEnabled, isResolutionEnabled, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ComposerState, type ExtendSource } from "./composer-state";
+import { canSend, durationOptions, initialComposer, isModelEnabled, isResolutionEnabled, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ComposerState, type ExtendSource } from "./composer-state";
 
 const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 } };
 const img = (id: string, type = "image/png", size = 1000): ComposerImage => ({ id, file: new File(["x"], `${id}.png`, { type }), url: "", name: `${id}.png`, type, size });
@@ -146,17 +146,16 @@ describe("extend mode (STORY_016, STORY_017)", () => {
   });
 });
 
-describe("the reference's other modes and the Showcase (STORY_022)", () => {
-  it("enter-mode switches to a look-only mode where nothing can be sent; leave-video-mode returns to text", () => {
+describe("the modes and the Showcase (STORY_022, STORY_026)", () => {
+  it("text mode can send once there is text; video mode also needs capabilities; leave-video-mode returns to text (STORY_026: no other modes)", () => {
     let state = reduceComposer(initialComposer(), { type: "text", text: "hello" });
-    state = reduceComposer(state, { type: "enter-mode", mode: "document" });
-    expect(state.mode).toBe("document");
-    expect(isLookOnlyMode(state.mode)).toBe(true);
-    expect(canSend(state)).toBe(false);
+    expect(state.mode).toBe("text");
+    expect(canSend(state)).toBe(true);
+    state = reduceComposer(state, { type: "enter-video-mode" });
+    expect(canSend(state)).toBe(false); // no capabilities yet
     state = reduceComposer(state, { type: "leave-video-mode" });
     expect(state.mode).toBe("text");
     expect(canSend(state)).toBe(true);
-    expect(isLookOnlyMode("video")).toBe(false);
   });
 
   it("a scene types the prompt, enters video mode and takes the parameters the Spark allows; clear-scene empties", () => {

@@ -1,16 +1,12 @@
 /** Assets filtering (STORY_015): only finished jobs, the reference's chips, and a case-insensitive title search. */
 import type { HistoryEntry } from "./history-store";
 
-export const ASSET_CHIPS = ["All", "Websites", "Documents", "Excel", "PPT", "Images", "Videos", "Audio"] as const;
+/** STORY_026 trimmed the reference's eight chips to the four a video workstation can fill: All · Images · Videos · Audio. */
+export const ASSET_CHIPS = ["All", "Images", "Videos", "Audio"] as const;
 export type AssetChip = (typeof ASSET_CHIPS)[number];
 /** assets-all@1440: "From agent", "From you", "Star" (STORY_024 takes the capture's casing). */
 export const ASSET_TABS = ["From agent", "From you", "Star"] as const;
 export type AssetTab = (typeof ASSET_TABS)[number];
-
-/** narrow-assets-all@390: the 390 chip row reads "Website" and "Document" where 1440 reads the plurals. */
-export function narrowChipLabel(chip: AssetChip): string {
-  return chip === "Websites" ? "Website" : chip === "Documents" ? "Document" : chip;
-}
 
 export interface AssetFilter {
   readonly chip: AssetChip;

@@ -255,7 +255,7 @@ describe("TaskPage — the reference's task page (STORY_023)", () => {
     expect(screen.getByTestId("preview-pane")).toBeInTheDocument();
   });
 
-  it("Copy copies the prompt, Like and Dislike are inert, the time is the finish time", async () => {
+  it("Copy copies the prompt and the time is the finish time; Like / Dislike are gone (STORY_026)", async () => {
     const writeText = vi.fn(() => Promise.resolve());
     Object.assign(navigator, { clipboard: { writeText } });
     render(shell(<TaskPage entry={done()} fetchImpl={fetchScript([]).fetchImpl} />));
@@ -265,8 +265,8 @@ describe("TaskPage — the reference's task page (STORY_023)", () => {
     });
     expect(writeText).toHaveBeenCalledWith("A boat");
     expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Like" })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("button", { name: "Dislike" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.queryByRole("button", { name: "Like" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Dislike" })).not.toBeInTheDocument();
     expect(screen.getByText(/^Sep 12, \d\d:\d\d$/)).toBeInTheDocument();
   });
 
@@ -280,15 +280,11 @@ describe("TaskPage — the reference's task page (STORY_023)", () => {
     expect(screen.getAllByText("Validate the request")).toHaveLength(2);
   });
 
-  it("the credits notice is inert and dismisses; the disclaimer is the reference's sentence", () => {
+  it("no credits notice and no disclaimer under the docked composer (STORY_026)", () => {
     render(shell(<TaskPage entry={done()} fetchImpl={fetchScript([]).fetchImpl} />));
-    const notice = screen.getByTestId("credits-notice");
-    expect(notice).toHaveTextContent("Fewer than 1,000 Credits remain.");
-    expect(within(notice).getByRole("button", { name: "Subscribe" })).toHaveAttribute("aria-disabled", "true");
-    expect(within(notice).getByRole("button", { name: "Buy Credits" })).toHaveAttribute("aria-disabled", "true");
-    fireEvent.click(within(notice).getByRole("button", { name: "Dismiss usage notice" }));
     expect(screen.queryByTestId("credits-notice")).not.toBeInTheDocument();
-    expect(screen.getByText("MiniMax Agent is AI and can make mistakes")).toBeInTheDocument();
+    expect(screen.queryByText(/Credits remain/)).not.toBeInTheDocument();
+    expect(screen.queryByText("MiniMax Agent is AI and can make mistakes")).not.toBeInTheDocument();
   });
 
   it("the Work Area panel lists the deliverable once done, folds, and hides when the Shell says so", () => {

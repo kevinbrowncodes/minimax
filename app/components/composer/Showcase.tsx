@@ -1,24 +1,21 @@
 "use client";
 import { cx } from "@/lib/cx";
-import type { ComposerMode } from "@/lib/composer-state";
-import { MODE_CARDS, VIDEO_SCENES, type Scene } from "@/lib/showcase";
+import { VIDEO_SCENES, type Scene } from "@/lib/showcase";
 import { Inert } from "@/components/shell/Inert";
 import { IconClose } from "@/components/shell/icons";
 import styles from "./showcase.module.css";
 
 export interface ShowcaseProps {
-  readonly mode: Exclude<ComposerMode, "text">;
-  readonly onScene?: (scene: Scene) => void;
+  readonly onScene: (scene: Scene) => void;
   readonly onDismiss: () => void;
 }
 
 /**
- * The Showcase row under a mode's composer (STORY_022; composer-video-mode@1440: title, ×, four 169×128 cards with
- * captions and a hover "Preview example"). In video mode a card types its prompt and parameters into the composer;
- * the other modes' cards are looks only. The reference's cards are its own content; ours are drawn.
+ * The Showcase row under the video composer (STORY_022; composer-video-mode@1440: title, ×, four 169×128 cards with
+ * captions and a hover "Preview example"). A card types its prompt and parameters into the composer. The reference's
+ * cards are its own content; ours are drawn.
  */
-export function Showcase({ mode, onScene, onDismiss }: ShowcaseProps) {
-  const cards = mode === "video" ? VIDEO_SCENES : MODE_CARDS[mode];
+export function Showcase({ onScene, onDismiss }: ShowcaseProps) {
   return (
     <section className={styles.showcase} aria-label="Showcase" data-testid="showcase">
       <div className={styles.head}>
@@ -26,17 +23,11 @@ export function Showcase({ mode, onScene, onDismiss }: ShowcaseProps) {
         <button type="button" className={styles.dismiss} aria-label="Clear selected scene" title="Clear selected scene" onClick={onDismiss}><IconClose /></button>
       </div>
       <div className={styles.grid}>
-        {cards.map((card) => (
+        {VIDEO_SCENES.map((card) => (
           <div key={card.id} className={styles.card}>
-            {mode === "video" && onScene ? (
-              <button type="button" className={cx(styles.thumb, styles[`art_${card.art}`])} aria-label={card.caption} onClick={() => { onScene(card as Scene); }}>
-                <span className={styles.thumbMark} aria-hidden="true" />
-              </button>
-            ) : (
-              <Inert label={card.caption} className={cx(styles.thumb, styles[`art_${card.art}`])}>
-                <span className={styles.thumbMark} aria-hidden="true" />
-              </Inert>
-            )}
+            <button type="button" className={cx(styles.thumb, styles[`art_${card.art}`])} aria-label={card.caption} onClick={() => { onScene(card); }}>
+              <span className={styles.thumbMark} aria-hidden="true" />
+            </button>
             <Inert label="Preview example" className={styles.preview} align="end">
               <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" fill="none" stroke="currentColor" strokeWidth="1.3" /><circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" strokeWidth="1.3" /></svg>
             </Inert>

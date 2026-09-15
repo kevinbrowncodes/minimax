@@ -3,14 +3,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cx } from "@/lib/cx";
 import { THEME_CHOICES, type ThemeChoice } from "@/lib/theme";
 import { Inert } from "./Inert";
-import { IconAccount, IconArchive, IconAvatar, IconChevronDown, IconClose, IconExternal, IconGeneral, IconInfo, IconMonitor, IconMoon, IconPencil, IconSearch, IconSun, IconUsage } from "./icons";
+import { IconArchive, IconChevronDown, IconClose, IconGeneral, IconMonitor, IconMoon, IconSearch, IconSun } from "./icons";
 import styles from "./settings.module.css";
 
-export type SettingsSection = "General" | "Account" | "Usage" | "Archived tasks";
+/** General and Archived tasks; STORY_026 removed the reference's Account and Usage (no accounts, plans or credits locally). */
+export type SettingsSection = "General" | "Archived tasks";
 const SECTIONS: readonly { readonly id: SettingsSection; readonly icon: ReactNode }[] = [
   { id: "General", icon: <IconGeneral /> },
-  { id: "Account", icon: <IconAccount /> },
-  { id: "Usage", icon: <IconUsage /> },
   { id: "Archived tasks", icon: <IconArchive /> },
 ];
 
@@ -23,7 +22,7 @@ export interface SettingsDialogProps {
 
 /**
  * User menu › Settings (STORY_019; settings-general@1440 / -dark, narrow-settings-general@390): a modal with a left
- * nav (General, Account, Usage, Archived tasks) and the General section — Appearance (Light mode / Dark mode / System
+ * nav (General, Archived tasks) and the General section — Appearance (Light mode / Dark mode / System
  * cards; the chosen one outlined in the accent) and the two Preferences rows, rendered inert. At 390 it is a bottom
  * sheet with the nav as horizontal tabs and no ×: the backdrop closes it, as on the reference. The other sections are
  * nav entries that show the notice until the shell rebuild story fills them.
@@ -62,16 +61,11 @@ function SettingsBody({ choice, onChoose, onClose }: SettingsDialogProps) {
         </nav>
         <div className={styles.panel}>
           <div className={styles.panelHead}>
-            <h2 id="settings-title" className={styles.panelTitle}>
-              {section}
-              {section === "Usage" ? <Inert label="About usage resources" className={styles.infoIcon}><IconInfo /></Inert> : null}
-            </h2>
+            <h2 id="settings-title" className={styles.panelTitle}>{section}</h2>
             <button type="button" className={styles.close} aria-label="Close settings" onClick={onClose}><IconClose /></button>
           </div>
           <div className={styles.panelBody}>
             {section === "General" ? <GeneralSection choice={choice} onChoose={onChoose} /> : null}
-            {section === "Account" ? <AccountSection /> : null}
-            {section === "Usage" ? <UsageSection /> : null}
             {section === "Archived tasks" ? <ArchivedSection /> : null}
           </div>
         </div>
@@ -122,82 +116,6 @@ function GeneralSection({ choice, onChoose }: { readonly choice: ThemeChoice; re
           description="Allow your content to help improve our products and services. You can turn this off at any time."
           label="Help improve our services setting"
         />
-      </div>
-    </>
-  );
-}
-
-/** settings-account@1440: avatar, nickname, the Password row, Delete account / Cancel / Save — all inert (no account locally). */
-function AccountSection() {
-  return (
-    <div className={styles.account}>
-      <div className={styles.accountIdentity}>
-        <Inert label="Edit avatar" className={styles.avatar}><IconAvatar /></Inert>
-        <span className={styles.nickname}>
-          Owner <Inert label="Edit nickname" className={styles.nicknameEdit}><IconPencil /></Inert>
-        </span>
-      </div>
-      <div className={styles.preferences}>
-        <div className={styles.preference}>
-          <div className={styles.preferenceText}>
-            <span className={styles.preferenceTitle}>Password</span>
-            <span className={styles.preferenceDescription}>You can update your password to better secure your account.</span>
-          </div>
-          <Inert label="Manage" className={styles.secondaryButton} align="end">Manage</Inert>
-        </div>
-      </div>
-      <div className={styles.accountFooter}>
-        <Inert label="Delete account" className={styles.dangerButton}>Delete account</Inert>
-        <span className={styles.accountFooterRight}>
-          <Inert label="Cancel" className={styles.secondaryButton} align="end">Cancel</Inert>
-          <Inert label="Save" className={cx(styles.primaryButton, styles.primaryButtonInactive)} align="end">Save</Inert>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/** settings-usage@1440: Your plan, Credits, Invoice — the reference's copy as static text; every control inert. */
-function UsageSection() {
-  return (
-    <>
-      <h3 className={styles.sectionTitle}>Your plan</h3>
-      <div className={styles.preferences}>
-        <div className={styles.preference}>
-          <div className={styles.preferenceText}>
-            <span className={styles.preferenceTitle}>Token Plan</span>
-            <span className={styles.preferenceDescription}>No Token Plan subscribed</span>
-          </div>
-          <Inert label="Subscribe" className={styles.secondaryButton} align="end">Subscribe</Inert>
-        </div>
-        <div className={styles.preference}>
-          <div className={styles.preferenceText}>
-            <span className={styles.preferenceTitle}>Credits</span>
-            <span className={styles.preferenceDescription}>0 + 400</span>
-          </div>
-          <span className={styles.buttonRow}>
-            <Inert label="Recharge" className={styles.secondaryButton} align="end">Recharge</Inert>
-            <Inert label="Manage" className={styles.secondaryButton} align="end">Manage <IconChevronDown /></Inert>
-          </span>
-        </div>
-      </div>
-      <h3 className={cx(styles.sectionTitle, styles.sectionTitleWithIcon)}>Credits <Inert label="About credit usage" className={styles.infoIcon}><IconInfo /></Inert></h3>
-      <div className={styles.preferences}>
-        <div className={styles.preference}>
-          <div className={styles.preferenceText}>
-            <span className={styles.preferenceTitle}>When enabled, credits (including gifted credits) will be applied to chat usage.</span>
-          </div>
-          <Inert role="switch" ariaChecked label="Use Credits after Token Plan limit" className={cx(styles.switch, styles.switchSmall)} align="end"><span className={styles.switchKnob} /></Inert>
-        </div>
-      </div>
-      <h3 className={styles.sectionTitle}>Invoice</h3>
-      <div className={styles.preferences}>
-        <div className={styles.preference}>
-          <div className={styles.preferenceText}>
-            <span className={styles.preferenceTitle}>Please request invoices through the MiniMax Open Platform.</span>
-          </div>
-          <Inert label="Request" className={styles.secondaryButton} align="end">Request <IconExternal /></Inert>
-        </div>
       </div>
     </>
   );

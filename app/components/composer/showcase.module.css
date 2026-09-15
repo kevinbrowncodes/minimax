@@ -97,18 +97,6 @@
 .art_product { background: radial-gradient(circle at 50% 40%, #f5f5f5 0 22%, #d9d9d9 23% 45%, #2b2b2b 46%); }
 .art_nature { background: linear-gradient(180deg, #ffe9b0, #7cb56b 55%, #1f4d2b); }
 .art_portrait { background: linear-gradient(200deg, #f3d3b0, #b56a4a 60%, #3a2a2a); }
-.art_report { background: linear-gradient(180deg, #fbe3d2, #f7c9a8); }
-.art_table { background: repeating-linear-gradient(180deg, #ffffff 0 12px, #eef3fb 12px 24px); }
-.art_analysis { background: linear-gradient(180deg, #e8f0ff, #c7d7f5); }
-.art_chart { background: linear-gradient(180deg, #ffffff 60%, #1f5e6b 60% 72%, #ffffff 72% 78%, #3aa1b0 78% 92%, #ffffff 92%); }
-.art_shop { background: linear-gradient(135deg, #fff7e6, #ffd9a1); }
-.art_landing { background: linear-gradient(160deg, #101010, #3b3b3b); }
-.art_space { background: radial-gradient(circle at 70% 30%, #6a7dff 0 12%, #0b1030 13%); }
-.art_portfolio { background: linear-gradient(90deg, #f2f2f2 0 50%, #d9d9d9 50%); }
-.art_painting { background: linear-gradient(135deg, #f6d365, #fda085 50%, #7f7fd5); }
-.art_fashion { background: linear-gradient(180deg, #e9e2da, #8c7b70); }
-.art_wildlife { background: linear-gradient(180deg, #ffffff, #cfe3f5 60%, #eaf2fa); }
-.art_noir { background: linear-gradient(135deg, #0a0a0a, #4a4a4a 60%, #0a0a0a); }
 @media (max-width: 899px) {
   .showcase {
     padding: 0;

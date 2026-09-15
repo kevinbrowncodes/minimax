@@ -27,13 +27,8 @@ export interface ExtendSource {
   readonly model: string;
   readonly posterUrl: string;
 }
-/** The composer's modes: text (the plain composer), video (ours), and the reference's three other chips, looks only (STORY_022). */
-export type ComposerMode = "text" | "video" | "document" | "website" | "image";
-export const LOOK_ONLY_MODES: readonly { readonly id: Exclude<ComposerMode, "text" | "video">; readonly label: string }[] = [
-  { id: "document", label: "Document" },
-  { id: "website", label: "Website" },
-  { id: "image", label: "Image Generation" },
-];
+/** The composer's modes: text (the plain composer, BACKLOG_006's chat) and video (ours). STORY_026 removed the reference's other chips. */
+export type ComposerMode = "text" | "video";
 
 export interface ComposerState {
   readonly mode: ComposerMode;
@@ -58,7 +53,6 @@ export type ComposerAction =
   | { readonly type: "text"; readonly text: string }
   | { readonly type: "enter-video-mode" }
   | { readonly type: "leave-video-mode" }
-  | { readonly type: "enter-mode"; readonly mode: Exclude<ComposerMode, "text" | "video"> }
   | { readonly type: "scene"; readonly prompt: string; readonly ratio: string; readonly resolution: string; readonly durationSeconds: number }
   | { readonly type: "clear-scene" }
   | { readonly type: "add-images"; readonly images: readonly ComposerImage[] }
@@ -75,17 +69,13 @@ export type ComposerAction =
   | { readonly type: "submit-start" }
   | { readonly type: "submit-end" };
 
-/** The reference's defaults (composer-video-mode@1440: 16:9, 5 s); resolution and model come from capabilities. */
+/**
+ * The reference's defaults (composer-video-mode@1440: 16:9, 5 s). The models, ratios and resolutions on offer are
+ * whatever `/api/capabilities` reports — STORY_026 dropped the reference's greyed cloud options (2K, H3-Max, H2.3).
+ */
 export const DEFAULT_RATIO = "16:9";
 export const DEFAULT_DURATION = 5;
 const DEFAULT_EXTENSION: ExtensionCapabilities = { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30 };
-export const REFERENCE_MODELS: readonly { readonly id: string; readonly label: string }[] = [
-  { id: "minimax-h3", label: "MiniMax-H3.0" },
-  { id: "minimax-h3-max", label: "MiniMax-H3-Max" },
-  { id: "hailuo-2.3", label: "Hailuo-2.3" },
-];
-export const REFERENCE_RESOLUTIONS: readonly string[] = ["768P", "2K"];
-export const REFERENCE_RATIOS: readonly string[] = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"];
 
 export function initialComposer(): ComposerState {
   return { mode: "text", text: "", images: [], capabilities: undefined, capabilitiesError: undefined, model: "", ratio: DEFAULT_RATIO, resolution: "", durationSeconds: DEFAULT_DURATION, extend: undefined, overlapFrames: DEFAULT_EXTENSION.overlapFrames.default, error: undefined, submitting: false };
@@ -140,8 +130,6 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
       return state.mode === "video" ? state : { ...state, mode: "video", error: undefined };
     case "leave-video-mode":
       return state.mode === "text" ? state : { ...state, mode: "text", images: [], extend: undefined, error: undefined };
-    case "enter-mode":
-      return { ...state, mode: action.mode, images: [], extend: undefined, error: undefined };
     case "scene": {
       // A Showcase card: the prompt after the tag, the parameters where the Spark allows them (the capabilities clamp).
       const caps = state.capabilities;
@@ -224,12 +212,11 @@ export function overlapOptions(state: ComposerState): readonly { readonly frames
   return extensionOf(state.capabilities).overlapFrames.options.map((frames) => ({ frames, label: `${overlapSeconds(frames)} s` }));
 }
 export function canSend(state: ComposerState): boolean {
-  if (isLookOnlyMode(state.mode)) return false;
   return state.text.trim().length > 0 && !state.submitting && (state.mode !== "video" || state.capabilities !== undefined);
 }
-/** Document, Website and Image Generation are rendered as the reference renders them and go nowhere (STORY_022). */
-export function isLookOnlyMode(mode: ComposerMode): mode is Exclude<ComposerMode, "text" | "video"> {
-  return mode === "document" || mode === "website" || mode === "image";
+/** The label the model pill shows for the chosen model ("MiniMax-H3.0" → "MiniMax-H3"); the capabilities name it. */
+export function modelLabel(state: ComposerState): string {
+  return (state.capabilities?.models.find((m) => m.id === state.model)?.label ?? "MiniMax-H3.0").replace(".0", "");
 }
 /** "16:9 768P 5s" — the Video parameters button's label (video-params-open@1440); "+10s" while extending. */
 export function paramsLabel(state: ComposerState): string {

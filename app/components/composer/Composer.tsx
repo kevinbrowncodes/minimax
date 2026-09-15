@@ -1,16 +1,13 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
-import { canSend, durationOptions, initialComposer, isLookOnlyMode, isModelEnabled, isResolutionEnabled, LOOK_ONLY_MODES, overlapOptions, paramsLabel, reduceComposer, REFERENCE_MODELS, REFERENCE_RATIOS, REFERENCE_RESOLUTIONS, type ComposerImage, type ExtendSource } from "@/lib/composer-state";
-import type { Scene } from "@/lib/showcase";
+import { canSend, durationOptions, initialComposer, modelLabel, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ExtendSource } from "@/lib/composer-state";
 import { cx } from "@/lib/cx";
 import { overlapSeconds } from "@/lib/extend";
 import type { Capabilities } from "@/lib/job-api";
 import { submitJob } from "@/lib/submit-job";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
-import { Inert } from "@/components/shell/Inert";
-import { IconDocument } from "@/components/shell/icons";
-import { AgentModelMenu, AttachMenu, ModeMenu } from "./ComposerMenus";
+import { AgentModelMenu, AttachMenu } from "./ComposerMenus";
 import { Showcase } from "./Showcase";
 import styles from "./composer.module.css";
 
@@ -48,7 +45,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const docked = variant === "docked";
   const textarea = useRef<HTMLTextAreaElement>(null);
   const [state, dispatch] = useReducer(reduceComposer, docked, (startInVideoMode) => (startInVideoMode ? reduceComposer(initialComposer(), { type: "enter-video-mode" }) : initialComposer()));
-  const [popover, setPopover] = useState<"params" | "model" | "attach" | "more" | "agent" | undefined>(undefined);
+  const [popover, setPopover] = useState<"params" | "model" | "attach" | "agent" | undefined>(undefined);
   const [showcaseDismissed, setShowcaseDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -139,7 +136,8 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const send = async (): Promise<void> => {
     if (!canSend(state)) return;
     if (state.mode !== "video") {
-      dispatch({ type: "error", error: { message: "MiniMax Local only generates videos — pick Video generation" } });
+      // BACKLOG_006 wires the text mode to a local text model; until then it says so (STORY_026)
+      dispatch({ type: "error", error: { message: "Text chat is not connected to the Spark yet — pick Video generation" } });
       return;
     }
     dispatch({ type: "submit-start" });
@@ -159,8 +157,6 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   };
 
   const video = state.mode === "video";
-  const lookOnly = isLookOnlyMode(state.mode);
-  const modeLabel = LOOK_ONLY_MODES.find((m) => m.id === state.mode)?.label ?? "";
   const caps = state.capabilities;
   const extending = state.extend;
 
@@ -232,30 +228,22 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
             <button type="button" className={styles.iconButton} aria-label="Add attachment" aria-haspopup="menu" aria-expanded={popover === "attach"} onClick={() => { setPopover(popover === "attach" ? undefined : "attach"); }}>+</button>
             {popover === "attach" ? <AttachMenu onAddFiles={video && !extending ? () => fileInput.current?.click() : undefined} onClose={() => { setPopover(undefined); }} /> : null}
           </span>
-          {lookOnly ? (
-            <button type="button" className={styles.modePill} aria-label={`${modeLabel}: leave this mode`} onClick={() => { dispatch({ type: "leave-video-mode" }); }}>
-              <IconDocument /> {modeLabel}
-            </button>
-          ) : null}
           {video ? (
             <>
               <span style={{ position: "relative" }} className={styles.modelWrap} data-popover="model">
-                <button type="button" className={styles.pill} aria-haspopup="menu" aria-expanded={popover === "model"} aria-label={`Model: ${REFERENCE_MODELS.find((m) => m.id === state.model)?.label ?? "MiniMax-H3"}`} onClick={() => { setPopover(popover === "model" ? undefined : "model"); }} disabled={!caps || extending !== undefined} title={extending ? FIXED_NOTE : undefined}>
+                <button type="button" className={styles.pill} aria-haspopup="menu" aria-expanded={popover === "model"} aria-label={`Model: ${modelLabel(state)}`} onClick={() => { setPopover(popover === "model" ? undefined : "model"); }} disabled={!caps || extending !== undefined} title={extending ? FIXED_NOTE : undefined}>
                   <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><circle cx="7" cy="7" r="2" fill="currentColor" /></svg>
-                  {(REFERENCE_MODELS.find((m) => m.id === state.model)?.label ?? "MiniMax-H3.0").replace(".0", "")}
+                  {modelLabel(state)}
                   <span aria-hidden="true">⌄</span>
                 </button>
-                {popover === "model" ? (
+                {popover === "model" && caps ? (
+                  // the models the Spark serves (STORY_026: no greyed cloud entries)
                   <div className={styles.menu} role="menu" aria-label="Model">
-                    {REFERENCE_MODELS.map((m) => {
-                      const enabled = isModelEnabled(state, m.id);
-                      return (
-                        <button key={m.id} type="button" role="menuitemradio" aria-checked={state.model === m.id} className={styles.menuItem} disabled={!enabled} onClick={() => { dispatch({ type: "model", model: m.id }); setPopover(undefined); }}>
-                          <span>{state.model === m.id ? "● " : ""}{m.label}</span>
-                          {enabled ? null : <span className={styles.menuNote}>not on the Spark</span>}
-                        </button>
-                      );
-                    })}
+                    {caps.models.map((m) => (
+                      <button key={m.id} type="button" role="menuitemradio" aria-checked={state.model === m.id} className={styles.menuItem} onClick={() => { dispatch({ type: "model", model: m.id }); setPopover(undefined); }}>
+                        <span>{state.model === m.id ? "● " : ""}{m.label.replace(".0", "")}</span>
+                      </button>
+                    ))}
                   </div>
                 ) : null}
               </span>
@@ -272,8 +260,8 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                   <div className={styles.popover} role="dialog" aria-label="Video parameters">
                     <span className={styles.sectionLabel}>Ratio</span>
                     <div className={styles.track} role="radiogroup" aria-label="Ratio">
-                      {REFERENCE_RATIOS.map((ratio) => (
-                        <button key={ratio} type="button" role="radio" aria-checked={state.ratio === ratio} className={cx(styles.segment, styles.segmentRatio, state.ratio === ratio && styles.segmentSelected)} disabled={!caps.ratios.includes(ratio) || extending !== undefined} onClick={() => { dispatch({ type: "ratio", ratio }); }}>
+                      {caps.ratios.map((ratio) => (
+                        <button key={ratio} type="button" role="radio" aria-checked={state.ratio === ratio} className={cx(styles.segment, styles.segmentRatio, state.ratio === ratio && styles.segmentSelected)} disabled={extending !== undefined} onClick={() => { dispatch({ type: "ratio", ratio }); }}>
                           <RatioGlyph ratio={ratio} />
                           {ratio}
                         </button>
@@ -281,14 +269,11 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                     </div>
                     <span className={styles.sectionLabel}>Resolution</span>
                     <div className={styles.track} role="radiogroup" aria-label="Resolution">
-                      {REFERENCE_RESOLUTIONS.map((resolution) => {
-                        const enabled = isResolutionEnabled(state, resolution);
-                        return (
-                          <button key={resolution} type="button" role="radio" aria-checked={state.resolution === resolution} className={cx(styles.segment, state.resolution === resolution && styles.segmentSelected)} disabled={!enabled || extending !== undefined} title={enabled ? undefined : "not on the Spark"} onClick={() => { dispatch({ type: "resolution", resolution }); }}>
-                            {resolution}{enabled ? "" : " — not on the Spark"}
-                          </button>
-                        );
-                      })}
+                      {caps.resolutions.map((resolution) => (
+                        <button key={resolution} type="button" role="radio" aria-checked={state.resolution === resolution} className={cx(styles.segment, state.resolution === resolution && styles.segmentSelected)} disabled={extending !== undefined} onClick={() => { dispatch({ type: "resolution", resolution }); }}>
+                          {resolution}
+                        </button>
+                      ))}
                     </div>
                     {extending ? <span className={styles.fixedNote}>{FIXED_NOTE}</span> : null}
                     <span className={styles.sectionLabel}>{extending ? "Duration (added)" : "Duration"}</span>
@@ -321,11 +306,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
               <button type="button" className={styles.inertModel} aria-label="MiniMax-M3" aria-haspopup="menu" aria-expanded={popover === "agent"} onClick={() => { setPopover(popover === "agent" ? undefined : "agent"); }}>MiniMax-M3 <span aria-hidden="true">⌄</span></button>
               {popover === "agent" ? <AgentModelMenu onClose={() => { setPopover(undefined); }} /> : null}
             </span>
-            {lookOnly ? (
-              <Inert label="Send message" className={cx(styles.send, styles.sendInert)} align="end">
-                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </Inert>
-            ) : stop ? (
+            {stop ? (
               <button type="button" className={styles.send} aria-label="Stop generation" disabled={stop.pending} onClick={stop.onStop}>
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" /></svg>
               </button>
@@ -343,27 +324,18 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
         </div>
       ) : null}
       {state.capabilitiesError ? <div className={styles.error} role="alert">{state.capabilitiesError}</div> : null}
-      {docked || state.mode !== "text" ? null : (
+      {docked || video ? null : (
+        // one mode chip (STORY_026): the reference's Document / Website / Image Generation / More are gone
         <div className={styles.chips} role="group" aria-label="Modes">
           <button type="button" className={styles.chip} onClick={() => { dispatch({ type: "enter-video-mode" }); }}>
             <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="9" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="m10.5 7 4-2v6l-4-2z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
             Video generation <span className={styles.h3}>H3</span>
           </button>
-          {LOOK_ONLY_MODES.map((m) => (
-            <button key={m.id} type="button" className={styles.chip} onClick={() => { dispatch({ type: "enter-mode", mode: m.id }); }}>
-              <IconDocument /> {m.label}
-            </button>
-          ))}
-          <span style={{ position: "relative" }} data-popover="more">
-            <button type="button" className={styles.chip} aria-haspopup="menu" aria-expanded={popover === "more"} onClick={() => { setPopover(popover === "more" ? undefined : "more"); }}>More</button>
-            {popover === "more" ? <ModeMenu /> : null}
-          </span>
         </div>
       )}
-      {docked || state.mode === "text" || showcaseDismissed || extending ? null : (
+      {docked || !video || showcaseDismissed || extending ? null : (
         <Showcase
-          mode={state.mode}
-          onScene={video ? (scene: Scene) => { dispatch({ type: "scene", prompt: scene.prompt, ratio: scene.ratio, resolution: scene.resolution, durationSeconds: scene.durationSeconds }); textarea.current?.focus(); } : undefined}
+          onScene={(scene) => { dispatch({ type: "scene", prompt: scene.prompt, ratio: scene.ratio, resolution: scene.resolution, durationSeconds: scene.durationSeconds }); textarea.current?.focus(); }}
           onDismiss={() => { dispatch({ type: "clear-scene" }); setShowcaseDismissed(true); }}
         />
       )}

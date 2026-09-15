@@ -1,46 +1,8 @@
 /**
- * The words on the pages behind the sidebar (STORY_025), read off the 2026-09-14 captures: page-plugins@1440,
- * agents-guide-view-now@1440, page-scheduled@1440, page-connect-mobile@1440, page-maxhermes@1440, page-maxclaw@1440.
+ * The words on the pages behind the sidebar (STORY_025), read off the 2026-09-14 captures: agents-guide-view-now@1440,
+ * page-connect-mobile@1440, page-maxhermes@1440, page-maxclaw@1440. STORY_026 dropped the marketplace and Schedules.
  * Names and one-line descriptions are plain text; the reference's logos and art are not reproduced (CLAUDE.md §3e).
  */
-
-export const PLUGIN_CATEGORIES = ["All", "Office", "Studio", "Design & sites", "Code", "Biz", "Sales", "Prod", "Sci & health", "Edu", "Other"] as const;
-
-export interface PluginCard {
-  readonly name: string;
-  readonly description: string;
-  /** The drawn tile's hue for the glyph (our own, not the plugin's logo). */
-  readonly hue: number;
-}
-
-export const PLUGINS: readonly PluginCard[] = [
-  { name: "Excel", description: "Create, edit, analyze, and convert spreadsheets.", hue: 140 },
-  { name: "EverMe", description: "Connect EverMe to read, search, and write notes.", hue: 45 },
-  { name: "Linear", description: "Connect Linear to find, create, and update issues.", hue: 230 },
-  { name: "Notion", description: "Connect your Notion workspace to read and write pages.", hue: 0 },
-  { name: "PDF", description: "Create, read, reformat, fill, transform and merge PDFs.", hue: 5 },
-  { name: "PPT", description: "Read, analyze, create, and edit PowerPoint decks.", hue: 20 },
-  { name: "Nowledge Mem", description: "Give MiniMax durable, cross-tool memory.", hue: 210 },
-  { name: "Obsidian Skills", description: "Create and edit Obsidian Markdown notes.", hue: 265 },
-];
-export const PLUGINS_TOTAL = 27;
-
-export interface SkillCard {
-  readonly name: string;
-  readonly uses: string;
-}
-
-export const SKILLS: readonly SkillCard[] = [
-  { name: "html-presentation-generator", uses: "10K" },
-  { name: "landing-page-builder", uses: "9.7K" },
-  { name: "minimax-pdf", uses: "8.3K" },
-  { name: "minimax-docx", uses: "7.4K" },
-  { name: "visual-content-generator", uses: "7K" },
-  { name: "pptx-generator", uses: "6.4K" },
-  { name: "video-story-generator", uses: "5.6K" },
-  { name: "minimax-xlsx", uses: "5.4K" },
-];
-export const SKILL_AUTHOR = "@MiniMax Code";
 
 export const MANAGE_TABS = [
   { label: "Plugins", count: 1 },

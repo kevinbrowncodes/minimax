@@ -1,10 +1,9 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { ASSET_CHIPS, ASSET_TABS, fileNameFor, filterAssets, narrowChipLabel, type AssetChip, type AssetTab } from "@/lib/assets-filter";
+import { ASSET_CHIPS, ASSET_TABS, fileNameFor, filterAssets, type AssetChip, type AssetTab } from "@/lib/assets-filter";
 import { cx } from "@/lib/cx";
 import type { HistoryEntry } from "@/lib/history-store";
-import { useNarrow } from "@/lib/use-narrow";
 import { Inert } from "@/components/shell/Inert";
 import { useShell } from "@/components/shell/ShellContext";
 import { IconArrowUpRight, IconClose, IconDownload, IconFilter, IconLocate, IconMore, IconPlay, IconSearch, IconStar, IconTrash, IconVideo } from "@/components/shell/icons";
@@ -51,7 +50,6 @@ function AssetMenu({ entry, label, withDownload = false, onDelete, onClose }: As
 export function AssetsPage({ fetchImpl, confirmImpl }: AssetsPageProps) {
   const doFetch = fetchImpl ?? fetch;
   const confirmDelete = confirmImpl ?? ((message: string) => window.confirm(message));
-  const narrow = useNarrow();
   const { setPageActions } = useShell();
   const [entries, setEntries] = useState<readonly HistoryEntry[] | undefined>(undefined);
   const [tab, setTab] = useState<AssetTab>("From agent");
@@ -164,7 +162,7 @@ export function AssetsPage({ fetchImpl, confirmImpl }: AssetsPageProps) {
         <div className={styles.chips}>
           {ASSET_CHIPS.map((c) => (
             <button key={c} type="button" className={cx(styles.chip, chip === c && styles.chipActive)} aria-pressed={chip === c} onClick={() => { setChip(c); }}>
-              {narrow ? narrowChipLabel(c) : c}
+              {c}
             </button>
           ))}
         </div>

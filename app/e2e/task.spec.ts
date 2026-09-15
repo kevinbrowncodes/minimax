@@ -147,7 +147,7 @@ test.describe("the task page matches the reference (STORY_023)", () => {
     await expect(panel).toBeVisible();
   });
 
-  test("the thread rows: the Processed row, Copy, the inert Like / Dislike, the credits notice dismisses, the disclaimer", async ({ page }, testInfo) => {
+  test("the thread rows: the Processed row and Copy; no Like / Dislike, credits notice or disclaimer (STORY_026)", async ({ page }) => {
     // the clipboard is stubbed: headless WebKit has no permission to write it, and what matters is what Copy hands it
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "clipboard", { value: { writeText: (text: string) => { (window as unknown as { copied?: string }).copied = text; return Promise.resolve(); } } });
@@ -156,22 +156,13 @@ test.describe("the task page matches the reference (STORY_023)", () => {
     await terminal;
     await page.getByTestId("preview-pane").getByRole("button", { name: "Close" }).click();
     await expect(page.getByRole("button", { name: /^Processed \d+s/ })).toBeVisible();
-    const like = page.getByRole("button", { name: "Like", exact: true });
-    await expect(like).toHaveAttribute("aria-disabled", "true");
-    await like.click({ force: true });
-    await expect(page.getByRole("status").filter({ hasText: "Not part of MiniMax Local" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Like", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Dislike", exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: "Copy prompt" }).click();
     await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
     expect(await page.evaluate(() => (window as unknown as { copied?: string }).copied)).toBe("Row by row");
-    const notice = page.getByTestId("credits-notice");
-    await expect(notice).toContainText("Fewer than 1,000 Credits remain.");
-    if (testInfo.project.name === "narrow") {
-      const box = await notice.getByRole("button", { name: "Subscribe" }).boundingBox();
-      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
-    }
-    await notice.getByRole("button", { name: "Dismiss usage notice" }).click();
-    await expect(notice).toBeHidden();
-    await expect(page.getByText("MiniMax Agent is AI and can make mistakes")).toBeVisible();
+    await expect(page.getByTestId("credits-notice")).toHaveCount(0);
+    await expect(page.getByText("MiniMax Agent is AI and can make mistakes")).toHaveCount(0);
   });
 
   test("a result the server flagged for a shot change carries the notice; its Retry re-posts without a seed (STORY_020, CHORE_009)", async ({ page, stubApi }) => {

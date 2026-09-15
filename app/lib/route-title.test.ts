@@ -11,10 +11,9 @@ describe("topBarFor", () => {
     expect(topBarFor("/task/unknown", recents)).toEqual({ kind: "task", title: "Unnamed Session" });
     expect(topBarFor("/elsewhere", recents)).toEqual({ kind: "other" });
   });
-  it("names the six pages behind the sidebar (STORY_025)", () => {
+  it("names the pages behind the sidebar (STORY_025; Plugins is the Management page since STORY_026)", () => {
     expect(topBarFor("/plugins", recents)).toEqual({ kind: "page", page: "plugins" });
-    expect(topBarFor("/plugins/manage", recents)).toEqual({ kind: "page", page: "plugins-manage" });
-    expect(topBarFor("/scheduled", recents)).toEqual({ kind: "page", page: "scheduled" });
+    expect(topBarFor("/scheduled", recents)).toEqual({ kind: "other" }); // STORY_026 removed Scheduled
     expect(topBarFor("/connect-mobile", recents)).toEqual({ kind: "page", page: "connect-mobile" });
     expect(topBarFor("/max-hermes", recents)).toEqual({ kind: "page", page: "max-hermes" });
     expect(topBarFor("/max-claw", recents)).toEqual({ kind: "page", page: "max-claw" });
@@ -29,8 +28,7 @@ describe("activeRow and isUnread", () => {
     expect(activeRow("/nope")).toBeUndefined();
     // STORY_025: the pages behind the sidebar light their row; Manage lights Plugins
     expect(activeRow("/plugins")).toBe("plugins");
-    expect(activeRow("/plugins/manage")).toBe("plugins");
-    expect(activeRow("/scheduled")).toBe("scheduled");
+    expect(activeRow("/scheduled")).toBeUndefined();
     expect(activeRow("/connect-mobile")).toBe("connect-mobile");
     expect(activeRow("/max-hermes")).toBe("max-hermes");
     expect(activeRow("/max-claw")).toBe("max-claw");

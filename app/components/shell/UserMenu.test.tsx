@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 
 describe("UserMenu (STORY_019; user-menu-open@1440)", () => {
-  it("opens from the chip with the reference's entries, Settings live and the rest inert", () => {
+  it("opens from the chip with Settings as its only entry (STORY_026 removed the plan row and the reference's other entries)", () => {
     const onOpenSettings = vi.fn();
     render(<UserMenu onOpenSettings={onOpenSettings} />);
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
@@ -30,13 +30,10 @@ describe("UserMenu (STORY_019; user-menu-open@1440)", () => {
     });
     const menu = screen.getByRole("menu", { name: "User menu" });
     expect(menu).toHaveTextContent("UID : local");
-    expect(menu).toHaveTextContent("Default");
+    expect(menu).not.toHaveTextContent("Subscribe");
     const items = screen.getAllByRole("menuitem").map((el) => el.getAttribute("aria-label") ?? el.textContent.trim());
-    expect(items).toEqual(["Switch to classic", "Settings", "Daily check-in", "Usage", "Contact us", "Learn more", "Logout"]);
-    act(() => {
-      screen.getByRole("menuitem", { name: "Logout" }).click();
-    });
-    expect(screen.getByRole("status")).toHaveTextContent(INERT_NOTICE);
+    expect(items).toEqual(["Settings"]);
+    for (const name of ["Switch to classic", "Daily check-in", "Usage", "Contact us", "Learn more", "Logout"]) expect(screen.queryByRole("menuitem", { name })).not.toBeInTheDocument();
     act(() => {
       screen.getByRole("menuitem", { name: "Settings" }).click();
     });
@@ -75,8 +72,9 @@ describe("SettingsDialog (STORY_019; settings-general@1440)", () => {
       screen.getByRole("radio", { name: "Dark mode" }).click();
     });
     expect(onChoose).toHaveBeenCalledWith("dark");
-    // STORY_021 filled the other sections (dialogs.test.tsx); here they only need to be real nav entries.
-    for (const name of ["Account", "Usage", "Archived tasks"]) expect(screen.getByRole("button", { name })).not.toHaveAttribute("aria-disabled");
+    // STORY_021 filled the other sections (dialogs.test.tsx); STORY_026 left General and Archived tasks.
+    expect(screen.getByRole("button", { name: "Archived tasks" })).not.toHaveAttribute("aria-disabled");
+    for (const name of ["Account", "Usage"]) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
     expect(screen.getAllByRole("switch")).toHaveLength(2);
     act(() => {
       screen.getByRole("switch", { name: "Remove watermark setting" }).click();
@@ -148,7 +146,7 @@ describe("Shell theme choice end to end in jsdom (STORY_019)", () => {
     expect(screen.getByRole("radio", { name: "Light mode" })).toHaveAttribute("aria-checked", "true");
   });
 
-  it("an inert top-bar control shows the notice and clears it after two seconds", () => {
+  it("an inert control in the Shell shows the notice and clears it after two seconds (STORY_026: the top bar has none left; the promo card's Download desktop does)", () => {
     render(
       <StrictMode>
         <Shell>
@@ -156,8 +154,12 @@ describe("Shell theme choice end to end in jsdom (STORY_019)", () => {
         </Shell>
       </StrictMode>,
     );
+    for (const name of ["Changelog", "Download"]) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
     act(() => {
-      screen.getByRole("button", { name: "Changelog" }).click();
+      screen.getByRole("button", { name: "2" }).click();
+    });
+    act(() => {
+      screen.getByRole("button", { name: "Download desktop" }).click();
     });
     expect(screen.getByRole("status")).toHaveTextContent(INERT_NOTICE);
     act(() => {

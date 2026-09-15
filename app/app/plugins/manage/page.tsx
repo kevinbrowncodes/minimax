@@ -1,6 +1,6 @@
-import { ManagePage } from "@/components/pages/ManagePage";
+import { redirect } from "next/navigation";
 
-// Plugins › Manage (STORY_025): the reference's Management page with its Agents tab, rendered inert.
+// STORY_026: the Management page moved to /plugins when the marketplace went; old links still land.
 export default function Manage() {
-  return <ManagePage />;
+  redirect("/plugins");
 }

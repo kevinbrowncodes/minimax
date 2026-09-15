@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ExtendSource } from "@/lib/composer-state";
 import type { Capabilities } from "@/lib/job-api";
@@ -49,20 +49,18 @@ describe("Composer", () => {
     expect(screen.queryByText("video-creator")).not.toBeInTheDocument();
   });
 
-  it("shows 2K and the other models as not on the Spark, and the parameters label follows the choice", async () => {
+  it("the parameters and the model menu list only what the Spark reports (STORY_026: no greyed 2K, H3-Max or H2.3), and the label follows the choice", async () => {
     await renderReady();
     fireEvent.click(screen.getByRole("button", { name: /^Video parameters:/ }));
-    const twoK = screen.getByRole("radio", { name: /2K/ });
-    expect(twoK).toBeDisabled();
+    expect(within(screen.getByRole("radiogroup", { name: "Resolution" })).getAllByRole("radio").map((el) => el.textContent)).toEqual(["768P"]);
+    expect(screen.queryByRole("radio", { name: /2K/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: "9:16" }));
     fireEvent.click(screen.getByRole("radio", { name: "10s" }));
     expect(screen.getByRole("button", { name: "Video parameters: 9:16 768P 10s" })).toBeInTheDocument();
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByRole("dialog", { name: "Video parameters" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /^Model:/ }));
-    expect(screen.getByRole("menuitemradio", { name: /Hailuo-2.3/ })).toBeDisabled();
-    expect(screen.getByRole("menuitemradio", { name: /MiniMax-H3-Max/ })).toBeDisabled();
-    expect(screen.getByRole("menuitemradio", { name: /MiniMax-H3.0/ })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Model: MiniMax-H3" }));
+    expect(screen.getAllByRole("menuitemradio").map((el) => el.textContent)).toEqual(["● MiniMax-H3"]);
   });
 
   it("refuses a gif reference inline and accepts a png as a thumbnail with a remove button", async () => {
@@ -109,14 +107,14 @@ describe("Composer", () => {
     });
   });
 
-  it("outside video mode, Send explains that only videos are generated", async () => {
+  it("outside video mode, Send says text chat is not connected to the Spark yet (STORY_026)", async () => {
     render(<Composer fetchImpl={fetchWith(() => json({}, 500))} />);
     fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "hello" } });
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Send message" }));
       await Promise.resolve();
     });
-    expect(screen.getByRole("alert")).toHaveTextContent(/only generates videos/);
+    expect(screen.getByRole("alert")).toHaveTextContent("Text chat is not connected to the Spark yet — pick Video generation");
   });
 });
 
@@ -178,7 +176,7 @@ describe("Composer — extend mode (STORY_016, STORY_017)", () => {
   });
 });
 
-describe("Composer — the reference's menus, modes and Showcase (STORY_022)", () => {
+describe("Composer — the reference's menus, the mode chip and the Showcase (STORY_022, STORY_026)", () => {
   it("the + menu lists the reference's entries with submenus; Add files or photos opens the reference chooser in video mode", async () => {
     await renderReady();
     const input = screen.getByTestId("reference-input");
@@ -186,52 +184,33 @@ describe("Composer — the reference's menus, modes and Showcase (STORY_022)", (
     fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
     const menu = screen.getByRole("menu", { name: "Add attachment" });
     const labels = Array.from(menu.querySelectorAll('[role="menuitem"]')).map((el) => el.getAttribute("aria-label") ?? el.textContent.trim());
-    expect(labels).toEqual(["Add files or photos", "Add to project", "Skills", "Plugins", "Environment variables"]);
+    expect(labels).toEqual(["Add files or photos", "Add to project", "Skills", "Environment variables"]); // STORY_026: no Plugins ›
     fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
     const skills = screen.getByRole("menu", { name: "Skills" });
     expect(skills).toHaveTextContent("No skills installed");
     expect(screen.getByRole("menuitem", { name: "Manage skills" })).toHaveAttribute("aria-disabled", "true");
-    fireEvent.click(screen.getByRole("menuitem", { name: "Plugins" }));
-    expect(screen.getByRole("menuitem", { name: "video-creator" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("menuitem", { name: "Add files or photos" }));
     expect(clickInput).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("menu", { name: "Add attachment" })).not.toBeInTheDocument();
   });
 
-  it("the More chip and MiniMax-M3 open their menus, every entry inert; Escape closes", () => {
+  it("MiniMax-M3 opens its menu, every entry inert (kept for BACKLOG_006); Escape closes", () => {
     const fetchImpl = fetchWith(() => json({}, 500));
     render(<Composer fetchImpl={fetchImpl} />);
-    fireEvent.click(screen.getByRole("button", { name: "More" }));
-    const more = screen.getByRole("menu", { name: "More modes" });
-    expect(Array.from(more.querySelectorAll('[role="menuitem"]')).map((el) => el.getAttribute("aria-label"))).toEqual(["Spreadsheet", "AI PPT", "Research Report", "Education", "Scheduled Tasks"]);
-    act(() => {
-      screen.getByRole("menuitem", { name: "AI PPT" }).click();
-    });
-    expect(screen.getByRole("status")).toHaveTextContent("Not part of MiniMax Local");
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByRole("menu", { name: "More modes" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "MiniMax-M3" }));
     const agent = screen.getByRole("menu", { name: "Agent model" });
     expect(agent).toHaveTextContent("MiniMax-M2.7 HighSpeed");
     expect(screen.getByRole("switch", { name: "Thinking" })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("menu", { name: "Agent model" })).not.toBeInTheDocument();
   });
 
-  it("Document switches the composer into a look-only mode: chips hidden, the pill in the bar, its Showcase, Send inert; the pill leaves", () => {
+  it("one mode chip: Video generation; the reference's Document / Website / Image Generation / More are gone (STORY_026)", () => {
     const fetchImpl = fetchWith(() => json({}, 500));
     render(<Composer fetchImpl={fetchImpl} />);
-    fireEvent.click(screen.getByRole("button", { name: "Document" }));
-    expect(screen.queryByRole("group", { name: "Modes" })).not.toBeInTheDocument();
-    const pill = screen.getByRole("button", { name: "Document: leave this mode" });
-    expect(screen.getByTestId("showcase")).toHaveTextContent("Regulation Overview Report");
-    act(() => {
-      screen.getByRole("button", { name: "Regulation Overview Report" }).click();
-    });
-    expect(screen.getAllByRole("status")[0]).toHaveTextContent("Not part of MiniMax Local");
-    fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "write me a report" } });
-    expect(screen.getByRole("button", { name: "Send message" })).toHaveAttribute("aria-disabled", "true");
-    fireEvent.click(pill);
-    expect(screen.getByRole("group", { name: "Modes" })).toBeInTheDocument();
-    expect(screen.queryByTestId("showcase")).not.toBeInTheDocument();
+    const chips = within(screen.getByRole("group", { name: "Modes" })).getAllByRole("button");
+    expect(chips.map((el) => el.textContent.replace(/\s+/g, " ").trim())).toEqual(["Video generation H3"]);
+    for (const name of ["Document", "Website", "Image Generation", "More"]) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
   });
 
   it("a video Showcase card types its prompt and sets its parameters; Clear selected scene empties and hides the row", async () => {

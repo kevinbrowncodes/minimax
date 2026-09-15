@@ -32,9 +32,9 @@ test.describe("shell (STORY_012)", () => {
     };
     const sidebar = page.getByRole("navigation", { name: "Sidebar" });
     // force: Playwright's actionability check treats aria-disabled as not enabled; the control does respond — that is the point.
+    // STORY_026: Plugins is the Management page; Scheduled is gone
     const rows: readonly { row: string; url: RegExp; inert: string; testid: string }[] = [
-      { row: "Plugins", url: /\/plugins$/, inert: "Install Excel", testid: "plugins-page" },
-      { row: "Scheduled", url: /\/scheduled$/, inert: "Scheduled task status", testid: "scheduled-page" },
+      { row: "Plugins", url: /\/plugins$/, inert: "Create agent", testid: "manage-page" },
       { row: "Connect mobile", url: /\/connect-mobile$/, inert: "Create IM Bot", testid: "connect-page" },
     ];
     for (const { row, url, inert, testid } of rows) {
@@ -55,7 +55,7 @@ test.describe("shell (STORY_012)", () => {
     }
   });
 
-  test("the Agents guide's View now opens Plugins › Manage, whose ‹ Plugins goes back; Personal shows the empty state; More › MaxHermes at desktop (STORY_025)", async ({ page }, testInfo) => {
+  test("the Agents guide's View now opens the Management page at /plugins; /plugins/manage redirects there; /scheduled is gone; More › MaxHermes at desktop (STORY_025, STORY_026)", async ({ page }, testInfo) => {
     await page.goto("/");
     await settled(page);
     if (testInfo.project.name === "narrow") {
@@ -63,13 +63,14 @@ test.describe("shell (STORY_012)", () => {
       await settled(page);
     }
     await page.getByRole("link", { name: "View now" }).click();
-    await expect(page).toHaveURL(/\/plugins\/manage$/);
+    await expect(page).toHaveURL(/\/plugins$/);
     await expect(page.getByRole("heading", { name: "Management" })).toBeVisible();
     await expect(page.getByRole("textbox", { name: "Name" })).toHaveValue("General");
-    await page.getByRole("link", { name: "Plugins" }).first().click();
+    await expect(page.getByRole("tab", { name: "Personal" })).toBeHidden(); // the marketplace is gone
+    await page.goto("/plugins/manage");
     await expect(page).toHaveURL(/\/plugins$/);
-    await page.getByRole("tab", { name: "Personal" }).click();
-    await expect(page.getByTestId("plugins-empty")).toHaveText(/No matching plugins or skills/);
+    const gone = await page.request.get("/scheduled");
+    expect(gone.status()).toBe(404);
     if (testInfo.project.name === "narrow") return; // More cannot unfold in the drawer (its header closes it), as on the reference
     const sidebar = page.getByRole("navigation", { name: "Sidebar" });
     await sidebar.getByRole("button", { name: "More", exact: true }).click();
@@ -81,14 +82,22 @@ test.describe("shell (STORY_012)", () => {
     await expect(page.getByRole("heading", { name: "Your 24/7 personal assistant." })).toBeVisible();
   });
 
-  test("the top bar's Changelog is inert with the notice and never leaves the page (STORY_019)", async ({ page }) => {
+  test("what STORY_026 removed is absent at both widths: the home bar's Changelog and Download, the footer's Download desktop, the user menu's entries but Settings, the credits and thumbs, the office chips", async ({ page }, testInfo) => {
     await page.goto("/");
     await settled(page);
-    const changelog = page.getByRole("button", { name: "Changelog" });
-    await expect(changelog).toHaveAttribute("title", "Not part of MiniMax Local");
-    await changelog.click({ force: true });
-    await expect(page.getByRole("status")).toHaveText("Not part of MiniMax Local — video generation only");
-    await expect(page).toHaveURL(/\/$/);
+    for (const name of ["Changelog", "Download", "Download desktop"]) await expect(page.getByRole("button", { name, exact: true })).toHaveCount(0);
+    for (const name of ["Document", "Website", "Image Generation", "More"]) await expect(page.getByRole("group", { name: "Modes" }).getByRole("button", { name, exact: true })).toHaveCount(0);
+    if (testInfo.project.name === "narrow") {
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
+      await settled(page);
+    }
+    await page.getByRole("button", { name: "Owner" }).click();
+    await expect(page.getByRole("menu", { name: "User menu" }).getByRole("menuitem")).toHaveText(["Settings"]);
+    await page.keyboard.press("Escape");
+    await page.goto("/assets");
+    await settled(page);
+    await expect(page.getByRole("button", { name: /^(Websites|Documents|Excel|PPT)$/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^(All|Images|Videos|Audio)$/ })).toHaveCount(4);
   });
 
   test("narrow: the sidebar is a drawer with a large enough toggle; Escape closes it", async ({ page }, testInfo) => {

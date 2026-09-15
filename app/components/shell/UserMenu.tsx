@@ -1,8 +1,6 @@
 "use client";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { cx } from "@/lib/cx";
-import { Inert } from "./Inert";
-import { IconAvatar, IconBook, IconChart, IconChevronRight, IconGift, IconHeadset, IconLogout, IconSettings, IconSwitchBack } from "./icons";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { IconAvatar, IconSettings } from "./icons";
 import styles from "./user-menu.module.css";
 
 export interface UserMenuProps {
@@ -10,10 +8,10 @@ export interface UserMenuProps {
 }
 
 /**
- * The footer chip and its menu (STORY_019; user-menu-open@1440 / -dark, narrow-user-menu-open@390): the account row,
- * the plan row, then Switch to classic, Settings, Daily check-in ›, Usage ›, Contact us ›, Learn more ›, Logout. Only
- * Settings does something here — it holds the Appearance choice; every other entry is the reference's control rendered
- * inert with the notice. Escape and a click outside close the menu.
+ * The footer chip and its menu (STORY_019; user-menu-open@1440 / -dark, narrow-user-menu-open@390). STORY_026 removed
+ * the reference's plan row, Switch to classic, Daily check-in, Usage, Contact us, Learn more and Logout — none of them
+ * can mean anything on a one-owner Spark — so the menu holds Settings alone, with room for what the wiring epic adds.
+ * Escape and a click outside close it.
  */
 export function UserMenu({ onOpenSettings }: UserMenuProps) {
   const [open, setOpen] = useState(false);
@@ -48,12 +46,6 @@ export function UserMenu({ onOpenSettings }: UserMenuProps) {
       {open ? (
         <div className={styles.menu} role="menu" aria-label="User menu">
           <div className={styles.uid}>UID : local</div>
-          <div className={styles.plan}>
-            <span className={styles.planName}>Default</span>
-            <Inert className={styles.subscribe} label="Subscribe">Subscribe</Inert>
-          </div>
-          <div className={styles.separator} />
-          <Entry icon={<IconSwitchBack />} label="Switch to classic" />
           <div className={styles.separator} />
           <button
             type="button"
@@ -67,24 +59,8 @@ export function UserMenu({ onOpenSettings }: UserMenuProps) {
             <span className={styles.entryIcon}><IconSettings /></span>
             <span className={styles.entryLabel}>Settings</span>
           </button>
-          <Entry icon={<IconGift />} label="Daily check-in" submenu />
-          <Entry icon={<IconChart />} label="Usage" submenu />
-          <div className={styles.separator} />
-          <Entry icon={<IconHeadset />} label="Contact us" submenu />
-          <Entry icon={<IconBook />} label="Learn more" submenu />
-          <Entry icon={<IconLogout />} label="Logout" />
         </div>
       ) : null}
     </div>
-  );
-}
-
-function Entry({ icon, label, submenu = false }: { readonly icon: ReactNode; readonly label: string; readonly submenu?: boolean }) {
-  return (
-    <Inert role="menuitem" label={label} className={cx(styles.entry, styles.entryInert)}>
-      <span className={styles.entryIcon}>{icon}</span>
-      <span className={styles.entryLabel}>{label}</span>
-      {submenu ? <span className={styles.entryChevron}><IconChevronRight /></span> : null}
-    </Inert>
   );
 }

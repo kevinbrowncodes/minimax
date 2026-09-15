@@ -8,13 +8,12 @@ import { useNarrow } from "@/lib/use-narrow";
 import { cx } from "@/lib/cx";
 import { useThemeChoice } from "@/lib/use-theme";
 import { CreateProjectDialog } from "./CreateProjectDialog";
-import { Inert } from "./Inert";
 import { PromoCard } from "./PromoCard";
 import { SearchDialog } from "./SearchDialog";
 import { SettingsDialog } from "./SettingsDialog";
 import { ShellStateProvider, useShell } from "./ShellContext";
 import { Sidebar } from "./Sidebar";
-import { IconDocument, IconDownload, IconExpand, IconWorkArea } from "./icons";
+import { IconExpand, IconWorkArea } from "./icons";
 import styles from "./shell.module.css";
 
 export interface ShellProps {
@@ -162,12 +161,6 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
           {bar.kind === "page" ? <div className={styles.topbarPage}>{pageActions}</div> : null}
           <div className={styles.topbarActions}>
             {bar.kind === "assets" && narrow ? pageActions : null}
-            {bar.kind === "home" ? (
-              <>
-                <Inert label="Changelog" className={styles.iconButton} align="end"><IconDocument /></Inert>
-                <Inert label="Download" className={styles.secondaryButton} align="end"><IconDownload /> Download</Inert>
-              </>
-            ) : null}
             {bar.kind === "task" && !narrow ? (
               // work-area-button@1440: shows / hides the task page's Work Area panel (STORY_023); the reference has none at 390
               <button type="button" className={styles.iconButton} aria-label="Work area" title="Work area" aria-pressed={workAreaOpen} onClick={toggleWorkArea}>

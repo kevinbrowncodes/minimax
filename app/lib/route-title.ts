@@ -12,8 +12,6 @@ export type TopBar = { readonly kind: "home" } | { readonly kind: "assets" } | {
 /** The pages behind the sidebar (STORY_025): each is a route of ours rendering the reference's page, inert. */
 export const REFERENCE_PAGES = {
   "/plugins": "plugins",
-  "/plugins/manage": "plugins-manage",
-  "/scheduled": "scheduled",
   "/connect-mobile": "connect-mobile",
   "/max-hermes": "max-hermes",
   "/max-claw": "max-claw",
@@ -44,13 +42,13 @@ export function isUnread(entry: RecentEntry): boolean {
   return Date.parse(entry.openedAt) < Date.parse(entry.finishedAt);
 }
 
-export type ActiveRow = "new-task" | "assets" | "plugins" | "scheduled" | "connect-mobile" | "max-hermes" | "max-claw" | `task:${string}`;
+export type ActiveRow = "new-task" | "assets" | "plugins" | "connect-mobile" | "max-hermes" | "max-claw" | `task:${string}`;
 
 export function activeRow(pathname: string): ActiveRow | undefined {
   if (pathname === "/") return "new-task";
   if (pathname === "/assets" || pathname.startsWith("/assets/")) return "assets";
   const page = referencePageFor(pathname);
-  if (page) return page === "plugins-manage" ? "plugins" : page;
+  if (page) return page;
   const task = /^\/task\/([^/]+)/.exec(pathname);
   if (task) return `task:${decodeURIComponent(task[1] ?? "")}`;
   return undefined;

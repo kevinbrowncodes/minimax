@@ -1,20 +1,16 @@
 "use client";
-import Link from "next/link";
-import { useMemo } from "react";
 import { cx } from "@/lib/cx";
 import { AGENTS, AGENT_SYSTEM_PROMPT, MANAGE_TABS } from "@/lib/reference-pages";
 import { Inert } from "@/components/shell/Inert";
-import { usePageActions } from "@/components/shell/ShellContext";
-import { IconAgent, IconBack, IconChevronDown, IconPlus } from "@/components/shell/icons";
+import { IconAgent, IconChevronDown, IconPlus } from "@/components/shell/icons";
 import styles from "./pages.module.css";
 
 /**
- * Plugins › Manage (STORY_025; agents-guide-view-now@1440): "Management" with its four counted tabs, the Agents tab
- * open — General / Coder / Verifier and Create agent on the left, the agent editor on the right. Inert, read-only.
+ * Plugins (STORY_025; agents-guide-view-now@1440): the reference's "Management" page with its four counted tabs, the
+ * Agents tab open — General / Coder / Verifier and Create agent on the left, the agent editor on the right. Inert,
+ * read-only, kept for the wiring epic (BACKLOG_007). STORY_026 made it the Plugins row's page (the marketplace went).
  */
 export function ManagePage() {
-  const actions = useMemo(() => <Link href="/plugins" className={styles.backLink}><IconBack /> Plugins</Link>, []);
-  usePageActions(actions);
   return (
     <main className={cx(styles.page, styles.managePage)} data-testid="manage-page">
       <h1 className={styles.manageHeading}>Management</h1>

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useReducer, useRef, useState, type ReactNode } 
 import { Composer } from "@/components/composer/Composer";
 import { Inert } from "@/components/shell/Inert";
 import { useShell } from "@/components/shell/ShellContext";
-import { IconChevronDown, IconClose, IconCopy, IconDocument, IconDownload, IconInfo, IconMore } from "@/components/shell/icons";
+import { IconChevronDown, IconClose, IconCopy, IconDocument, IconDownload, IconMore } from "@/components/shell/icons";
 import { fileNameFor } from "@/lib/assets-filter";
 import type { ExtendSource } from "@/lib/composer-state";
 import { cx } from "@/lib/cx";
@@ -38,10 +38,6 @@ const IconEye = () => (
 const IconPlay = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true"><circle cx="10" cy="10" r="8" /><path d="m8 7 5 3-5 3z" fill="currentColor" stroke="none" /></svg>
 );
-const IconThumb = ({ down = false }: { readonly down?: boolean }) => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" aria-hidden="true" style={down ? { transform: "rotate(180deg)" } : undefined}><path d="M4.5 7.5v6h-2v-6zM4.5 7.5l3-5a1.5 1.5 0 0 1 1.5 1.5v2.5h3.4a1.2 1.2 0 0 1 1.2 1.4l-.9 4.6a1.2 1.2 0 0 1-1.2 1H4.5" /></svg>
-);
-
 /** The Progress list (Work Area › Progress, and the unfolded Processed row): the reference's numbered steps with ticks. */
 function StepList({ steps, job }: { readonly steps: readonly Step[]; readonly job: JobSnapshot }) {
   return (
@@ -81,7 +77,8 @@ function PanelSection({ title, children }: { readonly title: string; readonly ch
 /**
  * The task page (STORY_014): the thread and the docked composer; polling drives it to a terminal state. STORY_023 gives
  * it the reference's shape: the result as a file card with a preview pane, the Work Area panel (Progress +
- * Deliverables) the top bar toggles, the Processed row, the message actions, the credits notice and the disclaimer.
+ * Deliverables) the top bar toggles, the Processed row and the message actions. STORY_026 removed the reference's
+ * credits notice, Like / Dislike and the "MiniMax Agent is AI…" line.
  */
 export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPageProps) {
   const router = useRouter();
@@ -100,7 +97,6 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
     setCardMenu(undefined);
   }, []);
   const [processedOpen, setProcessedOpen] = useState(false);
-  const [creditsDismissed, setCreditsDismissed] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
   const [overflows, setOverflows] = useState(false);
   const opened = useRef(false);
@@ -322,8 +318,6 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
                 </div>
                 <div className={styles.actions}>
                   <button type="button" className={styles.action} aria-label={copied ? "Copied" : "Copy prompt"} title={copied ? "Copied" : "Copy prompt"} onClick={() => void copyPrompt()}><IconCopy /></button>
-                  <Inert label="Like" className={styles.action}><IconThumb /></Inert>
-                  <Inert label="Dislike" className={styles.action}><IconThumb down /></Inert>
                   <span className={styles.time}>{formatDoneAt(doneAt)}</span>
                 </div>
               </div>
@@ -358,19 +352,7 @@ export function TaskPage({ entry, extendOnOpen = false, fetchImpl }: TaskPagePro
               <span className={cx(styles.jumpArrow, !atBottom && styles.jumpArrowDown)} aria-hidden="true">↑</span>
             </button>
           ) : null}
-          {creditsDismissed ? null : (
-            <div className={styles.credits} data-testid="credits-notice">
-              <span className={styles.creditsIcon} aria-hidden="true"><IconInfo /></span>
-              <span className={styles.creditsText}>Fewer than 1,000 Credits remain.</span>
-              <span className={styles.creditsActions}>
-                <Inert label="Buy Credits" className={styles.creditsSecondary} align="end">Buy Credits</Inert>
-                <Inert label="Subscribe" className={styles.creditsPrimary} align="end">Subscribe</Inert>
-              </span>
-              <button type="button" className={styles.creditsClose} aria-label="Dismiss usage notice" onClick={() => { setCreditsDismissed(true); }}><IconClose /></button>
-            </div>
-          )}
           <Composer variant="docked" fetchImpl={fetchImpl} stop={running ? { pending: busy === "stop", onStop: () => void stop() } : undefined} extend={extendSource} onStopExtending={() => { setExtending(false); }} />
-          <p className={styles.footer}>MiniMax Agent is AI and can make mistakes</p>
         </div>
       </div>
 

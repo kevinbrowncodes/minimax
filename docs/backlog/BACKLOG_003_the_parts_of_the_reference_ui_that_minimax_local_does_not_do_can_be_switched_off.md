@@ -1,6 +1,6 @@
 # BACKLOG_003 — The parts of the reference UI that MiniMax Local does not do can be switched off
 
-**Status:** Open (2026-09-14) · **Priority:** Low until EPIC_005 closes — raised by the owner while reviewing EPIC_005: "in another epic we will do another pass to make sure everything is wired up correctly to use MiniMax locally on our Spark … I would like the option somewhere to be able to turn certain aspects off, but we can get on that part once we are done copying the UI"
+**Status:** Withdrawn (2026-09-15) — the owner chose to **delete** the reference's extra surfaces rather than switch them off ([STORY_026](../story/STORY_026_only_video_and_text_generation_remain_in_the_ui_the_references_extras_are_removed.md)); the captures and side-by-side sheets remain the record of the reference look · **Priority:** was Low until EPIC_005 closed — raised by the owner while reviewing EPIC_005: "in another epic we will do another pass to make sure everything is wired up correctly to use MiniMax locally on our Spark … I would like the option somewhere to be able to turn certain aspects off, but we can get on that part once we are done copying the UI"
 
 ## Summary
 

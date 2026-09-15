@@ -15,11 +15,9 @@ import {
   IconBell,
   IconChevronDown,
   IconClaw,
-  IconClock,
   IconClose,
   IconCollapse,
   IconCopy,
-  IconDownload,
   IconFolder,
   IconHermes,
   IconLogo,
@@ -174,7 +172,6 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
         {pill("/", "new-task", <IconPlusCircle />, "New task")}
         <Inert label="Search" className={styles.railPill} align="start"><IconSearch /></Inert>
         {pill("/plugins", "plugins", <IconPlugins />, "Plugins")}
-        {pill("/scheduled", "scheduled", <IconClock />, "Scheduled")}
         {pill("/assets", "assets", <IconFolder />, "Assets")}
         {pill("/connect-mobile", "connect-mobile", <IconPhone />, "Connect mobile")}
         <div className={styles.spacer} />
@@ -198,9 +195,8 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
       </div>
       {link("/", "new-task", <IconPlusCircle />, "New task")}
       {onOpenSearch ? <ActionRow icon={<IconSearch />} label="Search" onClick={onOpenSearch} /> : <InertRow icon={<IconSearch />} label="Search" />}
-      {/* STORY_025: the rows lead to our renderings of the reference's pages; the pages are the inert part now */}
+      {/* STORY_025: the rows lead to our renderings of the reference's pages; STORY_026 removed Scheduled and the marketplace (Plugins is Management) */}
       {link("/plugins", "plugins", <IconPlugins />, "Plugins")}
-      {link("/scheduled", "scheduled", <IconClock />, "Scheduled")}
       {link("/assets", "assets", <IconFolder />, "Assets")}
       {link("/connect-mobile", "connect-mobile", <IconPhone />, "Connect mobile")}
 
@@ -241,7 +237,7 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
         <div className={styles.guide} data-testid="agents-guide">
           <button type="button" className={styles.guideClose} aria-label="Dismiss Agents guide" onClick={onDismissGuide}><IconClose /></button>
           <p className={styles.guideText}>You can now find Agents in Plugins</p>
-          <Link href="/plugins/manage" className={styles.guideLink} onClick={onNavigate}>View now</Link>
+          <Link href="/plugins" className={styles.guideLink} onClick={onNavigate}>View now</Link>
           <div className={styles.guideArt} aria-hidden="true">
             <span className={styles.guideArtCard}>
               <span className={styles.guideArtTitle}>Manage</span>
@@ -260,7 +256,6 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
             </button>
             <InboxPopover open={inboxOpen} onClose={() => { setInboxOpen(false); }} />
           </span>
-          <Inert label="Download desktop" className={styles.iconButton} align="end"><IconDownload /></Inert>
         </span>
       </div>
     </nav>

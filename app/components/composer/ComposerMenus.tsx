@@ -2,10 +2,13 @@
 import { useState, type ReactNode } from "react";
 import { cx } from "@/lib/cx";
 import { Inert } from "@/components/shell/Inert";
-import { IconChevronRight, IconMove, IconPlugins, IconPlusCircle, IconSettings } from "@/components/shell/icons";
+import { IconChevronRight, IconMove, IconPlusCircle, IconSettings } from "@/components/shell/icons";
 import styles from "./menus.module.css";
 
-/** Menus the reference's composer opens (STORY_022): the + menu with its submenus, the More chip's menu, the MiniMax-M3 menu. */
+/**
+ * Menus the reference's composer opens (STORY_022): the + menu with its submenus and the MiniMax-M3 menu. STORY_026
+ * removed the More chip's menu and the + menu's Plugins submenu; what is left is kept for the wiring epic (BACKLOG_007).
+ */
 
 const IconClip = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" aria-hidden="true"><path d="m10.5 5.5-4.6 4.6a1.6 1.6 0 0 0 2.3 2.3l5-5a3 3 0 0 0-4.3-4.3l-5.4 5.4a4.3 4.3 0 0 0 6.1 6.1l3.7-3.7" /></svg>
@@ -17,7 +20,7 @@ const IconKey = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" aria-hidden="true"><circle cx="5.5" cy="10.5" r="3" /><path d="m7.8 8.2 5.7-5.7M11 5l2 2M9.5 6.5l1.5 1.5" /></svg>
 );
 
-type Submenu = "project" | "skills" | "plugins";
+type Submenu = "project" | "skills";
 
 export interface AttachMenuProps {
   /** In video mode, Add files or photos opens the reference-image chooser; elsewhere it shows the notice. */
@@ -25,7 +28,7 @@ export interface AttachMenuProps {
   readonly onClose: () => void;
 }
 
-/** attach-menu-open@1440 and its three submenus: 190 px, 32 px entries; submenus 8 px to the right. */
+/** attach-menu-open@1440 and its submenus: 190 px, 32 px entries; submenus 8 px to the right. */
 export function AttachMenu({ onAddFiles, onClose }: AttachMenuProps) {
   const [open, setOpen] = useState<Submenu | undefined>(undefined);
   const entry = (id: Submenu, icon: ReactNode, label: string, children: ReactNode) => (
@@ -66,31 +69,10 @@ export function AttachMenu({ onAddFiles, onClose }: AttachMenuProps) {
           <Inert role="menuitem" label="Add skill" className={styles.item}><span className={styles.icon}><IconPlusCircle /></span><span className={styles.label}>Add skill</span></Inert>
         </>
       ))}
-      {entry("plugins", <IconPlugins />, "Plugins", (
-        <>
-          <Inert role="menuitem" label="video-creator" className={styles.item}><span className={styles.icon}><IconPlugins /></span><span className={styles.label}>video-creator</span></Inert>
-          <Inert role="menuitem" label="Add plugins" className={styles.item}><span className={styles.icon}><IconPlusCircle /></span><span className={styles.label}>Add plugins</span></Inert>
-        </>
-      ))}
       <Inert role="menuitem" label="Environment variables" className={styles.item}>
         <span className={styles.icon}><IconKey /></span>
         <span className={styles.label}>Environment variables</span>
       </Inert>
-    </div>
-  );
-}
-
-const MORE_MODES = ["Spreadsheet", "AI PPT", "Research Report", "Education", "Scheduled Tasks"] as const;
-
-/** mode-more-open@1440: 181 px, five 36 px entries. */
-export function ModeMenu() {
-  return (
-    <div className={cx(styles.menu, styles.moreMenu)} role="menu" aria-label="More modes">
-      {MORE_MODES.map((label) => (
-        <Inert key={label} role="menuitem" label={label} className={cx(styles.item, styles.itemTall)}>
-          <span className={styles.label}>{label}</span>
-        </Inert>
-      ))}
     </div>
   );
 }

@@ -1,6 +1,6 @@
-import { PluginsPage } from "@/components/pages/PluginsPage";
+import { ManagePage } from "@/components/pages/ManagePage";
 
-// Plugins (STORY_025): the reference's marketplace, rendered inert.
+// Plugins (STORY_025, STORY_026): the reference's Management page — the agents live here; the marketplace was removed.
 export default function Plugins() {
-  return <PluginsPage />;
+  return <ManagePage />;
 }
