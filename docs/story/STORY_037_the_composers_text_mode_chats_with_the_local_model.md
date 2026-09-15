@@ -1,7 +1,7 @@
 # STORY_037 — The composer's text mode chats with the local model
 
 **Epic:** [EPIC_006](../epic/EPIC_006_what_minimax_local_kept_from_the_reference_works_for_the_video_workflow.md) — BACKLOG_006's wiring, after STORY_036
-**Status:** Approved (2026-09-15 — the owner's "proceed with … completing epic 6")
+**Status:** Deferred (2026-09-15 — the text model it chats with (STORY_036) is deferred; the owner: "if that's not possible then we can defer this one"). The story is unchanged and waits for a text model on the Spark
 **Created:** 2026-09-15, from [behaviour.md §6](../recon/2026-09-15/behaviour.md)
 
 As the owner, I want to type in the composer's text mode and get a streamed answer from the model on my Spark, rendered the way the reference renders a turn — the working words, the prose, Processed N s, Copy and the time — so that MiniMax Local is also a place to think a clip through.

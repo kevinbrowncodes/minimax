@@ -1,7 +1,7 @@
 # STORY_036 — The text model for the Spark is chosen: licence read, memory measured
 
 **Epic:** [EPIC_006](../epic/EPIC_006_what_minimax_local_kept_from_the_reference_works_for_the_video_workflow.md) — [BACKLOG_006](../backlog/BACKLOG_006_text_chat_with_a_minimax_text_model_on_the_spark.md)'s first story
-**Status:** Approved (2026-09-15 — the owner's "proceed with … completing epic 6"); **the pick itself is the owner's, in writing, before any weights are fetched**
+**Status:** Deferred (owner, 2026-09-15 — see "The owner's pick" below); the research (candidates, licences, sizes, the memory arithmetic) is done and stays in this story
 **Created:** 2026-09-15
 
 As the owner, I want a text model served on the Spark — MiniMax's own if one fits, otherwise the smallest capable open model that does — chosen from licences read that day and memory measured on the box, so that the chat and the agents run locally.
@@ -36,7 +36,7 @@ The Spark: **121 GiB unified memory**, arm64 (GB10), driver 580.142, CUDA 13.0. 
 
 **Recommendation (not a decision):** Qwen3-30B-A3B-Instruct-2507 at Q4_K_M (18.6 GB, Apache-2.0) on `llama.cpp:server-cuda13`. It is the only candidate that runs beside the video model, its licence has no strings, and at 3.3B active parameters it will answer at chat speed on the GB10. MiniMax's own text models cannot serve the chat here: M3 does not fit the box at any quantisation, M2.5 only alone at 2–3 bits (and M2.7's licence forbids anything commercial without a letter). The reference's menu name ("MiniMax-M3") becomes the served model's name in STORY_037.
 
-**The owner's pick:** _pending — nothing is fetched until a line is written here._
+**The owner's pick (2026-09-15, verbatim):** "I would like to use the existing minimax model already if that's not possible then we can defer this one". The existing MiniMax model on the Spark is **MiniMax-H3** — a video generation model (the FL2VA / Ref2VA checkpoints, README › Running the Model); the only text-shaped part of it is its Qwen3-VL *text encoder*, which conditions the video and cannot answer a chat turn. No MiniMax text model fits the box (the table above), so the story is **deferred** as the owner said, with STORY_037 and STORY_038 that depend on it. Nothing was fetched.
 
 ## Departures from the reference
 

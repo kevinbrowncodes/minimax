@@ -1,7 +1,7 @@
 # STORY_038 — The agents are video-minded local personas
 
 **Epic:** [EPIC_006](../epic/EPIC_006_what_minimax_local_kept_from_the_reference_works_for_the_video_workflow.md) — after STORY_037
-**Status:** Approved (2026-09-15 — the owner's "proceed with … completing epic 6"; "replace with video-minded agents")
+**Status:** Deferred (2026-09-15 — the model the personas run on (STORY_036) is deferred; the owner: "if that's not possible then we can defer this one"). The story is unchanged and waits for a text model on the Spark
 **Created:** 2026-09-15, from [behaviour.md §4](../recon/2026-09-15/behaviour.md)
 
 As the owner, I want Plugins › Manage › Agents to hold personas that help me make videos — a Scriptwriter that turns an idea into the model's prompt format, a Director for shots and camera, a Reviewer that checks a clip against its script — editable, creatable, each one a chat away, so that the text model works for the video workflow.

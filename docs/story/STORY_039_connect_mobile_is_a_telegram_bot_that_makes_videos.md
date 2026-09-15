@@ -1,7 +1,7 @@
 # STORY_039 — Connect mobile is a Telegram bot that makes videos
 
 **Epic:** [EPIC_006](../epic/EPIC_006_what_minimax_local_kept_from_the_reference_works_for_the_video_workflow.md) — after STORY_035
-**Status:** Approved (2026-09-15 — the owner's "proceed with … completing epic 6"); **needs a bot token from the owner (@BotFather) to verify end to end**
+**Status:** Withdrawn (owner, 2026-09-15: "please do not proceed with story 39 I do not want that story"; on the status question: "I really didn't want connect mobile but if its almost done I guess we can keep it" — nothing had been started: no code, no tests). Kept as a record; the Connect mobile page itself is STORY_025's inert rendering and is the owner's call to keep or remove.
 **Created:** 2026-09-15, from [behaviour.md §5](../recon/2026-09-15/behaviour.md): the reference's page binds a Telegram bot by token (Create IM Bot offers Telegram only)
 
 As the owner, I want to text my Spark from my phone — a prompt, or a photo with a caption — and get the finished clip back in the chat, so that I can start and collect generations away from the desk.

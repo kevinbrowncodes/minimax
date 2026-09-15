@@ -1,6 +1,6 @@
 # BACKLOG_006 — Text chat with a MiniMax text model on the Spark
 
-**Status:** Open (2026-09-15) · **Priority:** Medium — the owner, deciding STORY_026's scope: keep "the text generation stuff"; "I thought MiniMax supported text generation as well … yes I agree we need to wire later but let me know if we can use MiniMax still or would that be too much effort?"
+**Status:** Open — STORY_036 (its decision story) is deferred by the owner on 2026-09-15 after the candidates were read: MiniMax-M3 does not fit the Spark at any quantisation, MiniMax-M2.5 only alone at 2–3 bits, and the existing MiniMax-H3 is a video model that cannot chat (the table is in STORY_036) · **Priority:** Medium — the owner, deciding STORY_026's scope: keep "the text generation stuff"; "I thought MiniMax supported text generation as well … yes I agree we need to wire later but let me know if we can use MiniMax still or would that be too much effort?"
 
 ## Summary
 
