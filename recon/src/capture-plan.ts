@@ -75,7 +75,7 @@ export function selectPasses(themes: readonly Theme[], widths: readonly number[]
 export function parseSessionArgFrom(args: string[]): RegExp {
   const i = args.indexOf("--session");
   const value = i >= 0 ? args[i + 1] : undefined;
-  return new RegExp(value && value.trim() ? value : "paper boat", "i");
+  return new RegExp(value && value.trim() ? value : "paper boat on rain puddle", "i");
 }
 
 /** Local calendar date as YYYY-MM-DD (the capture directory name). */

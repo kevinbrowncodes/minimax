@@ -10,7 +10,8 @@
     "check": "node src/check.ts",
     "capture": "node src/capture.ts",
     "tokens": "node src/tokens.ts",
-    "interactions": "node src/interactions.ts"
+    "interactions": "node src/interactions.ts",
+    "behaviour": "node src/behaviour.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",

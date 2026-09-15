@@ -60,4 +60,6 @@ export type NetworkEvent = {
   status?: number;
   contentType?: string;
   body?: unknown;
+  /** STORY_027: a POST / PUT / PATCH / DELETE request's JSON body, redacted (behaviour-plan.ts › redactBody). */
+  requestBody?: unknown;
 };

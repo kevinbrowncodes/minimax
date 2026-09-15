@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# recon/run.sh <check|capture|tokens|interactions> [args…] — run a recon script in the gate container (CHORE_005), headless,
+# recon/run.sh <check|capture|tokens|interactions|behaviour> [args…] — run a recon script in the gate container (CHORE_005), headless,
 # with the profile recon/login.sh signed in. Curated captures land in docs/recon/<date>/, raw output in recon/out/ (gitignored).
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
