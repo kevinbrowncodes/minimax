@@ -150,6 +150,10 @@ Owner, 2026-09-14 evening: "try 3 successful attempts at video extension for 01.
 
 **Chain 2: clean, with one retry** — four generations for three segments; segment 2's first draw dissolved the set (caught by eye and by the three-second rule that BUG_006 added the same night, not by the one-second rule that was live at the time), its second draw held. 5 h 25 min wall time (22:06 → 01:31) including the retry and the BUG_006 rebuild and restart between segments.
 
+| Chain 3 | Job | Seed | Result | Shot changes | Seam | Frames viewed |
+| --- | --- | --- | --- | --- | --- | --- |
+| Segment 1 — 01.jpg + script1, 10 s | `0dd0454c` | 3020006654 | done 02:22, 243 frames, both rules live | `result.cuts: []`; scan none (border max 2.6 / 3.3) | — | 0 / 60 / 120 / 180 / 242: the same poses, same set and framing |
+
 ## Estimated Complexity
 
 M — one prompt builder and its tests, one small custom node and a pure rule, one contract field on two servers, one notice on the task page, and two ~1 h verification runs.
