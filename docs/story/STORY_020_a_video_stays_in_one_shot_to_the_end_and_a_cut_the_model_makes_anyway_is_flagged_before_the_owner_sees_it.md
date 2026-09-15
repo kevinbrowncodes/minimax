@@ -153,6 +153,7 @@ Owner, 2026-09-14 evening: "try 3 successful attempts at video extension for 01.
 | Chain 3 | Job | Seed | Result | Shot changes | Seam | Frames viewed |
 | --- | --- | --- | --- | --- | --- | --- |
 | Segment 1 — 01.jpg + script1, 10 s | `0dd0454c` | 3020006654 | done 02:22, 243 frames, both rules live | `result.cuts: []`; scan none (border max 2.6 / 3.3) | — | 0 / 60 / 120 / 180 / 242: the same poses, same set and framing |
+| Segment 2 — +10 s, script2 | `dad05311` | 1425773616 | done 03:29, 498 frames | `result.cuts: []`; scan none (border max 5.9 / 6.1) | frame 243: 3.95 vs 4.01, ratio **0.99**, border step 2.8 | 241 / 243 / 280 / 340 / 420 / 497: the seam invisible, the poses, the curtain holds |
 
 ## Estimated Complexity
 
