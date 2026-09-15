@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { cx } from "@/lib/cx";
 import type { JobStatusResponse } from "@/lib/job-api";
-import { SCHEDULE_FILTERS, filterSections, formatNotBefore, isEmpty, runningLabel, scheduleSections, toLocalInput, type QueueRow, type ScheduleFilter } from "@/lib/queue-view";
+import { SCHEDULE_FILTERS, filterSections, formatNotBefore, isEmpty, modelNotice, runningLabel, scheduleSections, toLocalInput, type ModelState, type QueueRow, type ScheduleFilter } from "@/lib/queue-view";
 import { recentLabel } from "@/lib/recents";
 import type { RecentEntry } from "@/lib/route-title";
 import { formatDoneAt } from "@/lib/task-view";
@@ -36,16 +36,19 @@ export function ScheduledPage({ fetchImpl, now, pollMs = SCHEDULED_POLL_MS }: Sc
   const router = useRouter();
   const { setPageActions } = useShell();
   const [queue, setQueue] = useState<readonly QueueRow[] | undefined>(undefined);
+  const [model, setModel] = useState<ModelState | undefined>(undefined); // CHORE_011
   const [history, setHistory] = useState<readonly RecentEntry[]>([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<ScheduleFilter>("All");
   const [timing, setTiming] = useState<string | undefined>(undefined);
 
   const load = useCallback(async (): Promise<void> => {
-    const [q, h] = await Promise.all([
-      doFetch("/api/queue").then(async (res) => (res.ok ? ((await res.json()) as { entries: QueueRow[] }).entries : [])).catch(() => [] as QueueRow[]),
+    const [qBody, h] = await Promise.all([
+      doFetch("/api/queue").then(async (res): Promise<{ entries: QueueRow[]; model?: ModelState }> => (res.ok ? ((await res.json()) as { entries: QueueRow[]; model?: ModelState }) : { entries: [] })).catch((): { entries: QueueRow[]; model?: ModelState } => ({ entries: [] })),
       doFetch("/api/history").then(async (res) => (res.ok ? ((await res.json()) as { entries: RecentEntry[] }).entries : [])).catch(() => [] as RecentEntry[]),
     ]);
+    const q = qBody.entries;
+    setModel(qBody.model);
     // the running jobs' progress: history learns it only when a status is polled, so this page polls them (the task page does the same)
     const waitingIds = new Set(q.map((e) => e.id));
     const open = h.filter((e) => (e.status === "queued" || e.status === "running") && !waitingIds.has(e.id));
@@ -115,6 +118,7 @@ export function ScheduledPage({ fetchImpl, now, pollMs = SCHEDULED_POLL_MS }: Sc
         </span>
       </div>
 
+      {modelNotice(model) !== undefined ? <p className={styles.modelNotice} role="status" data-testid="model-notice">{modelNotice(model)}</p> : null}
       {nothingAtAll ? (
         <div className={styles.scheduledEmpty} data-testid="scheduled-empty">
           <p>No scheduled tasks yet.</p>

@@ -54,6 +54,12 @@ describe("the queue through the app's routes", () => {
     expect(second.position).toBe(2);
     expect(await stubJobs()).toEqual([]); // nothing reached the server
     expect((await line()).map((e) => `${String(e.position)} ${e.title}`)).toEqual(["1 A small paper boat", "2 Second in line"]);
+    // CHORE_011: the stub's health has no comfyui field, so the model counts as reachable; a server that cannot be reached is neither
+    expect(((await (await listQueue()).json()) as { model: unknown }).model).toEqual({ adapter: true, comfyui: true });
+    const was = process.env["MODEL_BASE_URL"];
+    process.env["MODEL_BASE_URL"] = "http://127.0.0.1:1";
+    expect(((await (await listQueue()).json()) as { model: unknown }).model).toEqual({ adapter: false, comfyui: false });
+    process.env["MODEL_BASE_URL"] = was;
     expect(await status(first.id)).toMatchObject({ id: first.id, status: "queued", position: 1 }); // the task page's poll while waiting
     const history = ((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries;
     expect(history.map((e) => e.id)).toEqual([second.id, first.id]);

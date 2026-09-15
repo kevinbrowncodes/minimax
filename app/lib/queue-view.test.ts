@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterSections, formatNotBefore, isEmpty, runningLabel, scheduleSections, toLocalInput, type QueueRow } from "./queue-view";
+import { filterSections, formatNotBefore, isEmpty, modelNotice, runningLabel, scheduleSections, toLocalInput, type QueueRow } from "./queue-view";
 import type { RecentEntry } from "./route-title";
 
 const now = new Date(2026, 8, 15, 19, 0);
@@ -38,6 +38,13 @@ describe("the Scheduled page's sections (STORY_041)", () => {
     expect(waitingOnly.running).toEqual([]);
     expect(waitingOnly.done).toEqual([]);
     expect(isEmpty(filterSections(s, "nothing like it", "All"))).toBe(true);
+  });
+
+  it("says why the line waits when the adapter or the model is down, and nothing when both answer (CHORE_011)", () => {
+    expect(modelNotice(undefined)).toBeUndefined();
+    expect(modelNotice({ adapter: true, comfyui: true })).toBeUndefined();
+    expect(modelNotice({ adapter: true, comfyui: false })).toBe("The Spark's model is not running — the line waits; start it with spark/comfyui/run.sh.");
+    expect(modelNotice({ adapter: false, comfyui: false })).toMatch(/adapter is not reachable/);
   });
 
   it("formats the run-at as today's clock or a dated stamp, the input value in local time, and the running label", () => {

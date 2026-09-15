@@ -19,13 +19,13 @@ const now = () => new Date(2026, 8, 15, 19, 0);
 const at = (h: number, m: number, day = 15) => new Date(2026, 8, day, h, m).toISOString();
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
-function fetchWith(queue: QueueRow[], history: RecentEntry[]) {
+function fetchWith(queue: QueueRow[], history: RecentEntry[], model: { adapter: boolean; comfyui: boolean } = { adapter: true, comfyui: true }) {
   const calls: { method: string; url: string; body?: unknown }[] = [];
   const impl = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const method = init?.method ?? "GET";
     calls.push({ method, url, body: typeof init?.body === "string" ? JSON.parse(init.body) : undefined });
-    if (url === "/api/queue") return Promise.resolve(json({ entries: queue }));
+    if (url === "/api/queue") return Promise.resolve(json({ entries: queue, model }));
     if (url === "/api/history") return Promise.resolve(json({ entries: history }));
     const job = /^\/api\/jobs\/([^/]+)$/.exec(url);
     if (job && method === "GET") {
@@ -115,6 +115,15 @@ describe("ScheduledPage (STORY_041)", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Scheduled task status" }), { target: { value: "Done" } });
     expect(screen.queryByRole("region", { name: "Waiting" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Done today" })).toBeInTheDocument();
+  });
+
+  it("says when the Spark's model is not running, and nothing when it is (CHORE_011)", async () => {
+    render(inShell(<ScheduledPage fetchImpl={fetchWith(queue, history, { adapter: true, comfyui: false }).fetchImpl} now={now} pollMs={0} />));
+    expect(await screen.findByTestId("model-notice")).toHaveTextContent("The Spark's model is not running — the line waits; start it with spark/comfyui/run.sh.");
+    cleanup();
+    render(inShell(<ScheduledPage fetchImpl={fetchWith(queue, history).fetchImpl} now={now} pollMs={0} />));
+    await screen.findByRole("region", { name: "Waiting" });
+    expect(screen.queryByTestId("model-notice")).not.toBeInTheDocument();
   });
 
   it("Run at… opens a date-time field that patches the time; Clear sends null", async () => {

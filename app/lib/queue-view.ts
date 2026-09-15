@@ -75,6 +75,19 @@ export function toLocalInput(iso: string | undefined): string {
   return `${String(d.getFullYear())}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+export interface ModelState {
+  readonly adapter: boolean;
+  readonly comfyui: boolean;
+}
+
+/** CHORE_011: the line above the sections when the line cannot move — the composer's BUG_001 words for the adapter, ours for the model. */
+export function modelNotice(model: ModelState | undefined): string | undefined {
+  if (model === undefined) return undefined;
+  if (!model.adapter) return "The Spark's adapter is not reachable — on the Spark, run spark/comfyui/run.sh; the line waits.";
+  if (!model.comfyui) return "The Spark's model is not running — the line waits; start it with spark/comfyui/run.sh.";
+  return undefined;
+}
+
 /** The running row's word: "Queued" while the model server has not started it, "Generating 41 %" after. */
 export function runningLabel(entry: Pick<RecentEntry, "status" | "progress">): string {
   return entry.status === "running" ? `Generating ${String(entry.progress ?? 0)} %` : "Queued";
