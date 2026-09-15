@@ -23,7 +23,6 @@ import {
   IconLogo,
   IconMore,
   IconMove,
-  IconPhone,
   IconPin,
   IconPlugins,
   IconPlus, IconPlusCircle,
@@ -351,7 +350,6 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
         <Inert label="Search" className={styles.railPill} align="start"><IconSearch /></Inert>
         {pill("/plugins", "plugins", <IconPlugins />, "Plugins")}
         {pill("/assets", "assets", <IconFolder />, "Assets")}
-        {pill("/connect-mobile", "connect-mobile", <IconPhone />, "Connect mobile")}
         <div className={styles.spacer} />
         <div className={styles.railFooter}><span className={styles.railAvatar} aria-label="Owner"><IconAvatar /></span></div>
       </nav>
@@ -409,7 +407,6 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
       {/* STORY_025: the rows lead to our renderings of the reference's pages; STORY_026 removed Scheduled and the marketplace (Plugins is Management) */}
       {link("/plugins", "plugins", <IconPlugins />, "Plugins")}
       {link("/assets", "assets", <IconFolder />, "Assets")}
-      {link("/connect-mobile", "connect-mobile", <IconPhone />, "Connect mobile")}
 
       {/* STORY_029 (behaviour-recents-pin-01-pinned@1440): the Pinned section sits above Projects while anything is pinned */}
       {pinned.length > 0 ? (

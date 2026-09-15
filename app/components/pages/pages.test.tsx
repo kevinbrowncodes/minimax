@@ -4,7 +4,6 @@ import { SettingsContext } from "@/components/shell/SettingsContext";
 import { ShellStateProvider, useShell } from "@/components/shell/ShellContext";
 import { AGENT_SYSTEM_PROMPT } from "@/lib/reference-pages";
 import { BUILT_IN_SKILLS, type Skill } from "@/lib/skills";
-import { ConnectMobilePage } from "./ConnectMobilePage";
 import { ManagePage } from "./ManagePage";
 
 const push = vi.fn();
@@ -183,11 +182,4 @@ describe("the pages behind the sidebar (STORY_025; STORY_026 removed the marketp
     });
   });
 
-  it("Connect mobile: the bot card, Create IM Bot, and the form's inert controls with the captured words", () => {
-    render(<ConnectMobilePage />);
-    for (const name of ["New Bot", "Create IM Bot", "Connect", "Choose an Agent: Default", "Working directory: No project", "Delete"]) expect(screen.getByRole("button", { name })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("textbox", { name: "Enter Bot Token" })).toHaveAttribute("readonly");
-    expect(screen.getByText("Get a token from @BotFather on Telegram.")).toBeInTheDocument();
-    expect(screen.getByText("Not bound")).toBeInTheDocument();
-  });
 });

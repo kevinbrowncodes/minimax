@@ -18,9 +18,6 @@ export const IconClock = () => (
 export const IconFolder = () => (
   <svg {...base}><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3h3l1.5 1.5H12.5A1.5 1.5 0 0 1 14 6v6a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12z" /></svg>
 );
-export const IconPhone = () => (
-  <svg {...base}><rect x="4.5" y="1.8" width="7" height="12.4" rx="1.5" /><path d="M7 12h2" /></svg>
-);
 export const IconProject = () => (
   <svg {...base}><rect x="2" y="4" width="12" height="9.5" rx="1.5" /><path d="M2 7h12M6 4V2.5h4V4" /></svg>
 );

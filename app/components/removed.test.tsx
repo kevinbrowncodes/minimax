@@ -30,7 +30,7 @@ afterEach(() => {
 /** What STORY_026 removed, by the accessible name or text each control carried; none may come back on any surface. */
 // ("More" and "Plugins" are not listed: the sidebar's More section, the result card's More ▾ and the Plugins row stay — the
 // removed More chip and Plugins submenu are pinned by Composer.test.tsx.)
-const REMOVED_CONTROLS = ["Scheduled", "MaxHermes", "MaxClaw", "Help improve our services setting", "Download desktop", "Changelog", "Download", "Subscribe", "Switch to classic", "Daily check-in", "Usage", "Contact us", "Learn more", "Logout", "Account", "Document", "Website", "Image Generation", "Like", "Dislike", "Buy Credits", "Dismiss usage notice", "Websites", "Documents", "Excel", "PPT", "Install Excel", "Refresh", "Create"];
+const REMOVED_CONTROLS = ["Scheduled", "Connect mobile", "MaxHermes", "MaxClaw", "Help improve our services setting", "Download desktop", "Changelog", "Download", "Subscribe", "Switch to classic", "Daily check-in", "Usage", "Contact us", "Learn more", "Logout", "Account", "Document", "Website", "Image Generation", "Like", "Dislike", "Buy Credits", "Dismiss usage notice", "Websites", "Documents", "Excel", "PPT", "Install Excel", "Refresh", "Create"];
 const REMOVED_TEXT = ["Fewer than 1,000 Credits remain.", "MiniMax Agent is AI and can make mistakes", "MiniMax Local only generates videos", "Help improve our services"];
 
 function expectNothingRemoved(): void {

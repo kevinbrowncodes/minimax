@@ -35,8 +35,7 @@ test.describe("shell (STORY_012)", () => {
     // STORY_026: Plugins is the Management page; Scheduled is gone
     const rows: readonly { row: string; url: RegExp; inert: string; testid: string }[] = [
       { row: "Plugins", url: /\/plugins$/, inert: "Create agent", testid: "manage-page" },
-      { row: "Connect mobile", url: /\/connect-mobile$/, inert: "Create IM Bot", testid: "connect-page" },
-    ];
+    ]; // CHORE_010: Connect mobile is gone
     for (const { row, url, inert, testid } of rows) {
       await page.goto("/");
       await settled(page);
@@ -70,7 +69,7 @@ test.describe("shell (STORY_012)", () => {
     await expect(page.getByRole("tab", { name: "Personal" })).toBeHidden(); // the marketplace is gone
     await page.goto("/plugins/manage");
     await expect(page).toHaveURL(/\/plugins$/);
-    for (const path of ["/scheduled", "/max-hermes", "/max-claw"]) expect((await page.request.get(path)).status(), path).toBe(404);
+    for (const path of ["/scheduled", "/max-hermes", "/max-claw", "/connect-mobile"]) expect((await page.request.get(path)).status(), path).toBe(404); // /connect-mobile: CHORE_010
     await page.goto("/");
     await settled(page);
     if (testInfo.project.name === "narrow") {

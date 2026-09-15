@@ -13,11 +13,10 @@ describe("Sidebar", () => {
   it("renders the captured rows in order with More and Projects folded by default (2026-09-14); the rows lead to our pages (STORY_025)", () => {
     const { container } = render(<Sidebar pathname="/" recents={[]} />);
     const texts = [...container.querySelectorAll('[class*="rowLabel"]')].map((el) => el.textContent);
-    expect(texts).toEqual(["New task", "Search", "Plugins", "Assets", "Connect mobile"]); // STORY_026: no Scheduled
+    expect(texts).toEqual(["New task", "Search", "Plugins", "Assets"]); // STORY_026: no Scheduled; CHORE_010: no Connect mobile
     expect(screen.getByRole("link", { name: "New task" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("href", "/assets");
     expect(screen.getByRole("link", { name: "Plugins" })).toHaveAttribute("href", "/plugins");
-    expect(screen.getByRole("link", { name: "Connect mobile" })).toHaveAttribute("href", "/connect-mobile");
     expect(screen.getByRole("link", { name: "View now" })).toHaveAttribute("href", "/plugins?tab=Agents"); // Management lives at /plugins (STORY_026); the guide promises Agents (STORY_040)
     const search = screen.getByText("Search").closest("[role=link]");
     expect(search).toHaveAttribute("aria-disabled", "true"); // Search without a handler stays inert
@@ -383,8 +382,8 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link", { name: "Plugins" })).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("button", { name: "Download desktop" })).not.toBeInTheDocument(); // STORY_026
     cleanup();
-    render(<Sidebar pathname="/connect-mobile" recents={[]} rail />);
-    expect(screen.getByRole("link", { name: "Connect mobile" })).toHaveAttribute("aria-current", "page");
+    render(<Sidebar pathname="/assets" recents={[]} rail />);
+    expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("aria-current", "page");
   });
 });
 
