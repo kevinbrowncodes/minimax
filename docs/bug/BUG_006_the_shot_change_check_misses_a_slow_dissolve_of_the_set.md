@@ -25,7 +25,7 @@ The rule compares the border with itself **one second earlier**. A dissolve that
 - [x] `cuts.ts` flags a shot change where **either** the one-second border change reaches `SHOT_CHANGE` (30) **or** the three-second change reaches `SLOW_CHANGE` (set from the table: above every clean clip's three-second maximum with margin, below this dissolve's); events merge as before; the reported frame is the largest single step inside the window that tripped it.
 - [x] Unit tests: the 2026-09-14 slow dissolve (a 40-frame ramp whose one-second change peaks at 16 and whose three-second change reaches the new threshold) is flagged; a held shot with the person moving is not; a hard cut is flagged once, not twice.
 - [x] The stub, the contract and the README say the check looks one and three seconds apart.
-- [ ] Re-run on `81354423`: one event near frame 262–303; on chain 1's three segments and chain 2's segment 1: none.
+- [x] Re-run on `81354423`: one event near frame 262–303; on chain 1's three segments and chain 2's segment 1: none. *(2026-09-15 00:16, the scan mirroring cuts.ts: `81354423` three-second max 26.9 → one event; `9504c191` 3.7, `40ea4550` 6.8, `c00b63a3` 6.8, `db8654c4` 3.3 → none. The first placement put the event at the seam (frame 243, the steepest single step inside the tripped window); a slow fade has no steepest frame, so the slow rule now reports the middle of its first tripped window — frame 264, 11.0 s, inside the fade.)*
 
 ## Resolution
 

@@ -8,8 +8,9 @@
  *   2. the border differs from THREE seconds earlier by SLOW_CHANGE (20) or more — a slow dissolve of the set
  *      (BUG_006: on 2026-09-14 the sequin curtain faded to a grey wall over 1.7 s; one-second windows peaked at 16.5,
  *      the three-second window at 26.9; the held shots on disk peak at 3–14 over three seconds, one older clip at 16).
- * Each contiguous run of tripped windows is one event, placed at the largest single-frame border step inside the first
- * window that tripped it (the cut frame for a cut, the steepest point of a dissolve); events within MERGE_FRAMES merge.
+ * Each contiguous run of tripped windows is one event: rule 1's at the largest single-frame border step inside the first
+ * window that tripped it (the cut frame), rule 2's at the middle of that window (inside the fade); events within
+ * MERGE_FRAMES merge, rule 1's exact frame winning over rule 2's estimate.
  * `long` is optional: a history written by the STORY_020 node (no three-second series) still gets rule 1.
  */
 import { FPS } from "./grid.ts";
@@ -77,14 +78,20 @@ function steepest(step: readonly number[], end: number, span: number): number {
   return best;
 }
 
-function eventsOf(series: readonly number[], span: number, threshold: number, step: readonly number[]): number[] {
+/**
+ * The events of one series: a new event where the window (i - span, i] first reaches the threshold. A fast change is
+ * placed at the steepest single step inside that window (the cut frame); a slow one at the window's middle, because a
+ * gradual fade has no steepest frame and its first tripped window straddles the fade (BUG_006: the steepest step in
+ * the 2026-09-14 dissolve's window was the seam, 20 frames before the fade began).
+ */
+function eventsOf(series: readonly number[], span: number, threshold: number, step: readonly number[], place: "steepest" | "middle"): number[] {
   const events: number[] = [];
   let inside = false;
   for (const [k, value] of series.entries()) {
     const i = k + span; // frame i compared with frame i - span
     if (value >= threshold && !inside) {
       inside = true;
-      events.push(steepest(step, i, span));
+      events.push(place === "steepest" ? steepest(step, i, span) : i - Math.floor(span / 2));
     } else if (value < threshold) {
       inside = false;
     }
@@ -94,14 +101,23 @@ function eventsOf(series: readonly number[], span: number, threshold: number, st
 
 export function detectCuts(changes: FrameChanges, thresholds: { readonly shot?: number; readonly slow?: number } = {}): Cut[] {
   const { step, second, span, long, longSpan } = changes;
-  const events = eventsOf(second, span, thresholds.shot ?? SHOT_CHANGE, step);
-  if (long && longSpan !== undefined) events.push(...eventsOf(long, longSpan, thresholds.slow ?? SLOW_CHANGE, step));
-  events.sort((a, b) => a - b);
-  const merged: number[] = [];
-  for (const frame of events) {
-    const last = merged[merged.length - 1];
-    if (last !== undefined && frame - last <= MERGE_FRAMES) continue;
-    merged.push(frame);
+  const events: { frame: number; fast: boolean }[] = eventsOf(second, span, thresholds.shot ?? SHOT_CHANGE, step, "steepest").map((frame) => ({ frame, fast: true }));
+  if (long && longSpan !== undefined) {
+    events.push(...eventsOf(long, longSpan, thresholds.slow ?? SLOW_CHANGE, step, "middle").map((frame) => ({ frame, fast: false })));
   }
-  return merged.map((frame) => ({ frame, seconds: Math.round((frame / FPS) * 100) / 100 }));
+  events.sort((a, b) => a.frame - b.frame);
+  // Merge events within MERGE_FRAMES: a fast (one-second) event names the exact frame, so it wins over a slow estimate.
+  const merged: { frame: number; fast: boolean }[] = [];
+  for (const event of events) {
+    const last = merged[merged.length - 1];
+    if (last !== undefined && event.frame - last.frame <= MERGE_FRAMES) {
+      if (event.fast && !last.fast) {
+        last.frame = event.frame;
+        last.fast = true;
+      }
+      continue;
+    }
+    merged.push({ ...event });
+  }
+  return merged.map(({ frame }) => ({ frame, seconds: Math.round((frame / FPS) * 100) / 100 }));
 }

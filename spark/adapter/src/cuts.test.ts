@@ -55,11 +55,9 @@ describe("detectCuts (BUG_006): the border three seconds apart catches a slow di
     const long = (s.long ?? []).map((v, i) => { const end = i + 72; return end >= 300 && end <= 360 ? 27 : v; });
     return { ...s, step, second, long };
   }
-  it("flags the slow dissolve once, though no one-second window reached the threshold", () => {
+  it("flags the slow dissolve once, though no one-second window reached the threshold, placed in the middle of the first tripped window (inside the fade)", () => {
     const cuts = detectCuts(slowDissolve());
-    expect(cuts).toHaveLength(1);
-    expect(cuts[0]?.frame).toBeGreaterThanOrEqual(262);
-    expect(cuts[0]?.frame).toBeLessThanOrEqual(303);
+    expect(cuts).toEqual([{ frame: 264, seconds: 11 }]); // first tripped window ends at 300; its middle is 264, inside 262–303
   });
   it("a held shot with the person moving (three-second border under the threshold) is not flagged", () => {
     const s = series(500);
