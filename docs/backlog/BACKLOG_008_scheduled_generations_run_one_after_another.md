@@ -1,6 +1,6 @@
 # BACKLOG_008 — Scheduled generations run one after another
 
-**Status:** Promoted to [STORY_041](../story/STORY_041_scheduled_is_the_queue_of_generations_that_run_one_after_another.md) (2026-09-15, drafted for the owner's approval) · **Priority:** High — the owner: "I want schedules at least my implementation to occur so I can submit multiple jobs one after another"
+**Status:** Archived (2026-09-15 17:38 EDT) — every part of the scope below is built: the page, the queue behind the adapter's five, remove and move up / down (Run next is a move to the top), a Send that never fails as busy, the Inbox event — [STORY_041](../story/STORY_041_scheduled_is_the_queue_of_generations_that_run_one_after_another.md) (Done 14:29); the line advancing with no browser open — [STORY_042](../story/STORY_042_the_queue_runs_with_no_browser_open.md) (Done 15:28); an extension waiting for its source — [STORY_043](../story/STORY_043_a_queued_extension_waits_for_its_source.md) (Done 17:38); [EPIC_007](../epic/EPIC_007_a_queue_of_generations.md) closed. Promoted to STORY_041 on 2026-09-15 · **Priority:** High — the owner: "I want schedules at least my implementation to occur so I can submit multiple jobs one after another"
 
 ## Summary
 
