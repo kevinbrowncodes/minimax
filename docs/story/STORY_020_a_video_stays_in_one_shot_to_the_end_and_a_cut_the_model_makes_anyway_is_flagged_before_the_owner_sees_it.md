@@ -145,6 +145,7 @@ Owner, 2026-09-14 evening: "try 3 successful attempts at video extension for 01.
 | --- | --- | --- | --- | --- | --- | --- |
 | Segment 1 — 01.jpg + script1, 10 s | `db8654c4` | 2963611361 | done 22:06, 243 frames | `result.cuts: []`; scan none (border max 2.9) | — | 0 / 60 / 120 / 180 / 242: the same poses as chain 1's, same set and framing |
 | Segment 2, attempt 1 — +10 s, script2 | `81354423` | 1614451648 | done 23:14, 498 frames — **rejected** | `result.cuts: []` — **a miss**: the check did not see it (border max 16.5 over a second) → [BUG_006](../bug/BUG_006_the_shot_change_check_misses_a_slow_dissolve_of_the_set.md) | frame 243: ratio 0.79 (continuous) | 241 / 243 / 280 / 340 / 420 / 497: the seam holds, then between ≈ 262 and 303 (10.9–12.6 s) **the sequin curtain dissolves into a plain grey backdrop**; lamps, stanchions, floor and the man stay; the poses go on in front of the wrong set |
+| Segment 2, attempt 2 — +10 s, script2 | `1c5c387a` | 4021986944 | done 00:22, 498 frames — **accepted** | `result.cuts: []` (1.3.0, one rule); the two-rule scan: none (border max 7.2 over a second, 8.0 over three) | frame 243: ratio **0.77**, border step 2.8 | 241 / 243 / 280 / 340 / 420 / 497: the seam invisible, the pivot, the arm across, the waistband hook, square to camera; the curtain holds for all 20.75 s |
 
 ## Estimated Complexity
 
