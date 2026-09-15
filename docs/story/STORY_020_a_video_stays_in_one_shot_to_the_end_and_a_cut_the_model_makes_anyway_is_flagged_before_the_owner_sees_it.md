@@ -1,6 +1,6 @@
 # STORY_020 — A video stays in one shot to the end, and a cut the model makes anyway is flagged before the owner sees it
 
-**Status:** In progress (2026-09-14, approved by the owner: "ok please proceed!") — the prompt builder, the measure, the contract and the notice component are landed; the notice's mount in the task page is [CHORE_009](../chore/CHORE_009_the_task_page_mounts_the_shot_change_notice_once_the_result_card_rewrite_has_landed.md) because that page is being rewritten for STORY_023 in another session; the overnight chain is the verification. Promoted from [BACKLOG_004](../backlog/BACKLOG_004_an_extension_can_still_change_the_scene_on_its_own_after_the_overlap.md) after the owner saw the 31 s chain change set at 00:11 → 00:12.
+**Status:** Done (2026-09-15, on the Spark) — approved by the owner on 2026-09-14 ("ok please proceed!"), implemented, gated, deployed, and verified overnight with three clean 30 s chains from 01.jpg and the three scripts (the Done note below). The notice's mount in the task page landed with STORY_023 (CHORE_009, the other session); BUG_006 (a slow dissolve the one-second rule missed) was found by chain 2 and fixed the same night.
 **Epic:** [EPIC_004](../epic/EPIC_004_a_video_model_runs_on_the_dgx_spark_behind_the_same_job_api.md) (the model side); follows [STORY_017](STORY_017_extending_a_video_keeps_the_scene_because_the_new_frames_are_generated_as_part_of_the_same_clip.md).
 
 As the owner, when I generate or extend a video I want the whole clip to be one continuous shot — the same set, lighting and framing from its first frame to its last — and when the model cuts to a different shot anyway I want to be told where, on the task page, before I download it, so that I never again find out from the video itself.
@@ -79,7 +79,7 @@ The notice is a `role="status"` strip above the player in the result bubble, amb
 - [x] *(CHORE_009)* Its **Retry** re-posts the entry's request (prompt, options, `continueFrom` and `overlapFrames` when it was an extension) **without** the seed, exactly like the failed-job Retry, and navigates to the new task; the flagged job stays in history and Assets unchanged.
 - [x] `history-store` records `cuts` from the first `done` status and keeps it across reloads.
 
-**Docs:** `docs/contracts/job-api.md` v1.3 (`result.cuts`, the prompt limit, the prompt the servers build); README → Running the Model gains "What the model is told" (the built prompt) and "The cut check".
+**Docs (done):** `docs/contracts/job-api.md` v1.3 (`result.cuts`, the prompt limit, the prompt the servers build); README → Running the Model gains "What the model is told" (the built prompt) and "The cut check".
 
 ## Departures from the reference
 
@@ -154,6 +154,20 @@ Owner, 2026-09-14 evening: "try 3 successful attempts at video extension for 01.
 | --- | --- | --- | --- | --- | --- | --- |
 | Segment 1 — 01.jpg + script1, 10 s | `0dd0454c` | 3020006654 | done 02:22, 243 frames, both rules live | `result.cuts: []`; scan none (border max 2.6 / 3.3) | — | 0 / 60 / 120 / 180 / 242: the same poses, same set and framing |
 | Segment 2 — +10 s, script2 | `dad05311` | 1425773616 | done 03:29, 498 frames | `result.cuts: []`; scan none (border max 5.9 / 6.1) | frame 243: 3.95 vs 4.01, ratio **0.99**, border step 2.8 | 241 / 243 / 280 / 340 / 420 / 497: the seam invisible, the poses, the curtain holds |
+| Segment 3 — +10 s, script3 | `f431ffb7` | 2136614867 | done 04:36, **753 frames (31.38 s)** | `result.cuts: []`; scan none (border max 6.1 / 7.4) | frame 243: ratio **0.63**; frame 498: ratio **0.41** | 496 / 498 / 540 / 600 / 660 / 752: the seam invisible, the squats, tall and square at the end; the set holds for all 31 s |
+
+**Chain 3: clean at the first try of every segment** — 3 h 4 min wall time (01:32 → 04:36).
+
+**The night in one line:** three 31.4 s chains, ten generations for nine segments, one rejected draw (chain 2's second segment, the slow dissolve), six seams all continuous (ratios 0.41–0.99 of the clip's own largest motion), no shot change in any accepted segment under either rule, peak memory 81.7 GiB. Before this story the same scripts changed set or framing in three of five generations on 2026-09-14; tonight one draw in ten did, and the check (after BUG_006) names it.
+
+
+## Done note (2026-09-15)
+
+- **Landed:** `50fd454` (the prompt builder, the 6000-character limit), `f02ea2e` (the measure node, `result.cuts`, contract v1.3, `CutNotice`), `d8f73e8` + the placement fix (BUG_006: the three-second rule), and STORY_023's commit mounting the notice (CHORE_009). Gate green on every push (the first two through an isolated worktree run because the other session's tree was mid-story, then through the hook on the shared tree).
+- **Deployed:** adapter 1.3.0 and the ComfyUI image with `minimax_local` (and KJNodes from CHORE_007) — restarted only between chain segments; the UI on the commits above.
+- **Manual verification (model MiniMax-H3 FL2VA `int8_convrot`, text encoder `nvfp4_awq`, ComfyUI v0.35.1, the Spark, 2026-09-14 18:09 → 2026-09-15 04:36):** the borrowed control (the PR #15375 author's workflow, above) and the three overnight chains in the tables above. The like-for-like reruns of the two failed 2026-09-14 draws with their original seeds were **not** run: the owner's goal for the night was three clean chains, which took the GPU until 04:36; those reruns remain the way to attribute the improvement to the prompt alone rather than to prompt plus seed, and are recorded here as not done.
+- **What the owner sees in the morning:** three 31 s videos in Assets (`c00b63a3`, `ff1bd35a`, `f431ffb7`), each also sent to him with frame strips; Recents rows named by creation minute (CHORE_008); a shot-change notice on any future clip the check flags.
+- **Left open:** BACKLOG_004's remedies 2 and 3 (overlap 56, the last-frame anchor) and BACKLOG_005 (a local prompt rewriter); CHORE_006 (the seam cross-fade — the seams tonight measured 0.41–0.99 without it).
 
 ## Estimated Complexity
 
