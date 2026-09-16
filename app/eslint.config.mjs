@@ -5,7 +5,7 @@ import tseslint from "typescript-eslint";
 
 // CLAUDE.md §6 rule 6: strict TypeScript, no `any`, type assertions only when unavoidable.
 export default defineConfig([
-  globalIgnores([".next/**", "node_modules/**", "next-env.d.ts", "playwright-report/**", "test-results/**", "coverage/**"]),
+  globalIgnores([".next/**", "node_modules/**", "next-env.d.ts", "playwright-report/**", "test-results/**", "playwright-report-trial/**", "test-results-trial/**", "coverage/**"]),
   ...nextVitals,
   ...nextTs,
   ...tseslint.configs.strictTypeChecked,
