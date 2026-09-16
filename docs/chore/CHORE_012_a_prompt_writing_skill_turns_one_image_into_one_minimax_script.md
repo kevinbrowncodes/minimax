@@ -1,6 +1,6 @@
 # CHORE_012 — A prompt-writing skill turns one image into one MiniMax script
 
-**Status:** Done (2026-09-16 05:00 EDT) — requested by the owner: "can you create the folder underneath agents/skills … include the version of the model as well … make sure our skills follow the agent skill specification"
+**Status:** Done (2026-09-16 04:48 EDT) — requested by the owner: "can you create the folder underneath agents/skills … include the version of the model as well … make sure our skills follow the agent skill specification"
 **Created:** 2026-09-16
 
 ## Summary
@@ -27,10 +27,11 @@ Add `agents/skills/minimax-single-script/` — an [Agent Skills](https://agentsk
 - **Check performed instead:** the skill directory is validated against the Agent Skills specification (the `skills-ref` reference validator where it can be run from a container; otherwise the frontmatter rules are checked by hand and listed in the Done note), and the metadata's model, checkpoint and versions are read from the running containers on the Spark the day the skill is written, not from the README.
 - **Not a test:** whether prompts written with the skill hold a single shot on the model is a manual verification — the owner's next runs, recorded in the skill's `metadata.minimax-verified-on` when he updates it.
 
-## Done note (2026-09-16 05:00 EDT)
+## Done note (2026-09-16 04:48 EDT)
 
 - `agents/skills/minimax-single-script/` created: `SKILL.md` (116 lines) with `references/base-en.md`, `references/example-i2va.md` (the model card's 726-word I2VA prompt, decoded from the saved card) and `references/anchor-example.md`.
 - **Validated with the reference validator, from a container** (`python:3.12-slim`, `pip install skills-ref` 0.1.1, CLI `agentskills validate`): `Valid skill: /work/skills/minimax-single-script`; `agentskills read-properties` returns the name, description, compatibility and the nine metadata keys.
 - **The versions in `metadata` were read from the running containers that morning**, not from the README: ComfyUI `comfyui_version.py` → 0.35.1; `/comfy/models/diffusion_models` → `minimax_h3_fl2va_int8_convrot.safetensors`; `/comfy/models/text_encoders` → `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors`; adapter `/health` → 1.4.0.
 - README: `agents/` in Project Structure; the prompt paragraph under Running the Model points at the skill.
 - Not done, by design: the skill has not yet written a prompt that was generated on the model; the owner's next run is the manual verification, and `minimax-verified-on` is his to update.
+- **Renamed 04:53 EDT, before the first push had landed, at the owner's request:** `agents/skills/minimax-single-script/` → `agents/skills/minimax-h3-director-thirst-trap/` (`name: minimax-h3-director-thirst-trap`; the prose above keeps the original path). The genre suffix is the family pattern — `minimax-h3-director-<genre>` — so later directors sit beside this one; the description leads with the genre, since agents match on it. "Director" names the skill's judgment — the one action, the camera, the held ending — and leaves room for a chain skill beside it; MiniMax's own skill is already the "writer" (`h3-prompt-writing`).

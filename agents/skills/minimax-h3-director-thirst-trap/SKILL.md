@@ -1,6 +1,6 @@
 ---
-name: minimax-single-script
-description: Turns one attached reference image into one finished 10-second image-to-video prompt for MiniMax-H3, in the model's base format (instruction line, integrated_multimodal_description, overall_soundscape, non_diegetic_music), ready to paste into the MiniMax Local composer. Use when the user attaches a photo and asks for a MiniMax script, a video prompt, an image-to-video prompt, a "thirst trap" or candid short-form clip from a still, or to convert a Veo-style prompt to MiniMax. Writes exactly one single-shot script; not for chains of several scripts or for text-only prompts.
+name: minimax-h3-director-thirst-trap
+description: Directs one thirst-trap short from one attached photo — a candid, believable 10-second single-shot action that shows off what is already in the frame — and writes it as one finished image-to-video prompt for MiniMax-H3 in the model's base format (instruction line, integrated_multimodal_description, overall_soundscape, non_diegetic_music), ready to paste into the MiniMax Local composer. Use when the user attaches a photo and asks for a thirst trap, a physique or posing clip, a candid short-form video from a still, a MiniMax script or image-to-video prompt in that genre, or to convert a Veo-style thirst-trap prompt to MiniMax. Writes exactly one single-shot script; other genres and chains of several scripts are other directors.
 compatibility: Portable to any agent that can read local files and view the attached image; no tools, network access or runtime required. Written for MiniMax-H3 served locally (ComfyUI) through the MiniMax Local adapter, which passes a prompt that starts with the instruction line through unchanged.
 metadata:
   author: kevinbrowncodes
@@ -14,7 +14,7 @@ metadata:
   minimax-source-guide: MiniMax Video Prompt Writing Guide (base, T2VA/I2VA/FL2VA/L2VA), references/base-en.md
 ---
 
-# MiniMax single script
+# MiniMax H3 director — thirst trap
 
 Turn one attached image into one 10-second, single-shot MiniMax-H3 prompt. The image is the immutable first frame; the clip is one continuous, physics-accurate action that evolves from it, written so that what you output is exactly what the model sees.
 
