@@ -314,8 +314,8 @@ export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, fetchImp
 
             {done ? (
               <div className={styles.result} data-testid="result">
-                {/* STORY_020 / CHORE_009: the server measured a shot change; Retry re-posts the request with a new seed */}
-                <CutNotice cuts={job.result.cuts} onRetry={() => void retry()} busy={busy === "retry"} />
+                {/* STORY_020 / CHORE_009: the server measured a shot change; Retry re-posts the request with a new seed. STORY_046: a moving camera's framing is a note */}
+                <CutNotice cuts={job.result.cuts} camera={job.result.camera} onRetry={() => void retry()} busy={busy === "retry"} />
                 <p className={styles.agentLine} role="status" data-testid="indicator">{resultLine(job)}</p>
                 <div className={styles.card} data-testid="result-card">
                   <span className={styles.cardIcon} aria-hidden="true"><IconPlay /></span>

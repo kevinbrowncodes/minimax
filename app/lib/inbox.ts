@@ -4,6 +4,7 @@
  */
 import { recentLabel } from "./recents";
 import type { RecentEntry } from "./route-title";
+import { shotChangeNotice } from "./shot-change";
 import { formatDoneAt } from "./task-view";
 
 export const INBOX_TABS = ["All", "Updates", "Messages"] as const;
@@ -42,8 +43,10 @@ export function eventsFor(entries: readonly RecentEntry[]): readonly InboxEvent[
     const base = { taskId: entry.id, stamp: recentLabel(entry), title: entry.title, at, tab: "Updates" as const, ...(entry.openedAt === undefined ? {} : { openedAt: entry.openedAt }) };
     if (entry.status === "done") {
       events.push({ ...base, id: `${entry.id}:ready`, kind: "ready", text: "Your video is ready" });
-      const cut = entry.result?.cuts?.[0];
-      if (cut) events.push({ ...base, id: `${entry.id}:cut`, kind: "cut", text: `The shot changed at ${clock(cut.seconds)}` });
+      // STORY_046: only a warning is news — a framing move the prompt asked for makes no event
+      const notice = shotChangeNotice(entry.result?.cuts, entry.result?.camera);
+      const first = notice?.tone === "warning" ? notice.seconds[0] : undefined;
+      if (first !== undefined) events.push({ ...base, id: `${entry.id}:cut`, kind: "cut", text: `The shot changed at ${clock(first)}` });
     } else if (entry.status === "failed") {
       const refused = entry.error?.code === "moderated";
       events.push({ ...base, id: `${entry.id}:${refused ? "refused" : "failed"}`, kind: refused ? "refused" : "failed", text: refused ? "The prompt was refused" : "Generation failed" });

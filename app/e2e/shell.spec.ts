@@ -374,6 +374,30 @@ test.describe("shell (STORY_021)", () => {
     expect(await stubApi.openJobs()).toEqual([]);
   });
 
+  test("a finished job whose framing moved as the prompt asked makes one Inbox event, not two (STORY_046)", async ({ page, request }, testInfo) => {
+    const narrow = testInfo.project.name === "narrow";
+    await clearHistory(request); // the count is asserted, so the list must be this test's own (CLAUDE.md §6b)
+    await page.goto("/?script=done-with-framing-move");
+    await page.getByRole("button", { name: /Video generation/ }).click();
+    await page.getByRole("textbox", { name: "Message" }).fill("Handheld selfie");
+    const terminal = waitForTerminalStatus(page);
+    await page.getByRole("button", { name: "Send message" }).click();
+    await expect(page).toHaveURL(/\/task\/[^/]+$/);
+    await terminal;
+    await page.goto("/");
+    await settled(page);
+    if (narrow) {
+      await page.getByRole("button", { name: "Expand sidebar" }).click();
+      await settled(page);
+    }
+    const bell = page.getByRole("button", { name: "Inbox, 1 unread" });
+    await expect(bell).toBeVisible();
+    await bell.click();
+    const rows = page.getByRole("dialog", { name: "Inbox" }).getByTestId("inbox-row");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.nth(0)).toContainText("Your video is ready");
+  });
+
   test("the Inbox carries the job events: a finished job with a shot change makes two, the bell counts them, Read all clears the count, a row opens the task (STORY_033)", async ({ page, request }, testInfo) => {
     const narrow = testInfo.project.name === "narrow";
     await clearHistory(request); // the count is asserted, so the list must be this test's own (CLAUDE.md §6b)

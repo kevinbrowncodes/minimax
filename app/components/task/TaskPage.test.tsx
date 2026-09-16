@@ -142,7 +142,20 @@ describe("TaskPage", () => {
 });
 
 describe("TaskPage — the shot-change notice (STORY_020, mounted by CHORE_009)", () => {
-  const result = (cuts?: readonly { frame: number; seconds: number }[]) => ({ url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 12.25, width: 1344, height: 768, sizeBytes: 1000, ...(cuts ? { cuts } : {}) });
+  const result = (cuts?: readonly { frame: number; seconds: number; kind?: "cut" | "framing" }[], camera?: "static" | "moving" | "unknown") => ({ url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 12.25, width: 1344, height: 768, sizeBytes: 1000, ...(cuts ? { cuts } : {}), ...(camera ? { camera } : {}) });
+
+  it("a framing move on a prompt that asked for a moving camera is the quiet note above the result, with no Retry (STORY_046)", () => {
+    const framing = [{ frame: 24, seconds: 1, kind: "framing" as const }, { frame: 100, seconds: 4.17, kind: "framing" as const }, { frame: 204, seconds: 8.5, kind: "framing" as const }];
+    render(shell(<TaskPage entry={entry({ status: "done", progress: 100, result: result(framing, "moving") })} fetchImpl={fetchScript([]).fetchImpl} />));
+    expect(screen.getByTestId("framing-note")).toHaveTextContent("The framing moved at 00:01, 00:04 and 00:08, as the prompt asked; no cut.");
+    expect(screen.queryByTestId("cut-notice")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("result-card")).toBeInTheDocument();
+    cleanup();
+    render(shell(<TaskPage entry={entry({ status: "done", progress: 100, result: result([...framing, { frame: 142, seconds: 5.92, kind: "cut" }], "moving") })} fetchImpl={fetchScript([]).fetchImpl} />));
+    expect(screen.getByTestId("cut-notice")).toHaveTextContent("The shot changed at 00:05 —");
+    expect(screen.queryByTestId("framing-note")).not.toBeInTheDocument();
+  });
 
   it("names the time of one change, lists several, and shows nothing for [] or an older server without the field", () => {
     render(shell(<TaskPage entry={entry({ status: "done", progress: 100, result: result([{ frame: 270, seconds: 11.25 }]) })} fetchImpl={fetchScript([]).fetchImpl} />));

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BASE_FORMAT_MARKER, I2VA_INSTRUCTION, MUSIC_FIELD, SOUNDSCAPE_FIELD, bodyOf, buildPrompt, durationLabel, fl2vaInstruction, isBaseFormatPrompt } from "./prompt.ts";
+import { BASE_FORMAT_MARKER, I2VA_INSTRUCTION, MUSIC_FIELD, SOUNDSCAPE_FIELD, bodyOf, buildPrompt, durationLabel, fl2vaInstruction, isBaseFormatPrompt, cameraOf, descriptionOf } from "./prompt.ts";
 
 const STATIC = "The camera holds a perfectly static shot throughout the entire";
 
@@ -75,5 +75,32 @@ describe("bodyOf: the owner's script as one paragraph", () => {
   it("a lower-case or non-letter start after the bracket is kept as is", () => {
     expect(bodyOf("[0:00-0:03] he waits.")).toBe("From 0:00 to 0:03, he waits.");
     expect(bodyOf("[0:00-0:03] 3 seconds of stillness.")).toBe("From 0:00 to 0:03, 3 seconds of stillness.");
+  });
+});
+
+describe("cameraOf (STORY_046): what the prompt asks of the camera, read from the prompt the model gets", () => {
+  const base = (description: string, soundscape = "The room's own tone.") => `For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.\n\nintegrated_multimodal_description: [Shot 1] ${description}\n\noverall_soundscape: ${soundscape}\n\nnon_diegetic_music: None.`;
+  it("a prompt the adapter wraps is static — the wrapper says so", () => {
+    expect(cameraOf("[0:00-0:03] He steps back and holds.")).toBe("static");
+  });
+  it("the owner's base-format prompt: 'static shot' with no move named is static", () => {
+    expect(cameraOf(base("Live-action. The camera holds a perfectly static shot throughout the entire ten-second duration: no cut. He waves."))).toBe("static");
+  });
+  it("a named move — the guide's types, the handheld words, 'camera follows' — is moving, whatever else the prompt says", () => {
+    expect(cameraOf(base("Live-action. The camera is the front-facing phone in his own hand and holds this selfie framing with only the small natural handheld sway that follows his lean."))).toBe("moving");
+    for (const move of ["The camera pushes in with small amplitude at slow speed.", "A slow push-in, then it holds.", "The camera pans right.", "The camera tilts up.", "A tracking shot along the pier.", "The camera follows her down the hall.", "A slow zoom out over the first three seconds.", "The camera holds a static shot, then a slow pull out."]) {
+      expect(cameraOf(base(move)), move).toBe("moving");
+    }
+  });
+  it("neither a static declaration nor a move is unknown", () => {
+    expect(cameraOf(base("Live-action, cinematic. He waves at the lens."))).toBe("unknown");
+  });
+  it("reads the description only: a pan that clatters in the soundscape, or 'spans' and 'zoomed' as other words, is not a move", () => {
+    expect(cameraOf(base("Live-action. The camera holds a static shot. He cooks.", "A pan clatters on the stove; the camera pans, someone says."))).toBe("static");
+    expect(cameraOf(base("The bridge spans the river; the camera holds a static shot; a zoomed-in map lies on the table."))).toBe("static");
+  });
+  it("descriptionOf: the field between the marker and the soundscape; the whole text without a marker", () => {
+    expect(descriptionOf(base("Alpha.", "Beta."))).toBe(" [Shot 1] Alpha.\n\n");
+    expect(descriptionOf("plain words")).toBe("plain words");
   });
 });

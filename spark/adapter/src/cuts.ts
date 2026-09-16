@@ -11,19 +11,31 @@
  * Each contiguous run of tripped windows is one event: rule 1's at the largest single-frame border step inside the first
  * window that tripped it (the cut frame), rule 2's at the middle of that window (inside the fade); events within
  * MERGE_FRAMES merge, rule 1's exact frame winning over rule 2's estimate.
- * `long` is optional: a history written by the STORY_020 node (no three-second series) still gets rule 1.
+ *   3. (STORY_046) the border differs from the PREVIOUS FRAME by CUT_STEP (30) or more — a cut, whatever the camera does.
+ *      Rules 1 and 2 cannot tell a camera move from a cut (a handheld selfie moved the border 48–54 over a second on
+ *      2026-09-16, as much as a cut); the single frame can: the real cuts on disk step 46.5–49.7 in one frame, the
+ *      handheld draws at most 15.7, a held shot 2.4, BUG_006's slow dissolve 2.8. A contiguous run of such steps is one
+ *      event at its largest step. Every event carries a `kind`: rule 3's are "cut", rules 1 and 2's "framing" (the set
+ *      or the framing changed — which, on a prompt that asked for a moving camera, is what was asked for).
+ * Events within MERGE_FRAMES merge; the higher-ranked event (cut > one-second > three-second) gives the merged event its
+ * frame and its kind, as rule 1's exact frame won over rule 2's estimate before.
+ * `long` is optional: a history written by the STORY_020 node (no three-second series) still gets rules 1 and 3.
  */
 import { FPS } from "./grid.ts";
 
 export const SHOT_CHANGE = 30;
 export const SLOW_CHANGE = 20;
+export const CUT_STEP = 30;
 export const MERGE_FRAMES = 48;
 
+export type CutKind = "cut" | "framing";
 export interface Cut {
   /** The first frame of the new shot (0-based, the joined clip's timeline). */
   readonly frame: number;
   /** frame / 24, to two decimals. */
   readonly seconds: number;
+  /** STORY_046: "cut" from the single-frame rule; "framing" from the one- and three-second rules. */
+  readonly kind: CutKind;
 }
 export interface FrameChanges {
   /** Border change between frames i and i + 1. */
@@ -99,25 +111,50 @@ function eventsOf(series: readonly number[], span: number, threshold: number, st
   return events;
 }
 
-export function detectCuts(changes: FrameChanges, thresholds: { readonly shot?: number; readonly slow?: number } = {}): Cut[] {
-  const { step, second, span, long, longSpan } = changes;
-  const events: { frame: number; fast: boolean }[] = eventsOf(second, span, thresholds.shot ?? SHOT_CHANGE, step, "steepest").map((frame) => ({ frame, fast: true }));
-  if (long && longSpan !== undefined) {
-    events.push(...eventsOf(long, longSpan, thresholds.slow ?? SLOW_CHANGE, step, "middle").map((frame) => ({ frame, fast: false })));
+/**
+ * STORY_046: the single-frame events — each contiguous run of steps at or over the threshold is one cut, at the frame
+ * after the run's largest step (a cut spread over two frames by encoding is still one cut).
+ */
+function stepEventsOf(step: readonly number[], threshold: number): number[] {
+  const events: number[] = [];
+  let best: number | undefined;
+  for (const [j, value] of step.entries()) {
+    if (value >= threshold) {
+      if (best === undefined || value > (step[best] ?? -1)) best = j;
+    } else if (best !== undefined) {
+      events.push(best + 1);
+      best = undefined;
+    }
   }
-  events.sort((a, b) => a.frame - b.frame);
-  // Merge events within MERGE_FRAMES: a fast (one-second) event names the exact frame, so it wins over a slow estimate.
-  const merged: { frame: number; fast: boolean }[] = [];
+  if (best !== undefined) events.push(best + 1);
+  return events;
+}
+
+/** cut > one-second > three-second: the higher rank names the merged event's frame and kind. */
+const RANK = { cut: 3, second: 2, long: 1 } as const;
+type Rank = (typeof RANK)[keyof typeof RANK];
+
+export function detectCuts(changes: FrameChanges, thresholds: { readonly shot?: number; readonly slow?: number; readonly cut?: number } = {}): Cut[] {
+  const { step, second, span, long, longSpan } = changes;
+  const events: { frame: number; rank: Rank }[] = eventsOf(second, span, thresholds.shot ?? SHOT_CHANGE, step, "steepest").map((frame) => ({ frame, rank: RANK.second }));
+  if (long && longSpan !== undefined) {
+    events.push(...eventsOf(long, longSpan, thresholds.slow ?? SLOW_CHANGE, step, "middle").map((frame) => ({ frame, rank: RANK.long })));
+  }
+  events.push(...stepEventsOf(step, thresholds.cut ?? CUT_STEP).map((frame) => ({ frame, rank: RANK.cut })));
+  events.sort((a, b) => a.frame - b.frame || b.rank - a.rank);
+  // Merge events within MERGE_FRAMES: the higher rank names the exact frame (a cut's step, a one-second event's
+  // steepest step) and wins over a lower one's estimate.
+  const merged: { frame: number; rank: Rank }[] = [];
   for (const event of events) {
     const last = merged[merged.length - 1];
     if (last !== undefined && event.frame - last.frame <= MERGE_FRAMES) {
-      if (event.fast && !last.fast) {
+      if (event.rank > last.rank) {
         last.frame = event.frame;
-        last.fast = true;
+        last.rank = event.rank;
       }
       continue;
     }
     merged.push({ ...event });
   }
-  return merged.map(({ frame }) => ({ frame, seconds: Math.round((frame / FPS) * 100) / 100 }));
+  return merged.map(({ frame, rank }) => ({ frame, seconds: Math.round((frame / FPS) * 100) / 100, kind: rank === RANK.cut ? "cut" : "framing" }));
 }

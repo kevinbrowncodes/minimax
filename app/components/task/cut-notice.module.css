@@ -31,3 +31,11 @@
   opacity: 0.6;
   cursor: default;
 }
+
+/* STORY_046: the quiet line for a framing move the prompt asked for — the muted voice of the thread's meta rows, no button */
+.note {
+  margin: 0 0 var(--spacing_12);
+  color: var(--text_default_secondary);
+  font-size: 14px;
+  line-height: 22px;
+}

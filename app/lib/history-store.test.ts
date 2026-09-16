@@ -48,6 +48,12 @@ describe("HistoryStore", () => {
     expect(done?.finishedAt).toBeDefined();
     expect(done?.result?.url).toBe("/jobs/a/result");
     expect(done?.result?.cuts).toEqual([{ frame: 270, seconds: 11.25 }]); // STORY_020: kept with the result
+    // STORY_046: the kind and the camera ride along with the result unchanged (a fresh entry: a terminal one is not re-recorded)
+    s.create({ id: "h", prompt: "handheld", params, referenceImages: 1, createdAt: "2026-09-16T18:00:00Z" });
+    const moved = s.recordStatus("h", { id: "h", status: "done", progress: 100, result: { url: "/jobs/h/result", posterUrl: "/jobs/h/poster", mimeType: "video/mp4", durationSeconds: 10, width: 1344, height: 768, sizeBytes: 1, cuts: [{ frame: 24, seconds: 1, kind: "framing" }], camera: "moving" } });
+    expect(moved?.result?.cuts).toEqual([{ frame: 24, seconds: 1, kind: "framing" }]);
+    expect(moved?.result?.camera).toBe("moving");
+    expect(s.remove("h")).toBe(true);
     const later = s.recordStatus("a", { id: "a", status: "running", progress: 1 });
     expect(later?.status).toBe("done");
     expect(s.patch("a", { openedAt: "2026-09-12T20:00:00Z" })?.openedAt).toBe("2026-09-12T20:00:00Z");

@@ -183,7 +183,15 @@ describe("create → status → result", () => {
     const second = Array.from({ length: 276 }, (_, i) => (i >= 118 && i < 142 ? 50 : 4));
     fake.frameChanges = { frames: 300, span: 24, step, second };
     const cut = await waitFor(await create({ ...valid, durationSeconds: 12 }), (s) => s["status"] === "done");
-    expect((cut["result"] as { cuts: unknown }).cuts).toEqual([{ frame: 142, seconds: 5.92 }]);
+    expect((cut["result"] as { cuts: unknown }).cuts).toEqual([{ frame: 142, seconds: 5.92, kind: "cut" }]);
+    // STORY_046: the result says what the prompt asked of the camera — a wrapped prompt is static; the owner's own
+    // base-format prompt with a handheld camera is moving, and its framing events are not cuts
+    expect((cut["result"] as { camera: unknown }).camera).toBe("static");
+    fake.frameChanges = { frames: 300, span: 24, step: Array.from({ length: 299 }, (_, j) => (j % 7 === 0 ? 14 : 8)), second: Array.from({ length: 276 }, (_, i) => (i < 40 ? 40 : 10)) };
+    const handheld = "integrated_multimodal_description: [Shot 1] Live-action. The camera is the phone in his own hand, a handheld sway that follows his lean. He leans to the desk.\n\noverall_soundscape: The room.\n\nnon_diegetic_music: None.";
+    const moving = await waitFor(await create({ ...valid, prompt: handheld, durationSeconds: 12 }), (s) => s["status"] === "done");
+    expect((moving["result"] as { camera: unknown }).camera).toBe("moving");
+    expect((moving["result"] as { cuts: readonly { kind: string }[] }).cuts.map((c) => c.kind)).toEqual(["framing"]);
     // no measure in the history at all: still done, no cuts key
     fake.frameChanges = undefined;
     const none = await waitFor(await create(), (s) => s["status"] === "done");

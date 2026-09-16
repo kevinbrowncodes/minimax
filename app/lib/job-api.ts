@@ -11,10 +11,16 @@ export interface Overlap {
   readonly frames: number;
   readonly seconds: number;
 }
+/** STORY_046 (contract v1.4): a cut is a single-frame jump of the picture's border; framing is the set or the framing changing over a second or three. */
+export type CutKind = "cut" | "framing";
+/** STORY_046 (contract v1.4): what the prompt asked of the camera, as the server read it. */
+export type Camera = "static" | "moving" | "unknown";
 /** STORY_020 (contract v1.3): where the server measured a shot change — the first frame of the new shot and its time. */
 export interface Cut {
   readonly frame: number;
   readonly seconds: number;
+  /** Absent from a server older than v1.4 — read as "framing". */
+  readonly kind?: CutKind;
 }
 export interface JobResult {
   readonly url: string;
@@ -27,6 +33,8 @@ export interface JobResult {
   readonly sizeBytes: number;
   /** Absent from a server older than v1.3 or when the measure was unavailable; [] when the shot held. */
   readonly cuts?: readonly Cut[];
+  /** Absent from a server older than v1.4 — read as "unknown". */
+  readonly camera?: Camera;
 }
 export interface JobRequest {
   readonly prompt: string;

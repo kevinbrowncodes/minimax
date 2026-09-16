@@ -258,13 +258,28 @@ describe("contract v1.2: extensions (STORY_017)", () => {
   });
 });
 
-describe("shot changes (STORY_020, contract v1.3)", () => {
-  it("done-with-cut reports the dissolve at 11.25 s; every other script reports none", async () => {
+describe("shot changes (STORY_020, contract v1.3; STORY_046, v1.4)", () => {
+  it("done-with-cut reports the dissolve at 11.25 s as a cut on a static camera; every other script reports none, static", async () => {
     const flagged = await create("done-with-cut");
     await status(flagged);
     await status(flagged);
-    expect(await status(flagged)).toMatchObject({ status: "done", result: { cuts: [{ frame: 270, seconds: 11.25 }] } });
+    expect(await status(flagged)).toMatchObject({ status: "done", result: { cuts: [{ frame: 270, seconds: 11.25, kind: "cut" }], camera: "static" } });
     const clean = await create("done-after-1-poll");
-    expect(await status(clean)).toMatchObject({ status: "done", result: { cuts: [] } });
+    expect(await status(clean)).toMatchObject({ status: "done", result: { cuts: [], camera: "static" } });
+  });
+  it("done-with-framing-move reports three framing events on a moving camera; done-with-cut-in-a-move adds a cut at 5.92 s", async () => {
+    const moved = await create("done-with-framing-move");
+    await status(moved);
+    await status(moved);
+    const movedDone = (await status(moved)) as { result: { cuts: readonly { kind: string; seconds: number }[]; camera: string } };
+    expect(movedDone.result.camera).toBe("moving");
+    expect(movedDone.result.cuts.map((c) => [c.kind, c.seconds])).toEqual([["framing", 1], ["framing", 4.17], ["framing", 8.5]]);
+    const cutIn = await create("done-with-cut-in-a-move");
+    await status(cutIn);
+    await status(cutIn);
+    const cutInDone = (await status(cutIn)) as { result: { cuts: readonly { kind: string; seconds: number }[]; camera: string } };
+    expect(cutInDone.result.camera).toBe("moving");
+    expect(cutInDone.result.cuts.filter((c) => c.kind === "cut")).toEqual([{ frame: 142, seconds: 5.92, kind: "cut" }]);
+    expect(cutInDone.result.cuts.filter((c) => c.kind === "framing")).toHaveLength(3);
   });
 });

@@ -17,8 +17,17 @@ export interface Script {
   readonly steps: readonly Step[];
   /** POST /jobs answers 400 when the request carries a reference image. */
   readonly rejectsUpload?: boolean;
-  /** STORY_020: the shot changes the done result reports (contract v1.3 `result.cuts`); [] when absent. */
-  readonly cuts?: readonly { readonly frame: number; readonly seconds: number }[];
+  /** STORY_020: the shot changes the done result reports (contract v1.3 `result.cuts`); [] when absent. STORY_046 (v1.4): each with its kind. */
+  readonly cuts?: readonly Cut[];
+  /** STORY_046 (v1.4): what the prompt asked of the camera, as the done result reports it; "static" when absent. */
+  readonly camera?: Camera;
+}
+export type CutKind = "cut" | "framing";
+export type Camera = "static" | "moving" | "unknown";
+export interface Cut {
+  readonly frame: number;
+  readonly seconds: number;
+  readonly kind: CutKind;
 }
 
 const q = (progress: number): Step => ({ status: "queued", progress });
@@ -37,7 +46,11 @@ export const SCRIPTS = {
   },
   "cancel-midway": { steps: [q(0), r(10), r(25), r(50)] },
   // STORY_020: done, but the server measured a shot change 11.25 s in (the 2026-09-14 chain's dissolve, frame 270)
-  "done-with-cut": { steps: [q(0), r(33), r(66), done], cuts: [{ frame: 270, seconds: 11.25 }] },
+  "done-with-cut": { steps: [q(0), r(33), r(66), done], cuts: [{ frame: 270, seconds: 11.25, kind: "cut" }], camera: "static" },
+  // STORY_046: the office round's handheld draw of 2026-09-16 (`ecb286a6`) — the framing moved three times, as the prompt asked; no cut
+  "done-with-framing-move": { steps: [q(0), r(33), r(66), done], cuts: [{ frame: 24, seconds: 1, kind: "framing" }, { frame: 100, seconds: 4.17, kind: "framing" }, { frame: 204, seconds: 8.5, kind: "framing" }], camera: "moving" },
+  // STORY_046: the same, with a cut the model made at 5.92 s (STORY_020's `2f980101` frame 142) inside the move
+  "done-with-cut-in-a-move": { steps: [q(0), r(33), r(66), done], cuts: [{ frame: 24, seconds: 1, kind: "framing" }, { frame: 100, seconds: 4.17, kind: "framing" }, { frame: 142, seconds: 5.92, kind: "cut" }, { frame: 204, seconds: 8.5, kind: "framing" }], camera: "moving" },
   "rejects-upload": { steps: [q(0), r(50), done], rejectsUpload: true },
 } as const satisfies Record<string, Script>;
 
@@ -63,7 +76,11 @@ export function stepFor(script: ScriptName, pollCount: number): Step {
 }
 
 /** STORY_020: the shot changes a script's done result reports ([] unless the script says otherwise). */
-export function cutsFor(name: ScriptName): readonly { readonly frame: number; readonly seconds: number }[] {
+export function cutsFor(name: ScriptName): readonly Cut[] {
   const script: Script = SCRIPTS[name];
   return script.cuts ?? [];
+}
+export function cameraFor(name: ScriptName): Camera {
+  const script: Script = SCRIPTS[name];
+  return script.camera ?? "static";
 }

@@ -15,11 +15,11 @@ import { JobStore, isTerminal, type Job } from "./job-store.ts";
 import { FPS, REQUIRED_CLASSES, buildGraph, extensionLength, lengthForSeconds, ref2vaFileFor, seconds, sizeFor, templateUnet, type Continuation, type Graph, type UploadedImage } from "./mapping.ts";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
 import { interpret, type ComfyEvent } from "./progress.ts";
-import { buildPrompt } from "./prompt.ts";
+import { buildPrompt, cameraOf } from "./prompt.ts";
 import { detectCuts, parseFrameChanges } from "./cuts.ts";
 import { WatermarkCache, type WatermarkRunner } from "./watermark.ts";
 
-export const VERSION = "1.4.0";
+export const VERSION = "1.5.0";
 
 export interface AdapterOptions {
   /** ComfyUI's base URL, e.g. http://comfyui:8188. */
@@ -167,7 +167,7 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
         ...(cuts ? { cuts } : {}),
       },
     });
-    log(`job ${job.id} done: ${video.subfolder}/${video.filename}${cuts ? ` — shot changes: ${cuts.length === 0 ? "none" : cuts.map((c) => `${String(c.seconds)} s (frame ${String(c.frame)})`).join(", ")}` : ""}`);
+    log(`job ${job.id} done: ${video.subfolder}/${video.filename}${cuts ? ` — shot changes: ${cuts.length === 0 ? "none" : cuts.map((c) => `${c.kind} at ${String(c.seconds)} s (frame ${String(c.frame)})`).join(", ")}; camera ${cameraOf(job.request.prompt)}` : ""}`);
   };
 
   const safeOutputPath = (subfolder: string, filename: string): string | undefined => {
@@ -397,6 +397,9 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
             height: job.result.height,
             sizeBytes: job.result.sizeBytes,
             ...(job.result.cuts === undefined ? {} : { cuts: job.result.cuts }),
+            // STORY_046 (contract v1.4): what the prompt asked of the camera, read from the stored request — so a job
+            // recorded before this version answers too (its cuts carry no kind; the UI reads that as framing)
+            camera: cameraOf(job.request.prompt),
           },
         }
       : {}),

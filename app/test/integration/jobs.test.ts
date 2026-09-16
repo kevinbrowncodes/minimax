@@ -60,6 +60,19 @@ describe("create → status → result through the app's routes", () => {
     expect(done).toMatchObject({ status: "done", progress: 100, result: { url: `/jobs/${id}/result`, mimeType: "video/mp4", width: 320, height: 180 } });
   });
 
+  it("relays where the shot changed, each event's kind and the camera the prompt asked for, unchanged from the server (STORY_020, STORY_046 — contract v1.4)", async () => {
+    const flagged = await create("done-with-cut");
+    await status(flagged);
+    await status(flagged);
+    expect(await status(flagged)).toMatchObject({ status: "done", result: { cuts: [{ frame: 270, seconds: 11.25, kind: "cut" }], camera: "static" } });
+    const moved = await create("done-with-framing-move");
+    await status(moved);
+    await status(moved);
+    const done = await status(moved);
+    expect(done.result?.camera).toBe("moving");
+    expect(done.result?.cuts?.map((c) => c.kind)).toEqual(["framing", "framing", "framing"]);
+  });
+
   it("surfaces failed with the code, and moderated as code moderated", async () => {
     const a = await create("fails-after-2-polls");
     await status(a);

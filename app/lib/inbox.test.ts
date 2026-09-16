@@ -50,3 +50,16 @@ describe("the Inbox's events (STORY_033)", () => {
     expect(formatEventTime("nope", now)).toBe("");
   });
 });
+
+describe("the Inbox's events (STORY_046): a framing move the prompt asked for is not news", () => {
+  const result = { url: "/jobs/x/result", posterUrl: "/jobs/x/poster", mimeType: "video/mp4", durationSeconds: 10, width: 1344, height: 768, sizeBytes: 1 };
+  const framing = [{ frame: 24, seconds: 1, kind: "framing" as const }, { frame: 100, seconds: 4.17, kind: "framing" as const }];
+  it("a moving camera with framing events only makes the ready event alone; a cut inside the move, or framing on a static camera, makes the cut event too", () => {
+    const moved: RecentEntry = { id: "h", title: "Handheld", createdAt: at(14, 0), finishedAt: at(14, 50), status: "done", progress: 100, result: { ...result, cuts: framing, camera: "moving" } };
+    expect(eventsFor([moved]).map((e) => e.id)).toEqual(["h:ready"]);
+    const cutIn: RecentEntry = { ...moved, id: "k", result: { ...result, cuts: [...framing, { frame: 142, seconds: 5.92, kind: "cut" }], camera: "moving" } };
+    expect(eventsFor([cutIn]).map((e) => `${e.id} ${e.text}`)).toEqual(["k:ready Your video is ready", "k:cut The shot changed at 00:05"]);
+    const wandered: RecentEntry = { ...moved, id: "s", result: { ...result, cuts: framing, camera: "static" } };
+    expect(eventsFor([wandered]).map((e) => `${e.id} ${e.text}`)).toEqual(["s:ready Your video is ready", "s:cut The shot changed at 00:01"]);
+  });
+});

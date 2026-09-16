@@ -29,3 +29,24 @@ describe("CutNotice (STORY_020)", () => {
     expect(screen.getByRole("button", { name: "Retry" })).toBeDisabled();
   });
 });
+
+describe("CutNotice (STORY_046): the quiet note for a framing move the prompt asked for", () => {
+  const framing = [{ frame: 24, seconds: 1, kind: "framing" as const }, { frame: 100, seconds: 4.17, kind: "framing" as const }, { frame: 204, seconds: 8.5, kind: "framing" as const }];
+  it("on a moving camera: a status line, no Retry, no amber strip", () => {
+    render(<CutNotice cuts={framing} camera="moving" onRetry={() => undefined} />);
+    const note = screen.getByTestId("framing-note");
+    expect(note).toHaveAttribute("role", "status");
+    expect(note).toHaveTextContent("The framing moved at 00:01, 00:04 and 00:08, as the prompt asked; no cut.");
+    expect(screen.queryByTestId("cut-notice")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+  });
+  it("a cut inside the move, or the same framing on a static camera, is the strip with Retry", () => {
+    render(<CutNotice cuts={[...framing, { frame: 142, seconds: 5.92, kind: "cut" }]} camera="moving" onRetry={() => undefined} />);
+    expect(screen.getByTestId("cut-notice")).toHaveTextContent("The shot changed at 00:05 —");
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    cleanup();
+    render(<CutNotice cuts={framing} camera="static" onRetry={() => undefined} />);
+    expect(screen.getByTestId("cut-notice")).toHaveTextContent("The shot changed at 00:01, 00:04 and 00:08 —");
+    expect(screen.queryByTestId("framing-note")).not.toBeInTheDocument();
+  });
+});

@@ -22,6 +22,46 @@ export const SOUNDSCAPE_FIELD = "overall_soundscape: The ambience the descriptio
 export const MUSIC_FIELD = "non_diegetic_music: None, unless the description above asks for music.";
 const INSTRUCTION_STARTS = ["For the target video", "How the reference pictures align"] as const;
 const BRACKET = /^\[(\d{1,2}:\d{2})-(\d{1,2}:\d{2})\]\s*/;
+const SOUNDSCAPE_MARKER = "overall_soundscape:";
+
+/**
+ * STORY_046: the camera moves the base guide names (§4.2: Push In / Pull Out, Pan, Tilt, Pedestal, Arc Shot, Tracking
+ * Shot — "the camera follows a moving subject" — and Zoom), plus the handheld words the owner's prompts use. Matched as
+ * whole words, case-insensitive, in the description field only: the soundscape may say a pan clatters.
+ */
+export const CAMERA_MOVES = [
+  "push in", "push-in", "pushes in", "pushing in",
+  "pull out", "pull-out", "pulls out", "pulling out",
+  "pan left", "pan right", "pans", "panning",
+  "tilt up", "tilt down", "tilts", "tilting",
+  "pedestal", "arc shot", "tracking shot", "dolly", "dollies",
+  "zoom", "zooms", "zooming",
+  "handheld", "hand-held", "sway", "sways", "swaying", "camera follows",
+] as const;
+const STATIC_CAMERA = /\bstatic shot\b/i;
+const MOVE_PATTERN = new RegExp(`\\b(?:${CAMERA_MOVES.map((m) => m.replace(/[-\s]/g, "[-\\s]")).join("|")})\\b`, "i");
+
+export type Camera = "static" | "moving" | "unknown";
+
+/** The description field of a base-format prompt (between its marker and the soundscape); the whole text otherwise. */
+export function descriptionOf(prompt: string): string {
+  const start = prompt.indexOf(BASE_FORMAT_MARKER);
+  const body = start === -1 ? prompt : prompt.slice(start + BASE_FORMAT_MARKER.length);
+  const end = body.indexOf(SOUNDSCAPE_MARKER);
+  return end === -1 ? body : body.slice(0, end);
+}
+
+/**
+ * What the caller's prompt asks of the camera, read from the prompt the model gets: a prompt the adapter wraps is
+ * "static" (the wrapper says so); the caller's own base-format prompt is "moving" when its description names a move,
+ * "static" when it says "static shot" and names none, "unknown" otherwise.
+ */
+export function cameraOf(prompt: string): Camera {
+  if (!isBaseFormatPrompt(prompt)) return "static";
+  const description = descriptionOf(prompt);
+  if (MOVE_PATTERN.test(description)) return "moving";
+  return STATIC_CAMERA.test(description) ? "static" : "unknown";
+}
 
 export type PromptShape =
   | { readonly kind: "fresh"; readonly frames: number; readonly images: number }

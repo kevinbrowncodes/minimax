@@ -238,4 +238,29 @@ test.describe("the task page matches the reference (STORY_023)", () => {
     expect((await terminal2).status).toBe("done");
     expect((await stubApi.received(id2)).request.prompt).toBe("Hold the shot");
   });
+
+  test("a framing move the prompt asked for is the quiet note above the result — no amber strip, no Retry (STORY_046)", async ({ page }) => {
+    // the stub's done-with-framing-move: three framing events on a moving camera (the office round's draw 1 of 2026-09-16)
+    const { terminal } = await submit(page, "done-with-framing-move", "Handheld, follows his lean");
+    await terminal;
+    await page.getByTestId("preview-pane").getByRole("button", { name: "Close" }).click();
+    const note = page.getByTestId("framing-note");
+    await expect(note).toHaveText("The framing moved at 00:01, 00:04 and 00:08, as the prompt asked; no cut.");
+    await expect(note).toHaveAttribute("role", "status");
+    await expect(page.getByTestId("cut-notice")).toHaveCount(0);
+    await expect(page.getByTestId("result").getByRole("button", { name: "Retry" })).toHaveCount(0);
+    await expect(page.getByTestId("result-card")).toBeVisible();
+  });
+
+  test("a cut inside a camera move is the amber notice, naming the cut alone (STORY_046)", async ({ page }) => {
+    // done-with-cut-in-a-move: the same three framing events plus a cut at 5.92 s
+    const { terminal } = await submit(page, "done-with-cut-in-a-move", "Handheld, then it cut");
+    await terminal;
+    await page.getByTestId("preview-pane").getByRole("button", { name: "Close" }).click();
+    const notice = page.getByTestId("cut-notice");
+    await expect(notice).toContainText("The shot changed at 00:05 — the set or the framing is no longer what it was.");
+    await expect(notice).not.toContainText("00:01");
+    await expect(notice.getByRole("button", { name: "Retry" })).toBeVisible();
+    await expect(page.getByTestId("framing-note")).toHaveCount(0);
+  });
 });
