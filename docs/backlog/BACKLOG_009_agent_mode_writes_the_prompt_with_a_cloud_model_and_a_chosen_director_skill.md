@@ -23,12 +23,17 @@ Today the scene anchor and the script are written by a person (the owner, or the
 
 STORY_044 (Send all, for chains), CHORE_012 (the skill format and the first director), BACKLOG_006 (the surface this wires; its Spark-model route stays a separate option), BACKLOG_005 (this is one way to get the rewriter — a cloud VLM rather than a local one).
 
+## Decided by the owner (2026-09-16, 12:45 EDT)
+
+- **Credential: Vertex AI on GCP** (a project, a service account, IAM) — not an AI Studio key. The project id and region come from the owner when the story is written; the service-account file lives outside the repo and is mounted into the app container, never in git.
+- **The reply goes into the composer for review first; later a Setting switches agent mode to straight-through** (photo → prompt → job with no review). Both modes exist; review is the default.
+- **The spike stays first, but expect few refusals** ("Flash 3.8 rarely refuses"). What matters is the refusal path: the model's refusal is captured and shown to the owner verbatim where the prompt would have been, **and it runs before any job exists — every segment's prompt must come back clean before the first POST; one refusal aborts the whole Send all and nothing is queued**, in review mode and in straight-through mode alike, so a refused script can never let a dependent segment run.
+- **The photos go to Google** — all of them.
+- **How the skill is sent** (there is no Gemini equivalent of the Agent Skills spec; a skill is text): `SKILL.md`'s body as the system instruction, `references/*.md` as text parts of the same request, the image as an image part, the owner's notes as the user turn; the skill + references held in Vertex context caching since they do not change between calls. The spike verifies this against the current Vertex docs.
+
 ## Open questions (for the epic)
 
-- API key or Vertex AI? Which GCP project, and who pays?
 - The exact model id, and whether image input at 1376×768 needs downscaling for cost.
-- The owner is sending his photos to Google: agreed, and are any images off-limits?
-- What happens on a safety refusal — shown as-is, retried with softer wording, or both?
-- Always review before Send, or an optional straight-through mode later?
-- Chat thread (the reference's look) or fill-the-composer (a tool)?
-- Does the skill's `metadata` (model, checkpoint, verified-on) get shown in the picker?
+- Where the skill picker lives (the composer's MiniMax-M3 menu becoming the director menu, or its own control) and whether the skill's `metadata` (model, checkpoint, verified-on) is shown.
+- The straight-through Setting: default off; per-send override or not.
+- The multi-script director (one anchor with no pose in it, N scripts in the `[0:00-` convention, for Send all): in this epic or the one after.
