@@ -1,4 +1,5 @@
-"""MiniMax Local's own ComfyUI nodes (STORY_020, BUG_006). Copied into custom_nodes/ by spark/comfyui/Dockerfile.
+"""MiniMax Local's own ComfyUI nodes (STORY_020, BUG_006, BUG_010). Copied into custom_nodes/ by spark/comfyui/Dockerfile;
+tested by test_frame_changes.py beside it, run inside the image by spark/comfyui/test-nodes.sh.
 
 MiniMaxLocalFrameChanges measures the outer border of every decoded frame — the top and bottom 10 % of rows plus the
 left and right 10 % of columns: the set, not the person — and reports three series of mean absolute RGB differences on
@@ -45,8 +46,9 @@ class MiniMaxLocalFrameChanges:
                 step.append(round(float((border - recent[-1]).abs().mean()), 2))
             if len(recent) >= SPAN:
                 second.append(round(float((border - recent[-SPAN]).abs().mean()), 2))
-            if len(recent) == LONG_SPAN:
-                long.append(round(float((border - recent[0]).abs().mean()), 2))
+            # BUG_010: `== LONG_SPAN` with `recent[0]` was true once (the deque holds LONG_SPAN + 1), so `long` had one value
+            if len(recent) >= LONG_SPAN:
+                long.append(round(float((border - recent[-LONG_SPAN]).abs().mean()), 2))
             recent.append(border)
         payload = json.dumps({"frames": n, "span": SPAN, "longSpan": LONG_SPAN, "step": step, "second": second, "long": long})
         return {"ui": {"text": [payload]}}

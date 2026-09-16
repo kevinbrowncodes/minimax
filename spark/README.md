@@ -67,6 +67,7 @@ spark/adapter/                the job-API adapter (STORY_006): TypeScript on Nod
   h3.sh                       file names per precision, the 17k+5 frame rule (shared by host and image)
   lib.sh                      host paths + the compose invocation
   install.sh fetch-h3.sh run.sh stop.sh smoke.sh memwatch.sh lint.sh   host wrappers (see table)
+  test-nodes.sh border.sh border.py                                    our ComfyUI node's tests and its measure over finished clips, both run inside the image (see table)
   h3_t2v_prompt.json          API-format graph derived from the official text-to-video template
 
 spark/data/                   gitignored
@@ -87,6 +88,8 @@ spark/data/                   gitignored
 | `memwatch.sh` | Samples used unified memory every 2 s from the host's `/proc/meminfo`; prints the peak on exit | `memwatch.sh [log] [interval]` |
 | `smoke.sh` | Submits `h3_t2v_prompt.json` through `POST /prompt` at 1344×768, 5 s, 24 fps with the story's fixed prompt; polls `GET /history/<id>`; saves the MP4 through `GET /view`; runs `memwatch.sh` for the duration; keeps the container log; prints wall time, peak memory, load lines, file size and duration | `H3_PRECISION`, `H3_TEXT_ENCODER`, `WIDTH`, `HEIGHT`, `DURATION`, `SEED`, `STEPS` |
 | `lint.sh` | shellcheck of every script through the `koalaman/shellcheck:stable` image | — |
+| `test-nodes.sh` | the unit tests of our ComfyUI node (`custom_nodes/minimax_local/test_frame_changes.py`, BUG_010 — the first; before it nothing ran the node) inside the ComfyUI image, the repo's copy mounted over the image's so the working tree is what is tested | — |
+| `border.sh` / `border.py` | the node's shot-change measure re-run over finished clips inside the ComfyUI image (PyAV decodes; nothing on the host), printing each clip's largest single-frame, one-second and three-second border change and the kind the adapter's rules give it — STORY_046's calibration; `spark/comfyui/border.sh spark/data/output/video/job-*.mp4` | — |
 
 Run order on a fresh box:
 

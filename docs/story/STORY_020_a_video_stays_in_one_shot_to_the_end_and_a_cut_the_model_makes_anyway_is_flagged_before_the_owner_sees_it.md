@@ -172,3 +172,5 @@ Owner, 2026-09-14 evening: "try 3 successful attempts at video extension for 01.
 ## Estimated Complexity
 
 M — one prompt builder and its tests, one small custom node and a pure rule, one contract field on two servers, one notice on the task page, and two ~1 h verification runs.
+
+> **Addendum, 2026-09-16 (BUG_010, STORY_046):** the node's three-second series (BUG_006) emitted one value per job until BUG_010 fixed it; the calibration table above is unchanged, and the node's own numbers over every clip on disk — one-second, three-second and the new single-frame column — are in [STORY_046](STORY_046_the_shot_change_notice_tells_a_camera_move_the_prompt_asked_for_from_a_cut.md)'s Done note.
