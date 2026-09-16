@@ -31,9 +31,13 @@ STORY_044 (Send all, for chains), CHORE_012 (the skill format and the first dire
 - **The photos go to Google** — all of them.
 - **How the skill is sent** (there is no Gemini equivalent of the Agent Skills spec; a skill is text): `SKILL.md`'s body as the system instruction, `references/*.md` as text parts of the same request, the image as an image part, the owner's notes as the user turn; the skill + references held in Vertex context caching since they do not change between calls. The spike verifies this against the current Vertex docs.
 
+- **The picker is the reference's MiniMax-M3 pill, repurposed** (the right end of the bar, left of Run at… and Send): it reads `Agent · <the selected agent's short name> ⌄`, opens a menu titled **Agents** with one row per folder under `agents/skills/` (name + description from `SKILL.md`, the selected one checked) and a *Manage agents* row to the Plugins page; visible in agent mode; in video mode the pill stays the reference's inert one until BACKLOG_006 decides. "Agent" is the word (the owner's, the folder's, and a future agent need not be a director); "director" stays in the thirst-trap skill's description.
+- **Straight-through is a Settings switch, default off** ("Agent mode sends the prompt straight to a job"); no per-send override for now.
+- **The multi-script director is in this epic**, after the single-clip path works: photo → one anchor with no pose in it + N scripts in the `[0:00-` convention → Send all (STORY_044); a second folder under `agents/skills/` (`minimax-h3-director-thirst-trap-chain` or the family's next name).
+- **The model id is taken from Vertex's model list at spike time** — the spike lists the Gemini Flash models available on the owner's project and region and the story pins the newest Flash.
+
 ## Open questions (for the epic)
 
-- The exact model id, and whether image input at 1376×768 needs downscaling for cost.
-- Where the skill picker lives (the composer's MiniMax-M3 menu becoming the director menu, or its own control) and whether the skill's `metadata` (model, checkpoint, verified-on) is shown.
-- The straight-through Setting: default off; per-send override or not.
-- The multi-script director (one anchor with no pose in it, N scripts in the `[0:00-` convention, for Send all): in this epic or the one after.
+- Whether image input at 1376×768 needs downscaling for cost.
+- Whether the skill's `metadata` (model, checkpoint, verified-on) is shown in the Agents menu.
+- The GCP project id, region and the service account's roles (the owner supplies them when the spike is written).
