@@ -45,7 +45,7 @@ export default defineConfig({
       url: appUrl,
       reuseExistingServer: false,
       timeout: 60_000,
-      env: { PORT: String(APP_PORT), HOSTNAME: "127.0.0.1", MODEL_BASE_URL: stubUrl, NEXT_TELEMETRY_DISABLED: "1", HISTORY_FILE: path.join(tmpdir(), `minimax-e2e-history-${String(process.pid)}.json`), PROJECTS_FILE: path.join(tmpdir(), `minimax-e2e-projects-${String(process.pid)}.json`), QUEUE_TICK_MS: "0" }, // STORY_042: the specs' own polls advance the line
+      env: { PORT: String(APP_PORT), HOSTNAME: "127.0.0.1", MODEL_BASE_URL: stubUrl, NEXT_TELEMETRY_DISABLED: "1", HISTORY_FILE: path.join(tmpdir(), `minimax-e2e-history-${String(process.pid)}.json`), PROJECTS_FILE: path.join(tmpdir(), `minimax-e2e-projects-${String(process.pid)}.json`), QUEUE_TICK_MS: "0", QUEUE_SOURCE_STALE_MS: "3000" }, // STORY_042: the specs' own polls advance the line; BUG_009: a source unheard for 3 s is asked of the stub by the runner (10 s in production)
     },
   ],
 });

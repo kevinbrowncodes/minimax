@@ -168,6 +168,43 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     expect(await stubApi.openJobs()).toEqual([]);
   });
 
+  test("a waiting extension goes when its source finishes with no page watching it — the runner asks the stub itself (BUG_009)", async ({ page, request, stubApi }, testInfo) => {
+    test.slow(); // ≈ 4 × 3.5 s of ticks for the source, then the extension's own polls
+    const narrow = testInfo.project.name === "narrow";
+    // the source and its extension are sent through the app's route with no page open: nothing will ever poll the source
+    const src = (await (await request.post("/api/jobs?script=done-after-3-polls", { data: { prompt: "An unwatched clip", ratio: "16:9", resolution: "768P", durationSeconds: 5, model: "minimax-h3" } })).json()) as { id: string; status: string };
+    expect(src.status).toBe("queued");
+    const ext = (await (await request.post("/api/jobs?script=done-after-3-polls", { data: { prompt: "and on it goes", ratio: "16:9", resolution: "768P", durationSeconds: 4, model: "minimax-h3", continueFrom: src.id, overlapFrames: 39 } })).json()) as { id: string; status: string; position?: number };
+    expect(ext).toMatchObject({ status: "queued", position: 1 });
+    expect((await stubApi.jobs()).map((j) => j.id)).toEqual([src.id]); // the extension waits in the app's line
+    // the ticker is off under Playwright (QUEUE_TICK_MS=0); GET /api/history runs the same runner a tick runs and never
+    // polls a job itself — each call, spaced past QUEUE_SOURCE_STALE_MS (3 s here), is one tick with every tab closed
+    await expect
+      .poll(
+        async () => {
+          await request.get("/api/history");
+          return (await stubApi.jobs()).map((j) => j.id);
+        },
+        { intervals: [3_500], timeout: 60_000 },
+      )
+      .toHaveLength(2); // the runner heard the source finish and sent the extension
+    const extEntry = (await (await request.get(`/api/history/${ext.id}`)).json()) as { status: string; jobId?: string; continuesFrom?: { id: string } };
+    expect(extEntry.jobId).toBeDefined();
+    expect(extEntry.continuesFrom?.id).toBe(src.id);
+    expect(((await (await request.get(`/api/history/${src.id}`)).json()) as { status: string }).status).toBe("done"); // recorded by the runner, as a page's poll would
+    expect((await stubApi.received(extEntry.jobId ?? "")).request.continueFrom).toBe(src.id);
+    // the first page opened sees the extension past Waiting, and finishes it
+    const extDone = waitForTerminalStatus(page, { id: ext.id, timeout: 60_000 });
+    await page.goto("/scheduled");
+    await settled(page);
+    await expect(page.getByRole("region", { name: "Waiting" })).toHaveCount(0);
+    expect((await extDone).status).toBe("done");
+    await expect(page.getByRole("region", { name: "Done today" })).toContainText("and on it goes", { timeout: 15_000 });
+    if (narrow) await expect(page.getByTestId("scheduled-page")).toBeVisible();
+    for (const id of [ext.id, src.id]) await request.delete(`/api/history/${id}`);
+    expect(await stubApi.openJobs()).toEqual([]);
+  });
+
   test("the empty page, its search and the status filter", async ({ page }) => {
     await page.goto("/scheduled");
     await settled(page);

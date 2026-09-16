@@ -34,7 +34,10 @@ describe("HistoryStore", () => {
     s.create({ id: "b", prompt: "second boat", params, referenceImages: 1, createdAt: "2026-09-12T19:00:00Z" });
     expect(s.list().map((e) => e.id)).toEqual(["b", "a"]);
     expect(s.get("a")).toMatchObject({ title: "first boat", status: "queued", progress: 0 });
-    expect(s.recordStatus("a", { id: "a", status: "running", progress: 40 })).toMatchObject({ status: "running", progress: 40 });
+    expect(s.get("a")?.statusAt).toBeUndefined(); // BUG_009: nothing heard yet
+    const heard = s.recordStatus("a", { id: "a", status: "running", progress: 40 });
+    expect(heard).toMatchObject({ status: "running", progress: 40 });
+    expect(Date.now() - Date.parse(heard?.statusAt ?? "")).toBeLessThan(5_000); // BUG_009: stamped when heard
     expect(s.recordStatus("a", { id: "a", status: "running", progress: 10 })?.progress).toBe(40);
     const done = s.recordStatus("a", { id: "a", status: "done", progress: 100, result: { url: "/jobs/a/result", posterUrl: "/jobs/a/poster", mimeType: "video/mp4", durationSeconds: 5, width: 1344, height: 768, sizeBytes: 1, cuts: [{ frame: 270, seconds: 11.25 }] } });
     expect(done?.finishedAt).toBeDefined();

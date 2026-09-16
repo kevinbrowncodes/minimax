@@ -1,6 +1,6 @@
 # BUG_009 — A queued extension waits for its source only while a browser is watching it
 
-**Status:** Open (2026-09-16)
+**Status:** Approved (2026-09-16 05:35 EDT — the owner: "Yes please fix bug 009"; taken by session minimax-c6)
 **Found:** 2026-09-16 03:50 EDT, on the Spark, in the owner's overnight run (two 30 s chains queued up front through STORY_043; `test/26-09-18-2000_br/run-2026-09-15.md`)
 
 ## Summary

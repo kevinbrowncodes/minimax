@@ -28,10 +28,12 @@ beforeAll(async () => {
   stub = createStubServer({ fixture: "mp4" });
   stubUrl = `http://127.0.0.1:${String(await stub.listen(0))}`;
   process.env["MODEL_BASE_URL"] = stubUrl;
+  process.env["QUEUE_SOURCE_STALE_MS"] = "0"; // BUG_009: the runner asks the stub about a pending source on every run here
 });
 afterAll(async () => {
   await stub.close();
   delete process.env["MODEL_BASE_URL"];
+  delete process.env["QUEUE_SOURCE_STALE_MS"];
 });
 beforeEach(() => {
   dir = mkdtempSync(path.join(tmpdir(), "queue-it-"));
@@ -164,6 +166,37 @@ describe("the queue through the app's routes", () => {
     expect(((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries.find((e) => e.id === ext2.id)).toMatchObject({ status: "failed", error: { code: "source_failed" } });
     // an unknown source goes up and the server refuses it, as before
     expect((await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, continueFrom: "nope" }))).status).toBe(400);
+  });
+
+  it("a waiting extension goes once its source is done although nothing polled the source: the runner asks the stub itself (BUG_009)", async () => {
+    // the source is created directly (its id is the stub's); the stub answers done on its second status request
+    const src = (await (await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", valid))).json()) as CreateJobResponse;
+    expect(src.status).toBe("queued");
+    const ext = (await (await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, prompt: "And on", continueFrom: src.id, overlapFrames: 39 }))).json()) as Queued;
+    expect(ext).toMatchObject({ status: "queued", position: 1 });
+    expect((await stubJobs()).map((j) => j.id)).toEqual([src.id]);
+    // from here no GET /api/jobs/:id is made — the list polls run the runner, which asks the stub about the source itself
+    let rows = await line();
+    for (let i = 0; i < 4 && rows.length > 0; i += 1) rows = await line();
+    expect(rows).toEqual([]);
+    const entries = ((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries;
+    expect(entries.find((e) => e.id === src.id)).toMatchObject({ status: "done" }); // heard by the runner, recorded as a page's poll would
+    const extEntry = entries.find((e) => e.id === ext.id);
+    expect(extEntry?.status).toBe("queued");
+    expect(extEntry?.jobId).toBeDefined();
+    expect((await stubJobs()).map((j) => j.id)).toEqual([src.id, extEntry?.jobId ?? ""]); // one create for the extension, once
+    const received = (await (await fetch(`${stubUrl}/__stub/jobs/${extEntry?.jobId ?? ""}/received`)).json()) as { request: { continueFrom?: string; overlapFrames?: number } };
+    expect(received.request).toMatchObject({ continueFrom: src.id, overlapFrames: 39 });
+    // a source the stub no longer knows: the runner fails the source and the extension leaves the line with the reason
+    const lost = (await (await createJob(jsonRequest("/api/jobs?script=slow-done-after-10-polls", { ...valid, prompt: "Lost" }))).json()) as CreateJobResponse;
+    const orphan = (await (await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, prompt: "Orphan", continueFrom: lost.id }))).json()) as Queued;
+    expect(await line()).toHaveLength(1);
+    stub.reset(); // the stub forgets every job: the source now answers 404
+    await line();
+    expect(await line()).toEqual([]);
+    const after = ((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries;
+    expect(after.find((e) => e.id === lost.id)).toMatchObject({ status: "failed", error: { code: "not_found" } });
+    expect(after.find((e) => e.id === orphan.id)).toMatchObject({ status: "failed", error: { code: "source_failed", message: "its source did not finish" } });
   });
 
   it("move, Edit (replaces, in place, position and time kept), Remove, cancel of a waiting one; a submitted one can no longer be edited or removed", async () => {

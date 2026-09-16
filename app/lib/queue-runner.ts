@@ -5,12 +5,27 @@
  */
 import { readFileSync } from "node:fs";
 import { historyStore } from "./history-store";
-import type { CreateJobResponse } from "./job-api";
+import { isTerminal, type CreateJobResponse, type JobStatusResponse } from "./job-api";
 import { forward } from "./model-client";
-import { due, markSubmitted, removeQueued, waiting, type QueueEntry } from "./queue-store";
+import { due, getQueued, markSubmitted, removeQueued, waiting, type QueueEntry } from "./queue-store";
 import { referenceFilePath } from "./uploads";
 
 export type Submit = (entry: QueueEntry) => Promise<Response>;
+/** BUG_009: ask the model server about a job it knows under `upstreamId` (its `GET /jobs/:id`). */
+export type Refresh = (upstreamId: string) => Promise<Response>;
+
+/**
+ * BUG_009: how long a source's last heard status counts as fresh. A page watching a job polls it every 1–5 s and
+ * writes what it hears; the runner asks the model server itself only about a source nobody has heard from for this
+ * long, so a watched job costs no extra request and an unwatched one is asked once per ticker tick (30 s).
+ * QUEUE_SOURCE_STALE_MS overrides it (the gate's Playwright server sets 3 s; the integration tests 0).
+ */
+export const DEFAULT_SOURCE_STALE_MS = 10_000;
+export function sourceStaleMs(): number {
+  const raw = process.env["QUEUE_SOURCE_STALE_MS"];
+  const parsed = raw === undefined || raw === "" ? Number.NaN : Number(raw);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : DEFAULT_SOURCE_STALE_MS;
+}
 
 /**
  * What the model server is sent for a queued request: JSON without images, multipart with them, never our own fields.
@@ -47,6 +62,57 @@ export function sourceState(id: string): "done" | "pending" | "gone" {
   return "pending";
 }
 
+export const refreshFromModel: Refresh = (upstreamId) => forward(`/jobs/${encodeURIComponent(upstreamId)}`);
+
+/**
+ * BUG_009: the runner learns that a source finished only from history, and only a page's poll wrote it — with every
+ * tab closed a waiting extension never went. So before deciding what is due, ask the model server about every source
+ * a waiting extension depends on — once per source per run; only sources that were submitted, are not terminal in
+ * history and have not been heard from within `staleMs` — and record the answer through the same path the task page's
+ * poll uses. A 404 means the server no longer knows the job: the source is failed in history with that message, and
+ * `submitDue` then fails its extensions with "its source did not finish". Anything else (unreachable, a non-JSON
+ * body) leaves history as it was — the line waits, as it does for a submit that cannot be made. Returns how many
+ * sources were asked.
+ */
+export async function refreshPendingSources(options: { readonly refresh?: Refresh; readonly staleMs?: number; readonly now?: Date } = {}): Promise<number> {
+  const refresh = options.refresh ?? refreshFromModel;
+  const staleMs = options.staleMs ?? sourceStaleMs();
+  const now = (options.now ?? new Date()).getTime();
+  const sources = new Set<string>();
+  for (const entry of waiting()) {
+    const id = entry.request.continueFrom;
+    if (id === undefined || sources.has(id)) continue;
+    const source = historyStore().get(id);
+    if (!source || isTerminal(source.status)) continue; // gone, or settled: nothing to ask
+    const queued = getQueued(id);
+    if (queued !== undefined && queued.jobId === undefined) continue; // still waiting in the line itself: not submitted yet
+    if (source.statusAt !== undefined && now - Date.parse(source.statusAt) < staleMs) continue; // a page is watching it
+    sources.add(id);
+  }
+  let asked = 0;
+  for (const id of sources) {
+    let response: Response;
+    try {
+      response = await refresh(upstreamJobId(id));
+    } catch {
+      continue;
+    }
+    asked += 1;
+    if (response.status === 404) {
+      historyStore().recordStatus(id, { id, status: "failed", progress: 0, error: { code: "not_found", message: "the generation server no longer knows this job" } });
+      continue;
+    }
+    if (response.status !== 200) continue;
+    try {
+      const body = (await response.json()) as JobStatusResponse;
+      historyStore().recordStatus(id, { ...body, id });
+    } catch {
+      // not the contract's JSON: leave history as it was
+    }
+  }
+  return asked;
+}
+
 let running: Promise<number> | undefined;
 
 /**
@@ -54,10 +120,12 @@ let running: Promise<number> | undefined;
  * refuses for any other reason is failed in history with the server's message and leaves the line. Returns how many
  * were submitted.
  */
-export function submitDue(options: { readonly now?: Date; readonly submit?: Submit } = {}): Promise<number> {
+export function submitDue(options: { readonly now?: Date; readonly submit?: Submit; readonly refresh?: Refresh; readonly staleMs?: number } = {}): Promise<number> {
   if (running) return running;
   const run = (async () => {
     const submit = options.submit ?? submitToModel;
+    // BUG_009: hear from the model server about the sources the line waits on, browser or no browser
+    await refreshPendingSources({ ...(options.refresh === undefined ? {} : { refresh: options.refresh }), ...(options.staleMs === undefined ? {} : { staleMs: options.staleMs }), ...(options.now === undefined ? {} : { now: options.now }) });
     let count = 0;
     // STORY_043: an extension whose source will never finish leaves the line with the reason
     for (const entry of waiting()) {

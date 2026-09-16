@@ -53,10 +53,12 @@ export interface HistoryEntry {
   readonly referenceFiles?: readonly ReferenceFile[];
   /** STORY_041: a request that waited in the app's queue keeps its id; once submitted, the model server's job id lives here. */
   readonly jobId?: string;
+  /** BUG_009: when the status was last heard from the model server (or set by the app) — the runner asks again only when this is stale. */
+  readonly statusAt?: string;
   readonly error?: JobError;
   readonly result?: JobResult;
 }
-export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "overlap" | "pinned" | "pinnedAt" | "archived" | "archivedAt" | "projectId" | "starred" | "referenceFiles" | "jobId" | "prompt" | "params" | "referenceImages">>;
+export type HistoryPatch = Partial<Pick<HistoryEntry, "status" | "progress" | "finishedAt" | "openedAt" | "error" | "result" | "title" | "overlap" | "pinned" | "pinnedAt" | "archived" | "archivedAt" | "projectId" | "starred" | "referenceFiles" | "jobId" | "statusAt" | "prompt" | "params" | "referenceImages">>;
 
 const TERMINAL: ReadonlySet<JobStatus> = new Set(["done", "failed", "cancelled"]);
 const TITLE_MAX = 48;
@@ -122,7 +124,7 @@ export class HistoryStore {
     return next;
   }
 
-  /** Record a status response from the generation server; sets finishedAt the first time a terminal status arrives. */
+  /** Record a status response from the generation server; sets finishedAt the first time a terminal status arrives; stamps statusAt (BUG_009). */
   recordStatus(id: string, status: JobStatusResponse): HistoryEntry | undefined {
     const current = this.get(id);
     if (!current) return undefined;
@@ -130,6 +132,7 @@ export class HistoryStore {
     const terminal = TERMINAL.has(status.status);
     return this.patch(id, {
       status: status.status,
+      statusAt: new Date().toISOString(),
       progress: Math.max(current.progress, status.progress),
       ...(status.error ? { error: status.error } : {}),
       ...(status.result ? { result: status.result } : {}),
