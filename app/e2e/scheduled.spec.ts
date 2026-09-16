@@ -65,7 +65,10 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     const timed = page.waitForResponse((r) => r.url().includes(`/api/queue/${second}`) && r.request().method() === "PATCH");
     await page.getByLabel("Run at time for Second in line").fill(`${String(inAnHour.getFullYear())}-${pad(inAnHour.getMonth() + 1)}-${pad(inAnHour.getDate())}T${pad(inAnHour.getHours())}:${pad(inAnHour.getMinutes())}`);
     expect((await timed).ok()).toBe(true);
-    await expect(rows.nth(0)).toContainText(`Not before ${pad(inAnHour.getHours())}:${pad(inAnHour.getMinutes())}`);
+    // CHORE_013: from 23:00 on the browser's clock (UTC in the gate container) an hour ahead is tomorrow and the row reads "Not before Sep 17, 00:43" (the date form), so the
+    // date is not asserted — only the label and the clock time, which both forms carry
+    await expect(rows.nth(0)).toContainText("Not before ");
+    await expect(rows.nth(0)).toContainText(`${pad(inAnHour.getHours())}:${pad(inAnHour.getMinutes())}`);
     // the stub freed: the untimed one goes on the next poll and finishes; the timed one still waits
     const firstDone = waitForTerminalStatus(page, { id: first, timeout: 30_000 });
     await stubApi.busy(false);
