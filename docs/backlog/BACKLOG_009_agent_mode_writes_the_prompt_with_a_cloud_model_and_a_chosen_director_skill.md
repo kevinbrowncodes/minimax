@@ -38,6 +38,78 @@ STORY_044 (Send all, for chains), CHORE_012 (the skill format and the first dire
 - **The multi-script director is in this epic**, after the single-clip path works: photo → one anchor with no pose in it + N scripts in the `[0:00-` convention → Send all (STORY_044); a second folder under `agents/skills/` (`minimax-h3-director-thirst-trap-chain` or the family's next name).
 - **The model id is taken from Vertex's model list at spike time** — the spike lists the Gemini Flash models available on the owner's project and region and the story pins the newest Flash.
 
+## UI — as agreed with the owner on 2026-09-16 (Option D of the map, revised with Google Flow's agent)
+
+Non-destructive to the reference: one chip and two icons **added** in the composer's left slot; the right-hand pill, `+ › Skills`, Management › Skills and Management › Agents keep their reference meaning; nothing of agent.minimax.io's is removed.
+
+**The composer, Agent off** — exactly today's composer, plus the dim chip:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────────┐
+│ [+ Reference]                                                                                 │
+│ ● video-creator   ▏Enter message... (use / for commands)                                      │
+├──────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [+]  [◎ Agent]  [MiniMax-H3 ⌄]  [▭ 16:9 │ 768P │ ◷ 5s]            MiniMax-M3 ⌄  [Run at…]  [↑] │
+└──────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**The composer, Agent on** — the chip filled and naming the skill, two icons beside it, the pill naming the agent's model:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ [01.jpg ×]                                                                                        │
+│ ● video-creator   ▏What do you want to create?  (notes for the agent, or nothing)                 │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [+]  [◉ Agent · Thirst trap ⌄] [≡] [⚙]  [MiniMax-H3 ⌄] [16:9 │ 768P │ 5s]   Gemini Flash ⌄ [Run at…] [↑] │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+         │                         │   └─ Agent settings (panel)
+         │                         └───── Agent instructions (panel)
+         ▼ the chip's menu: the skill
+   ┌──────────────────────────────────┐
+   │ Skills                           │
+   │ ● Thirst trap director   H3    ✓ │
+   │ ○ Chain director        (next)   │
+   │ ──────────────────────────────── │
+   │ ⚙ Manage skills                  │
+   └──────────────────────────────────┘
+```
+
+Send with Agent on → the box shows the agent's status ("Thinking…") and Send becomes Stop → the reply comes back **into the box for review** (Confirm before generating: Always) or goes **straight to a job** (Never); a refusal or a failed format check shows where the prompt would be and nothing is queued; a chain reply (full-format segments) shows the chain strip and Send all as STORY_044 does. Below Send: "≈ 50 min on the Spark".
+
+**Agent instructions** (right-hand panel, from the ≡ icon — Flow's panel, ours to store): persistent guidelines sent after the skill on every run while toggled on; with a reference image they are the saved scenes and characters.
+
+```
+┌ ← Agent instructions ─────────────────────────────────────────────────────┐
+│ [on ] Studio · sequin curtain                                        🗑   │
+│       [01.jpg]  + Reference                                               │
+│       A fit young man in his early twenties … the camera on a tripod.     │
+│ [off] Bathroom · blue wall                                           🗑   │
+│       [01.jpeg] + Reference                                               │
+│       A fit young man in his mid-twenties … the camera on a tripod.       │
+│ [on ] House rule                                                     🗑   │
+│       + Reference                                                         │
+│       The camera stays completely fixed unless the script moves it.       │
+│ + Add instruction                                                         │
+│                                                                    [Done] │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+**Agent settings** (right-hand panel, from the ⚙ icon — Flow's panel, ours to store):
+
+```
+┌ ← Agent settings ─────────────────────────────────────────────────────────┐
+│ Confirm before generating                                                 │
+│  ● Always   Agent will ask for confirmation before generating media.      │
+│  ○ Never    Agent will generate media and use the Spark automatically.    │
+│ Video generation default                                                  │
+│  Draws  [x1] x2 x3 x4                                    (a later story)  │
+│  Model  Gemini Flash · Vertex AI                                          │
+│                                                                    [Save] │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+**Management › Skills** lists the folders under `agents/skills/` (name, description, the `metadata` model / checkpoint / verified-on from each `SKILL.md`); `+ › Skills` picks the one the agent uses — both the reference's meaning of those surfaces. The `{{idea}}` snippets (Short-to-script, Loop) become a Templates section there or are retired — the owner's call. **Management › Agents** stays the reference's inert tab. Narrow (390): the chip keeps its glyph and "Agent", the skill name moves into the menu's title; the two panels are full-width sheets.
+
 ## Open questions (for the epic)
 
 - Whether image input at 1376×768 needs downscaling for cost.
