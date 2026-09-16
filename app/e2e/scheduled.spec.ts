@@ -2,6 +2,8 @@ import { expect, test } from "./fixtures/test";
 import { clearHistory, listHistory } from "./fixtures/history";
 import { waitForTerminalStatus } from "./fixtures/job";
 import { settled } from "./fixtures/settle";
+import { REFERENCE_IMAGE } from "./fixtures/upload";
+import { expectPlayable } from "./fixtures/video";
 
 /**
  * The queue (STORY_041): with the stub refusing creates as busy (as the adapter does at its open-job limit), two prompts
@@ -202,6 +204,78 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     await expect(page.getByRole("region", { name: "Done today" })).toContainText("and on it goes", { timeout: 15_000 });
     if (narrow) await expect(page.getByTestId("scheduled-page")).toBeVisible();
     for (const id of [ext.id, src.id]) await request.delete(`/api/history/${id}`);
+    expect(await stubApi.openJobs()).toEqual([]);
+  });
+
+  test("one image and three scripts go out in one Send and run as a chain (STORY_044)", async ({ page, request, stubApi }, testInfo) => {
+    test.slow(); // three jobs of three polls each, one after another, with the runner's stale window between them
+    const narrow = testInfo.project.name === "narrow";
+    await page.goto("/?script=done-after-3-polls");
+    await settled(page);
+    await page.getByRole("button", { name: /Video generation/ }).click();
+    await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
+    // the scene, then three scripts in the owner's convention; 5 s (the default) is the shortest chain
+    const scene = "A red kite over a windy beach at golden hour.";
+    const scripts = ["[0:00-0:02] The kite climbs.\n[0:02-0:05] It steadies against the wind.", "[0:00-0:02] The kite turns.\n[0:02-0:05] It dips toward the sand.", "[0:00-0:02] The kite rises again.\n[0:02-0:05] It holds high and still."];
+    await page.getByRole("textbox", { name: "Message" }).fill(`${scene}\n\n${scripts.join("\n\n")}`);
+    const strip = page.getByTestId("chain-strip");
+    await expect(page.getByTestId("chain-summary")).toHaveText("3 segments · 5 s each · ≈ 16.5 s in all · overlap 1.6 s"); // 124 + 175 − 39 + 175 − 39 = 396 frames
+    await expect(strip.getByTestId("chain-row")).toHaveCount(3);
+    await expect(strip.getByTestId("chain-row").first()).toContainText("1 5 s from the image The kite climbs.");
+    await expect(strip.getByTestId("chain-row").nth(2)).toContainText("3 +5 s continues 2 The kite rises again.");
+    // every POST's answer is collected from before the click: three 202s, in order, each extension naming the id before it
+    const created: { id: string; position?: number }[] = [];
+    page.on("response", (r) => {
+      if (r.url().includes("/api/jobs") && r.request().method() === "POST" && r.status() === 202) void r.json().then((body: { id: string; position?: number }) => created.push(body));
+    });
+    await page.getByRole("button", { name: "Send all" }).click();
+    await expect.poll(() => created.length, { timeout: 15_000 }).toBe(3);
+    const [first, second, third] = created.map((c) => c.id) as [string, string, string];
+    expect(created[1]?.position).toBe(1);
+    expect(created[2]?.position).toBe(2);
+    await expect(page.getByTestId("toast")).toHaveText("Queued — 3 segments, ≈ 16.5 s");
+    await expect(page).toHaveURL(new RegExp(`/task/${third}$`)); // the last segment's page: the whole video's
+    await expect(page.getByTestId("indicator")).toContainText("Waiting — 2nd in line");
+    const history = await listHistory(request);
+    expect(history.find((e) => e.id === second)?.status).toBe("queued");
+    expect((await stubApi.jobs()).map((j) => j.id)).toEqual([first]); // only the first has reached the server
+    // Scheduled: one Running, two waiting in order, each after its source
+    const firstDone = waitForTerminalStatus(page, { id: first, timeout: 90_000 });
+    await page.goto("/scheduled");
+    await settled(page);
+    await expect(page.getByRole("region", { name: "Running" })).toContainText("The kite climbs.");
+    const rows = page.getByTestId("waiting-row");
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText("The kite turns.");
+    await expect(rows.nth(0)).toContainText("Waiting · after");
+    await expect(rows.nth(1)).toContainText("The kite rises again.");
+    // the first finishes, the second goes and finishes, the third goes and finishes — each terminal waited on
+    expect((await firstDone).status).toBe("done");
+    const secondDone = waitForTerminalStatus(page, { id: second, timeout: 90_000 });
+    expect((await secondDone).status).toBe("done");
+    const thirdDone = waitForTerminalStatus(page, { id: third, timeout: 90_000 });
+    expect((await thirdDone).status).toBe("done");
+    await expect(page.getByRole("region", { name: "Waiting" })).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Done today" })).toContainText("The kite rises again.", { timeout: 15_000 });
+    // each extension went up naming the segment before it
+    const secondEntry = (await (await request.get(`/api/history/${second}`)).json()) as { jobId?: string; continuesFrom?: { id: string } };
+    const thirdEntry = (await (await request.get(`/api/history/${third}`)).json()) as { jobId?: string; continuesFrom?: { id: string } };
+    expect(secondEntry.continuesFrom?.id).toBe(first);
+    expect(thirdEntry.continuesFrom?.id).toBe(second);
+    expect((await stubApi.received(secondEntry.jobId ?? "")).request.continueFrom).toBe(first);
+    expect((await stubApi.received(thirdEntry.jobId ?? "")).request.continueFrom).toBe(secondEntry.jobId);
+    // the scene with every segment; the first went multipart (the image), and FormData writes a field's newlines as CRLF
+    expect((await stubApi.received(first)).request.prompt.replace(/\r\n/g, "\n")).toBe(`${scene}\n\n${scripts[0] ?? ""}`);
+    expect((await stubApi.received(thirdEntry.jobId ?? "")).request.prompt).toBe(`${scene}\n\n${scripts[2] ?? ""}`);
+    // the third segment's page holds the result, named after the segment before it
+    await page.goto(`/task/${third}`);
+    await settled(page);
+    await expect(page.getByTestId("continues")).toContainText("Continues The kite turns.");
+    // reopened, the result is the file card (task-page@1440); Open preview plays it
+    await page.getByTestId("result-card").getByRole("button", { name: "Open preview" }).click();
+    await expectPlayable(page.getByTestId("result-video"), `/api/jobs/${third}/result`);
+    if (narrow) await expect(page.getByTestId("composer")).toBeVisible();
+    for (const id of [third, second, first]) await request.delete(`/api/history/${id}`);
     expect(await stubApi.openJobs()).toEqual([]);
   });
 

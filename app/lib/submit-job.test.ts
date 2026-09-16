@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { initialComposer, reduceComposer, type ComposerImage, type ComposerState } from "./composer-state";
 import type { Capabilities } from "./job-api";
-import { buildJobRequest, submitJob } from "./submit-job";
+import { buildJobRequest, submitChain, submitJob } from "./submit-job";
 
 const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["16:9"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 } };
 const typed = (): ComposerState => reduceComposer(reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: caps }), { type: "enter-video-mode" }), { type: "text", text: " A boat " });
@@ -78,5 +78,60 @@ describe("submitJob", () => {
     expect(await submitJob(typed(), bare503)).toMatchObject({ ok: false, status: 503, message: /busy/ });
     const down = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
     expect(await submitJob(typed(), down)).toMatchObject({ ok: false, status: 0, message: /could not be reached/ });
+  });
+});
+
+describe("a chain's segments (STORY_044)", () => {
+  const chainCaps: Capabilities = { ...caps, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 } };
+  const ready = (): ComposerState => reduceComposer(reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: chainCaps }), { type: "enter-video-mode" }), { type: "text", text: "Scene\n[0:00-0:03] one\n[0:00-0:03] two" });
+
+  it("buildJobRequest with a segment: the segment's prompt, its images for the first, continueFrom + overlapFrames and no images for an extension", () => {
+    const withImage = reduceComposer(ready(), { type: "add-images", images: [img] });
+    const first = buildJobRequest(withImage, { prompt: "Scene\n\n[0:00-0:03] one", images: withImage.images, notBefore: "2026-09-16T20:00:00.000Z" });
+    expect(first.init.body).toBeInstanceOf(FormData);
+    expect((first.init.body as FormData).get("prompt")).toBe("Scene\n\n[0:00-0:03] one");
+    expect((first.init.body as FormData).get("notBefore")).toBe("2026-09-16T20:00:00.000Z");
+    expect((first.init.body as FormData).get("continueFrom")).toBeNull();
+    const next = buildJobRequest(withImage, { prompt: "Scene\n\n[0:00-0:03] two", continueFrom: "j1" });
+    expect(next.init.body).toBe(JSON.stringify({ prompt: "Scene\n\n[0:00-0:03] two", ratio: "16:9", resolution: "768P", durationSeconds: 5, model: "minimax-h3", continueFrom: "j1", overlapFrames: 39 }));
+  });
+
+  it("submitChain posts in order, each continueFrom the id just answered, the first with the images and the run-at", async () => {
+    const state = reduceComposer(reduceComposer(ready(), { type: "add-images", images: [img] }), { type: "not-before", notBefore: "2026-09-16T20:00:00.000Z" });
+    const bodies: unknown[] = [];
+    let n = 0;
+    const fetchImpl = vi.fn((_url: RequestInfo | URL, init?: RequestInit) => {
+      const body = init?.body;
+      bodies.push(body instanceof FormData ? Object.fromEntries([...body.entries()].filter(([k]) => k !== "referenceImage")) : JSON.parse(typeof body === "string" ? body : "{}"));
+      n += 1;
+      return Promise.resolve(new Response(JSON.stringify({ id: `j${String(n)}`, status: "queued", progress: 0, ...(n > 1 ? { position: n - 1 } : {}) }), { status: 202, headers: { "content-type": "application/json" } }));
+    }) as unknown as typeof fetch;
+    const result = await submitChain(state, ["Scene\n\n[0:00-0:03] one", "Scene\n\n[0:00-0:03] two", "Scene\n\n[0:00-0:03] three"], fetchImpl);
+    expect(result).toEqual({ ok: true, ids: ["j1", "j2", "j3"] });
+    expect(bodies[0]).toMatchObject({ prompt: "Scene\n\n[0:00-0:03] one", notBefore: "2026-09-16T20:00:00.000Z" });
+    expect(bodies[0]).not.toHaveProperty("continueFrom");
+    expect(bodies[1]).toMatchObject({ prompt: "Scene\n\n[0:00-0:03] two", continueFrom: "j1", overlapFrames: 39 });
+    expect(bodies[1]).not.toHaveProperty("notBefore");
+    expect(bodies[2]).toMatchObject({ continueFrom: "j2" });
+    // the first went multipart (the image), the rest JSON
+    const inits = vi.mocked(fetchImpl).mock.calls.map((c) => c[1]?.body);
+    expect(inits[0]).toBeInstanceOf(FormData);
+    expect(typeof inits[1]).toBe("string");
+  });
+
+  it("submitChain in extend mode makes the first segment an extension of the source; a refusal stops the sequence and says which segment", async () => {
+    const extending = reduceComposer(ready(), { type: "extend-from", source: { id: "src", title: "26-09-16-1100", durationSeconds: 5, ratio: "16:9", resolution: "768P", model: "minimax-h3", posterUrl: "" } });
+    let n = 0;
+    const fetchImpl = vi.fn(() => {
+      n += 1;
+      if (n === 3) return Promise.resolve(new Response(JSON.stringify({ error: { code: "unsupported_option", message: "the video is 31 s long; the Spark extends videos up to 30 s", field: "continueFrom" } }), { status: 400, headers: { "content-type": "application/json" } }));
+      return Promise.resolve(new Response(JSON.stringify({ id: `j${String(n)}`, status: "queued", progress: 0, position: n }), { status: 202, headers: { "content-type": "application/json" } }));
+    }) as unknown as typeof fetch;
+    const result = await submitChain(extending, ["a", "b", "c", "d"], fetchImpl);
+    expect(result).toEqual({ ok: false, sent: ["j1", "j2"], index: 2, message: "the video is 31 s long; the Spark extends videos up to 30 s", field: "continueFrom" });
+    expect(vi.mocked(fetchImpl).mock.calls).toHaveLength(3); // nothing after the refusal
+    const firstBody = vi.mocked(fetchImpl).mock.calls[0]?.[1]?.body;
+    const first = JSON.parse(typeof firstBody === "string" ? firstBody : "{}") as { continueFrom?: string };
+    expect(first.continueFrom).toBe("src");
   });
 });

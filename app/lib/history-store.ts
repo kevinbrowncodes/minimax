@@ -3,6 +3,7 @@
  * Entries are read from disk on every call (the file is small and one Next process writes it), so a reopened page
  * and the sidebar always see the latest state. HISTORY_FILE names the file; the app container mounts /data for it.
  */
+import { firstTimestampedLine } from "./chain";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -65,7 +66,9 @@ const TITLE_MAX = 48;
 
 /** The first 48 characters of the prompt at a word boundary, with an ellipsis when cut. */
 export function titleFor(prompt: string): string {
-  const clean = prompt.trim().replace(/\s+/g, " ");
+  // STORY_044: a script is named by its first timestamped line (the bracket dropped), so a chain's segments — each
+  // beginning with the same scene paragraph — read as their own beats rather than six copies of the scene
+  const clean = (firstTimestampedLine(prompt) ?? prompt).trim().replace(/\s+/g, " ");
   if (clean.length <= TITLE_MAX) return clean || "Unnamed Session";
   const cut = clean.slice(0, TITLE_MAX + 1);
   const boundary = cut.lastIndexOf(" ");

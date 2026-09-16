@@ -458,3 +458,136 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     expect(screen.queryByTestId("showcase")).not.toBeInTheDocument();
   });
 });
+
+describe("Composer — a chain from one text (STORY_044)", () => {
+  const scene = "A fit young man stands centre frame on a black studio floor.";
+  const s1 = "[0:00-0:03] From his standing stance, he draws his elbows back.\n[0:03-0:10] He holds.";
+  const s2 = "[0:00-0:03] He steps his left foot back slightly.\n[0:03-0:10] He holds the angle.";
+  const s3 = "[0:00-0:03] From the three-quarter angle, he squats.\n[0:03-0:10] He stands tall.";
+  const three = `${scene}\n\n${s1}\n\n${s2}\n\n${s3}`;
+  const type = (text: string) => { fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: text } }); };
+  const pick10s = () => { fireEvent.click(screen.getByRole("button", { name: /^Video parameters:/ })); fireEvent.click(screen.getByRole("radio", { name: "10s" })); fireEvent.keyDown(window, { key: "Escape" }); };
+
+  it("two or more [0:00- scripts show the strip with the segments and the length in all; one script or none shows nothing and Send stays Send", async () => {
+    await renderReady();
+    type(`${scene}\n\n${s1}`);
+    expect(screen.queryByTestId("chain-strip")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send message" })).toBeEnabled();
+    type(three);
+    pick10s();
+    const strip = screen.getByTestId("chain-strip");
+    expect(screen.getByTestId("chain-summary")).toHaveTextContent("3 segments · 10 s each · ≈ 31.4 s in all · overlap 1.6 s");
+    const rows = within(strip).getAllByTestId("chain-row");
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toHaveTextContent("1 10 s from the text From his standing stance, he draws his elbows back.");
+    expect(rows[1]).toHaveTextContent("2 +10 s continues 1 He steps his left foot back slightly.");
+    expect(rows[2]).toHaveTextContent("3 +10 s continues 2 From the three-quarter angle, he squats.");
+    expect(screen.queryByRole("button", { name: "Send message" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send all" })).toBeEnabled();
+    // the strip's Overlap changes the arithmetic and what every extension will carry
+    fireEvent.click(within(strip).getByRole("radio", { name: "2.3 s" }));
+    expect(screen.getByTestId("chain-summary")).toHaveTextContent("overlap 2.3 s");
+    type("just one prompt");
+    expect(screen.queryByTestId("chain-strip")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send message" })).toBeEnabled();
+  });
+
+  it("over the cap the summary names the segments that would not run, their rows are greyed and Send all is disabled; a script longer than the chosen length says so", async () => {
+    await renderReady();
+    type(`${scene}\n\n${s1}\n\n${s2}\n\n${s3}\n\n${s1}`);
+    pick10s();
+    expect(screen.getByTestId("chain-summary")).toHaveTextContent("4 segments · 10 s each · ≈ 42.0 s in all · overlap 1.6 s — the Spark extends videos up to 30 s: segment 4 would not run");
+    const rows = screen.getAllByTestId("chain-row");
+    expect(rows[3]).toHaveAttribute("data-fits", "false");
+    expect(rows[3]).toHaveTextContent("would extend a 31.4 s video");
+    expect(rows[2]).toHaveAttribute("data-fits", "true");
+    expect(screen.getByRole("button", { name: "Send all" })).toBeDisabled();
+    // at the default 5 s a script whose last timestamp is 0:10 is flagged
+    type(`${scene}\n\n${s1}\n\n${s2}`);
+    fireEvent.click(screen.getByRole("button", { name: /^Video parameters:/ }));
+    fireEvent.click(screen.getByRole("radio", { name: "5s" }));
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.getAllByTestId("chain-row")[1]).toHaveTextContent("ends at 0:10 — longer than 5 s");
+    expect(screen.getByRole("button", { name: "Send all" })).toBeEnabled();
+  });
+
+  it("Send all posts the segments in order — the first with the image, each next continuing the id just answered — toasts the count and opens the last segment's page", async () => {
+    const bodies: unknown[] = [];
+    let n = 0;
+    const fetchImpl = fetchWith((init) => {
+      const body = init?.body;
+      bodies.push(body instanceof FormData ? Object.fromEntries([...body.entries()].filter(([k]) => k !== "referenceImage")) : JSON.parse(typeof body === "string" ? body : "{}"));
+      n += 1;
+      return json({ id: `j${String(n)}`, status: "queued", progress: 0, ...(n > 1 ? { position: n - 1 } : {}) }, 202);
+    });
+    const notify = vi.fn();
+    render(
+      <ShellContext.Provider value={{ workAreaOpen: false, toggleWorkArea: () => undefined, previewOpen: false, openPreview: () => undefined, closePreview: () => undefined, pageActions: undefined, setPageActions: () => undefined, toast: undefined, notify, clearToast: () => undefined }}>
+        <Composer fetchImpl={fetchImpl} />
+      </ShellContext.Provider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled();
+    });
+    const input = screen.getByTestId("reference-input");
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [new File(["png"], "a.png", { type: "image/png" })] } });
+      await Promise.resolve();
+    });
+    type(three);
+    pick10s();
+    expect(screen.getAllByTestId("chain-row")[0]).toHaveTextContent("from the image");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send all" }));
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith("/task/j3");
+    });
+    expect(bodies).toHaveLength(3);
+    expect(bodies[0]).toMatchObject({ prompt: `${scene}\n\n${s1}`, durationSeconds: "10" });
+    expect(bodies[0]).not.toHaveProperty("continueFrom");
+    expect(bodies[1]).toMatchObject({ prompt: `${scene}\n\n${s2}`, continueFrom: "j1", overlapFrames: 39, durationSeconds: 10 });
+    expect(bodies[2]).toMatchObject({ prompt: `${scene}\n\n${s3}`, continueFrom: "j2" });
+    expect(vi.mocked(fetchImpl).mock.calls.filter((c) => typeof c[0] === "string" && c[0].startsWith("/api/jobs"))).toHaveLength(3);
+    expect(notify).toHaveBeenCalledWith("Queued — 3 segments, ≈ 31.4 s");
+  });
+
+  it("a refusal at the third post keeps the two accepted segments, names the third in the error, and leaves the composer extending the second with the scene and the unsent script", async () => {
+    let n = 0;
+    await renderReady(() => {
+      n += 1;
+      if (n === 3) return json({ error: { code: "validation", message: "prompt is too long", field: "prompt" } }, 400);
+      return json({ id: `j${String(n)}`, status: "queued", progress: 0, position: n }, 202);
+    });
+    type(three);
+    pick10s();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send all" }));
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("Segment 3 was not sent: prompt is too long");
+    });
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByTestId("continuation")).toHaveAttribute("data-pending", "true");
+    expect(screen.getByTestId("continuation")).toHaveTextContent("Continues · 20.8 s (not finished yet");
+    expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue(`${scene}\n\n${s3}`);
+    expect(screen.queryByTestId("chain-strip")).not.toBeInTheDocument(); // one script left: a plain extension, Send as today
+    expect(screen.getByRole("button", { name: "Send message" })).toBeEnabled();
+  });
+
+  it("in extend mode every segment is an extension and the first row continues the source by its stamp", async () => {
+    render(<Composer fetchImpl={fetchWith(() => json({ id: "j2", status: "queued", progress: 0 }, 202))} variant="docked" extend={{ ...source, title: "26-09-16-1100", durationSeconds: 5 }} onStopExtending={vi.fn()} />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^Video parameters:/ })).toBeEnabled();
+    });
+    type(`${s1}\n\n${s2}`);
+    const rows = screen.getAllByTestId("chain-row");
+    expect(rows[0]).toHaveTextContent("1 +10 s continues 26-09-16-1100 From his standing stance");
+    expect(rows[1]).toHaveTextContent("2 +10 s continues 1 He steps his left foot back");
+    expect(screen.getByTestId("chain-summary")).toHaveTextContent("2 segments · +10 s each · ≈ 26.4 s in all · overlap 1.6 s");
+    expect(screen.getByRole("button", { name: "Send all" })).toBeEnabled();
+  });
+});

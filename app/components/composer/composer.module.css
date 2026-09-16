@@ -593,3 +593,90 @@
   color: var(--icon_default_tertiary);
   font-size: 20px;
 }
+
+/* STORY_044: the chain strip under the box — the continuation tile's type and colours (STORY_016), one row per script */
+.chain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_8);
+  padding: var(--spacing_8) 0 0;
+  border-top: 1px solid var(--border_default);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text_default_secondary);
+}
+.chainSummary {
+  margin: 0;
+  color: var(--text_default_primary);
+  font-weight: 500;
+}
+.chainRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_4);
+}
+.chainRow {
+  display: grid;
+  grid-template-columns: 20px 44px auto minmax(0, 1fr);
+  column-gap: var(--spacing_8);
+  align-items: baseline;
+}
+.chainRowUnfit {
+  opacity: 0.5;
+}
+.chainNum {
+  color: var(--text_default_primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.chainLen {
+  color: var(--text_default_primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.chainFrom {
+  white-space: nowrap;
+}
+.chainWords {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chainWarn {
+  grid-column: 3 / -1;
+  padding: 0 var(--spacing_4);
+  border-radius: var(--radius_4);
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--text_default_primary);
+  white-space: normal;
+}
+.chainOverlap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_4);
+}
+/* Send all: the round Send grows into a pill with its label; the arrow stays */
+.sendAll {
+  width: auto;
+  padding: 0 var(--spacing_12) 0 var(--spacing_12);
+  gap: var(--spacing_4);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+@media (max-width: 899px) {
+  /* narrow (390): the words stack under the number; the summary line wraps */
+  .chainRow {
+    grid-template-columns: 20px 44px auto;
+  }
+  .chainWords {
+    grid-column: 2 / -1;
+    white-space: normal;
+  }
+  .chainWarn {
+    grid-column: 2 / -1;
+  }
+}

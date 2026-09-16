@@ -109,7 +109,7 @@ export function extensionOf(caps: Capabilities | undefined): ExtensionCapabiliti
   return caps?.extension ?? DEFAULT_EXTENSION;
 }
 /** The most an extension step may add with this overlap: the server's range, cut by the model's frame ceiling. */
-function maxAdded(caps: Capabilities | undefined, overlapFrames: number): number {
+export function maxAdded(caps: Capabilities | undefined, overlapFrames: number): number {
   const ext = extensionOf(caps);
   return Math.min(ext.durationsSeconds.max, maxAddedSeconds(overlapFrames, ext.durationsSeconds.max));
 }
@@ -179,8 +179,10 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
       return { ...state, extend: undefined, images: [], model: caps?.models[0]?.id ?? "", resolution: caps?.resolutions[0] ?? "", ratio: caps?.ratios.includes(DEFAULT_RATIO) === false ? (caps.ratios[0] ?? DEFAULT_RATIO) : DEFAULT_RATIO, durationSeconds: clampDuration(DEFAULT_DURATION, caps, undefined), overlapFrames: extensionOf(caps).overlapFrames.default, error: undefined };
     }
     case "overlap": {
-      if (!state.extend) return state;
+      // STORY_044: outside extend mode the overlap is the chain strip's — it applies to every extension the chain will
+      // post; the first clip's own length is not clamped by it (the plan caps each extension's step itself)
       const overlapFrames = clampOverlap(action.overlapFrames, state.capabilities);
+      if (!state.extend) return state.overlapFrames === overlapFrames ? state : { ...state, overlapFrames };
       return { ...state, overlapFrames, durationSeconds: clampDuration(state.durationSeconds, state.capabilities, overlapFrames) };
     }
     case "add-images": {

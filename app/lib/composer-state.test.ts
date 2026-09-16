@@ -153,16 +153,21 @@ describe("extend mode (STORY_016, STORY_017)", () => {
     expect(canSend(reduceComposer(s, { type: "text", text: "next" }))).toBe(true);
   });
 
-  it("the overlap changes only while extending, re-clamps the duration, and clear-extend / leave-video-mode restore the normal composer", () => {
+  it("the overlap re-clamps the duration while extending and is kept as the chain strip's outside it (STORY_044); clear-extend / leave-video-mode restore the normal composer", () => {
     const s = reduceComposer(ready(), { type: "extend-from", source });
     expect(reduceComposer(s, { type: "overlap", overlapFrames: 22 })).toMatchObject({ overlapFrames: 22 });
     expect(durationOptions(reduceComposer(s, { type: "overlap", overlapFrames: 22 }))).toEqual([4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
     expect(durationOptions(reduceComposer(s, { type: "overlap", overlapFrames: 56 }))).toEqual([4, 5, 6, 7, 8, 9, 10, 11, 12]);
     const long = reduceComposer(reduceComposer(s, { type: "overlap", overlapFrames: 22 }), { type: "duration", durationSeconds: 14 });
     expect(reduceComposer(long, { type: "overlap", overlapFrames: 56 })).toMatchObject({ overlapFrames: 56, durationSeconds: 12 });
+    // STORY_044: outside extend mode the overlap is the chain strip's — kept, the first clip's length untouched
+    const fresh = reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: caps }), { type: "duration", durationSeconds: 10 });
+    expect(reduceComposer(fresh, { type: "overlap", overlapFrames: 56 })).toMatchObject({ overlapFrames: 56, durationSeconds: 10, extend: undefined });
     expect(reduceComposer(s, { type: "overlap", overlapFrames: 30 }).overlapFrames).toBe(39);
     const plain = ready();
-    expect(reduceComposer(plain, { type: "overlap", overlapFrames: 22 })).toBe(plain);
+    // an overlap the server does not offer is snapped to one it does (39 stays 39: the same state object); the chain strip may set a real one outside extend mode (STORY_044)
+    expect(reduceComposer(plain, { type: "overlap", overlapFrames: 30 })).toBe(plain);
+    expect(reduceComposer(plain, { type: "overlap", overlapFrames: 22 })).toMatchObject({ overlapFrames: 22, extend: undefined, durationSeconds: 5 });
     expect(reduceComposer(plain, { type: "clear-extend" })).toBe(plain);
     expect(overlapOptions(plain)).toEqual([]);
     const cleared = reduceComposer(reduceComposer(s, { type: "overlap", overlapFrames: 22 }), { type: "clear-extend" });

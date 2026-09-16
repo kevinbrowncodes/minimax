@@ -2,13 +2,15 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
 import Link from "next/link";
-import { canSend, durationOptions, initialComposer, modelLabel, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ExtendSource, type InitialRequest } from "@/lib/composer-state";
+import { canSend, durationOptions, extensionOf, initialComposer, maxAdded, modelLabel, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ExtendSource, type InitialRequest } from "@/lib/composer-state";
 import { formatNotBefore, toLocalInput } from "@/lib/queue-view";
 import { ordinal } from "@/lib/todo-steps";
 import { cx } from "@/lib/cx";
 import { overlapSeconds } from "@/lib/extend";
 import type { Capabilities } from "@/lib/job-api";
-import { submitJob } from "@/lib/submit-job";
+import { submitChain, submitJob } from "@/lib/submit-job";
+import { chainPlan, segmentPrompt, splitChain } from "@/lib/chain";
+import { ChainStrip, type ChainStart } from "./ChainStrip";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
 import { AgentModelMenu, AttachMenu } from "./ComposerMenus";
 import { EnvDialog } from "./EnvDialog";
@@ -208,6 +210,30 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
       return;
     }
     dispatch({ type: "submit-start" });
+    if (chain !== undefined && plan !== undefined) {
+      if (!plan.fits) {
+        dispatch({ type: "submit-end" });
+        return;
+      }
+      // STORY_044: Send all — the segments one after another, each an extension of the id just answered; the last page is the whole video's
+      const prompts = chain.segments.map((script) => segmentPrompt(chain.scene, script));
+      const sent = await submitChain(state, prompts, doFetch);
+      if (sent.ok) {
+        notify(`Queued — ${String(sent.ids.length)} segments, ≈ ${plan.totalSeconds.toFixed(1)} s`);
+        router.push(`/task/${encodeURIComponent(sent.ids[sent.ids.length - 1] ?? "")}`);
+        return;
+      }
+      // a refusal mid-way: the accepted segments stay in the line; the composer keeps the scene and the unsent scripts, in extend mode against the last accepted one (its pending tile), so Send all again continues the chain
+      const lastId = sent.sent[sent.sent.length - 1];
+      if (lastId !== undefined) {
+        const accepted = plan.segments[sent.sent.length - 1];
+        const title = await doFetch(`/api/history/${encodeURIComponent(lastId)}`).then(async (res) => (res.ok ? ((await res.json()) as { title?: string }).title : undefined)).catch(() => undefined);
+        dispatch({ type: "extend-from", source: { id: lastId, title: title ?? lastId.slice(0, 8), durationSeconds: accepted?.joinedSeconds ?? state.durationSeconds, ratio: state.ratio, resolution: state.resolution, model: state.model, posterUrl: `/api/jobs/${encodeURIComponent(lastId)}/poster`, pending: true } });
+        dispatch({ type: "text", text: [chain.scene, ...chain.segments.slice(sent.index)].filter((part) => part !== "").join("\n\n") });
+      }
+      dispatch({ type: "error", error: { message: `Segment ${String(sent.index + 1)} was not sent: ${sent.message}`, ...(sent.field === undefined ? {} : { field: sent.field }) } });
+      return;
+    }
     const result = await submitJob(state, doFetch);
     if (result.ok) {
       // STORY_041: a request that went into the line says where it stands; an Edit returns to the queue
@@ -228,6 +254,12 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const video = state.mode === "video" && videoEnabled;
   const caps = state.capabilities;
   const extending = state.extend;
+  // STORY_044: two or more "[0:00-" scripts in the text make a chain; the strip and Send all follow from the text alone
+  const split = video ? splitChain(state.text) : undefined;
+  const chain = split !== undefined && split.segments.length >= 2 ? split : undefined;
+  const ext = extensionOf(caps);
+  const plan = chain === undefined ? undefined : chainPlan(chain.segments, { seconds: state.durationSeconds, overlapFrames: state.overlapFrames, extensionMax: caps ? maxAdded(caps, state.overlapFrames) : ext.durationsSeconds.max, maxSourceSeconds: ext.maxSourceSeconds, ...(extending ? { fromSource: extending.durationSeconds } : {}) });
+  const chainStart: ChainStart = extending ? { kind: "source", title: extending.title } : state.images.length > 0 ? { kind: "image" } : { kind: "text" };
 
   return (
     <>
@@ -311,6 +343,9 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
             onKeyDown={onKeyDown}
           />
         </div>
+        {plan !== undefined ? (
+          <ChainStrip plan={plan} start={chainStart} maxSourceSeconds={ext.maxSourceSeconds} overlapFrames={state.overlapFrames} overlapOptions={ext.overlapFrames.options.map((frames) => ({ frames, label: `${overlapSeconds(frames)} s` }))} onOverlap={(overlapFrames) => { dispatch({ type: "overlap", overlapFrames }); }} />
+        ) : null}
         <div className={styles.bar}>
           <span style={{ position: "relative" }} data-popover="attach">
             <button type="button" className={styles.iconButton} aria-label="Add attachment" aria-haspopup="menu" aria-expanded={popover === "attach"} onClick={() => { setPopover(popover === "attach" ? undefined : "attach"); }}>+</button>
@@ -436,7 +471,8 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" /></svg>
               </button>
             ) : (
-              <button type="button" className={styles.send} aria-label="Send message" disabled={!canSend(state)} onClick={() => void send()}>
+              <button type="button" className={cx(styles.send, plan !== undefined && styles.sendAll)} aria-label={plan === undefined ? "Send message" : "Send all"} disabled={!canSend(state) || (plan !== undefined && !plan.fits)} onClick={() => void send()}>
+                {plan === undefined ? null : "Send all"}
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             )}

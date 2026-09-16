@@ -25,6 +25,11 @@ describe("titleFor", () => {
     expect(title).toBe("A small paper boat drifting across a rain puddle…");
     expect(titleFor("")).toBe("Unnamed Session");
   });
+  it("names a script by its first timestamped line, the bracket dropped, with or without a scene before it (STORY_044)", () => {
+    expect(titleFor("[0:00-0:03] He steps his left foot back slightly, pivoting into a right three-quarter stance.\n[0:03-0:07] He raises his right arm.")).toBe("He steps his left foot back slightly, pivoting…");
+    expect(titleFor("A fit young man stands centre frame on a black studio floor.\n\n[0:00-0:03] From his standing stance, he draws his elbows back.\nThe camera stays fixed.")).toBe("From his standing stance, he draws his elbows…");
+    expect(titleFor("A fit young man stands centre frame")).toBe("A fit young man stands centre frame");
+  });
 });
 
 describe("HistoryStore", () => {
