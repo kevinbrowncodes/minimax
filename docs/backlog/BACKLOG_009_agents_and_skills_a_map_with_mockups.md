@@ -198,3 +198,41 @@ What it costs over B: the Skills tab changes meaning (one story), and the snippe
 - Send all accepts full-format segments (each starts with `integrated_multimodal_description:`) and sends each unchanged, so the skill decides the camera (owner, 2026-09-16).
 - A format check runs before any straight-through send; a bad reply is a shown failure, not a queued job.
 - Every segment's prompt must come back clean before the first job is created; one refusal aborts the whole Send all.
+
+## 7. Google Flow's agent mode, item by item (2026-09-16 13:40)
+
+Read from the owner's Flow project through Claude in Chrome (labels quoted verbatim by it; one image generation was spent to see what a run produces). Each item judged by the same test — does it add on top of MiniMax's UI, or change something of theirs — and by the vision (photo → prompt → job, with the owner in control).
+
+| Flow | Verdict | Ours |
+| --- | --- | --- |
+| **Agent** chip, highlighted when on | Take | Option D's chip |
+| Agent on: the parameters pill is replaced by two icon buttons, **Agent instructions** and **Settings** | Take the icons, keep our pill | Two icon buttons appear beside the chip when it is on; the video parameters pill (16:9 · 768P · 5s) stays — the agent's prompt goes into a job with those parameters and Send all reads them |
+| **Agent instructions** panel: **+ Add instruction** → rows of {toggle "Toggle instruction active" (on by default), "Instruction title", "Delete instruction", **+ Reference** (an image from the project's assets: "Select reference image", search, All / Images / Characters / Avatars, "Upload media"), "Create a guideline for your agent"}; **Done** | **Take — decided** | Persistent guidelines sent after the skill on every run while toggled on. A guideline with a reference image is the **saved scene** (the set's photo + its scene paragraph) or a **character** the owner asked for on 2026-09-16 — reusable with no LLM. A right-hand panel opened from the chip's icon; ours; stored server-side like Skills (STORY_040's store pattern); MiniMax's surfaces untouched |
+| **Agent settings › Confirm before generating**: **Always** ("Agent will ask for confirmation before generating media") / **Never** ("Agent will generate media and spend credits automatically"); **Save** | **Take, in Flow's place and words — decided** (replaces the Settings-dialog switch decided earlier) | The review-vs-straight-through choice lives in an **Agent settings** panel opened from the chip's Settings icon: *Always* = the prompt comes back into the box for review; *Never* = straight to a job ("…use the Spark automatically"). Note: Flow's *Always* did not pause in the test; ours must — a job is 50 min of GPU |
+| Agent settings › **Image generation default** (ratio, x1–x4, model) | Leave | No image generation in scope |
+| Agent settings › **Video generation default**: ratio, **x1 / x2 / x3 / x4**, model | Take the count, **as a later story in this epic — decided** | Draws per prompt with fresh seeds — each draw a job, the queue runs them in turn (what the owner did by hand on 2026-09-16, two draws of the cove prompt). Ratio and model are the existing pill |
+| Placeholder "What do you want to create?"; an **Expand** button | Leave | The reference's placeholder stays |
+| Send → live status in the box ("Thinking…", "Defining Visual Goals"), Send becomes **Stop** | Take | The composer already turns Send into Stop while a job runs; an agent run shows its status in the box and Stop aborts the Gemini call |
+| A finished run produces media directly (two images for x2), no prompt to review | Take as the straight-through mode only | Review is the default (decided) |
+| Results labelled prompt · date · model · ratio, with download / re-run / delete | Have it | The task page and Assets (re-run = Retry) |
+| "Generating will use 0 credits" under the pill | Take the idea | "≈ N min on the Spark" under Send — the chain strip already knows the lengths |
+
+**Decided by the owner (13:45):** Confirm before generating lives in the Agent settings panel as Flow has it (not the Settings dialog); Agent instructions are guidelines + an optional reference image, toggleable, and double as saved scenes and characters; draws per prompt (x1–x4) is a later story in the epic.
+
+### Option D, revised with Flow's two icons
+
+```
+Agent on:
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ [01.jpg ×]                                                                                        │
+│ ● video-creator   ▏What do you want to create?                                                    │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [+]  [◎ Agent · Thirst trap ⌄] [≡] [⚙]  [MiniMax-H3 ⌄] [16:9 │ 768P │ 5s]   Gemini Flash ⌄ [Run at…] [↑] │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                  │    └─ Agent settings (right-hand panel): Confirm before generating ● Always ○ Never;
+                                  │       Video default: x1 x2 x3 x4 (later); Save
+                                  └─ Agent instructions (right-hand panel): + Add instruction → [on] Title · + Reference · guideline · 🗑 ; Done
+                                     e.g. [on] "Studio · sequin curtain" · [01.jpg] · "A fit young man… the camera on a tripod."
+                                          [off] "Bathroom · blue wall"  · [01.jpeg] · "A fit young man in his mid-twenties…"
+Agent off: the chip dim, the two icons gone, everything else as today.
+```
