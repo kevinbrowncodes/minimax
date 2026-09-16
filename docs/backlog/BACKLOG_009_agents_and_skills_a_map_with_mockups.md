@@ -1,4 +1,4 @@
-# BACKLOG_009 — Agents and skills: what the words mean today, and three ways the UI could put them together
+# BACKLOG_009 — Agents and skills: what the words mean today, and four ways the UI could put them together
 
 **Companion to** [BACKLOG_009](BACKLOG_009_agent_mode_writes_the_prompt_with_a_cloud_model_and_a_chosen_director_skill.md). Written 2026-09-16 for the owner, before the epic is drafted, because "skill" and "agent" each mean two things in this repo right now and the epic has to pick one meaning per word. Nothing here is built.
 
@@ -66,9 +66,9 @@ Management › Skills (the snippets) and Management › Agents (the reference's,
 └───────────────────────────────────────────┘        └─────────────────────┴─────────────────────────────┘
 ```
 
-## 4. After — the three options
+## 4. After — the four options
 
-### Option A — the reference's model: the pill picks the **agent**, Skills are the folders *(recommended)*
+### Option A — the reference's model: the pill picks the **agent**, Skills are the folders
 
 The pill becomes the agent picker; Management › Skills lists `agents/skills/`; `+ › Skills` picks which skill the agent uses; Management › Agents shows the Director as a real row.
 
@@ -148,9 +148,40 @@ Management › Skills and Agents as in Option A.
 
 The compact form of A: one pill, one menu, the skill nested under the agent. Slightly denser at 390.
 
+### Option D — Flow's Agent chip in MiniMax's chrome *(recommended, 2026-09-16 13:15 — the owner's steer after seeing Google Flow)*
+
+Google Flow's composer (screenshot by the owner, 2026-09-16): `+`, then an **Agent** chip that toggles agent mode on the same box, then the parameters pill (`Video · 720p · 8s · x1`) and Send — agent is a *modifier on the composer*, not another page. The reference's composer already has chips in that left slot (its mode chips; STORY_026 kept *Video generation H3*) and a tag row (*video-creator*, the project chip), so an Agent chip beside `+` is the same kind of element — a Departure of the kind already made for Run at… and Send all, small enough to keep or drop at the next re-clone. The right-hand pill keeps its *reference* meaning, the agent's **model**: `Gemini Flash ⌄` (Vertex) now, a Spark text model beside it if BACKLOG_006 ever lands — so a future re-clone lands on it unchanged.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────────┐
+│ [01.jpg ×]                                                                                    │
+│ ● video-creator   ▏What do you want to create?  (notes for the agent — or nothing)            │
+├──────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [+]  [◎ Agent · Thirst trap ⌄]  [MiniMax-H3 ⌄]  [16:9 │ 768P │ 5s]     Gemini Flash ⌄  [Run at…]  [↑] │
+└──────────────────────────────────────────────────────────────────────────────────────────────┘
+        │ off: the chip reads "Agent" (grey) and the composer is exactly today's
+        ▼ on: the chip is filled and names the skill; its menu picks the skill
+   ┌──────────────────────────────────┐
+   │ Skills                           │
+   │ ● Thirst trap director   H3    ✓ │
+   │ ○ Chain director        (next)   │
+   │ ──────────────────────────────── │
+   │ ⚙ Manage skills                  │
+   └──────────────────────────────────┘
+narrow (390): the chip keeps its glyph and "Agent"; the skill name moves into the menu's title
+```
+
+- **Agent chip off** → nothing about the composer changes (the review-mode composer after an agent reply is this state, with the prompt in the box).
+- **Agent chip on** → attach the photo, type notes or nothing, Send: the app sends the skill + references + image + notes to the model named on the pill; the reply fills the box for review (or goes straight to a job with the Setting); a refusal or a failed format check shows where the prompt would be and nothing is queued.
+- **The skill** is picked on the chip's menu (the folders under `agents/skills/`, from each `SKILL.md`; *Manage skills* opens Management › Skills, which lists the same folders with their metadata — the reference's meaning of that tab).
+- **The model** is picked on the pill, as in the reference; with one model it reads `Gemini Flash` and the menu has one row (the Thinking switch goes).
+- **Management › Agents** stays the reference's inert tab until personas are wanted; **the snippets** (Short-to-script, Loop) become a "Templates" section of the Skills tab or are retired — the owner's call.
+
+**Decided 2026-09-16 13:25 (owner): Option D, on the condition that it is non-destructive to the reference's UI — add on top, reuse what agent.minimax.io has, remove nothing, so that a future re-clone stays cheap.** Checked surface by surface: the Agent chip is an addition in a slot the reference already uses for chips; the right-hand pill keeps its reference meaning (the agent's model) with the model we actually run in place of the three cloud rows we cannot (STORY_026's rule); `+ › Skills` and Management › Skills return to their reference meaning (skills the agent follows); Management › Agents and every other surface are untouched. The only thing that changes is our own STORY_040 snippet stand-in.
+
 ## 5. Recommendation
 
-**Option A** (or C, which is A with a denser menu). Reasons:
+**Option D** — Flow's chip in MiniMax's chrome. It does what A does (one meaning per word; the model on the pill, as the reference has it; the folders on the Skills tab) and adds the visible **Agent** button the owner wants where Flow puts it, while every reference surface keeps its reference meaning — so the next re-clone of agent.minimax.io has one small chip to keep or drop and nothing to untangle. A's reasons carry over:
 
 1. It is the reference's own model and MiniMax's own vocabulary — no Departure to justify, and the recon already shows what each surface looks like.
 2. One meaning per word: an *agent* does the work (Director; later Critic; later a Spark text model), a *skill* says how (the folders). The repo layout `agents/skills/` already says this.
@@ -159,7 +190,7 @@ The compact form of A: one pill, one menu, the skill nested under the agent. Sli
 
 What it costs over B: the Skills tab changes meaning (one story), and the snippets need a home or a retirement (the owner's call; Short-to-script is superseded by the director skill anyway).
 
-**If the owner prefers B**, nothing in BACKLOG_009 breaks — the epic just names the folders "agents" in the UI and leaves the Skills tab alone; the spec, the validator and the folder layout are unaffected either way.
+**If the owner prefers A, B or C**, nothing in BACKLOG_009 breaks — the epic just names the folders "agents" in the UI and leaves the Skills tab alone; the spec, the validator and the folder layout are unaffected either way.
 
 ## 6. Settled regardless of the option
 
