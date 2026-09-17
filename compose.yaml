@@ -4,6 +4,8 @@
 #   app-dev   the same image running `next dev` with hot reload, on port 3000 for the owner's browser (profile "dev")
 #   app       the production image (app/Dockerfile) serving the built UI on port 3000       -> docker compose up -d app
 #   stub      the stub generation server (STORY_008) on the compose network, port 4010, no host port (profile "tools")
+#   gcloud    Google's CLI for the one-time Vertex AI setup (STORY_047): the owner's login persists under spark/data/gcloud,
+#             the service-account key lands under spark/data/secrets — both gitignored (profile "tools"; spark/gcloud/*.sh)
 #
 # Only one of app-dev / app runs at a time (both publish 3000). The model side is spark/comfyui/compose.yaml
 # (project "minimax-spark"); the UI reaches it through MODEL_BASE_URL only. Values come from the environment or a
@@ -63,8 +65,15 @@ services:
       MODEL_API_KEY: ${MODEL_API_KEY:-}
       HISTORY_FILE: /data/history.json
       PROJECTS_FILE: /data/projects.json
+      # STORY_047: Vertex AI for agent mode — the service-account key mounted read-only, the project/region/model from .env
+      # (or Settings › Environment variables, which wins). The photos and notes the agent is given go to Google.
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/vertex-sa.json
+      VERTEX_PROJECT: ${VERTEX_PROJECT:-}
+      VERTEX_LOCATION: ${VERTEX_LOCATION:-us-central1}
+      VERTEX_MODEL: ${VERTEX_MODEL:-}
     volumes:
       - app-data:/data
+      - ./spark/data/secrets:/secrets:ro
     networks: [default, minimax]
     restart: unless-stopped
 
@@ -80,6 +89,20 @@ services:
       HOME: /tmp/gate-home
       STUB_PORT: "4010"
       STUB_FIXTURE: ${STUB_FIXTURE:-mp4}
+
+  gcloud:
+    # Google's official CLI image, slim variant, pinned to the version and digest read from the registry on 2026-09-17 (STORY_047).
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:585.0.0-slim@sha256:0673a69a1e178abb079941b326e718aedf3f57bdf5343465e365d826472edd83
+    profiles: ["tools"]
+    user: "${SPARK_UID:-1000}:${SPARK_GID:-1000}"
+    entrypoint: ["gcloud"]
+    environment:
+      CLOUDSDK_CONFIG: /gcloud-config
+      HOME: /gcloud-config
+      CLOUDSDK_CORE_DISABLE_USAGE_REPORTING: "true"
+    volumes:
+      - ./spark/data/gcloud:/gcloud-config
+      - ./spark/data/secrets:/secrets
 
 volumes:
   pnpm-store: {}
