@@ -1,6 +1,6 @@
-# STORY_048 — Three photos go through Gemini Flash with the thirst-trap director, and what came back is written down
+# STORY_048 — The Gemini spike
 
-**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the second story; the spike every later story codes against. After [STORY_047](STORY_047_the_app_can_reach_vertex_ai_on_the_owners_gcp_project_and_no_secret_touches_the_repo_or_the_chat.md) (the credential)
+**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the second story; the spike every later story codes against. After [STORY_047](STORY_047_the_google_credential.md) (the credential)
 **Status:** Proposed (2026-09-17 03:20 EDT — drafted with 049–055 at the owner's request, "create all the stories now before we proceed"; from EPIC_009 as revised in aa7092d and the owner's answers of 00:50; nothing built)
 **Created:** 2026-09-17
 

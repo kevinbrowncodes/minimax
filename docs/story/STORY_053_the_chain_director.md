@@ -1,6 +1,6 @@
-# STORY_053 — The chain director writes a whole video, and Send all sends its segments unchanged
+# STORY_053 — The chain director
 
-**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the seventh story. After [STORY_052](STORY_052_agent_instructions_saved_scenes_characters_and_house_rules_the_director_follows_on_every_run.md) (a saved scene is the anchor this director keeps); extends [STORY_044](STORY_044_one_starting_frame_and_any_number_of_scripts_go_out_in_one_send.md) (Send all)
+**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the seventh story. After [STORY_052](STORY_052_agent_instructions.md) (a saved scene is the anchor this director keeps); extends [STORY_044](STORY_044_one_starting_frame_and_any_number_of_scripts_go_out_in_one_send.md) (Send all)
 **Status:** Proposed (2026-09-17 03:20 EDT — drafted with 048–055 at the owner's request; from EPIC_009 as revised in aa7092d — a full-format chain reply has no scene block, segment 1 opens with the instruction line, segments 2..N at the marker with no Picture, written for the extension's real 12.25 s, a title rule for full-format rows — and the owner's rule of 2026-09-16 (every segment clean before the first POST; one refusal aborts the whole Send all); nothing built)
 **Created:** 2026-09-17
 

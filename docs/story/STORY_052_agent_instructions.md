@@ -1,6 +1,6 @@
-# STORY_052 — Agent instructions: saved scenes, characters and house rules the director follows on every run
+# STORY_052 — Agent instructions
 
-**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the sixth story. After [STORY_051](STORY_051_agent_settings_the_prompt_goes_straight_to_a_job_when_confirmation_is_off.md); before [STORY_053](STORY_053_the_chain_director_writes_a_whole_video_and_send_all_sends_its_segments_unchanged.md), whose anchor is exactly what a saved scene carries
+**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the sixth story. After [STORY_051](STORY_051_confirm_before_generating.md); before [STORY_053](STORY_053_the_chain_director.md), whose anchor is exactly what a saved scene carries
 **Status:** Proposed (2026-09-17 03:20 EDT — drafted with 048–055 at the owner's request; from EPIC_009 as revised in aa7092d and the owner's decision of 2026-09-16 13:45 (Flow's Agent instructions: toggleable guidelines with an optional reference image, doubling as saved scenes and characters); nothing built)
 **Created:** 2026-09-17
 

@@ -1,6 +1,6 @@
-# STORY_049 — The server writes a prompt from a photo, a skill and notes, and says so when the model declines
+# STORY_049 — The director on the server
 
-**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the third story; the route every UI story calls. After [STORY_048](STORY_048_three_photos_go_through_gemini_flash_with_the_thirst_trap_director_and_what_came_back_is_written_down.md) (the spike, whose request shape, model id, safety settings and refusal wording this story codes against)
+**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the third story; the route every UI story calls. After [STORY_048](STORY_048_the_gemini_spike.md) (the spike, whose request shape, model id, safety settings and refusal wording this story codes against)
 **Status:** Proposed (2026-09-17 03:20 EDT — drafted with 048–055 at the owner's request; from EPIC_009 as revised in aa7092d; nothing built)
 **Created:** 2026-09-17
 

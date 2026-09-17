@@ -1,6 +1,6 @@
-# STORY_055 — One prompt becomes several draws with fresh seeds
+# STORY_055 — Draws per prompt
 
-**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the ninth and last story ("draws per prompt as a later story", the owner, 2026-09-16 13:45). After [STORY_054](STORY_054_management_skills_lists_the_director_skills_as_the_reference_means_it_and_keeps_the_snippets_as_templates.md)
+**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the ninth and last story ("draws per prompt as a later story", the owner, 2026-09-16 13:45). After [STORY_054](STORY_054_the_skills_tab.md)
 **Status:** Proposed (2026-09-17 03:20 EDT — drafted with 048–054 at the owner's request; from EPIC_009 as revised in aa7092d; nothing built)
 **Created:** 2026-09-17
 

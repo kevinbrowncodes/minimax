@@ -1,4 +1,4 @@
-# STORY_047 — The app can reach Vertex AI on the owner's GCP project, and no secret touches the repo or the chat
+# STORY_047 — The Google credential
 
 **Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the first story; the credential every later story calls Google with
 **Status:** Approved (2026-09-17 00:55 EDT — the owner: "Approve 047 now; I draft it and wait for your login"; the fresh project, caching deferred, Templates, metadata on the tab only, the original reply out of scope — his answers of 00:50); drafted for implementation, the build starting when he is at a terminal on the Spark with the project id

@@ -1,6 +1,6 @@
-# STORY_054 — Management › Skills lists the director skills as the reference means it, and keeps the snippets as templates
+# STORY_054 — The Skills tab
 
-**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the eighth story; the tidy-up once the chip's menu lists the folders. After [STORY_053](STORY_053_the_chain_director_writes_a_whole_video_and_send_all_sends_its_segments_unchanged.md) (two folders to list)
+**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the eighth story; the tidy-up once the chip's menu lists the folders. After [STORY_053](STORY_053_the_chain_director.md) (two folders to list)
 **Status:** Proposed (2026-09-17 03:20 EDT — drafted with 048–055 at the owner's request; from EPIC_009 as revised in aa7092d and the owner's answers of 00:50 — the `{{idea}}` snippets stay, under a **Templates** section; the skill's metadata shows on the Skills tab only; nothing built)
 **Created:** 2026-09-17
 

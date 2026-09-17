@@ -1,6 +1,6 @@
-# STORY_051 — Agent settings: the prompt goes straight to a job when confirmation is off
+# STORY_051 — Confirm before generating
 
-**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the fifth story; the owner's stated end state (photo → prompt → job, no one reading). After [STORY_050](STORY_050_the_agent_chip_turns_the_composer_into_a_director_you_talk_to_and_the_prompt_comes_back_for_review.md) (review mode, which stays the default)
+**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the fifth story; the owner's stated end state (photo → prompt → job, no one reading). After [STORY_050](STORY_050_the_agent_chip.md) (review mode, which stays the default)
 **Status:** Proposed (2026-09-17 03:20 EDT — drafted with 048–055 at the owner's request; from EPIC_009 as revised in aa7092d and the owner's decision of 2026-09-16 13:45 (Flow's *Confirm before generating* in an Agent settings panel, Always the default); nothing built)
 **Created:** 2026-09-17
 

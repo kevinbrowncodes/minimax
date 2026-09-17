@@ -1,6 +1,6 @@
-# STORY_050 — The Agent chip turns the composer into a director you talk to, and the prompt comes back for review
+# STORY_050 — The Agent chip
 
-**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the fourth story; the first the owner can use. After [STORY_049](STORY_049_the_server_writes_a_prompt_from_a_photo_a_skill_and_notes_and_says_so_when_the_model_declines.md) (the route and the fake this UI is built on)
+**Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — the fourth story; the first the owner can use. After [STORY_049](STORY_049_the_director_on_the_server.md) (the route and the fake this UI is built on)
 **Status:** Proposed (2026-09-17 03:20 EDT — drafted with 048–055 at the owner's request; from EPIC_009 as revised in aa7092d, the owner's answers of 00:50 (the chip's menu is name + description; metadata on the Skills tab only) and his answers to the review round (the chip disabled in extend mode with a reason; the run-without-a-job notice from the agent-runs store; a format miss warns in review); nothing built)
 **Created:** 2026-09-17
 
