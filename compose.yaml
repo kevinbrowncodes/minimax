@@ -6,6 +6,8 @@
 #   stub      the stub generation server (STORY_008) on the compose network, port 4010, no host port (profile "tools")
 #   gcloud    Google's CLI for the one-time Vertex AI setup (STORY_047): the owner's login persists under spark/data/gcloud,
 #             the service-account key lands under spark/data/secrets — both gitignored (profile "tools"; spark/gcloud/*.sh)
+#   agent-spike  the gate image with the Vertex key mounted read-only, for STORY_048's spike only (profile "tools";
+#             spark/gcloud/spike.sh) — the gate service itself never sees the key, so no test can reach Google
 #
 # Only one of app-dev / app runs at a time (both publish 3000). The model side is spark/comfyui/compose.yaml
 # (project "minimax-spark"); the UI reaches it through MODEL_BASE_URL only. Values come from the environment or a
@@ -69,7 +71,7 @@ services:
       # (or Settings › Environment variables, which wins). The photos and notes the agent is given go to Google.
       GOOGLE_APPLICATION_CREDENTIALS: /secrets/vertex-sa.json
       VERTEX_PROJECT: ${VERTEX_PROJECT:-}
-      VERTEX_LOCATION: ${VERTEX_LOCATION:-us-central1}
+      VERTEX_LOCATION: ${VERTEX_LOCATION:-global}
       VERTEX_MODEL: ${VERTEX_MODEL:-}
     volumes:
       - app-data:/data
@@ -89,6 +91,23 @@ services:
       HOME: /tmp/gate-home
       STUB_PORT: "4010"
       STUB_FIXTURE: ${STUB_FIXTURE:-mp4}
+
+  agent-spike:
+    image: *gate-image
+    profiles: ["tools"]
+    user: "${SPARK_UID:-1000}:${SPARK_GID:-1000}"
+    working_dir: /work
+    entrypoint: ["pnpm", "--filter", "app", "agent:spike"]
+    volumes:
+      - .:/work
+      - pnpm-store:/pnpm-store
+      - ./spark/data/secrets:/secrets:ro
+    environment:
+      HOME: /tmp/gate-home
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/vertex-sa.json
+      VERTEX_PROJECT: ${VERTEX_PROJECT:-}
+      VERTEX_LOCATION: ${VERTEX_LOCATION:-global}
+      VERTEX_MODEL: ${VERTEX_MODEL:-}
 
   gcloud:
     # Google's official CLI image, slim variant, pinned to the version and digest read from the registry on 2026-09-17 (STORY_047).

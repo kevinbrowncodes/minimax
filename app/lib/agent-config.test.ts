@@ -1,6 +1,6 @@
 /** STORY_047: the agent's configuration — present, each thing missing with its reason, the env store winning over process.env, values never in a reason. */
 import { describe, expect, it } from "vitest";
-import { DEFAULT_KEY_FILE, DEFAULT_LOCATION, agentFlag, readAgentConfig } from "./agent-config";
+import { DEFAULT_KEY_FILE, DEFAULT_LOCATION, DEFAULT_MODEL, agentFlag, readAgentConfig } from "./agent-config";
 
 const none = (): undefined => undefined;
 const all = { VERTEX_PROJECT: "proj-1", VERTEX_LOCATION: "europe-west4", VERTEX_MODEL: "gemini-x-flash", GOOGLE_APPLICATION_CREDENTIALS: "/tmp/k.json" };
@@ -23,9 +23,10 @@ describe("readAgentConfig", () => {
     const config = readAgentConfig({ env: all, readValue: none, exists: () => false });
     expect(config).toMatchObject({ configured: false, reason: expect.stringContaining("not mounted at /tmp/k.json") as string });
   });
-  it("names the missing model and points at STORY_048", () => {
-    const config = readAgentConfig({ env: without("VERTEX_MODEL"), readValue: none, exists: () => true });
-    expect(config).toMatchObject({ configured: false, reason: expect.stringContaining("VERTEX_MODEL is not set — STORY_048") as string });
+  it("an unset VERTEX_MODEL falls back to the model STORY_048 pinned, and the env overrides it", () => {
+    expect(DEFAULT_MODEL).toBe("gemini-3.8-flash");
+    expect(readAgentConfig({ env: without("VERTEX_MODEL"), readValue: none, exists: () => true })).toMatchObject({ configured: true, model: "gemini-3.8-flash" });
+    expect(readAgentConfig({ env: all, readValue: none, exists: () => true })).toMatchObject({ configured: true, model: "gemini-x-flash" });
   });
   it("the env store's value wins over process.env, and whitespace is trimmed", () => {
     const store: Record<string, string> = { VERTEX_MODEL: "  gemini-from-settings  " };
@@ -37,7 +38,7 @@ describe("readAgentConfig", () => {
     expect(config).toMatchObject({ configured: true, project: "proj-1" });
   });
   it("a reason never carries a value that was set", () => {
-    const config = readAgentConfig({ env: { ...without("VERTEX_MODEL"), VERTEX_PROJECT: "secret-project-name" }, readValue: none, exists: () => true });
+    const config = readAgentConfig({ env: { ...all, VERTEX_PROJECT: "secret-project-name" }, readValue: none, exists: () => false });
     expect(config.configured).toBe(false);
     if (!config.configured) expect(config.reason).not.toContain("secret-project-name");
   });

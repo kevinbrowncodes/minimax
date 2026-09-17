@@ -4,7 +4,9 @@ description: Directs one thirst-trap short from one attached photo — a candid,
 compatibility: Portable to any agent that can read local files and view the attached image; no tools, network access or runtime required. Written for MiniMax-H3 served locally (ComfyUI) through the MiniMax Local adapter, which passes a prompt that starts with the instruction line through unchanged.
 metadata:
   author: kevinbrowncodes
-  version: "1.0"
+  version: "1.1"
+  minimax-short-name: Thirst trap
+  minimax-clip-seconds: "10"
   minimax-model: MiniMax-H3 (open weights, Comfy-Org quantized)
   minimax-checkpoint: minimax_h3_fl2va_int8_convrot
   minimax-text-encoder: qwen3vl_32b_minimax_h3_nvfp4_awq
@@ -42,9 +44,13 @@ Create **one continuous action sequence** that begins immediately from the first
 
 The **first frame must appear visually identical to the attached image before any motion begins**. The action must evolve directly from the subject's **existing posture, balance and environment** visible in the first frame.
 
+## Length — the rule that is missed first
+
+**The description field is 400–600 words. Not fewer.** A shorter description is the single most common miss: a first draft tends to land at 200–250 words with a thin scene anchor, and on our box a thin anchor is what lets the set drift. Before you output, count the words of the description. If it is under 400, do not output — expand, in this order: the **scene anchor** to its full 150–250 words (every object with colour, material and position; the light's source, direction and quality; the framing; every clothing item and every piece of jewelry, with the hand or wrist it is on; what the action will reveal outside the frame), then the three timeline beats with concrete, physical detail (which hand, which foot, what the weight does, what the fabric does, what the face does). Spend words on the set and the body, never on adjectives of mood. The model card's own example runs ≈ 700 words; 400–600 is the floor and ceiling here because the adapter's prompt limit is 6,000 characters.
+
 ## How MiniMax differs from Veo (these change how you write)
 
-1. **The model is natively multi-shot.** Any stretch of the clip the prompt leaves under-described, it fills the way its training data does: with a cut to a new shot. So the prompt declares one shot up front, describes the frame in full, and keeps the timeline dense. Aim for **350–600 words** in the description field.
+1. **The model is natively multi-shot.** Any stretch of the clip the prompt leaves under-described, it fills the way its training data does: with a cut to a new shot. So the prompt declares one shot up front, describes the frame in full, and keeps the timeline dense: **400–600 words** in the description field (see Length above).
 2. **Timestamps mean cuts.** In MiniMax's format the only timestamps are cut points (`At 00:03.500, the camera cuts to…`). Never write `[0:00-0:03]`, `at the 8-second mark`, or `THE HOOK:` labels. Write the timeline as prose: *in the first two seconds… through the middle of the clip… in the final seconds…*
 3. **The frame is regenerated from your words, not copied.** The image anchors the first instant; after that the set, light, clothing and props persist only as well as the prompt describes them. **Anything the action will reveal that is outside the frame** (below a waist-up crop, behind the subject) must be described too — and the model may still guess: on our box a subject cropped at the waist was rendered without the trunks the prompt named, in two of two draws. Prefer actions that stay inside what the image shows.
 4. **Camera is written in MiniMax's vocabulary**: a named type, an amplitude and a speed. Static is `The camera holds a perfectly static shot throughout the entire ten-second duration`; a move is `a slow, subtle push-in` or `a slow, steady zoom out during the first three seconds, then holds`. Declare it in the first two sentences, before any action.
@@ -77,7 +83,7 @@ One attached image, and optionally a line of notes (what the subject wears outsi
 
 ## Output
 
-Output **only** the prompt below. Line 1 verbatim. The description is **one paragraph** with no labels, headings, line breaks or timestamps inside it.
+Output **only** the prompt below. Line 1 verbatim. The description is **one paragraph** of 400–600 words with no labels, headings, line breaks or timestamps inside it; one blank line between the fields.
 
 ```text
 For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.
@@ -102,7 +108,7 @@ non_diegetic_music: {{MUSIC}}
 ## Checklist (verify before you output)
 
 - Line 1 is the instruction line, verbatim, and nothing precedes it.
-- The description is one paragraph, 350–600 words, no labels, no line breaks, no timestamps, no bracketed times.
+- The description is one paragraph, **400–600 words — counted**, no labels, no line breaks, no timestamps, no bracketed times.
 - `[Shot 1]` opens it; style then camera come before any action; the single-shot declaration is present.
 - Everything visible in the image is named with colour/material/position; clothing and jewelry piece by piece; the light; the framing.
 - Anything the action reveals outside the frame is described.

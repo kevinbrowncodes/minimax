@@ -22,7 +22,7 @@ die() { printf '[setup-vertex] ERROR: %s\n' "$*" >&2; exit 1; }
 
 PROJECT="${1:-}"
 BILLING="${2:-}"
-REGION="${3:-us-central1}"
+REGION="${3:-global}"
 [ -n "$PROJECT" ] && [ -n "$BILLING" ] || die "usage: $0 <project-id> <billing-account-id> [region]"
 [[ "$PROJECT" =~ ^[a-z][a-z0-9-]{4,28}[a-z0-9]$ ]] || die "project id must be 6–30 chars, lowercase letters, digits and hyphens, starting with a letter"
 [[ "$BILLING" =~ ^[0-9A-F]{6}-[0-9A-F]{6}-[0-9A-F]{6}$ ]] || die "billing account id must look like XXXXXX-XXXXXX-XXXXXX"

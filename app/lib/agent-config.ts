@@ -9,9 +9,10 @@ import { existsSync } from "node:fs";
 import { envValue } from "./env-store";
 
 export const DEFAULT_KEY_FILE = "/secrets/vertex-sa.json";
-export const DEFAULT_LOCATION = "us-central1";
-/** The Gemini model the director runs on; unset until STORY_048's spike pins it from Vertex's model list. */
-export const DEFAULT_MODEL: string | undefined = undefined;
+/** Vertex's `global` location: where Gemini 3.8 Flash is served for this project (STORY_048 — us-central1 answered 404 on 2026-09-17), and the cheaper price row. */
+export const DEFAULT_LOCATION = "global";
+/** The Gemini model the director runs on — pinned by STORY_048's spike from Vertex itself (publishers.models.get → GA, 2026-09-17); an env value overrides it. */
+export const DEFAULT_MODEL: string | undefined = "gemini-3.8-flash";
 
 export type AgentConfig =
   | { readonly configured: true; readonly project: string; readonly location: string; readonly model: string; readonly keyFile: string }
@@ -43,7 +44,7 @@ export function readAgentConfig({ env = process.env, readValue = envValue, exist
   const keyFile = clean(env["GOOGLE_APPLICATION_CREDENTIALS"]) ?? DEFAULT_KEY_FILE;
   if (!exists(keyFile)) return { configured: false, reason: `the key file is not mounted at ${keyFile} — run spark/gcloud/setup-vertex.sh on the Spark and restart the app` };
   const model = read("VERTEX_MODEL") ?? DEFAULT_MODEL;
-  if (model === undefined) return { configured: false, reason: "VERTEX_MODEL is not set — STORY_048's spike pins it from Vertex's model list" };
+  if (model === undefined) return { configured: false, reason: "VERTEX_MODEL is not set and no model is pinned in the app" };
   return { configured: true, project, location: read("VERTEX_LOCATION") ?? DEFAULT_LOCATION, model, keyFile };
 }
 
