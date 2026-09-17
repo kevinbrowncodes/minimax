@@ -5,6 +5,8 @@
  *   TRIAL_BASE_URL (http://minimax-app:3000)  TRIAL_IMAGE (/work/test/26-09-17-0800_office/01.jpeg)
  *   TRIAL_NOTES ("keep the camera still")  TRIAL_OUT_DIR (/work/spark/data/smoke)
  *   TRIAL_SUBMIT_ONLY (1: screenshot the chip's states and the reply, Send, then stop after the 202 — no wait for the GPU)
+ *   TRIAL_CONFIRM (never: STORY_051's straight-through — the setting is set through the panel, Send makes the job at once,
+ *   the box never shows the prompt; the setting is put back to always at the end)
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -14,6 +16,7 @@ const IMAGE = process.env["TRIAL_IMAGE"] ?? "/work/test/26-09-17-0800_office/01.
 const NOTES = process.env["TRIAL_NOTES"] ?? "keep the camera still";
 const OUT_DIR = process.env["TRIAL_OUT_DIR"] ?? "/work/spark/data/smoke";
 const SUBMIT_ONLY = process.env["TRIAL_SUBMIT_ONLY"] === "1";
+const STRAIGHT_THROUGH = process.env["TRIAL_CONFIRM"] === "never";
 
 const t0 = Date.now();
 function stamper(testInfo: TestInfo) {
@@ -42,17 +45,40 @@ test("the Agent chip directs a clip from the office photo through the real direc
   await expect(page.getByRole("menu", { name: "Skills" }).getByRole("menuitemradio")).toHaveCount(2);
   await shot("menu");
   await page.keyboard.press("Escape");
+  if (STRAIGHT_THROUGH) {
+    // STORY_051: Confirm before generating → Never, through the panel
+    await page.getByRole("button", { name: "Agent settings" }).click();
+    const panel = page.getByRole("dialog", { name: "Agent settings" });
+    await shot("settings");
+    await panel.getByRole("radio", { name: /Never/ }).click();
+    await panel.getByRole("button", { name: "Save" }).click();
+    await expect(panel).toBeHidden();
+    stamp("Confirm before generating: Never");
+  }
   await page.getByTestId("reference-input").setInputFiles(IMAGE);
   await page.getByRole("textbox", { name: "Message" }).fill(NOTES);
   await shot("ready");
   stamp("Send to the director");
   const run = page.waitForResponse((r) => r.url().includes("/api/agent/runs") && r.request().method() === "POST", { timeout: 300_000 });
+  const createdStraight = STRAIGHT_THROUGH ? page.waitForResponse((r) => r.url().includes("/api/jobs") && r.request().method() === "POST", { timeout: 300_000 }) : undefined;
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByTestId("agent-status")).toHaveText("Thinking…");
   await shot("thinking");
   const reply = (await (await run).json()) as { kind: string; prompt?: string; findings?: unknown[]; passes?: number; message?: string };
   stamp(`the director answered: ${reply.kind}${reply.passes === undefined ? "" : ` in ${String(reply.passes)} passes`}${reply.findings === undefined ? "" : `, ${String(reply.findings.length)} findings`}`);
   expect(reply.kind).toBe("prompt");
+  if (STRAIGHT_THROUGH && createdStraight !== undefined) {
+    // no review step: the job is posted at once and the composer leaves for the task page
+    const { id: straightId } = (await (await createdStraight).json()) as { id: string };
+    stamp(`straight through: job ${straightId.slice(0, 8)} accepted`);
+    await expect(page).toHaveURL(new RegExp(`/task/${straightId}$`));
+    await shot("straight-through-task");
+    writeFileSync(path.join(OUT_DIR, `agent-chip-reply-straight-${new Date().toISOString().replace(/[:.]/g, "-")}.txt`), `${reply.prompt ?? ""}\n`);
+    await page.request.patch("/api/settings", { data: { agentConfirm: "always" } });
+    if (SUBMIT_ONLY) return;
+    await waitDone(straightId);
+    return;
+  }
   const box = page.getByRole("textbox", { name: "Message" });
   await expect(box).toHaveValue(/^For the target video/);
   await expect(chip).toHaveAttribute("aria-pressed", "false");
@@ -67,13 +93,18 @@ test("the Agent chip directs a clip from the office photo through the real direc
   stamp(`job ${id.slice(0, 8)} accepted`);
   await expect(page).toHaveURL(new RegExp(`/task/${id}$`));
   if (SUBMIT_ONLY) return;
-  let last = "";
-  for (;;) {
-    const body = (await (await page.request.get(`/api/jobs/${id}`)).json()) as { status: string; progress?: number; result?: { frames?: number; durationSeconds?: number; cuts?: unknown; camera?: string }; error?: { message?: string } };
-    if (body.status === "done") { stamp(`done: ${JSON.stringify(body.result)}`); await shot("done"); return; }
-    if (body.status === "failed" || body.status === "cancelled") { stamp(`${body.status}: ${body.error?.message ?? ""}`); expect(body.status).toBe("done"); return; }
-    const line = `${body.status} ${String(body.progress ?? 0)}%`;
-    if (line !== last && (body.progress ?? 0) % 25 === 0) { stamp(`${id.slice(0, 8)} ${line}`); last = line; }
-    await page.waitForResponse((r) => r.url().endsWith(`/api/jobs/${id}`) && r.request().method() === "GET", { timeout: 180_000 }).catch(() => undefined);
+  await waitDone(id);
+
+  /** Follow the job to a terminal state: the page's own polls are the clock, never a sleep. */
+  async function waitDone(jobId: string): Promise<void> {
+    let last = "";
+    for (;;) {
+      const body = (await (await page.request.get(`/api/jobs/${jobId}`)).json()) as { status: string; progress?: number; result?: { frames?: number; durationSeconds?: number; cuts?: unknown; camera?: string }; error?: { message?: string } };
+      if (body.status === "done") { stamp(`done: ${JSON.stringify(body.result)}`); await shot("done"); return; }
+      if (body.status === "failed" || body.status === "cancelled") { stamp(`${body.status}: ${body.error?.message ?? ""}`); expect(body.status).toBe("done"); return; }
+      const line = `${body.status} ${String(body.progress ?? 0)}%`;
+      if (line !== last && (body.progress ?? 0) % 25 === 0) { stamp(`${jobId.slice(0, 8)} ${line}`); last = line; }
+      await page.waitForResponse((r) => r.url().endsWith(`/api/jobs/${jobId}`) && r.request().method() === "GET", { timeout: 180_000 }).catch(() => undefined);
+    }
   }
 });

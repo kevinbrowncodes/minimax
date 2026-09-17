@@ -415,8 +415,15 @@
   .modelWrap {
     display: none;
   }
+  /* STORY_050: with the Agent chip in the row the bar may wrap to a second row rather than overflow the viewport (the reference has no chip) */
   .bar {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+  }
+  .agentChipWord {
+    display: none; /* the glyph alone at narrow widths; "Agent" and the skill name live in the menu's title */
+  }
+  .agentChip {
+    padding: 0 var(--spacing_8);
   }
   .inertModel {
     padding: 0 var(--spacing_4);
@@ -872,4 +879,157 @@
     min-width: 44px;
     min-height: 44px;
   }
+}
+
+/* STORY_052 — Agent instructions: rows in the Settings chrome; the picker as a second sheet inside the panel */
+.agentInstructionsPanel {
+  width: min(480px, 100vw);
+  position: relative;
+}
+.agentInstructionsEmpty {
+  margin: 0 0 var(--spacing_16);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text_default_secondary);
+}
+.agentInstructionList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_12);
+}
+.agentInstruction {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_8);
+  padding: var(--spacing_12);
+  border-radius: var(--radius_12);
+  background: var(--bg_grouped_tertiary);
+}
+.agentInstructionHead {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+}
+.agentInstructionTitle {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--spacing_8);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_8);
+  background: var(--bg_default_primary);
+  color: var(--text_default_primary);
+  font-size: 14px;
+}
+.agentInstructionText {
+  width: 100%;
+  padding: var(--spacing_8);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_8);
+  background: var(--bg_default_primary);
+  color: var(--text_default_primary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  resize: vertical;
+}
+.agentInstructionRef {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+}
+.agentInstructionThumb {
+  width: 56px;
+  height: 56px;
+}
+.agentInstructionThumbMissing img {
+  opacity: 0.3;
+}
+.agentInstructionMissing {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text_default_secondary);
+}
+.agentAddReference,
+.agentAddInstruction {
+  height: 32px;
+  padding: 0 var(--spacing_12);
+  border: 1px dashed var(--border_default);
+  border-radius: var(--radius_8);
+  background: transparent;
+  color: var(--text_default_secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.agentAddInstruction {
+  margin-top: var(--spacing_12);
+}
+.agentAddReference:hover,
+.agentAddInstruction:hover {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.agentPicker {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing_12);
+  padding: var(--spacing_16) var(--spacing_24);
+  background: var(--bg_default_primary_elevated);
+}
+.agentPickerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.agentPickerActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_8);
+}
+.agentPickerGrid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 90px);
+  gap: var(--spacing_12);
+  overflow-y: auto;
+}
+.agentPickerTile {
+  width: 90px;
+  height: 90px;
+  padding: 0;
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_12);
+  background: var(--bg_default_tertiary);
+  overflow: hidden;
+  cursor: pointer;
+}
+.agentPickerTile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.agentBadge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  border-radius: 7px;
+  background: var(--blue_400);
+  color: #fff;
+  font-size: 10px;
+  line-height: 14px;
+  text-align: center;
 }

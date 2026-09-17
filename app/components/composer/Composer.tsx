@@ -13,8 +13,9 @@ import { sparkTimeLine } from "@/lib/spark-time";
 import { DESCRIPTION_MARKER } from "@/lib/prompt-format";
 import { AgentChip } from "./AgentChip";
 import { AgentSettingsPanel } from "./AgentSettingsPanel";
+import { AgentInstructionsPanel } from "./AgentInstructionsPanel";
 import { decide } from "@/lib/agent-decision";
-import { IconSettings } from "@/components/shell/icons";
+import { IconMenu, IconSettings } from "@/components/shell/icons";
 import { chainPlan, segmentPrompt, splitChain } from "@/lib/chain";
 import { ChainStrip, type ChainStart } from "./ChainStrip";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
@@ -90,6 +91,8 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const [popover, setPopover] = useState<"params" | "model" | "attach" | "agent" | "agent-skill" | undefined>(undefined);
   const runController = useRef<AbortController | undefined>(undefined); // STORY_050: the director run in flight
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false); // STORY_051: the ⚙ panel
+  const [agentInstructionsOpen, setAgentInstructionsOpen] = useState(false); // STORY_052: the ≡ panel
+  const [activeInstructions, setActiveInstructions] = useState(0); // STORY_052: the ≡ badge
   const [envOpen, setEnvOpen] = useState(false); // STORY_035
   const [showcaseDismissed, setShowcaseDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -124,6 +127,24 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
       .catch(() => [] as AgentSkill[])
       .then((list) => {
         if (!cancelled) dispatch({ type: "agent-skills", skills: list, chosen: settings.agentSkill ?? initialAgentRun?.skill });
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
+  }, []);
+  // STORY_052: the ≡ badge — how many instructions are active
+  useEffect(() => {
+    let cancelled = false;
+    void doFetch("/api/agent/instructions")
+      .then(async (res) => {
+        const body: unknown = res.ok ? await res.json() : undefined;
+        const list = typeof body === "object" && body !== null ? (body as { instructions?: unknown }).instructions : undefined;
+        return Array.isArray(list) ? (list as { active?: unknown }[]).filter((r) => r.active === true).length : 0;
+      })
+      .catch(() => 0)
+      .then((n) => {
+        if (!cancelled) setActiveInstructions(n);
       });
     return () => {
       cancelled = true;
@@ -359,6 +380,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   return (
     <>
       <EnvDialog open={envOpen} onClose={() => { setEnvOpen(false); }} fetchImpl={fetchImpl} />
+      <AgentInstructionsPanel open={agentInstructionsOpen} fetchImpl={fetchImpl} narrow={narrow} notify={(text) => { notify(text); }} onClose={() => { setAgentInstructionsOpen(false); }} onSaved={(n) => { setActiveInstructions(n); }} />
       <AgentSettingsPanel open={agentSettingsOpen} confirm={settings.agentConfirm} modelLabel={agentModel?.label ?? "—"} narrow={narrow} onClose={() => { setAgentSettingsOpen(false); }} onSave={(confirm) => { updateSettings({ agentConfirm: confirm }); setAgentSettingsOpen(false); notify("Saved"); }} />
       {state.queueId !== undefined ? (
         // STORY_041: Edit of a waiting request
@@ -440,7 +462,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
             onKeyDown={onKeyDown}
           />
         </div>
-        {agentRunning ? <div className={styles.agentStatus} role="status" data-testid="agent-status">Thinking…</div> : null}
+        {agentRunning ? <div className={styles.agentStatus} role="status" data-testid="agent-status">Thinking…{activeInstructions > 0 ? ` (${String(activeInstructions)} ${activeInstructions === 1 ? "instruction" : "instructions"})` : ""}</div> : null}
         {!agentRunning && state.agent.notice?.tone === "warn" ? <div className={styles.agentWarn} role="status" data-testid="agent-findings">▲ {state.agent.notice.message}</div> : null}
         {!agentRunning && state.agent.notice?.tone === "info" ? <div className={styles.agentInfo} role="status" data-testid="agent-info">{state.agent.notice.message}</div> : null}
         {agentOn && state.images.length === 0 && !agentRunning ? <div className={styles.agentInfo} data-testid="agent-hint">Attach the photo the director starts from.</div> : null}
@@ -480,6 +502,13 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 onSkill={(id) => { dispatch({ type: "agent-skill", skillId: id }); setPopover(undefined); updateSettings({ agentSkill: id }); }}
                 onManage={() => { setPopover(undefined); router.push("/plugins?tab=Skills"); }}
               />
+              {agentOn ? (
+                // STORY_052: Agent instructions — the guidelines the director follows on every run, with the active count
+                <span className={styles.agentWrap}>
+                  <button type="button" className={styles.agentIconButton} aria-label={activeInstructions === 0 ? "Agent instructions" : `Agent instructions, ${String(activeInstructions)} active`} disabled={agentRunning} onClick={() => { setAgentInstructionsOpen(true); setPopover(undefined); }}><IconMenu /></button>
+                  {activeInstructions > 0 ? <span className={styles.agentBadge} aria-hidden="true" data-testid="instructions-badge">{activeInstructions}</span> : null}
+                </span>
+              ) : null}
               {agentOn ? (
                 // STORY_051: Agent settings — Confirm before generating
                 <button type="button" className={styles.agentIconButton} aria-label="Agent settings" disabled={agentRunning} onClick={() => { setAgentSettingsOpen(true); setPopover(undefined); }}><IconSettings /></button>

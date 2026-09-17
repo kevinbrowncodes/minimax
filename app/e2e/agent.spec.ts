@@ -190,4 +190,54 @@ test.describe("the Agent chip (STORY_050)", () => {
     expect(((await (await request.get(`${STUB}/__stub/jobs`)).json()) as { jobs: unknown[] }).jobs).toEqual([]);
     expect(await stubApi.openJobs()).toEqual([]);
   });
+
+  // STORY_052 — Agent instructions
+  test("an instruction with an uploaded reference is sent with the run, and not when toggled off", async ({ page, request, stubApi }) => {
+    await openVideoWithAgent(page, "/?agentScript=clean");
+    await expect(page.getByRole("button", { name: "Agent instructions" })).toBeVisible();
+    await page.getByRole("button", { name: "Agent instructions" }).click();
+    const panel = page.getByRole("dialog", { name: "Agent instructions" });
+    await expect(panel.getByText(/No instructions yet/)).toBeVisible();
+    await panel.getByRole("button", { name: "+ Add instruction" }).click();
+    await panel.getByRole("textbox", { name: "Instruction title" }).fill("House rule");
+    await panel.getByRole("textbox", { name: "Instruction text" }).fill("The camera stays fixed unless the script moves it.");
+    await panel.getByRole("button", { name: "+ Reference" }).click();
+    const picker = page.getByRole("dialog", { name: "Select reference image" });
+    await expect(picker).toBeVisible();
+    await page.getByTestId("instruction-upload").setInputFiles(REFERENCE_IMAGE);
+    await expect(panel.getByRole("img", { name: "Reference for House rule" })).toBeVisible();
+    await panel.getByRole("button", { name: "Done" }).click();
+    await expect(panel).toBeHidden();
+    await expect(page.getByRole("button", { name: "Agent instructions, 1 active" })).toBeVisible();
+    await expect(page.getByTestId("instructions-badge")).toHaveText("1");
+    await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
+    const run = page.waitForResponse((r) => r.url().includes("/api/agent/runs") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Send message" }).click();
+    expect((await run).status()).toBe(200);
+    let fake = (await (await request.get(`${STUB}/__stub/agent/runs`)).json()) as { runs: { parts: { kind: string; head?: string }[] }[] };
+    const heads = fake.runs[0]?.parts.map((p) => (p.kind === "text" ? p.head?.split("\n")[0] : "image")) ?? [];
+    expect(heads.filter((h) => h === "image")).toHaveLength(2);
+    expect(heads).toContain("Instruction — House rule:");
+    expect(heads.indexOf('Reference image for the instruction "House rule":')).toBeLessThan(heads.indexOf("Instruction — House rule:"));
+    expect(heads.indexOf("Instruction — House rule:")).toBeLessThan(heads.indexOf("The attached photo — the first frame:"));
+    // toggled off: the run carries no instruction
+    await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue(/^For the target video/); // the reply landed — the chip is off
+    await expect(page.getByTestId("agent-chip")).toHaveAttribute("aria-pressed", "false");
+    await page.getByTestId("agent-chip").click(); // on again
+    await expect(page.getByRole("button", { name: /Agent instructions/ })).toBeVisible();
+    await page.getByRole("button", { name: /Agent instructions/ }).click();
+    await panel.getByRole("switch", { name: "Toggle instruction active" }).click();
+    await panel.getByRole("button", { name: "Done" }).click();
+    await expect(panel).toBeHidden();
+    await expect(page.getByTestId("instructions-badge")).toBeHidden();
+    await stubApi.reset();
+    await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
+    const again = page.waitForResponse((r) => r.url().includes("/api/agent/runs") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Send message" }).click();
+    expect((await again).status()).toBe(200);
+    fake = (await (await request.get(`${STUB}/__stub/agent/runs`)).json()) as { runs: { parts: { kind: string; head?: string }[] }[] };
+    const off = fake.runs[0]?.parts.map((p) => (p.kind === "text" ? p.head?.split("\n")[0] : "image")) ?? [];
+    expect(off.filter((h) => h === "image")).toHaveLength(1);
+    expect(off.some((h) => h?.startsWith("Instruction"))).toBe(false);
+  });
 });

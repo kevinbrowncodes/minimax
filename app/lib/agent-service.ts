@@ -8,6 +8,7 @@
 import path from "node:path";
 import { readAgentConfig, type AgentConfig } from "./agent-config";
 import { assembleRequest, directorGenerationConfig, DIRECTOR_EXPAND_WORDS, DIRECTOR_SAFETY_SETTINGS, expandChainInstruction, expandInstruction, readSkill, type ImageInput, type InstructionInput, type SkillFolder } from "./agent-request";
+import { activeInstructionInputs } from "./agent-instruction-store";
 import { recordAgentRun } from "./agent-run-store";
 import { checkPromptFormat, splitSegments, type Finding } from "./prompt-format";
 import { generateContent, tokenFor, type GenerateRequest, type GenerateResult, type Token, type VertexTarget } from "./vertex";
@@ -52,6 +53,13 @@ function segmentsAsked(skill: SkillFolder, notes: string): number {
   return Number.isFinite(fallback) && fallback > 1 ? fallback : 1;
 }
 
+const warned = new Set<string>();
+function warnOnce(message: string): void {
+  if (warned.has(message)) return;
+  warned.add(message);
+  console.warn(message);
+}
+
 export async function runDirector(input: RunInput, { config = readAgentConfig(), fetch: fetchImpl = fetch, now = Date.now, record = recordAgentRun }: RunDeps = {}): Promise<RunOutcome> {
   if (!config.configured) return { kind: "error", code: "not_configured", status: 503, message: config.reason };
   let skill: SkillFolder;
@@ -68,7 +76,10 @@ export async function runDirector(input: RunInput, { config = readAgentConfig(),
     return fail("unreachable", 502, `the credential could not be exchanged for a token: ${error instanceof Error ? error.message : String(error)}`);
   }
   const target: VertexTarget = { project: config.project, location: config.location, model: config.model, ...(config.vertexBaseUrl === undefined ? {} : { baseUrl: config.vertexBaseUrl }) };
-  const assembled = assembleRequest(skill, input.image, input.notes, input.instructions ?? []);
+  // STORY_052: the active instructions go with every run — after the skill's references, before the photo
+  const active = input.instructions === undefined ? activeInstructionInputs() : { inputs: input.instructions, missing: [] as readonly string[] };
+  for (const title of active.missing) warnOnce(`[agent] the instruction "${title}" has no readable reference image — sent without it`);
+  const assembled = assembleRequest(skill, input.image, input.notes, active.inputs);
   const base: GenerateRequest = { systemInstruction: assembled.systemInstruction, parts: assembled.parts, safetySettings: DIRECTOR_SAFETY_SETTINGS, generationConfig: directorGenerationConfig(config.thinking) };
   const timeoutMs = config.timeoutMs;
   const timer = AbortSignal.timeout(timeoutMs);

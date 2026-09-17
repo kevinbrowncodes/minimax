@@ -55,7 +55,7 @@ export function AgentChip({ on, skills, skillId, disabledReason, busy = false, m
         data-testid="agent-chip"
       >
         <IconDirector />
-        <span>Agent</span>
+        <span className={styles.agentChipWord}>Agent</span>
         {on && !narrow && label !== "" ? <span className={styles.agentChipSkill}>· {label}</span> : null}
       </button>
       {on ? (
