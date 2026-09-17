@@ -40,6 +40,12 @@ export type AgentConfig =
 export interface AgentFlag {
   readonly configured: boolean;
   readonly reason?: string;
+  /** STORY_050: the model the right-hand pill names while the chip is on. */
+  readonly model?: { readonly id: string; readonly label: string };
+}
+/** "gemini-3.8-flash" → "Gemini 3.8 Flash" — the pill's label from the id. */
+export function agentModelLabel(id: string): string {
+  return id.split("-").filter((p) => p !== "").map((p) => (/^\d/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1))).join(" ");
 }
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -82,5 +88,5 @@ export function agentSettings({ env = process.env, readValue = envValue }: Pick<
 }
 
 export function agentFlag(config: AgentConfig = readAgentConfig()): AgentFlag {
-  return config.configured ? { configured: true } : { configured: false, reason: config.reason };
+  return config.configured ? { configured: true, model: { id: config.model, label: agentModelLabel(config.model) } } : { configured: false, reason: config.reason };
 }

@@ -54,6 +54,40 @@ export interface ComposerState {
   readonly notBefore?: string;
   /** STORY_041: Edit of a waiting request — Send replaces this queue entry instead of creating a job. */
   readonly queueId?: string;
+  /** STORY_050: the Agent chip — the director that writes the prompt from the photo. */
+  readonly agent: AgentState;
+}
+
+/** STORY_050: a director skill as `GET /api/agent/skills` lists it. */
+export interface AgentSkill {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly metadata: Readonly<Record<string, string>>;
+}
+/** The format check's finding, as the route returns it (lib/prompt-format.ts). */
+export interface AgentFinding {
+  readonly code: string;
+  readonly message: string;
+  readonly segment?: number;
+}
+export interface AgentState {
+  readonly on: boolean;
+  /** The chosen skill's id; undefined until the list arrives (then the setting's, or the first). */
+  readonly skillId?: string;
+  readonly skills: readonly AgentSkill[];
+  readonly running: boolean;
+  /** What the last run left behind: the findings of a reply, or the words of a refusal / error / stop. */
+  readonly notice?: { readonly tone: "warn" | "alert" | "info"; readonly message: string };
+}
+export const INITIAL_AGENT: AgentState = { on: false, skills: [], running: false };
+
+/** The chip's label: the skill's short name (`minimax-short-name`) or its name. */
+export function agentSkillLabel(skill: AgentSkill | undefined): string {
+  return skill?.metadata["minimax-short-name"] ?? skill?.name ?? "";
+}
+export function agentSkill(state: ComposerState): AgentSkill | undefined {
+  return state.agent.skills.find((s) => s.id === state.agent.skillId);
 }
 
 /** STORY_041: a waiting request as the composer reopens it (Edit), from `GET /api/queue/:id`. */
@@ -90,7 +124,17 @@ export type ComposerAction =
   | { readonly type: "submit-start" }
   | { readonly type: "submit-end" }
   | { readonly type: "project"; readonly projectId: string | undefined }
-  | { readonly type: "not-before"; readonly notBefore: string | undefined };
+  | { readonly type: "not-before"; readonly notBefore: string | undefined }
+  // STORY_050: the Agent chip
+  | { readonly type: "agent-skills"; readonly skills: readonly AgentSkill[]; readonly chosen?: string }
+  | { readonly type: "agent-toggle"; readonly on?: boolean }
+  | { readonly type: "agent-skill"; readonly skillId: string }
+  | { readonly type: "agent-start" }
+  | { readonly type: "agent-reply"; readonly prompt: string; readonly findings: readonly AgentFinding[]; readonly clipSeconds?: number }
+  | { readonly type: "agent-declined"; readonly message: string }
+  | { readonly type: "agent-failed"; readonly message: string }
+  | { readonly type: "agent-stopped" }
+  | { readonly type: "agent-notes"; readonly notes: string; readonly message: string };
 
 /**
  * The reference's defaults (composer-video-mode@1440: 16:9, 5 s). The models, ratios and resolutions on offer are
@@ -101,7 +145,7 @@ export const DEFAULT_DURATION = 5;
 const DEFAULT_EXTENSION: ExtensionCapabilities = { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30 };
 
 export function initialComposer(projectId?: string, text = "", more: Pick<ComposerState, "notBefore" | "queueId"> = {}): ComposerState {
-  return { mode: "text", text, images: [], capabilities: undefined, capabilitiesError: undefined, model: "", ratio: DEFAULT_RATIO, resolution: "", durationSeconds: DEFAULT_DURATION, extend: undefined, overlapFrames: DEFAULT_EXTENSION.overlapFrames.default, error: undefined, submitting: false, projectId, ...more };
+  return { mode: "text", text, images: [], capabilities: undefined, capabilitiesError: undefined, model: "", ratio: DEFAULT_RATIO, resolution: "", durationSeconds: DEFAULT_DURATION, extend: undefined, overlapFrames: DEFAULT_EXTENSION.overlapFrames.default, error: undefined, submitting: false, projectId, agent: INITIAL_AGENT, ...more };
 }
 
 /** The server's extension limits, or the contract's defaults while capabilities are unknown or lack them. */
@@ -152,7 +196,7 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
     case "enter-video-mode":
       return state.mode === "video" ? state : { ...state, mode: "video", error: undefined };
     case "leave-video-mode":
-      return state.mode === "text" ? state : { ...state, mode: "text", images: [], extend: undefined, error: undefined };
+      return state.mode === "text" ? state : { ...state, mode: "text", images: [], extend: undefined, error: undefined, agent: { ...state.agent, on: false, notice: undefined } };
     case "scene": {
       // A Showcase card: the prompt after the tag, the parameters where the Spark allows them (the capabilities clamp).
       const caps = state.capabilities;
@@ -171,7 +215,7 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
     case "extend-from": {
       const ext = extensionOf(state.capabilities);
       const overlapFrames = ext.overlapFrames.default;
-      return { ...state, mode: "video", extend: action.source, images: [], ratio: action.source.ratio, resolution: action.source.resolution, model: action.source.model, durationSeconds: clampDuration(ext.durationsSeconds.default, state.capabilities, overlapFrames), overlapFrames, error: undefined };
+      return { ...state, mode: "video", extend: action.source, images: [], ratio: action.source.ratio, resolution: action.source.resolution, model: action.source.model, durationSeconds: clampDuration(ext.durationsSeconds.default, state.capabilities, overlapFrames), overlapFrames, error: undefined, agent: { ...state.agent, on: false, notice: undefined } };
     }
     case "clear-extend": {
       if (!state.extend) return state;
@@ -188,6 +232,7 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
     case "add-images": {
       if (state.extend) return { ...state, error: { message: "An extension takes no reference images — the video being extended is the reference", field: "referenceImage" } };
       const next = [...state.images, ...action.images];
+      if (state.agent.on && next.length > 1) return { ...state, error: { message: "The director takes one photo", field: "referenceImage" } };
       const verdict = validateReferenceImages(next);
       if (!verdict.ok) return { ...state, error: { message: verdict.message, field: verdict.field } };
       const max = state.capabilities?.referenceImages.max ?? 2;
@@ -216,6 +261,37 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
       return state.projectId === action.projectId ? state : { ...state, projectId: action.projectId };
     case "not-before":
       return state.notBefore === action.notBefore ? state : { ...state, notBefore: action.notBefore };
+    // STORY_050 — the Agent chip
+    case "agent-skills": {
+      const chosen = action.skills.some((k) => k.id === action.chosen) ? action.chosen : action.skills.some((k) => k.id === state.agent.skillId) ? state.agent.skillId : action.skills[0]?.id;
+      return { ...state, agent: { ...state.agent, skills: action.skills, ...(chosen === undefined ? {} : { skillId: chosen }) } };
+    }
+    case "agent-toggle": {
+      const on = action.on ?? !state.agent.on;
+      if (on === state.agent.on || state.agent.running) return state;
+      if (on && state.extend) return state; // the chip is disabled in extend mode: it directs from a photo
+      // turning it on keeps one photo at most; turning it off clears a run's notice
+      return { ...state, mode: on ? "video" : state.mode, images: on ? state.images.slice(0, 1) : state.images, error: undefined, agent: { ...state.agent, on, notice: undefined } };
+    }
+    case "agent-skill":
+      return state.agent.skills.some((k) => k.id === action.skillId) ? { ...state, agent: { ...state.agent, skillId: action.skillId } } : state;
+    case "agent-start":
+      return { ...state, error: undefined, agent: { ...state.agent, running: true, notice: undefined } };
+    case "agent-reply": {
+      // the prompt into the box, the chip off, the photo kept; the duration becomes the skill's clip length when it declares one
+      const durationSeconds = action.clipSeconds === undefined ? state.durationSeconds : clampDuration(action.clipSeconds, state.capabilities, undefined);
+      const notice = action.findings.length === 0 ? undefined : { tone: "warn" as const, message: `The reply misses the skill's format: ${action.findings.map((f) => f.message).join("; ")}. Edit it, or send it as it is.` };
+      return { ...state, text: action.prompt, durationSeconds, error: undefined, agent: { ...state.agent, on: false, running: false, notice } };
+    }
+    case "agent-declined":
+      return { ...state, agent: { ...state.agent, running: false, notice: { tone: "alert", message: `The director declined: "${action.message}"` } } };
+    case "agent-failed":
+      return { ...state, agent: { ...state.agent, running: false, notice: { tone: "alert", message: action.message } } };
+    case "agent-stopped":
+      return { ...state, agent: { ...state.agent, running: false, notice: { tone: "info", message: "Stopped — nothing was sent." } } };
+    case "agent-notes":
+      // an Inbox row reopened (STORY_050): the notes back in the box with the chip on and the run's words
+      return { ...state, mode: "video", text: action.notes, error: undefined, agent: { ...state.agent, on: true, running: false, notice: { tone: "alert", message: action.message } } };
   }
 }
 
@@ -241,7 +317,13 @@ export function overlapOptions(state: ComposerState): readonly { readonly frames
   return extensionOf(state.capabilities).overlapFrames.options.map((frames) => ({ frames, label: `${overlapSeconds(frames)} s` }));
 }
 export function canSend(state: ComposerState): boolean {
+  if (state.mode === "video" && state.agent.on) return state.images.length === 1 && !state.agent.running && !state.submitting && state.capabilities !== undefined;
   return state.text.trim().length > 0 && !state.submitting && (state.mode !== "video" || state.capabilities !== undefined);
+}
+/** STORY_050: the clip length a skill's prompts are written for (`minimax-clip-seconds`), when it declares one. */
+export function skillClipSeconds(skill: AgentSkill | undefined): number | undefined {
+  const raw = Number(skill?.metadata["minimax-clip-seconds"]);
+  return Number.isFinite(raw) && raw > 0 ? raw : undefined;
 }
 /** The label the model pill shows for the chosen model ("MiniMax-H3.0" → "MiniMax-H3"); the capabilities name it. */
 export function modelLabel(state: ComposerState): string {

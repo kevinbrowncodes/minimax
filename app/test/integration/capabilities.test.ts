@@ -49,7 +49,7 @@ describe("GET /api/capabilities with the agent flag", () => {
     const upstream = (await (await fetch(`${stubUrl}/capabilities`)).json()) as Record<string, unknown>;
     const { agent, ...rest } = body;
     expect(rest).toEqual(upstream);
-    expect(agent).toEqual({ configured: true });
+    expect(agent).toEqual({ configured: true, model: { id: "gemini-it", label: "Gemini It" } }); // STORY_050: the model the pill names
   });
   it("says why when VERTEX_PROJECT is unset", async () => {
     delete process.env["VERTEX_PROJECT"];

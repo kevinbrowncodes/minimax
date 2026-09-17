@@ -88,19 +88,22 @@ export async function runDirector(input: RunInput, { config = readAgentConfig(),
   if (!check.isPrompt) {
     // the model spoke instead of directing: an empty reply is a bad reply; words are shown as the model's refusal
     if (text.trim() === "") return fail("bad_reply", 502, "the model returned no text");
-    record({ skill: input.skillId, notes: input.notes, outcome: "refusal", message: text.trim() });
+    record({ skill: input.skillId, skillName: skillName(), notes: input.notes, outcome: "refusal", message: text.trim() });
     return { kind: "refusal", message: text.trim() };
   }
   return { kind: "prompt", prompt: check.prompt, findings: check.findings, segments: check.segments, passes: second.kind === "reply" ? 2 : 1 };
 
+  function skillName(): string {
+    return skill.metadata["minimax-short-name"] ?? skill.name;
+  }
   function fail(code: Exclude<RunOutcome, { kind: "prompt" | "refusal" }>["code"], status: number, message: string): RunOutcome {
-    if (!input.signal?.aborted) record({ skill: input.skillId, notes: input.notes, outcome: "error", message });
+    if (!input.signal?.aborted) record({ skill: input.skillId, skillName: skillName(), notes: input.notes, outcome: "error", message });
     return { kind: "error", code, status, message };
   }
   function judge(result: GenerateResult): RunOutcome | undefined {
     if (result.kind === "reply") return undefined;
     if (result.kind === "refusal") {
-      record({ skill: input.skillId, notes: input.notes, outcome: "refusal", message: result.message });
+      record({ skill: input.skillId, skillName: skillName(), notes: input.notes, outcome: "refusal", message: result.message });
       return { kind: "refusal", message: result.message };
     }
     if (input.signal?.aborted) return { kind: "error", code: "timeout", status: 499, message: "the run was stopped" };

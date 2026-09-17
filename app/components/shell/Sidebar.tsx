@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import type { Project } from "@/lib/project-store";
-import { eventsFor, unreadCount, type InboxEvent } from "@/lib/inbox";
+import { eventsFor, unreadCount, type AgentRunEvent, type InboxEvent } from "@/lib/inbox";
 import { activeRecents, hasMoreRecents, pinnedRecents, recentLabel, recentName, tasksOf, visibleRecents } from "@/lib/recents";
 import { activeRow, isUnread, type RecentEntry } from "@/lib/route-title";
 import { DEFAULT_SHELL_PREFS, type Section, type ShellPrefs } from "@/lib/shell-prefs";
@@ -36,6 +36,8 @@ import {
 export interface SidebarProps {
   readonly pathname: string;
   readonly recents: readonly RecentEntry[];
+  /** STORY_050: director runs that ended without a prompt — the Inbox's Messages rows. */
+  readonly agentRuns?: readonly AgentRunEvent[];
   readonly prefs?: ShellPrefs;
   /** The 52 px icon rail (STORY_021, sidebar-collapsed@1440): icons only, no sections, the logo expands. */
   readonly rail?: boolean;
@@ -331,7 +333,7 @@ function ProjectRow({ project, tasks, active, expanded, onToggle, onNavigate, on
   );
 }
 
-export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail = false, onNavigate, onCollapse, onExpand, onToggleSection, onDismissGuide, onOpenSettings, onOpenSearch, onOpenCreateProject, onDeleteRecent, onRenameRecent, onPinRecent, onCopyRecentId, onArchiveRecent, projects = [], onRenameProject, onPinProject, onDeleteProject, onNewTask, onMoveRecent, inboxReadAt, onInboxReadAll, onOpenInboxEvent, onInboxOpen }: SidebarProps) {
+export function Sidebar({ pathname, recents, agentRuns = [], prefs = DEFAULT_SHELL_PREFS, rail = false, onNavigate, onCollapse, onExpand, onToggleSection, onDismissGuide, onOpenSettings, onOpenSearch, onOpenCreateProject, onDeleteRecent, onRenameRecent, onPinRecent, onCopyRecentId, onArchiveRecent, projects = [], onRenameProject, onPinProject, onDeleteProject, onNewTask, onMoveRecent, inboxReadAt, onInboxReadAll, onOpenInboxEvent, onInboxOpen }: SidebarProps) {
   const active = activeRow(pathname);
   const [showAll, setShowAll] = useState(false);
   // STORY_031: which project rows are expanded to their tasks (a click on the row toggles; not remembered)
@@ -365,7 +367,7 @@ export function Sidebar({ pathname, recents, prefs = DEFAULT_SHELL_PREFS, rail =
     </Link>
   );
   // STORY_033: the Inbox's events come from every entry, archived ones included — the job happened either way
-  const inboxEvents = eventsFor(recents);
+  const inboxEvents = eventsFor(recents, agentRuns);
   const unread = unreadCount(inboxEvents, inboxReadAt);
   const listed = activeRecents(recents); // STORY_030: archived rows live under Settings › Archived tasks
   const shown = visibleRecents(listed, showAll);

@@ -2,13 +2,16 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
 import Link from "next/link";
-import { canSend, durationOptions, extensionOf, initialComposer, maxAdded, modelLabel, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ExtendSource, type InitialRequest } from "@/lib/composer-state";
+import { agentSkill, canSend, durationOptions, extensionOf, initialComposer, maxAdded, modelLabel, overlapOptions, paramsLabel, reduceComposer, skillClipSeconds, type AgentSkill, type ComposerImage, type ExtendSource, type InitialRequest } from "@/lib/composer-state";
 import { formatNotBefore, toLocalInput } from "@/lib/queue-view";
 import { ordinal } from "@/lib/todo-steps";
 import { cx } from "@/lib/cx";
 import { overlapSeconds } from "@/lib/extend";
 import type { Capabilities } from "@/lib/job-api";
-import { submitChain, submitJob } from "@/lib/submit-job";
+import { submitAgentRun, submitChain, submitJob } from "@/lib/submit-job";
+import { sparkTimeLine } from "@/lib/spark-time";
+import { DESCRIPTION_MARKER } from "@/lib/prompt-format";
+import { AgentChip } from "./AgentChip";
 import { chainPlan, segmentPrompt, splitChain } from "@/lib/chain";
 import { ChainStrip, type ChainStart } from "./ChainStrip";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
@@ -17,6 +20,7 @@ import { EnvDialog } from "./EnvDialog";
 import { useProjects } from "@/components/shell/ProjectsContext";
 import { useSettings } from "@/components/shell/SettingsContext";
 import { useShell } from "@/components/shell/ShellContext";
+import { useNarrow } from "@/lib/use-narrow";
 import { applySkill, type Skill } from "@/lib/skills";
 import { IconProject } from "@/components/shell/icons";
 import { Showcase } from "./Showcase";
@@ -54,17 +58,21 @@ export interface ComposerProps {
   readonly initialText?: string;
   /** STORY_041: Edit of a waiting request (`/?queue=`) — the request as sent; Send replaces its queue entry. */
   readonly initialRequest?: InitialRequest;
+  /** STORY_050: an Inbox row of a director run that ended without a prompt (`/?agentRun=`) — the notes back, the chip on, the words shown. */
+  readonly initialAgentRun?: { readonly notes: string; readonly message: string; readonly skill: string };
 }
 
 /** The home composer (STORY_013): text mode, video mode with references, model, parameters, Send; extend mode (STORY_016). */
-export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExtending, initialProjectId, initialText, initialRequest }: ComposerProps) {
+export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExtending, initialProjectId, initialText, initialRequest, initialAgentRun }: ComposerProps) {
   const router = useRouter();
   const docked = variant === "docked";
   const textarea = useRef<HTMLTextAreaElement>(null);
   const { projects, openCreate } = useProjects();
   const { notify } = useShell();
   // STORY_040: the video-creator plugin's switch — off is a text-only workstation: no mode chip, no video controls
-  const videoEnabled = useSettings().settings.videoEnabled;
+  const { settings, update: updateSettings } = useSettings();
+  const narrow = useNarrow();
+  const videoEnabled = settings.videoEnabled;
   const [state, dispatch] = useReducer(reduceComposer, { docked, initialProjectId, initialText, initialRequest }, (init) => {
     // STORY_041: an Edit starts in video mode with the request's words, project and run-at; its parameters and images follow once capabilities arrive
     const request = init.initialRequest;
@@ -76,7 +84,8 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const [skills, setSkills] = useState<readonly Skill[]>([]);
   // STORY_031: the chip names the chosen project; a project that no longer exists shows nothing (the route would refuse it)
   const project = state.projectId === undefined ? undefined : projects.find((p) => p.id === state.projectId);
-  const [popover, setPopover] = useState<"params" | "model" | "attach" | "agent" | undefined>(undefined);
+  const [popover, setPopover] = useState<"params" | "model" | "attach" | "agent" | "agent-skill" | undefined>(undefined);
+  const runController = useRef<AbortController | undefined>(undefined); // STORY_050: the director run in flight
   const [envOpen, setEnvOpen] = useState(false); // STORY_035
   const [showcaseDismissed, setShowcaseDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -98,6 +107,31 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
   }, []);
+
+  // STORY_050: the director skills for the chip's menu; the chosen one is the setting's, else the reopened run's, else the first
+  useEffect(() => {
+    let cancelled = false;
+    void doFetch("/api/agent/skills")
+      .then(async (res) => {
+        const body: unknown = res.ok ? await res.json() : undefined;
+        const list = typeof body === "object" && body !== null ? (body as { skills?: unknown }).skills : undefined;
+        return Array.isArray(list) ? (list as AgentSkill[]) : [];
+      })
+      .catch(() => [] as AgentSkill[])
+      .then((list) => {
+        if (!cancelled) dispatch({ type: "agent-skills", skills: list, chosen: settings.agentSkill ?? initialAgentRun?.skill });
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
+  }, []);
+  useEffect(() => {
+    if (initialAgentRun) dispatch({ type: "agent-notes", notes: initialAgentRun.notes, message: initialAgentRun.message });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
+  }, []);
+  // a run in flight is stopped when the composer goes away (StrictMode's simulated unmount included — the controller lives in a ref)
+  useEffect(() => () => { runController.current?.abort(); }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -202,8 +236,41 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
     onStopExtending?.();
   };
 
+  // STORY_050: the director run — the photo and the notes to the skill; the reply into the box, or the words of a refusal
+  const runAgent = async (): Promise<void> => {
+    const controller = new AbortController();
+    runController.current?.abort();
+    runController.current = controller;
+    dispatch({ type: "agent-start" });
+    const result = await submitAgentRun(state, doFetch, controller.signal);
+    if (controller !== runController.current) return; // a later run or an unmount superseded this one
+    runController.current = undefined;
+    if (result.kind === "prompt") {
+      dispatch({ type: "agent-reply", prompt: result.prompt, findings: result.findings, ...(skillClipSeconds(agentSkill(state)) === undefined ? {} : { clipSeconds: skillClipSeconds(agentSkill(state)) }) });
+      requestAnimationFrame(() => {
+        const box = textarea.current;
+        if (!box) return;
+        box.focus();
+        box.setSelectionRange(0, 0);
+        box.scrollTop = 0; // the caret at the start is not enough: setting the value scrolled the box to its end
+      });
+      return;
+    }
+    if (result.kind === "stopped") { dispatch({ type: "agent-stopped" }); return; }
+    if (result.kind === "refusal") dispatch({ type: "agent-declined", message: result.message });
+    else dispatch({ type: "agent-failed", message: result.message });
+    window.dispatchEvent(new Event("minimax:agent-runs")); // the Shell reloads the Inbox's rows
+  };
+  const stopAgent = (): void => {
+    runController.current?.abort();
+  };
+
   const send = async (): Promise<void> => {
     if (!canSend(state)) return;
+    if (state.mode === "video" && state.agent.on) {
+      await runAgent();
+      return;
+    }
     if (state.mode !== "video") {
       // BACKLOG_006 wires the text mode to a local text model; until then it says so (STORY_026)
       dispatch({ type: "error", error: { message: "Text chat is not connected to the Spark yet — pick Video generation" } });
@@ -245,7 +312,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
-    if (event.key === "Enter" && !event.shiftKey && !stop) {
+    if (event.key === "Enter" && !event.shiftKey && !stop && !state.agent.running) {
       event.preventDefault();
       void send();
     }
@@ -260,6 +327,15 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const ext = extensionOf(caps);
   const plan = chain === undefined ? undefined : chainPlan(chain.segments, { seconds: state.durationSeconds, overlapFrames: state.overlapFrames, extensionMax: caps ? maxAdded(caps, state.overlapFrames) : ext.durationsSeconds.max, maxSourceSeconds: ext.maxSourceSeconds, ...(extending ? { fromSource: extending.durationSeconds } : {}) });
   const chainStart: ChainStart = extending ? { kind: "source", title: extending.title } : state.images.length > 0 ? { kind: "image" } : { kind: "text" };
+  // STORY_050: the Agent chip — greyed with a reason when the agent is not configured or the composer is extending a clip
+  const agentOn = video && state.agent.on;
+  const agentRunning = state.agent.running;
+  const agentDisabledReason = extending ? "Agent needs a photo — it directs from the first frame" : caps !== undefined && caps.agent?.configured === false ? caps.agent.reason : undefined;
+  const agentModel = caps?.agent?.model;
+  // "≈ N min on the Spark": only for a prompt in the model's format (the director's, or one pasted in that shape)
+  const sparkLine = video && !agentOn && state.text.includes(DESCRIPTION_MARKER)
+    ? sparkTimeLine(plan === undefined ? [{ seconds: state.durationSeconds, fromImage: state.images.length > 0, extension: extending !== undefined }] : plan.segments.map((segment, i) => ({ seconds: segment.seconds, fromImage: i === 0 && !extending && state.images.length > 0, extension: i > 0 || extending !== undefined })))
+    : undefined;
 
   return (
     <>
@@ -308,8 +384,8 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 <button type="button" className={styles.thumbRemove} aria-label={`Remove Reference image ${String(index + 1)}`} onClick={() => { dispatch({ type: "remove-image", id: image.id }); }}>×</button>
               </div>
             ))}
-            {state.images.length < (caps?.referenceImages.max ?? 2) ? (
-              <button type="button" className={styles.tile} onClick={() => fileInput.current?.click()} aria-label="Add reference image">
+            {state.images.length < (agentOn ? 1 : (caps?.referenceImages.max ?? 2)) ? (
+              <button type="button" className={styles.tile} onClick={() => fileInput.current?.click()} aria-label={agentOn ? "Add the photo" : "Add reference image"} disabled={agentRunning}>
                 <span className={styles.tilePlus} aria-hidden="true">+</span>
                 <span>Reference</span>
               </button>
@@ -339,10 +415,15 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
             placeholder={extending ? EXTEND_PLACEHOLDER : PLACEHOLDER}
             value={state.text}
             rows={2}
+            readOnly={agentRunning}
             onChange={(event) => { dispatch({ type: "text", text: event.target.value }); }}
             onKeyDown={onKeyDown}
           />
         </div>
+        {agentRunning ? <div className={styles.agentStatus} role="status" data-testid="agent-status">Thinking…</div> : null}
+        {!agentRunning && state.agent.notice?.tone === "warn" ? <div className={styles.agentWarn} role="status" data-testid="agent-findings">▲ {state.agent.notice.message}</div> : null}
+        {!agentRunning && state.agent.notice?.tone === "info" ? <div className={styles.agentInfo} role="status" data-testid="agent-info">{state.agent.notice.message}</div> : null}
+        {agentOn && state.images.length === 0 && !agentRunning ? <div className={styles.agentInfo} data-testid="agent-hint">Attach the photo the director starts from.</div> : null}
         {plan !== undefined ? (
           <ChainStrip plan={plan} start={chainStart} maxSourceSeconds={ext.maxSourceSeconds} overlapFrames={state.overlapFrames} overlapOptions={ext.overlapFrames.options.map((frames) => ({ frames, label: `${overlapSeconds(frames)} s` }))} onOverlap={(overlapFrames) => { dispatch({ type: "overlap", overlapFrames }); }} />
         ) : null}
@@ -366,8 +447,21 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
           </span>
           {video ? (
             <>
+              <AgentChip
+                on={state.agent.on}
+                skills={state.agent.skills}
+                skillId={state.agent.skillId}
+                disabledReason={agentDisabledReason}
+                busy={agentRunning}
+                menuOpen={popover === "agent-skill"}
+                narrow={narrow}
+                onToggle={() => { dispatch({ type: "agent-toggle" }); setPopover(undefined); }}
+                onMenu={() => { setPopover(popover === "agent-skill" ? undefined : "agent-skill"); }}
+                onSkill={(id) => { dispatch({ type: "agent-skill", skillId: id }); setPopover(undefined); updateSettings({ agentSkill: id }); }}
+                onManage={() => { setPopover(undefined); router.push("/plugins?tab=Skills"); }}
+              />
               <span style={{ position: "relative" }} className={styles.modelWrap} data-popover="model">
-                <button type="button" className={styles.pill} aria-haspopup="menu" aria-expanded={popover === "model"} aria-label={`Model: ${modelLabel(state)}`} onClick={() => { setPopover(popover === "model" ? undefined : "model"); }} disabled={!caps || extending !== undefined} title={extending ? FIXED_NOTE : undefined}>
+                <button type="button" className={styles.pill} aria-haspopup="menu" aria-expanded={popover === "model"} aria-label={`Model: ${modelLabel(state)}`} onClick={() => { setPopover(popover === "model" ? undefined : "model"); }} disabled={!caps || extending !== undefined || agentRunning} title={extending ? FIXED_NOTE : undefined}>
                   <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><circle cx="7" cy="7" r="2" fill="currentColor" /></svg>
                   {modelLabel(state)}
                   <span aria-hidden="true">⌄</span>
@@ -384,7 +478,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 ) : null}
               </span>
               <span style={{ position: "relative" }} data-popover="params">
-                <button type="button" className={styles.pill} aria-haspopup="dialog" aria-expanded={popover === "params"} aria-label={`Video parameters: ${paramsLabel(state)}`} onClick={() => { setPopover(popover === "params" ? undefined : "params"); }} disabled={!caps}>
+                <button type="button" className={styles.pill} aria-haspopup="dialog" aria-expanded={popover === "params"} aria-label={`Video parameters: ${paramsLabel(state)}`} onClick={() => { setPopover(popover === "params" ? undefined : "params"); }} disabled={!caps || agentRunning}>
                   <RatioGlyph ratio={state.ratio} /> {state.ratio}
                   <span className={styles.pillSep} aria-hidden="true" />
                   {state.resolution || "768P"}
@@ -439,13 +533,13 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
           ) : null}
           <div className={styles.barRight}>
             <span style={{ position: "relative" }} data-popover="agent">
-              <button type="button" className={styles.inertModel} aria-label="MiniMax-M3" aria-haspopup="menu" aria-expanded={popover === "agent"} onClick={() => { setPopover(popover === "agent" ? undefined : "agent"); }}>MiniMax-M3 <span aria-hidden="true">⌄</span></button>
-              {popover === "agent" ? <AgentModelMenu onClose={() => { setPopover(undefined); }} /> : null}
+              <button type="button" className={styles.inertModel} aria-label={agentOn && agentModel ? `Agent model: ${agentModel.label}` : "MiniMax-M3"} aria-haspopup="menu" aria-expanded={popover === "agent"} disabled={agentRunning} onClick={() => { setPopover(popover === "agent" ? undefined : "agent"); }}>{agentOn && agentModel ? agentModel.label : "MiniMax-M3"} <span aria-hidden="true">⌄</span></button>
+              {popover === "agent" ? <AgentModelMenu onClose={() => { setPopover(undefined); }} {...(agentOn && agentModel ? { model: agentModel } : {})} /> : null}
             </span>
             {video && !docked && !extending ? (
               // STORY_041: Run at… — hold the request in the queue until a time; set, it reads "Not before …" with a ×
               <span className={styles.runAtWrap} data-popover="run-at">
-                <button type="button" className={cx(styles.runAtButton, state.notBefore !== undefined && styles.runAtButtonOn)} aria-label={state.notBefore === undefined ? "Run at" : `Run at: ${formatNotBefore(state.notBefore)}`} aria-expanded={runAtOpen} onClick={() => { setRunAtOpen((o) => !o); }}>
+                <button type="button" className={cx(styles.runAtButton, state.notBefore !== undefined && styles.runAtButtonOn)} aria-label={state.notBefore === undefined ? "Run at" : `Run at: ${formatNotBefore(state.notBefore)}`} aria-expanded={runAtOpen} disabled={agentRunning} onClick={() => { setRunAtOpen((o) => !o); }}>
                   {state.notBefore === undefined ? "Run at…" : formatNotBefore(state.notBefore)}
                 </button>
                 {state.notBefore !== undefined ? <button type="button" className={styles.runAtClear} aria-label="Clear the run-at time" onClick={() => { dispatch({ type: "not-before", notBefore: undefined }); setRunAtOpen(false); }}>×</button> : null}
@@ -466,7 +560,11 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 ) : null}
               </span>
             ) : null}
-            {stop ? (
+            {agentRunning ? (
+              <button type="button" className={styles.send} aria-label="Stop the agent" onClick={stopAgent}>
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" /></svg>
+              </button>
+            ) : stop ? (
               <button type="button" className={styles.send} aria-label="Stop generation" disabled={stop.pending} onClick={stop.onStop}>
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" /></svg>
               </button>
@@ -479,6 +577,12 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
           </div>
         </div>
       </div>
+      {sparkLine !== undefined ? <div className={styles.sparkLine} data-testid="spark-time">{sparkLine}</div> : null}
+      {!agentRunning && state.agent.notice?.tone === "alert" ? (
+        <div className={styles.error} role="alert" data-testid="agent-alert">
+          <span aria-hidden="true">ⓘ</span> {state.agent.notice.message}
+        </div>
+      ) : null}
       {state.error ? (
         <div className={styles.error} role="alert" data-field={state.error.field}>
           <span aria-hidden="true">ⓘ</span> {state.error.message}

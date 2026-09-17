@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AGENT_RUNS_MAX, agentRunsFile, listAgentRuns, markAgentRunOpened, recordAgentRun } from "./agent-run-store";
+import { AGENT_RUNS_MAX, agentRunsFile, clearAgentRuns, listAgentRuns, markAgentRunOpened, recordAgentRun } from "./agent-run-store";
 
 let dir = "";
 beforeEach(() => {
@@ -35,5 +35,7 @@ describe("agent-run-store", () => {
     expect(listAgentRuns()).toEqual([]);
     writeFileSync(agentRunsFile(), JSON.stringify([{ id: 1 }, { id: "x", at: "2026-09-17T00:00:00Z", skill: "s", notes: "", outcome: "refusal", message: "m" }]));
     expect(listAgentRuns()).toHaveLength(1);
+    clearAgentRuns();
+    expect(listAgentRuns()).toEqual([]);
   });
 });

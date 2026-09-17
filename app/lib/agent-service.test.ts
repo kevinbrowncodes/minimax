@@ -73,7 +73,7 @@ describe("runDirector", () => {
     const { fetch } = vertex([() => json(200, { candidates: [{ finishReason: "SAFETY", content: { parts: [{ text: "I can't help with that." }] } }] })]);
     const out = await runDirector({ skillId: "minimax-h3-director-thirst-trap", image, notes: "n" }, { config, fetch, record });
     expect(out).toEqual({ kind: "refusal", message: "I can't help with that." });
-    expect(record).toHaveBeenCalledWith({ skill: "minimax-h3-director-thirst-trap", notes: "n", outcome: "refusal", message: "I can't help with that." });
+    expect(record).toHaveBeenCalledWith({ skill: "minimax-h3-director-thirst-trap", skillName: "Thirst trap", notes: "n", outcome: "refusal", message: "I can't help with that." });
   });
   it("a reply that is not a prompt (prose) is shown as a refusal in the model's words", async () => {
     const record = vi.fn();

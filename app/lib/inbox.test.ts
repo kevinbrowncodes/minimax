@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { eventsFor, formatEventTime, isEventRead, tabFilter, unreadCount } from "./inbox";
+import { eventsFor, formatEventTime, isEventRead, tabFilter, unreadCount, type InboxEvent } from "./inbox";
 import type { RecentEntry } from "./route-title";
 
 const at = (h: number, m: number) => new Date(2026, 8, 15, h, m).toISOString();
@@ -61,5 +61,26 @@ describe("the Inbox's events (STORY_046): a framing move the prompt asked for is
     expect(eventsFor([cutIn]).map((e) => `${e.id} ${e.text}`)).toEqual(["k:ready Your video is ready", "k:cut The shot changed at 00:05"]);
     const wandered: RecentEntry = { ...moved, id: "s", result: { ...result, cuts: framing, camera: "static" } };
     expect(eventsFor([wandered]).map((e) => `${e.id} ${e.text}`)).toEqual(["s:ready Your video is ready", "s:cut The shot changed at 00:01"]);
+  });
+});
+
+describe("the Inbox's events (STORY_050): director runs that ended without a prompt", () => {
+  const runs = [
+    { id: "r1", at: "2026-09-17T07:12:00.000Z", skill: "minimax-h3-director-thirst-trap", skillName: "Thirst trap", notes: "blue trunks under the crop, keep the camera still and the light as it is", outcome: "refusal" as const, message: "I can't help with that." },
+    { id: "r2", at: "2026-09-17T08:00:00.000Z", skill: "Thirst trap", notes: "", outcome: "error" as const, message: "Google's quota: exceeded", openedAt: "2026-09-17T08:05:00.000Z" },
+  ];
+  it("merges them as Messages rows, newest first, titled by the skill and the notes' first words, read when opened or after Read all", () => {
+    const events = eventsFor([], runs);
+    expect(events.map((e) => [e.kind, e.tab, e.runId, e.taskId])).toEqual([["agent-failed", "Messages", "r2", undefined], ["agent-refused", "Messages", "r1", undefined]]);
+    expect(events[1]?.text).toBe("The director declined");
+    expect(events[1]?.title).toBe("Thirst trap — blue trunks under the crop, keep the camera…");
+    expect(events[0]?.title).toBe("Thirst trap — (no notes)");
+    expect(events[1]?.stamp).toMatch(/^26-09-17-\d{4}$/);
+    expect(isEventRead(events[0] as InboxEvent, undefined)).toBe(true);
+    expect(isEventRead(events[1] as InboxEvent, undefined)).toBe(false);
+    expect(isEventRead(events[1] as InboxEvent, "2026-09-17T09:00:00.000Z")).toBe(true);
+    expect(tabFilter(events, "Messages")).toHaveLength(2);
+    expect(tabFilter(events, "Updates")).toHaveLength(0);
+    expect(unreadCount(events, undefined)).toBe(1);
   });
 });

@@ -4,6 +4,7 @@
  * and the sidebar always see the latest state. HISTORY_FILE names the file; the app container mounts /data for it.
  */
 import { firstTimestampedLine } from "./chain";
+import { describedAction } from "./prompt-format";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -68,7 +69,8 @@ const TITLE_MAX = 48;
 export function titleFor(prompt: string): string {
   // STORY_044: a script is named by its first timestamped line (the bracket dropped), so a chain's segments — each
   // beginning with the same scene paragraph — read as their own beats rather than six copies of the scene
-  const clean = (firstTimestampedLine(prompt) ?? prompt).trim().replace(/\s+/g, " ");
+  // STORY_050: a director's base-format prompt is named by its first action sentence, not "For the target video, at 0.00…"
+  const clean = (firstTimestampedLine(prompt) ?? describedAction(prompt) ?? prompt).trim().replace(/\s+/g, " ");
   if (clean.length <= TITLE_MAX) return clean || "Unnamed Session";
   const cut = clean.slice(0, TITLE_MAX + 1);
   const boundary = cut.lastIndexOf(" ");

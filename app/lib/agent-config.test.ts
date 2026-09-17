@@ -46,7 +46,7 @@ describe("readAgentConfig", () => {
 
 describe("agentFlag", () => {
   it("publishes the flag alone when configured, and the reason when not", () => {
-    expect(agentFlag({ configured: true, project: "p", location: "l", model: "m", keyFile: "/k", skillsDir: "/s", timeoutMs: 1, thinking: "low" })).toEqual({ configured: true });
+    expect(agentFlag({ configured: true, project: "p", location: "l", model: "gemini-3.8-flash", keyFile: "/k", skillsDir: "/s", timeoutMs: 1, thinking: "low" })).toEqual({ configured: true, model: { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash" } });
     expect(agentFlag({ configured: false, reason: "why" })).toEqual({ configured: false, reason: "why" });
   });
 });

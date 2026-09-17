@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { createStubServer, DEFAULT_FIXTURES_DIR, type StubServer } from "stub-generation-server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { GET as getRuns, POST as postRun } from "@/app/api/agent/runs/route";
+import { DELETE as deleteRuns, GET as getRuns, POST as postRun } from "@/app/api/agent/runs/route";
 import { PATCH as patchRun } from "@/app/api/agent/runs/[id]/route";
 import { GET as getSkills } from "@/app/api/agent/skills/route";
 import { forgetTokens } from "@/lib/vertex";
@@ -104,6 +104,9 @@ describe("POST /api/agent/runs", () => {
     const patched = await patchRun(new Request(`http://app/api/agent/runs/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ openedAt: "2026-09-17T12:00:00.000Z" }) }), { params: Promise.resolve({ id }) });
     expect(await patched.json()).toMatchObject({ id, openedAt: "2026-09-17T12:00:00.000Z" });
     expect((await patchRun(new Request("http://app/api/agent/runs/nope", { method: "PATCH" }), { params: Promise.resolve({ id: "nope" }) })).status).toBe(404);
+    // DELETE forgets every run (the e2e lane's reset)
+    expect((await deleteRuns()).status).toBe(200);
+    expect(((await (await getRuns()).json()) as { runs: unknown[] }).runs).toEqual([]);
   });
   it("quota is a 429 relayed and recorded; an unreachable fake is a 502 without the URL", async () => {
     const quota = await run("quota");

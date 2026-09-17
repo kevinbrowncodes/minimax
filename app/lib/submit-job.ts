@@ -95,3 +95,48 @@ export async function submitChain(state: ComposerState, prompts: readonly string
   }
   return { ok: true, ids };
 }
+
+/** STORY_050: what `POST /api/agent/runs` answers, as the composer reads it. */
+export type AgentRunResult =
+  | { readonly kind: "prompt"; readonly prompt: string; readonly findings: readonly { readonly code: string; readonly message: string; readonly segment?: number }[]; readonly segments: number }
+  | { readonly kind: "refusal"; readonly message: string }
+  | { readonly kind: "error"; readonly status: number; readonly message: string }
+  | { readonly kind: "stopped" };
+
+/**
+ * STORY_050: the director run — the skill, the one photo and the notes as multipart; `?agentScript=` on the page URL
+ * forwarded as `?script=` so the e2e lane picks the fake's outcome (the jobs route's `?script=` is untouched). The
+ * caller's signal aborts the request; an abort is "stopped", never an error.
+ */
+export async function submitAgentRun(state: ComposerState, fetchImpl: typeof fetch = fetch, signal?: AbortSignal): Promise<AgentRunResult> {
+  const image = state.images[0];
+  const skillId = state.agent.skillId;
+  if (image === undefined || skillId === undefined) return { kind: "error", status: 0, message: "Attach the photo the director starts from" };
+  const form = new FormData();
+  form.set("skill", skillId);
+  form.set("notes", state.text);
+  form.append("referenceImage", image.file, image.name);
+  const script = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("agentScript");
+  const url = script === null ? "/api/agent/runs" : `/api/agent/runs?script=${encodeURIComponent(script)}`;
+  let response: Response;
+  try {
+    response = await fetchImpl(url, { method: "POST", body: form, ...(signal === undefined ? {} : { signal }) });
+  } catch (error) {
+    if (signal?.aborted) return { kind: "stopped" };
+    return { kind: "error", status: 0, message: `The agent could not be reached: ${error instanceof Error ? error.message : String(error)}` };
+  }
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    return { kind: "error", status: response.status, message: `The agent answered ${String(response.status)} without JSON` };
+  }
+  const o = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+  if (response.ok && o["kind"] === "prompt" && typeof o["prompt"] === "string") return { kind: "prompt", prompt: o["prompt"], findings: Array.isArray(o["findings"]) ? (o["findings"] as AgentRunResult extends { findings: infer F } ? F : never) : [], segments: typeof o["segments"] === "number" ? o["segments"] : 1 };
+  if (response.ok && o["kind"] === "refusal" && typeof o["message"] === "string") return { kind: "refusal", message: o["message"] };
+  const err = typeof o["error"] === "object" && o["error"] !== null ? (o["error"] as Record<string, unknown>) : {};
+  const code = typeof err["code"] === "string" ? err["code"] : "";
+  const message = typeof err["message"] === "string" ? err["message"] : `The agent answered ${String(response.status)}`;
+  const prefix = code === "unreachable" ? "The agent could not be reached: " : code === "quota" ? "Google's quota: " : code === "timeout" ? "" : code === "not_configured" ? "The agent is not configured: " : "";
+  return { kind: "error", status: response.status, message: `${prefix}${message}` };
+}

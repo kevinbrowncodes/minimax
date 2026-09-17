@@ -1,5 +1,5 @@
 import { runDirector } from "@/lib/agent-service";
-import { listAgentRuns } from "@/lib/agent-run-store";
+import { clearAgentRuns, listAgentRuns } from "@/lib/agent-run-store";
 import { errorResponse, guarded } from "@/lib/model-client";
 import { validateReferenceImages } from "@/lib/upload-validation";
 
@@ -33,5 +33,13 @@ export function POST(request: Request): Promise<Response> {
     const outcome = await runDirector({ skillId: skill.trim(), image: { bytes: new Uint8Array(await file.arrayBuffer()), mimeType: file.type }, notes, signal: request.signal, ...(script === undefined ? {} : { script }) });
     if (outcome.kind === "error") return errorResponse({ status: outcome.status, code: outcome.code, message: outcome.message });
     return Response.json(outcome);
+  });
+}
+
+/** DELETE /api/agent/runs — forget every run (the e2e lane's reset between specs). */
+export function DELETE(): Promise<Response> {
+  return guarded(() => {
+    clearAgentRuns();
+    return Promise.resolve(Response.json({ ok: true }));
   });
 }

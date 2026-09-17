@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -13,6 +13,15 @@ function store(): HistoryStore {
   dir = mkdtempSync(path.join(tmpdir(), "history-"));
   return new HistoryStore(path.join(dir, "nested", "history.json"));
 }
+
+describe("titleFor (STORY_050: a director's prompt is named by its first action sentence)", () => {
+  it("skips the instruction line and the style and camera sentences; a timestamped script and plain prose keep their rules", () => {
+    const office = readFileSync(path.resolve(__dirname, "../test/fixtures/agent/office-expanded.txt"), "utf8");
+    expect(titleFor(office)).toBe("A fit young man in his early twenties with short…");
+    expect(titleFor("integrated_multimodal_description: [Shot 1] The man in the navy trunks steps forward and holds there.\n\noverall_soundscape: none")).toBe("The man in the navy trunks steps forward and…");
+    expect(titleFor("scene\n[0:00-0:03] He steps back.")).toBe("He steps back.");
+  });
+});
 
 describe("titleFor", () => {
   it("cuts at a word boundary within 48 characters and adds an ellipsis", () => {

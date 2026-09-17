@@ -680,3 +680,130 @@
     grid-column: 2 / -1;
   }
 }
+
+/* STORY_050 — the Agent chip (the reference's Agent Team slot: 32 px, radius 10, 14 px/400, blue when on) */
+.agentWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.agentChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing_6);
+  height: 32px;
+  padding: 0 var(--spacing_10, 10px);
+  border: 0;
+  border-radius: var(--radius_10);
+  background: transparent;
+  color: var(--text_default_secondary);
+  font-size: 14px;
+  line-height: var(--line_height_20);
+  cursor: pointer;
+  transition: background var(--duration_fast) var(--ease_standard), color var(--duration_fast) var(--ease_standard);
+}
+.agentChip:hover:not([aria-disabled="true"]) {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.agentChip[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+}
+.agentChipOn {
+  color: var(--blue_400);
+  background: rgba(0, 148, 252, 0.1);
+}
+:root[data-theme="dark"] .agentChipOn {
+  background: rgba(0, 148, 252, 0.16);
+}
+.agentChipSkill {
+  white-space: nowrap;
+}
+.agentChipMenu {
+  height: 32px;
+  padding: 0 var(--spacing_6);
+  margin-left: -6px;
+  border: 0;
+  border-radius: 0 var(--radius_10) var(--radius_10) 0;
+  background: transparent;
+  color: var(--blue_400);
+  font-size: 14px;
+  cursor: pointer;
+}
+.agentChipMenu:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.agentSkillMenu {
+  left: 0;
+  width: 268px;
+}
+.agentMenuTitle {
+  padding: var(--spacing_6) var(--spacing_8);
+  font-size: 12px;
+  color: var(--text_default_tertiary);
+}
+.agentMenuItem {
+  align-items: flex-start;
+}
+.agentMenuText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+.agentMenuDesc {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text_default_secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 236px;
+}
+.agentMenuSeparator {
+  height: 1px;
+  margin: var(--spacing_6) 0;
+  background: var(--border_default);
+}
+/* the status line while the director works, in the thread's muted meta type */
+.agentStatus {
+  width: 100%;
+  padding: 0 var(--spacing_4);
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--text_default_secondary);
+}
+/* the findings strip: STORY_020's amber; the info strip: the muted note */
+.agentWarn {
+  width: 100%;
+  padding: var(--spacing_8) var(--spacing_12);
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--text_default_primary);
+  font-size: 14px;
+  line-height: 22px;
+}
+.agentInfo {
+  width: 100%;
+  text-align: center;
+  color: var(--text_default_secondary);
+  font-size: 13px;
+}
+/* "≈ 50 min on the Spark" under Send */
+.sparkLine {
+  width: 100%;
+  text-align: right;
+  padding: 0 var(--spacing_8);
+  font-size: 12px;
+  color: var(--text_default_tertiary);
+}
+@media (max-width: 767px) {
+  .agentChip,
+  .agentChipMenu {
+    min-height: 44px;
+  }
+  .agentSkillMenu {
+    width: min(268px, calc(100vw - 48px));
+  }
+}

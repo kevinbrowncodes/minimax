@@ -137,7 +137,7 @@ const AGENT_MODELS = ["MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7 HighSpeed"] as
  * agent-model-menu-open@1440: 218 px, right-aligned; three models (M3 checked) and a Thinking switch. At 390
  * (narrow-agent-model-menu-open@390) the same entries are a "Select model" bottom sheet over a dimmed page with a ×.
  */
-export function AgentModelMenu({ onClose }: { readonly onClose: () => void }) {
+export function AgentModelMenu({ onClose, model }: { readonly onClose: () => void; readonly model?: { readonly id: string; readonly label: string } }) {
   return (
     <>
       <div className={styles.sheetBackdrop} onMouseDown={(event) => { event.stopPropagation(); onClose(); }} aria-hidden="true" />
@@ -146,17 +146,28 @@ export function AgentModelMenu({ onClose }: { readonly onClose: () => void }) {
           <span className={styles.sheetTitle}>Select model</span>
           <button type="button" className={styles.sheetClose} aria-label="Close" onClick={onClose}>×</button>
         </div>
-        {AGENT_MODELS.map((label, i) => (
+        {model ? (
+          // STORY_050: while the Agent chip is on the pill names the model we run — one row, checked, no Thinking switch (STORY_026's rule)
+          <button type="button" role="menuitemradio" aria-checked className={styles.item} title={model.id} onClick={onClose}>
+            <span className={styles.check} aria-hidden="true">✓</span>
+            <span className={styles.label}>{model.label}</span>
+          </button>
+        ) : null}
+        {model ? null : AGENT_MODELS.map((label, i) => (
           <Inert key={label} role="menuitem" label={label} className={styles.item}>
             <span className={styles.check} aria-hidden="true">{i === 0 ? "✓" : ""}</span>
             <span className={styles.label}>{label}</span>
           </Inert>
         ))}
-        <div className={styles.separator} />
-        <div className={cx(styles.item, styles.itemStatic)}>
-          <span className={styles.label}>Thinking</span>
-          <Inert role="switch" ariaChecked label="Thinking" className={styles.switch} align="end"><span className={styles.switchKnob} /></Inert>
-        </div>
+        {model ? null : (
+          <>
+            <div className={styles.separator} />
+            <div className={cx(styles.item, styles.itemStatic)}>
+              <span className={styles.label}>Thinking</span>
+              <Inert role="switch" ariaChecked label="Thinking" className={styles.switch} align="end"><span className={styles.switchKnob} /></Inert>
+            </div>
+          </>
+        )}
       </div>
     </>
   );

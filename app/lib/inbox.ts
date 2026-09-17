@@ -10,11 +10,25 @@ import { formatDoneAt } from "./task-view";
 export const INBOX_TABS = ["All", "Updates", "Messages"] as const;
 export type InboxTab = (typeof INBOX_TABS)[number];
 
-export type InboxKind = "ready" | "cut" | "failed" | "refused" | "cancelled";
+export type InboxKind = "ready" | "cut" | "failed" | "refused" | "cancelled" | "agent-refused" | "agent-failed";
+
+/** STORY_050: a director run that ended without a prompt (`GET /api/agent/runs`) — the Messages tab's first content. */
+export interface AgentRunEvent {
+  readonly id: string;
+  readonly at: string;
+  readonly skill: string;
+  readonly skillName?: string;
+  readonly notes: string;
+  readonly outcome: "refusal" | "error";
+  readonly message: string;
+  readonly openedAt?: string;
+}
 
 export interface InboxEvent {
   readonly id: string;
-  readonly taskId: string;
+  /** The task the event belongs to; absent for an agent run, which has `runId` instead. */
+  readonly taskId?: string;
+  readonly runId?: string;
   readonly kind: InboxKind;
   /** "Your video is ready", "The shot changed at 00:11", … */
   readonly text: string;
@@ -34,9 +48,23 @@ function clock(seconds: number): string {
   return `${String(Math.floor(whole / 60)).padStart(2, "0")}:${String(whole % 60).padStart(2, "0")}`;
 }
 
-/** Every terminal entry's events, newest first (a job's "ready" before its "shot changed" — they share a time). */
-export function eventsFor(entries: readonly RecentEntry[]): readonly InboxEvent[] {
+/** "26-09-17-0312" — the stamp a run is named by, the way recents are (CHORE_008's minute). */
+function runStamp(at: string): string {
+  const d = new Date(at);
+  if (Number.isNaN(d.getTime())) return "";
+  const two = (n: number): string => String(n).padStart(2, "0");
+  return `${String(d.getFullYear()).slice(2)}-${two(d.getMonth() + 1)}-${two(d.getDate())}-${two(d.getHours())}${two(d.getMinutes())}`;
+}
+
+/** Every terminal entry's events and every agent run's, newest first (a job's "ready" before its "shot changed" — they share a time). */
+export function eventsFor(entries: readonly RecentEntry[], runs: readonly AgentRunEvent[] = []): readonly InboxEvent[] {
   const events: InboxEvent[] = [];
+  for (const run of runs) {
+    const notes = run.notes.trim().replace(/\s+/g, " ");
+    const cut = notes.length > 48 ? `${notes.slice(0, 49).replace(/\s+\S*$/, "")}…` : notes; // at a word boundary, as titleFor cuts
+    const title = `${run.skillName ?? run.skill} — ${notes === "" ? "(no notes)" : cut}`;
+    events.push({ id: `run:${run.id}`, runId: run.id, kind: run.outcome === "refusal" ? "agent-refused" : "agent-failed", text: run.outcome === "refusal" ? "The director declined" : "The agent run failed", stamp: runStamp(run.at), title, at: run.at, tab: "Messages", ...(run.openedAt === undefined ? {} : { openedAt: run.openedAt }) });
+  }
   for (const entry of entries) {
     const at = entry.finishedAt ?? entry.createdAt;
     if (at === undefined) continue;

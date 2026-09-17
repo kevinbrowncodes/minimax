@@ -1,7 +1,7 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import type { InboxEvent } from "@/lib/inbox";
+import type { AgentRunEvent, InboxEvent } from "@/lib/inbox";
 import type { Project } from "@/lib/project-store";
 import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
 import { archivedRecents, tasksOf } from "@/lib/recents";
@@ -66,6 +66,7 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [themeChoice, setThemeChoice] = useThemeChoice();
   const [recents, setRecents] = useState<readonly RecentEntry[]>([]);
+  const [agentRuns, setAgentRuns] = useState<readonly AgentRunEvent[]>([]); // STORY_050: director runs that ended without a prompt
   const confirmDelete = useCallback((message: string) => (confirmImpl ? confirmImpl(message) : window.confirm(message)), [confirmImpl]);
 
   const loadRecents = useCallback(() => {
@@ -74,6 +75,17 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
       .then(async (res) => (res.ok ? ((await res.json()) as { entries: RecentEntry[] }).entries : []))
       .then((entries) => {
         if (!cancelled) setRecents(entries);
+      })
+      .catch(() => undefined);
+    // STORY_050: the Inbox's Messages rows come from the agent-runs store, loaded with the recents
+    fetch("/api/agent/runs")
+      .then(async (res) => {
+        const body: unknown = res.ok ? await res.json() : undefined;
+        const list = typeof body === "object" && body !== null ? (body as { runs?: unknown }).runs : undefined;
+        return Array.isArray(list) ? (list as AgentRunEvent[]) : [];
+      })
+      .then((runs) => {
+        if (!cancelled) setAgentRuns(runs);
       })
       .catch(() => undefined);
     return () => {
@@ -97,6 +109,12 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
 
   // Recents follow the history store; refetched on every navigation so a new job or a finished one shows up.
   useEffect(() => loadRecents(), [pathname, loadRecents]);
+  // STORY_050: a director run that ended without a prompt tells the Shell to reload the Inbox's rows
+  useEffect(() => {
+    const reload = (): void => { loadRecents(); };
+    window.addEventListener("minimax:agent-runs", reload);
+    return () => { window.removeEventListener("minimax:agent-runs", reload); };
+  }, [loadRecents]);
   useEffect(() => loadProjects(), [pathname, loadProjects]);
   /** STORY_034: the server-wide settings, read once and whenever Settings opens. */
   const loadSettings = useCallback(() => {
@@ -304,7 +322,16 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
   const openInboxEvent = useCallback(
     (event: InboxEvent) => {
       if (narrow) closeDrawer();
-      router.push(`/task/${encodeURIComponent(event.taskId)}`);
+      if (event.runId !== undefined) {
+        // STORY_050: a director run's row reopens the composer with the notes and the words; the row is stamped opened
+        const id = event.runId;
+        const openedAt = new Date().toISOString();
+        setAgentRuns((runs) => runs.map((r) => (r.id === id ? { ...r, openedAt } : r)));
+        void fetch(`/api/agent/runs/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ openedAt }) }).catch(() => undefined);
+        router.push(`/?agentRun=${encodeURIComponent(id)}`);
+        return;
+      }
+      if (event.taskId !== undefined) router.push(`/task/${encodeURIComponent(event.taskId)}`);
     },
     [narrow, closeDrawer, router],
   );
@@ -320,6 +347,7 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
         <Sidebar
           pathname={pathname}
           recents={recents}
+          agentRuns={agentRuns}
           prefs={prefs}
           rail={rail}
           onNavigate={narrow ? closeDrawer : undefined}

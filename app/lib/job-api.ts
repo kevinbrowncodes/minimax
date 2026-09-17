@@ -77,7 +77,7 @@ export interface Capabilities {
   /** v1.1 (STORY_016): how a finished video can be extended; absent on a server without extensions. */
   readonly extension?: ExtensionCapabilities;
   /** STORY_047: merged in by the app's own route, never by the adapter — whether agent mode is configured, and why not. */
-  readonly agent?: { readonly configured: boolean; readonly reason?: string };
+  readonly agent?: { readonly configured: boolean; readonly reason?: string; readonly model?: { readonly id: string; readonly label: string } };
 }
 export interface ExtensionCapabilities {
   readonly durationsSeconds: { readonly min: number; readonly max: number; readonly step: number; readonly default: number };

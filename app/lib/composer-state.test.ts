@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Capabilities } from "./job-api";
-import { canSend, durationOptions, initialComposer, isModelEnabled, isResolutionEnabled, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ComposerState, type ExtendSource } from "./composer-state";
+import { canSend, durationOptions, initialComposer, isModelEnabled, isResolutionEnabled, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ComposerState, type ExtendSource, agentSkill, agentSkillLabel, skillClipSeconds, type AgentSkill } from "./composer-state";
 
 const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 } };
 const img = (id: string, type = "image/png", size = 1000): ComposerImage => ({ id, file: new File(["x"], `${id}.png`, { type }), url: "", name: `${id}.png`, type, size });
@@ -209,5 +209,74 @@ describe("the modes and the Showcase (STORY_022, STORY_026)", () => {
   it("without capabilities a scene's parameters are taken as given", () => {
     const state = reduceComposer(initialComposer(), { type: "scene", prompt: "p", ratio: "21:9", resolution: "2K", durationSeconds: 8 });
     expect([state.ratio, state.resolution, state.durationSeconds]).toEqual(["21:9", "2K", 8]);
+  });
+});
+
+describe("the Agent chip (STORY_050)", () => {
+  const skills: readonly AgentSkill[] = [
+    { id: "minimax-h3-director-thirst-trap", name: "minimax-h3-director-thirst-trap", description: "Directs one…", metadata: { "minimax-short-name": "Thirst trap", "minimax-clip-seconds": "10" } },
+    { id: "minimax-h3-director-thirst-trap-chain", name: "minimax-h3-director-thirst-trap-chain", description: "Directs a whole…", metadata: { "minimax-short-name": "Chain director" } },
+  ];
+  const video = (): ComposerState => reduceComposer(ready(), { type: "enter-video-mode" });
+  it("the skills arrive: the setting's is chosen, else the first; the label is the short name", () => {
+    const first = reduceComposer(video(), { type: "agent-skills", skills });
+    expect(first.agent.skillId).toBe("minimax-h3-director-thirst-trap");
+    expect(agentSkillLabel(agentSkill(first))).toBe("Thirst trap");
+    const chosen = reduceComposer(video(), { type: "agent-skills", skills, chosen: "minimax-h3-director-thirst-trap-chain" });
+    expect(agentSkillLabel(agentSkill(chosen))).toBe("Chain director");
+    expect(reduceComposer(video(), { type: "agent-skills", skills, chosen: "nope" }).agent.skillId).toBe("minimax-h3-director-thirst-trap");
+    expect(reduceComposer(chosen, { type: "agent-skill", skillId: "nope" }).agent.skillId).toBe("minimax-h3-director-thirst-trap-chain");
+    expect(skillClipSeconds(agentSkill(first))).toBe(10);
+    expect(skillClipSeconds(agentSkill(chosen))).toBeUndefined();
+  });
+  it("Send with the chip on needs one photo, not text; a second photo is refused while on and allowed when off", () => {
+    let state = reduceComposer(video(), { type: "agent-toggle" });
+    expect(state.agent.on).toBe(true);
+    expect(canSend(state)).toBe(false);
+    state = reduceComposer(state, { type: "add-images", images: [img("a")] });
+    expect(canSend(state)).toBe(true);
+    const refused = reduceComposer(state, { type: "add-images", images: [img("b")] });
+    expect(refused.images).toHaveLength(1);
+    expect(refused.error?.message).toBe("The director takes one photo");
+    const off = reduceComposer(state, { type: "agent-toggle" });
+    expect(off.agent.on).toBe(false);
+    expect(reduceComposer(off, { type: "add-images", images: [img("b")] }).images).toHaveLength(2);
+    expect(canSend(off)).toBe(false); // no text
+    // turning it on keeps only the first photo
+    const two = reduceComposer(off, { type: "add-images", images: [img("b")] });
+    expect(reduceComposer(two, { type: "agent-toggle" }).images.map((i) => i.id)).toEqual(["a"]);
+  });
+  it("the chip cannot turn on in extend mode, and turns off when extending or leaving video mode", () => {
+    const source = { id: "s", title: "t", durationSeconds: 10, ratio: "16:9", resolution: "768P", model: "minimax-h3", posterUrl: "" };
+    const extending = reduceComposer(video(), { type: "extend-from", source });
+    expect(reduceComposer(extending, { type: "agent-toggle" }).agent.on).toBe(false);
+    const on = reduceComposer(video(), { type: "agent-toggle" });
+    expect(reduceComposer(on, { type: "extend-from", source }).agent.on).toBe(false);
+    expect(reduceComposer(on, { type: "leave-video-mode" }).agent.on).toBe(false);
+  });
+  it("a run: start, then the reply into the box with the chip off, the photo kept, the duration the skill's, findings as a warning", () => {
+    let state = reduceComposer(reduceComposer(video(), { type: "agent-skills", skills }), { type: "agent-toggle" });
+    state = reduceComposer(state, { type: "add-images", images: [img("a")] });
+    state = reduceComposer(state, { type: "text", text: "keep the camera still" });
+    state = reduceComposer(state, { type: "agent-start" });
+    expect(state.agent.running).toBe(true);
+    expect(canSend(state)).toBe(false);
+    expect(reduceComposer(state, { type: "agent-toggle" })).toBe(state); // nothing toggles mid-run
+    const replied = reduceComposer(state, { type: "agent-reply", prompt: "For the target video…", findings: [], clipSeconds: 10 });
+    expect(replied).toMatchObject({ text: "For the target video…", durationSeconds: 10, images: [{ id: "a" }], agent: { on: false, running: false, notice: undefined } });
+    const warned = reduceComposer(state, { type: "agent-reply", prompt: "p", findings: [{ code: "no-soundscape", message: "no overall_soundscape: field" }, { code: "description-too-short", message: "the description is 300 words; the skill asks for 350–600" }] });
+    expect(warned.agent.notice).toEqual({ tone: "warn", message: "The reply misses the skill's format: no overall_soundscape: field; the description is 300 words; the skill asks for 350–600. Edit it, or send it as it is." });
+    expect(reduceComposer(state, { type: "agent-reply", prompt: "p", findings: [] }).durationSeconds).toBe(state.durationSeconds); // no clip length declared
+  });
+  it("a refusal, an error and a stop keep the chip on and the notes, with their words; reopening a run puts the notes back", () => {
+    let state = reduceComposer(video(), { type: "agent-toggle" });
+    state = reduceComposer(reduceComposer(state, { type: "text", text: "notes" }), { type: "agent-start" });
+    expect(reduceComposer(state, { type: "agent-declined", message: "I can't help with that." })).toMatchObject({ text: "notes", agent: { on: true, running: false, notice: { tone: "alert", message: 'The director declined: "I can\'t help with that."' } } });
+    expect(reduceComposer(state, { type: "agent-failed", message: "Google's quota: exceeded" }).agent.notice).toEqual({ tone: "alert", message: "Google's quota: exceeded" });
+    expect(reduceComposer(state, { type: "agent-stopped" }).agent.notice).toEqual({ tone: "info", message: "Stopped — nothing was sent." });
+    const reopened = reduceComposer(ready(), { type: "agent-notes", notes: "blue trunks", message: 'The director declined: "no"' });
+    expect(reopened).toMatchObject({ mode: "video", text: "blue trunks", agent: { on: true, notice: { tone: "alert" } } });
+    // turning the chip off clears the notice
+    expect(reduceComposer(reopened, { type: "agent-toggle" }).agent.notice).toBeUndefined();
   });
 });
