@@ -15,6 +15,11 @@ const STUB = "http://127.0.0.1:4010";
 test.beforeEach(async ({ request }) => {
   await clearHistory(request);
   await request.delete("/api/agent/runs"); // the Inbox's rows from earlier specs
+  await request.patch("/api/settings", { data: { agentConfirm: "always" } }); // STORY_051: the default, whatever the last spec left
+});
+test.afterEach(async ({ request }) => {
+  await request.patch("/api/settings", { data: { agentConfirm: "always" } });
+  await request.delete("/api/agent/runs"); // the Inbox's Messages rows: never left for the next spec
 });
 
 async function openVideoWithAgent(page: import("@playwright/test").Page, url: string): Promise<void> {
@@ -45,8 +50,7 @@ test.describe("the Agent chip (STORY_050)", () => {
     await page.getByRole("textbox", { name: "Message" }).fill("keep the camera still");
     const run = page.waitForResponse((r) => r.url().includes("/api/agent/runs") && r.request().method() === "POST");
     await page.getByRole("button", { name: "Send message" }).click();
-    await expect(page.getByTestId("agent-status")).toHaveText("Thinking…");
-    await expect(page.getByRole("button", { name: "Stop the agent" })).toBeVisible();
+    // the fake answers at once, so Thinking… and Stop are transient here — the `slow` case below asserts them
     expect((await run).status()).toBe(200);
     // the reply in the box, the chip off, the photo kept, 10 s, the line under Send
     const box = page.getByRole("textbox", { name: "Message" });
@@ -134,6 +138,56 @@ test.describe("the Agent chip (STORY_050)", () => {
     await page.getByRole("button", { name: "Send message" }).click();
     expect((await created).status()).toBe(202);
     await terminal;
+    expect(await stubApi.openJobs()).toEqual([]);
+  });
+
+  // STORY_051 — Confirm before generating
+  test("Never: a clean reply goes straight to a job with no review step; the panel saves the setting", async ({ page, stubApi }) => {
+    await openVideoWithAgent(page, "/?agentScript=clean&script=done-after-1-poll");
+    await page.getByRole("button", { name: "Agent settings" }).click();
+    const panel = page.getByRole("dialog", { name: "Agent settings" });
+    await expect(panel.getByRole("radio", { name: /Always/ })).toBeChecked();
+    await expect(page.getByTestId("agent-settings-model")).toHaveText("Gemini 3.8 Flash · Vertex AI");
+    await panel.getByRole("radio", { name: /Never/ }).click();
+    const saved = page.waitForResponse((r) => r.url().includes("/api/settings") && r.request().method() === "PATCH");
+    await panel.getByRole("button", { name: "Save" }).click();
+    expect(((await (await saved).json()) as { agentConfirm: string }).agentConfirm).toBe("never");
+    await expect(panel).toBeHidden();
+    await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
+    await page.getByRole("textbox", { name: "Message" }).fill("straight through");
+    const terminal = waitForTerminalStatus(page);
+    const created = page.waitForResponse((r) => r.url().includes("/api/jobs") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Send message" }).click();
+    const response = await created;
+    expect(response.status()).toBe(202);
+    const { id } = (await response.json()) as { id: string };
+    await expect(page).toHaveURL(new RegExp(`/task/${id}$`));
+    await terminal;
+    const received = await stubApi.received(id);
+    expect(received.request.prompt.startsWith("For the target video")).toBe(true);
+    expect(received.request).toMatchObject({ durationSeconds: 10, referenceImages: 1 });
+    await expectPlayable(page.getByTestId("preview-pane").getByTestId("result-video"), `/api/jobs/${id}/result`);
+  });
+
+  test("Never: a reply with findings is not sent, and a refusal is not either", async ({ page, request, stubApi }) => {
+    await request.patch("/api/settings", { data: { agentConfirm: "never" } });
+    await openVideoWithAgent(page, "/?agentScript=warn");
+    await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
+    const run = page.waitForResponse((r) => r.url().includes("/api/agent/runs") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Send message" }).click();
+    expect((await run).status()).toBe(200);
+    await expect(page.getByTestId("agent-findings")).toContainText("Not sent — the reply misses the skill's format");
+    await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue(/^For the target video/);
+    expect(((await (await request.get(`${STUB}/__stub/jobs`)).json()) as { jobs: unknown[] }).jobs).toEqual([]);
+    await page.goto("/?agentScript=refusal");
+    await page.getByRole("button", { name: /Video generation/ }).click();
+    await page.getByTestId("agent-chip").click();
+    await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
+    const refused = page.waitForResponse((r) => r.url().includes("/api/agent/runs") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Send message" }).click();
+    expect((await refused).status()).toBe(200);
+    await expect(page.getByTestId("agent-alert")).toContainText("The director declined");
+    expect(((await (await request.get(`${STUB}/__stub/jobs`)).json()) as { jobs: unknown[] }).jobs).toEqual([]);
     expect(await stubApi.openJobs()).toEqual([]);
   });
 });

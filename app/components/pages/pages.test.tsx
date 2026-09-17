@@ -84,7 +84,7 @@ describe("the pages behind the sidebar (STORY_025; STORY_026 removed the marketp
     const update = vi.fn();
     const { fetchImpl } = fetchWith();
     const { rerender } = render(
-      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: true }, update }}>
+      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: true, agentConfirm: "always" }, update }}>
         <ManagePage fetchImpl={fetchImpl} />
       </SettingsContext.Provider>,
     );
@@ -102,7 +102,7 @@ describe("the pages behind the sidebar (STORY_025; STORY_026 removed the marketp
     fireEvent.click(toggle);
     expect(update).toHaveBeenCalledWith({ videoEnabled: false });
     rerender(
-      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: false }, update }}>
+      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: false, agentConfirm: "always" }, update }}>
         <ManagePage fetchImpl={fetchImpl} />
       </SettingsContext.Provider>,
     );

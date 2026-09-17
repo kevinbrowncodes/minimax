@@ -6,11 +6,15 @@ export interface Settings {
   readonly videoEnabled: boolean;
   /** STORY_050: the director skill the Agent chip follows (a folder id); undefined = the first skill listed. */
   readonly agentSkill?: string;
+  /** STORY_051: Confirm before generating — "always" (the reply comes back for review) or "never" (straight to a job). */
+  readonly agentConfirm: AgentConfirm;
 }
-export const DEFAULT_SETTINGS: Settings = { removeWatermark: true, videoEnabled: true };
-export const SETTING_KEYS = ["removeWatermark", "videoEnabled", "agentSkill"] as const satisfies readonly (keyof Settings)[];
-/** What each setting accepts (STORY_050): the PATCH route refuses anything else. */
-export const SETTING_TYPES: Readonly<Record<(typeof SETTING_KEYS)[number], "boolean" | "string">> = { removeWatermark: "boolean", videoEnabled: "boolean", agentSkill: "string" };
+export const AGENT_CONFIRM = ["always", "never"] as const;
+export type AgentConfirm = (typeof AGENT_CONFIRM)[number];
+export const DEFAULT_SETTINGS: Settings = { removeWatermark: true, videoEnabled: true, agentConfirm: "always" };
+export const SETTING_KEYS = ["removeWatermark", "videoEnabled", "agentSkill", "agentConfirm"] as const satisfies readonly (keyof Settings)[];
+/** What each setting accepts (STORY_050): a type, or the list of allowed values; the PATCH route refuses anything else. */
+export const SETTING_TYPES: Readonly<Record<(typeof SETTING_KEYS)[number], "boolean" | "string" | readonly string[]>> = { removeWatermark: "boolean", videoEnabled: "boolean", agentSkill: "string", agentConfirm: AGENT_CONFIRM };
 
 /** A stored value is merged over the defaults field by field; garbage yields the defaults. */
 export function parseSettings(raw: string | undefined): Settings {
@@ -21,7 +25,8 @@ export function parseSettings(raw: string | undefined): Settings {
     const v = value as Record<string, unknown>;
     const bool = (key: "removeWatermark" | "videoEnabled"): boolean => (typeof v[key] === "boolean" ? v[key] : DEFAULT_SETTINGS[key]);
     const agentSkill = typeof v["agentSkill"] === "string" && v["agentSkill"].trim() !== "" ? v["agentSkill"] : undefined;
-    return { removeWatermark: bool("removeWatermark"), videoEnabled: bool("videoEnabled"), ...(agentSkill === undefined ? {} : { agentSkill }) };
+    const agentConfirm = (AGENT_CONFIRM as readonly unknown[]).includes(v["agentConfirm"]) ? (v["agentConfirm"] as AgentConfirm) : DEFAULT_SETTINGS.agentConfirm;
+    return { removeWatermark: bool("removeWatermark"), videoEnabled: bool("videoEnabled"), agentConfirm, ...(agentSkill === undefined ? {} : { agentSkill }) };
   } catch {
     return DEFAULT_SETTINGS;
   }

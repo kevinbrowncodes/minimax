@@ -807,3 +807,69 @@
     width: min(268px, calc(100vw - 48px));
   }
 }
+
+/* STORY_051 — Agent settings: the Settings dialog's chrome, 420 px anchored right; a sheet at narrow widths */
+.agentPanelBackdrop {
+  justify-content: flex-end;
+  align-items: stretch;
+}
+.agentPanel {
+  display: flex;
+  flex-direction: column;
+  width: min(420px, 100vw);
+  height: 100%;
+  background: var(--bg_default_primary_elevated);
+  color: var(--text_default_primary);
+  outline: none;
+  overflow: hidden;
+}
+.agentPanelSheet {
+  width: 100vw;
+}
+.agentPanelHeadLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing_8);
+}
+.agentOption {
+  cursor: pointer;
+}
+.agentRadio {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--blue_400);
+}
+.agentSectionGap {
+  margin-top: var(--spacing_24);
+}
+.agentPanelButtons {
+  margin-top: var(--spacing_24);
+  justify-content: flex-end;
+}
+/* the ⚙ beside the chip */
+.agentIconButton {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius_10);
+  background: transparent;
+  color: var(--text_default_secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.agentIconButton:hover:not(:disabled) {
+  background: var(--bg_interaction_tertiary_hover);
+}
+.agentIconButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+@media (max-width: 767px) {
+  .agentIconButton {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

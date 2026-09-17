@@ -130,7 +130,7 @@ export type ComposerAction =
   | { readonly type: "agent-toggle"; readonly on?: boolean }
   | { readonly type: "agent-skill"; readonly skillId: string }
   | { readonly type: "agent-start" }
-  | { readonly type: "agent-reply"; readonly prompt: string; readonly findings: readonly AgentFinding[]; readonly clipSeconds?: number }
+  | { readonly type: "agent-reply"; readonly prompt: string; readonly findings: readonly AgentFinding[]; readonly clipSeconds?: number; readonly notSent?: boolean }
   | { readonly type: "agent-declined"; readonly message: string }
   | { readonly type: "agent-failed"; readonly message: string }
   | { readonly type: "agent-stopped" }
@@ -280,7 +280,9 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
     case "agent-reply": {
       // the prompt into the box, the chip off, the photo kept; the duration becomes the skill's clip length when it declares one
       const durationSeconds = action.clipSeconds === undefined ? state.durationSeconds : clampDuration(action.clipSeconds, state.capabilities, undefined);
-      const notice = action.findings.length === 0 ? undefined : { tone: "warn" as const, message: `The reply misses the skill's format: ${action.findings.map((f) => f.message).join("; ")}. Edit it, or send it as it is.` };
+      // STORY_051: in straight-through mode a reply with findings (or a chain, until STORY_053) is not sent — the strip says so
+      const prefix = action.notSent === true ? "Not sent — " : "";
+      const notice = action.findings.length === 0 ? (action.notSent === true ? { tone: "warn" as const, message: "Not sent — a chain is reviewed before Send all. Read it, then Send all." } : undefined) : { tone: "warn" as const, message: `${prefix}${prefix === "" ? "The" : "the"} reply misses the skill's format: ${action.findings.map((f) => f.message).join("; ")}. Edit it${action.notSent === true ? " and Send" : ", or send it as it is"}.` };
       return { ...state, text: action.prompt, durationSeconds, error: undefined, agent: { ...state.agent, on: false, running: false, notice } };
     }
     case "agent-declined":

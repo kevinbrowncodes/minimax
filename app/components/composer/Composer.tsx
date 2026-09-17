@@ -12,6 +12,9 @@ import { submitAgentRun, submitChain, submitJob } from "@/lib/submit-job";
 import { sparkTimeLine } from "@/lib/spark-time";
 import { DESCRIPTION_MARKER } from "@/lib/prompt-format";
 import { AgentChip } from "./AgentChip";
+import { AgentSettingsPanel } from "./AgentSettingsPanel";
+import { decide } from "@/lib/agent-decision";
+import { IconSettings } from "@/components/shell/icons";
 import { chainPlan, segmentPrompt, splitChain } from "@/lib/chain";
 import { ChainStrip, type ChainStart } from "./ChainStrip";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
@@ -86,6 +89,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const project = state.projectId === undefined ? undefined : projects.find((p) => p.id === state.projectId);
   const [popover, setPopover] = useState<"params" | "model" | "attach" | "agent" | "agent-skill" | undefined>(undefined);
   const runController = useRef<AbortController | undefined>(undefined); // STORY_050: the director run in flight
+  const [agentSettingsOpen, setAgentSettingsOpen] = useState(false); // STORY_051: the ⚙ panel
   const [envOpen, setEnvOpen] = useState(false); // STORY_035
   const [showcaseDismissed, setShowcaseDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -245,8 +249,23 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
     const result = await submitAgentRun(state, doFetch, controller.signal);
     if (controller !== runController.current) return; // a later run or an unmount superseded this one
     runController.current = undefined;
+    const decision = decide(settings.agentConfirm, result);
+    if (decision === "queue" && result.kind === "prompt") {
+      // STORY_051: straight through — the prompt is posted as a Send would post it, the box never shows it; the write starts before the paint
+      const clip = skillClipSeconds(agentSkill(state));
+      const sent = await submitJob({ ...state, ...(clip === undefined ? {} : { durationSeconds: clip }) }, doFetch, { prompt: result.prompt, images: state.images, ...(state.notBefore === undefined ? {} : { notBefore: state.notBefore }), ...(state.queueId === undefined ? {} : { replaces: state.queueId }) });
+      if (sent.ok) {
+        dispatch({ type: "agent-reply", prompt: "", findings: [] });
+        notify(sent.position === undefined ? "Queued — the director's prompt" : `Queued — the director's prompt, ${ordinal(sent.position)} in line`);
+        router.push(state.queueId === undefined ? `/task/${encodeURIComponent(sent.id)}` : "/scheduled");
+        return;
+      }
+      dispatch({ type: "agent-reply", prompt: result.prompt, findings: result.findings, ...(clip === undefined ? {} : { clipSeconds: clip }) });
+      dispatch({ type: "error", error: { message: sent.message, ...(sent.field === undefined ? {} : { field: sent.field }) } });
+      return;
+    }
     if (result.kind === "prompt") {
-      dispatch({ type: "agent-reply", prompt: result.prompt, findings: result.findings, ...(skillClipSeconds(agentSkill(state)) === undefined ? {} : { clipSeconds: skillClipSeconds(agentSkill(state)) }) });
+      dispatch({ type: "agent-reply", prompt: result.prompt, findings: result.findings, notSent: decision === "review-not-sent", ...(skillClipSeconds(agentSkill(state)) === undefined ? {} : { clipSeconds: skillClipSeconds(agentSkill(state)) }) });
       requestAnimationFrame(() => {
         const box = textarea.current;
         if (!box) return;
@@ -340,6 +359,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   return (
     <>
       <EnvDialog open={envOpen} onClose={() => { setEnvOpen(false); }} fetchImpl={fetchImpl} />
+      <AgentSettingsPanel open={agentSettingsOpen} confirm={settings.agentConfirm} modelLabel={agentModel?.label ?? "—"} narrow={narrow} onClose={() => { setAgentSettingsOpen(false); }} onSave={(confirm) => { updateSettings({ agentConfirm: confirm }); setAgentSettingsOpen(false); notify("Saved"); }} />
       {state.queueId !== undefined ? (
         // STORY_041: Edit of a waiting request
         <div className={styles.editing} role="status" data-testid="editing-banner">
@@ -460,6 +480,10 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 onSkill={(id) => { dispatch({ type: "agent-skill", skillId: id }); setPopover(undefined); updateSettings({ agentSkill: id }); }}
                 onManage={() => { setPopover(undefined); router.push("/plugins?tab=Skills"); }}
               />
+              {agentOn ? (
+                // STORY_051: Agent settings — Confirm before generating
+                <button type="button" className={styles.agentIconButton} aria-label="Agent settings" disabled={agentRunning} onClick={() => { setAgentSettingsOpen(true); setPopover(undefined); }}><IconSettings /></button>
+              ) : null}
               <span style={{ position: "relative" }} className={styles.modelWrap} data-popover="model">
                 <button type="button" className={styles.pill} aria-haspopup="menu" aria-expanded={popover === "model"} aria-label={`Model: ${modelLabel(state)}`} onClick={() => { setPopover(popover === "model" ? undefined : "model"); }} disabled={!caps || extending !== undefined || agentRunning} title={extending ? FIXED_NOTE : undefined}>
                   <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><circle cx="7" cy="7" r="2" fill="currentColor" /></svg>

@@ -12,5 +12,6 @@ export async function listHistory(request: APIRequestContext): Promise<readonly 
 }
 /** Forget every entry, through the real DELETE route. */
 export async function clearHistory(request: APIRequestContext): Promise<void> {
+  await request.delete("/api/agent/runs"); // STORY_050: the Inbox counts director runs too — a spec must not leave one for the next
   for (const entry of await listHistory(request)) await request.delete(`/api/history/${entry.id}`);
 }

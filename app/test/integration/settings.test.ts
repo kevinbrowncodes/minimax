@@ -37,18 +37,24 @@ afterEach(() => {
 
 describe("settings through the app's routes", () => {
   it("GET defaults to clean downloads; PATCH flips the switch and refuses anything else", async () => {
-    expect(await settingsOf()).toEqual({ removeWatermark: true, videoEnabled: true });
+    expect(await settingsOf()).toEqual({ removeWatermark: true, videoEnabled: true, agentConfirm: "always" });
     const off = await patchSettings(jsonRequest("/api/settings", { removeWatermark: false }, "PATCH"));
     expect(off.status).toBe(200);
-    expect(await off.json()).toEqual({ removeWatermark: false, videoEnabled: true });
-    expect(await settingsOf()).toEqual({ removeWatermark: false, videoEnabled: true });
-    expect(await (await patchSettings(jsonRequest("/api/settings", { videoEnabled: false }, "PATCH"))).json()).toEqual({ removeWatermark: false, videoEnabled: false }); // STORY_040
+    expect(await off.json()).toEqual({ removeWatermark: false, videoEnabled: true, agentConfirm: "always" });
+    expect(await settingsOf()).toEqual({ removeWatermark: false, videoEnabled: true, agentConfirm: "always" });
+    expect(await (await patchSettings(jsonRequest("/api/settings", { videoEnabled: false }, "PATCH"))).json()).toEqual({ removeWatermark: false, videoEnabled: false, agentConfirm: "always" }); // STORY_040
     expect((await patchSettings(jsonRequest("/api/settings", { videoEnabled: "off" }, "PATCH"))).status).toBe(400);
     expect((await patchSettings(jsonRequest("/api/settings", { removeWatermark: "no" }, "PATCH"))).status).toBe(400);
     expect((await patchSettings(jsonRequest("/api/settings", { other: true }, "PATCH"))).status).toBe(400);
     expect((await patchSettings(jsonRequest("/api/settings", {}, "PATCH"))).status).toBe(400);
     expect((await patchSettings(new Request("http://app/api/settings", { method: "PATCH", body: "nope" }))).status).toBe(400);
-    expect(await settingsOf()).toEqual({ removeWatermark: false, videoEnabled: false });
+    // STORY_050/051: the chip's skill (a string) and Confirm before generating (an enum)
+    expect(await (await patchSettings(jsonRequest("/api/settings", { agentSkill: "minimax-h3-director-thirst-trap", agentConfirm: "never" }, "PATCH"))).json()).toEqual({ removeWatermark: false, videoEnabled: false, agentConfirm: "never", agentSkill: "minimax-h3-director-thirst-trap" });
+    expect((await patchSettings(jsonRequest("/api/settings", { agentConfirm: "sometimes" }, "PATCH"))).status).toBe(400);
+    expect(((await (await patchSettings(jsonRequest("/api/settings", { agentConfirm: "sometimes" }, "PATCH"))).json()) as { error: { field: string; message: string } }).error).toMatchObject({ field: "agentConfirm", message: "agentConfirm must be one of always, never" });
+    expect((await patchSettings(jsonRequest("/api/settings", { agentSkill: 3 }, "PATCH"))).status).toBe(400);
+    await patchSettings(jsonRequest("/api/settings", { agentConfirm: "always" }, "PATCH"));
+    expect(await settingsOf()).toEqual({ removeWatermark: false, videoEnabled: false, agentConfirm: "always", agentSkill: "minimax-h3-director-thirst-trap" });
   });
 
   it("with the switch off a download asks for the marked copy (the stub says x-watermark: 1); playback and a clean setting never do", async () => {

@@ -312,7 +312,7 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     expect(screen.getByRole("group", { name: "Modes" })).toBeInTheDocument();
     cleanup();
     render(
-      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: false }, update: () => undefined }}>
+      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: false, agentConfirm: "always" }, update: () => undefined }}>
         <Composer fetchImpl={fetchWith(() => json({}))} />
       </SettingsContext.Provider>,
     );
@@ -322,7 +322,7 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     cleanup();
     // the docked composer starts in video mode; with the plugin off it is text-only too (no video parameters)
     render(
-      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: false }, update: () => undefined }}>
+      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: false, agentConfirm: "always" }, update: () => undefined }}>
         <Composer fetchImpl={fetchWith(() => json({}))} variant="docked" />
       </SettingsContext.Provider>,
     );
