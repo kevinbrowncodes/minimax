@@ -10,7 +10,7 @@
  */
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { assembleRequest, expandInstruction, readSkill } from "../lib/agent-request";
+import { assembleRequest, expandChainInstruction, expandInstruction, readSkill } from "../lib/agent-request";
 import { fetchToken, generateContent, getPublisherModel, readKeyFile, safetySettingsAt, type GenerateRequest, type HarmBlockThreshold, type MediaResolution, type Part, type SafetySetting, type VertexTarget } from "../lib/vertex";
 
 /** The Flash ids Google's model page listed on 2026-09-17 (its navigation; the body is client-rendered); `get` says which exist and their stage. */
@@ -40,6 +40,9 @@ function env(name: string): string {
 function fromRoot(p: string): string {
   return path.resolve(process.env["INIT_CWD"] ?? process.cwd(), p);
 }
+function segmentsOf(text: string): string[] {
+  return text.split(/\n(?=integrated_multimodal_description:)/).map((x) => x.trim()).filter((x) => x !== "");
+}
 function wordsOf(text: string): number {
   const m = /integrated_multimodal_description:([\s\S]*?)(?=\n\s*overall_soundscape:|$)/.exec(text);
   return m?.[1] === undefined ? 0 : m[1].trim().split(/\s+/).length;
@@ -58,6 +61,8 @@ async function main(): Promise<number> {
   const maxTokens = Number(flag(args, "--max-tokens") ?? "4096");
   const thinking = flag(args, "--thinking");
   const expand = has(args, "--expand");
+  const chainOf = flag(args, "--chain");
+  const chain = chainOf === undefined ? undefined : Number(chainOf);
   const model = flag(args, "--model") ?? (envModel !== undefined && envModel !== "" ? envModel : "gemini-3.8-flash");
   const location = process.env["VERTEX_LOCATION"]?.trim();
   const target: VertexTarget = { project: env("VERTEX_PROJECT"), location: location !== undefined && location !== "" ? location : "us-central1", model, ...(process.env["VERTEX_BASE_URL"] === undefined ? {} : { baseUrl: process.env["VERTEX_BASE_URL"] }) };
@@ -75,7 +80,7 @@ async function main(): Promise<number> {
 
   const [skillDir, imagePath, ...noteWords] = args;
   if (skillDir === undefined || imagePath === undefined) {
-    console.error("usage: agent:spike <skill-dir> <image> [notes…] [--safety default|least] [--media low|medium|high] [--model <id>] [--max-tokens N] [--thinking low|medium|high|minimal] [--expand] [--out <dir>] | --models");
+    console.error("usage: agent:spike <skill-dir> <image> [notes…] [--safety default|least] [--media low|medium|high] [--model <id>] [--max-tokens N] [--thinking low|medium|high|minimal] [--expand] [--chain N] [--out <dir>] | --models");
     return 2;
   }
   const skill = readSkill(fromRoot(skillDir));
@@ -92,7 +97,7 @@ async function main(): Promise<number> {
   let settings: readonly SafetySetting[] | undefined = safety === "least" ? safetySettingsAt("OFF") : undefined;
   const request = (s: readonly SafetySetting[] | undefined): GenerateRequest => ({ systemInstruction: assembled.systemInstruction, parts, safetySettings: s, generationConfig: { maxOutputTokens: maxTokens, ...(thinking === undefined ? {} : { thinkingConfig: { thinkingLevel: thinking.toUpperCase() as "LOW" | "MEDIUM" | "HIGH" | "MINIMAL" } }) } });
 
-  const header = `model ${target.model} · region ${target.location} · skill ${skill.id} v${skill.metadata["version"] ?? "?"} · image ${imagePath} (${String(image.bytes.length)} bytes, ${mimeType}) · notes: ${notes === "" ? "(none)" : notes} · safety: ${safety}${level === undefined ? "" : ` · media ${level}`} · maxOutputTokens ${String(maxTokens)}${thinking === undefined ? "" : ` · thinking ${thinking}`}${expand ? " · two-pass" : ""}`;
+  const header = `model ${target.model} · region ${target.location} · skill ${skill.id} v${skill.metadata["version"] ?? "?"} · image ${imagePath} (${String(image.bytes.length)} bytes, ${mimeType}) · notes: ${notes === "" ? "(none)" : notes} · safety: ${safety}${level === undefined ? "" : ` · media ${level}`} · maxOutputTokens ${String(maxTokens)}${thinking === undefined ? "" : ` · thinking ${thinking}`}${expand ? " · two-pass" : ""}${chain === undefined ? "" : ` · chain of ${String(chain)}`}`;
   console.log(header);
   let started = Date.now();
   let result = await generateContent(target, token, request(settings));
@@ -111,9 +116,12 @@ async function main(): Promise<number> {
   if (expand && result.kind === "reply") {
     const draft = result;
     const draftWords = wordsOf(draft.text);
-    lines.push(`DRAFT · finish ${draft.finishReason} · ${seconds} s · ${String(draftWords)} description words · candidates ${String(draft.usage.candidateTokens)} · thoughts ${String(draft.usage.thoughtTokens)}`);
+    lines.push(`DRAFT · finish ${draft.finishReason} · ${seconds} s · ${String(draftWords)} description words${chain === undefined ? "" : ` · segments ${String(segmentsOf(draft.text).length)}`} · candidates ${String(draft.usage.candidateTokens)} · thoughts ${String(draft.usage.thoughtTokens)}`);
+    lines.push("----- draft -----");
+    lines.push(draft.text);
+    lines.push("----- end draft -----");
     started = Date.now();
-    result = await generateContent(target, token, { ...request(settings), followUp: { modelText: draft.text, userText: expandInstruction(450, 600) } });
+    result = await generateContent(target, token, { ...request(settings), followUp: { modelText: draft.text, userText: chain === undefined ? expandInstruction(450, 600) : expandChainInstruction(chain, 400, 550) } });
     seconds = ((Date.now() - started) / 1000).toFixed(1);
   }
   if (result.kind === "error") {
@@ -131,6 +139,7 @@ async function main(): Promise<number> {
     lines.push("----- end -----");
     if (result.kind === "reply") {
       const words = wordsOf(result.text);
+      if (chain !== undefined) lines.push(`segments: ${String(segmentsOf(result.text).length)} · words per description: ${segmentsOf(result.text).map((seg) => String(wordsOf(seg))).join(" / ")}`);
       lines.push(`description words: ${String(words)} · starts with the instruction line: ${result.text.startsWith("For the target video") ? "yes" : "NO"} · soundscape: ${result.text.includes("overall_soundscape:") ? "yes" : "NO"} · music: ${result.text.includes("non_diegetic_music:") ? "yes" : "NO"} · bracketed times: ${/\[\d{1,2}:\d{2}/.test(result.text) ? "YES" : "none"} · fences: ${result.text.includes("```") ? "YES" : "none"}`);
     }
   }

@@ -173,3 +173,8 @@ export function expandInstruction(minWords: number, maxWords: number): string {
 export const DIRECTOR_SAFETY_SETTINGS: readonly SafetySetting[] = safetySettingsAt("OFF");
 export const DIRECTOR_GENERATION_CONFIG: GenerationConfig = { maxOutputTokens: 16384, thinkingConfig: { thinkingLevel: "LOW" } };
 export const DIRECTOR_EXPAND_WORDS = { min: 450, max: 600 } as const;
+
+/** The second pass for a chain reply (STORY_053): every segment expanded, the count, the order and the chain's rules kept. */
+export function expandChainInstruction(segments: number, minWords: number, maxWords: number): string {
+  return `Revise your reply: keep all ${String(segments)} segments in the same order, separated by one blank line, with nothing else in the output; keep line 1 of segment 1 and every fact, name, colour, object and beat of what you wrote; and expand each segment's integrated_multimodal_description to ${String(minWords)}–${String(maxWords)} words — the same scene anchor (150–250 words, no pose in it) word for word in every segment, then that segment's beats with concrete physical detail (which hand, which foot, what the weight, the fabric and the face do), naming the subject by appearance in every beat, then the hold. Segments 2 onward still begin with integrated_multimodal_description:, say twelve-second, never mention a picture or an attached image, and open on the exact held state the previous segment ended in — restating where the hands, the weight, the gaze and any held object were. Keep every segment one paragraph with no labels, line breaks or timestamps, and keep both sound fields on each. Output only the prompts.`;
+}
