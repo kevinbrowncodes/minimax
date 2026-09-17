@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
 import { DEFAULT_OVERLAP, MAX_FRAMES, OVERLAP_OPTIONS, extensionLength, lengthForSeconds, maxAddedSeconds, seconds } from "./extension.ts";
 import { DEFAULT_SCRIPT, cameraFor, cutsFor, isScriptName, isTerminal, stepFor, type JobError, type JobStatus, type ScriptName } from "./scripts.ts";
+import { createAgentFake, loadAgentFixtures } from "./agent.ts";
 
 export const VERSION = "1.2.0";
 export const CAPABILITIES = {
@@ -80,6 +81,8 @@ export interface StubOptions {
   readonly fixture?: "mp4" | "webm";
   /** When set, every contract call must carry `Authorization: Bearer <apiKey>`. */
   readonly apiKey?: string;
+  /** STORY_049: how long the fake Vertex's `slow` script waits before answering (8 s by default; tests shorten it). */
+  readonly agentSlowDelayMs?: number;
 }
 export interface StubServer {
   readonly server: Server;
@@ -241,6 +244,7 @@ export function createStubServer(options: StubOptions = {}): StubServer {
   const { video, poster } = loadFixture(fixturesDir, options.fixture ?? "mp4");
   const jobs = new Map<string, Job>();
   let busy = false; // STORY_041: POST /__stub/busy { busy } — creates answer 503 busy while set; reset clears it
+  const agent = createAgentFake(loadAgentFixtures(fixturesDir), options.agentSlowDelayMs === undefined ? {} : { slowDelayMs: options.agentSlowDelayMs }); // STORY_049: the fake Vertex on this port
 
   const stateOf = (job: Job): JobState => (job.cancelledAt ? { status: "cancelled", progress: job.cancelledAt.progress } : stepFor(job.script, job.pollCount));
   const jobOr404 = (id: string): Job => {
@@ -362,6 +366,8 @@ export function createStubServer(options: StubOptions = {}): StubServer {
     const p = url.pathname;
     const hook = p.startsWith("/__stub/");
 
+    // STORY_049: the fake Vertex has its own bearer (the fake token endpoint's), never the generation server's
+    if (await agent.handle(req, res, url, () => readBody(req), (status, body) => { sendJson(res, status, body); })) return;
     if (!hook && options.apiKey !== undefined) {
       const header = req.headers.authorization ?? "";
       if (header !== `Bearer ${options.apiKey}`) throw new HttpError(401, "unauthorized", "missing or wrong bearer token");
@@ -417,6 +423,7 @@ export function createStubServer(options: StubOptions = {}): StubServer {
     if (method === "POST" && p === "/__stub/reset") {
       jobs.clear();
       busy = false;
+      agent.reset();
       sendJson(res, 200, { ok: true }); return;
     }
     if (method === "GET" && p === "/__stub/jobs") {

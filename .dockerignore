@@ -11,3 +11,4 @@ recon/.profile
 docs
 *.md
 !app/**/*.md
+!agents/**/*.md

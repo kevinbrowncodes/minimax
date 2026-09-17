@@ -1,6 +1,6 @@
 /** STORY_047: the agent's configuration — present, each thing missing with its reason, the env store winning over process.env, values never in a reason. */
 import { describe, expect, it } from "vitest";
-import { DEFAULT_KEY_FILE, DEFAULT_LOCATION, DEFAULT_MODEL, agentFlag, readAgentConfig } from "./agent-config";
+import { DEFAULT_KEY_FILE, DEFAULT_LOCATION, DEFAULT_MODEL, agentFlag, agentSettings, readAgentConfig } from "./agent-config";
 
 const none = (): undefined => undefined;
 const all = { VERTEX_PROJECT: "proj-1", VERTEX_LOCATION: "europe-west4", VERTEX_MODEL: "gemini-x-flash", GOOGLE_APPLICATION_CREDENTIALS: "/tmp/k.json" };
@@ -9,7 +9,7 @@ const without = (...keys: (keyof typeof all)[]): Record<string, string | undefin
 
 describe("readAgentConfig", () => {
   it("is configured with the four present, the key file existing", () => {
-    expect(readAgentConfig({ env: all, readValue: none, exists: (p) => p === "/tmp/k.json" })).toEqual({ configured: true, project: "proj-1", location: "europe-west4", model: "gemini-x-flash", keyFile: "/tmp/k.json" });
+    expect(readAgentConfig({ env: all, readValue: none, exists: (p) => p === "/tmp/k.json" })).toMatchObject({ configured: true, project: "proj-1", location: "europe-west4", model: "gemini-x-flash", keyFile: "/tmp/k.json", thinking: "low", timeoutMs: 240_000 });
   });
   it("defaults the region and the key path", () => {
     const config = readAgentConfig({ env: without("GOOGLE_APPLICATION_CREDENTIALS", "VERTEX_LOCATION"), readValue: none, exists: (p) => p === DEFAULT_KEY_FILE });
@@ -46,7 +46,16 @@ describe("readAgentConfig", () => {
 
 describe("agentFlag", () => {
   it("publishes the flag alone when configured, and the reason when not", () => {
-    expect(agentFlag({ configured: true, project: "p", location: "l", model: "m", keyFile: "/k" })).toEqual({ configured: true });
+    expect(agentFlag({ configured: true, project: "p", location: "l", model: "m", keyFile: "/k", skillsDir: "/s", timeoutMs: 1, thinking: "low" })).toEqual({ configured: true });
     expect(agentFlag({ configured: false, reason: "why" })).toEqual({ configured: false, reason: "why" });
+  });
+});
+
+describe("agentSettings", () => {
+  it("reads the thinking level (env store first), the timeout, the gate overrides and the skills dir", () => {
+    const store: Record<string, string> = { VERTEX_THINKING: "HIGH" };
+    expect(agentSettings({ env: { VERTEX_THINKING: "medium", AGENT_TIMEOUT_MS: "5000", VERTEX_BASE_URL: "http://stub", VERTEX_TOKEN_URL: "http://stub/token", SKILLS_DIR: "/skills" }, readValue: (k) => store[k] })).toEqual({ skillsDir: "/skills", vertexBaseUrl: "http://stub", tokenUrl: "http://stub/token", timeoutMs: 5000, thinking: "high" });
+    expect(agentSettings({ env: { VERTEX_THINKING: "turbo", AGENT_TIMEOUT_MS: "-3" }, readValue: () => undefined })).toMatchObject({ thinking: "low", timeoutMs: 240_000 });
+    expect(agentSettings({ env: {}, readValue: () => undefined }).skillsDir.endsWith("agents/skills")).toBe(true);
   });
 });

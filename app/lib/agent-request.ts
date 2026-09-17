@@ -172,6 +172,10 @@ export function expandInstruction(minWords: number, maxWords: number): string {
  */
 export const DIRECTOR_SAFETY_SETTINGS: readonly SafetySetting[] = safetySettingsAt("OFF");
 export const DIRECTOR_GENERATION_CONFIG: GenerationConfig = { maxOutputTokens: 16384, thinkingConfig: { thinkingLevel: "LOW" } };
+/** The generation config for a thinking level the owner set (`VERTEX_THINKING`); "default" leaves the model to choose. */
+export function directorGenerationConfig(thinking: "low" | "medium" | "high" | "default"): GenerationConfig {
+  return thinking === "default" ? { maxOutputTokens: 16384 } : { maxOutputTokens: 16384, thinkingConfig: { thinkingLevel: thinking.toUpperCase() as "LOW" | "MEDIUM" | "HIGH" } };
+}
 export const DIRECTOR_EXPAND_WORDS = { min: 450, max: 600 } as const;
 
 /** The second pass for a chain reply (STORY_053): every segment expanded, the count, the order and the chain's rules kept. */

@@ -324,3 +324,25 @@ export async function getPublisherModel(target: Pick<VertexTarget, "location" | 
   }
   return { ok: true, name: typeof body["name"] === "string" ? body["name"] : modelId, launchStage: typeof body["launchStage"] === "string" ? body["launchStage"] : "?", versionId: typeof body["versionId"] === "string" ? body["versionId"] : "?" };
 }
+
+const tokenCache = new Map<string, { token: Token; pending?: Promise<Token> }>();
+/** STORY_049: the token for a key file, cached until a minute before it lapses; one exchange in flight per file. */
+export async function tokenFor(keyFile: string, options: TokenOptions = {}): Promise<Token> {
+  const now = options.now ?? Date.now;
+  const cached = tokenCache.get(keyFile);
+  if (cached?.token && cached.token.expiresAt - now() > 60_000) return cached.token;
+  if (cached?.pending) return cached.pending;
+  const pending = fetchToken(readKeyFile(keyFile), options).then((token) => {
+    tokenCache.set(keyFile, { token });
+    return token;
+  }, (error: unknown) => {
+    tokenCache.delete(keyFile);
+    throw error;
+  });
+  tokenCache.set(keyFile, { token: cached?.token ?? { accessToken: "", expiresAt: 0 }, pending });
+  return pending;
+}
+/** Tests and a replaced key: forget every cached token. */
+export function forgetTokens(): void {
+  tokenCache.clear();
+}

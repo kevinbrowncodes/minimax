@@ -27,6 +27,9 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 WORKDIR /srv
 COPY --from=build --chown=node:node /work/app/.next/standalone ./
 COPY --from=build --chown=node:node /work/app/.next/static ./app/.next/static
+# STORY_049: the director skills are baked in (a skill is versioned; a change goes through git and a rebuild)
+COPY --chown=node:node agents/ ./agents/
+ENV SKILLS_DIR=/srv/agents/skills
 RUN mkdir -p /data && chown node:node /data
 VOLUME /data
 USER node

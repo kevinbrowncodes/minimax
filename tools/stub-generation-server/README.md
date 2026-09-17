@@ -33,3 +33,16 @@ Per job, with `X-Stub-Script: <name>` or `?script=<name>` on `POST /jobs`. Progr
 - `GET /__stub/fixtures/<fixture.mp4|fixture.webm|fixture-poster.png|fixture-reference.png>` → that file, whatever `STUB_FIXTURE` is (for the codec probe).
 
 Hooks never require the bearer token. Fixtures and how they were made: [fixtures/README.md](fixtures/README.md).
+
+## The fake Vertex (STORY_049)
+
+On the same port, so `VERTEX_BASE_URL` and `VERTEX_TOKEN_URL` both point here in the gate and the app can never reach Google from a test:
+
+| Route | Answers |
+| --- | --- |
+| `POST /token` | `{ access_token: "stub-token", token_type: "Bearer", expires_in: 3600 }` for any assertion |
+| `GET /v1/publishers/google/models/:id` | 200 (GA, `versionId: default`) for `gemini-3.8-flash` and `gemini-2.5-flash`; 404 otherwise |
+| `POST /v1/projects/:p/locations/:l/publishers/google/models/:m:generateContent` | by script — `x-stub-script` or `?script=`, default `clean`; a request with three `contents` (user, model, user) is the second pass |
+| `GET /__stub/agent/runs` | what was received, in order: the script, the pass, the parts (`text` with its first 60 characters, `image` with MIME type, bytes and sha256), the follow-up turn's head, the safety and generation settings, `aborted` (the client hung up before the answer). `POST /__stub/reset` clears them |
+
+Scripts: `clean` (pass 1 the one-pass draft, pass 2 the expanded prompt — both real replies of 2026-09-17, `fixtures/agent/`), `warn` (pass 2 without the soundscape and cut to ≈ 300 words — two findings), `chain` / `chain-warn` (three segments; `chain-warn` cuts segment 2 short on pass 2), `refusal` (a candidate stopped for `SAFETY`, no text), `refusal-text` (a polite refusal in prose), `malformed` ("I can't see an image in this request."), `slow` (`clean` after 8 s — `agentSlowDelayMs` shortens it for tests), `quota` (429 in Google's error shape). Nothing here is Google's code; the shapes are the ones Vertex's discovery document (rev. 20260904) and the spike's replies showed.
