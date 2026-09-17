@@ -71,6 +71,22 @@ export interface AgentFinding {
   readonly message: string;
   readonly segment?: number;
 }
+
+/**
+ * The amber strip's words for a reply with findings: a single clip's as "The reply misses the skill's format: …";
+ * a chain's per segment (STORY_053) — "Segment 2 misses the skill's format: …" — the server's own "Segment N:" prefix
+ * dropped; "Not sent — " in front when straight-through mode held the reply back.
+ */
+export function findingsNotice(findings: readonly AgentFinding[], notSent: boolean): string {
+  const prefix = notSent ? "Not sent — " : "";
+  const chained = findings.every((f) => f.segment !== undefined);
+  const tail = notSent ? `Edit it and Send${chained ? " all" : ""}.` : "Edit it, or send it as it is.";
+  if (!chained) return `${prefix}${prefix === "" ? "The" : "the"} reply misses the skill's format: ${findings.map((f) => f.message).join("; ")}. ${tail}`;
+  const bySegment = new Map<number, string[]>();
+  for (const f of findings) bySegment.set(f.segment ?? 0, [...(bySegment.get(f.segment ?? 0) ?? []), f.message.replace(/^Segment \d+:\s*/, "")]);
+  const parts = [...bySegment.entries()].map(([n, messages]) => `Segment ${String(n)} misses the skill's format: ${messages.join("; ")}.`);
+  return `${prefix}${parts.join(" ")} ${tail}`;
+}
 export interface AgentState {
   readonly on: boolean;
   /** The chosen skill's id; undefined until the list arrives (then the setting's, or the first). */
@@ -280,9 +296,8 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
     case "agent-reply": {
       // the prompt into the box, the chip off, the photo kept; the duration becomes the skill's clip length when it declares one
       const durationSeconds = action.clipSeconds === undefined ? state.durationSeconds : clampDuration(action.clipSeconds, state.capabilities, undefined);
-      // STORY_051: in straight-through mode a reply with findings (or a chain, until STORY_053) is not sent — the strip says so
-      const prefix = action.notSent === true ? "Not sent — " : "";
-      const notice = action.findings.length === 0 ? (action.notSent === true ? { tone: "warn" as const, message: "Not sent — a chain is reviewed before Send all. Read it, then Send all." } : undefined) : { tone: "warn" as const, message: `${prefix}${prefix === "" ? "The" : "the"} reply misses the skill's format: ${action.findings.map((f) => f.message).join("; ")}. Edit it${action.notSent === true ? " and Send" : ", or send it as it is"}.` };
+      // STORY_051: in straight-through mode a reply with findings is not sent — the strip says so
+      const notice = action.findings.length === 0 ? undefined : { tone: "warn" as const, message: findingsNotice(action.findings, action.notSent === true) };
       return { ...state, text: action.prompt, durationSeconds, error: undefined, agent: { ...state.agent, on: false, running: false, notice } };
     }
     case "agent-declined":

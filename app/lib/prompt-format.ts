@@ -7,6 +7,8 @@
  * A code fence around an otherwise clean prompt is stripped and reported, so the prompt stays usable. Pure.
  */
 export const INSTRUCTION_STARTS = ["For the target video", "How the reference pictures align"] as const;
+/** The I2VA instruction line, as the adapter writes it (spark/adapter/src/prompt.ts › I2VA_INSTRUCTION, by value). */
+export const I2VA_INSTRUCTION = "For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.";
 export const DESCRIPTION_MARKER = "integrated_multimodal_description:";
 export const SOUNDSCAPE_MARKER = "overall_soundscape:";
 export const MUSIC_MARKER = "non_diegetic_music:";
@@ -18,6 +20,8 @@ export const MAX_DESCRIPTION_WORDS = 600;
 export type FindingCode =
   | "text-before-instruction"
   | "no-instruction-line"
+  | "instruction-line-differs"
+  | "instruction-line-on-extension"
   | "no-description"
   | "no-soundscape"
   | "no-music"
@@ -81,12 +85,15 @@ function checkSingle(text: string, extension = false): Finding[] {
   const instructionAt = INSTRUCTION_STARTS.map((s) => trimmed.indexOf(s)).filter((i) => i !== -1).sort((a, b) => a - b)[0];
   const markerAt = trimmed.indexOf(DESCRIPTION_MARKER);
   if (extension) {
-    if (instructionAt !== undefined || trimmed.includes("<Picture")) findings.push({ code: "text-before-instruction", message: "an extension segment carries an instruction line or a <Picture> reference — an extension has no picture" });
+    if (instructionAt !== undefined || trimmed.includes("<Picture")) findings.push({ code: "instruction-line-on-extension", message: "an extension segment carries an instruction line or a <Picture> reference — an extension has no picture" });
     if (markerAt > 0 && instructionAt === undefined) findings.push({ code: "text-before-instruction", message: `${String(wordCount(trimmed.slice(0, markerAt)))} words come before integrated_multimodal_description: — an extension segment starts at the marker` });
   } else if (instructionAt === undefined) {
     findings.push({ code: "no-instruction-line", message: 'the instruction line is missing — a single-clip prompt starts "For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced."' });
   } else if (instructionAt > 0) {
     findings.push({ code: "text-before-instruction", message: `${String(wordCount(trimmed.slice(0, instructionAt)))} words come before the instruction line — the model would read them as part of the prompt` });
+  } else if (trimmed.startsWith(INSTRUCTION_STARTS[0]) && (trimmed.split(/\r?\n/)[0] ?? "").trim() !== I2VA_INSTRUCTION) {
+    // STORY_053: the adapter sends a base-format prompt unchanged, so a line the model mis-typed reaches MiniMax as it is
+    findings.push({ code: "instruction-line-differs", message: `the instruction line is not the model's, word for word — it must read "${I2VA_INSTRUCTION}"` });
   }
   const description = descriptionOf(trimmed);
   if (description === undefined) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Capabilities } from "./job-api";
-import { canSend, durationOptions, initialComposer, isModelEnabled, isResolutionEnabled, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ComposerState, type ExtendSource, agentSkill, agentSkillLabel, skillClipSeconds, type AgentSkill } from "./composer-state";
+import { canSend, durationOptions, findingsNotice, initialComposer, isModelEnabled, isResolutionEnabled, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ComposerState, type ExtendSource, agentSkill, agentSkillLabel, skillClipSeconds, type AgentSkill } from "./composer-state";
 
 const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 } };
 const img = (id: string, type = "image/png", size = 1000): ComposerImage => ({ id, file: new File(["x"], `${id}.png`, { type }), url: "", name: `${id}.png`, type, size });
@@ -267,6 +267,12 @@ describe("the Agent chip (STORY_050)", () => {
     const warned = reduceComposer(state, { type: "agent-reply", prompt: "p", findings: [{ code: "no-soundscape", message: "no overall_soundscape: field" }, { code: "description-too-short", message: "the description is 300 words; the skill asks for 350–600" }] });
     expect(warned.agent.notice).toEqual({ tone: "warn", message: "The reply misses the skill's format: no overall_soundscape: field; the description is 300 words; the skill asks for 350–600. Edit it, or send it as it is." });
     expect(reduceComposer(state, { type: "agent-reply", prompt: "p", findings: [] }).durationSeconds).toBe(state.durationSeconds); // no clip length declared
+    // STORY_051: not sent; STORY_053: a chain's findings name the segment, the server's own prefix dropped, and the tail says Send all
+    expect(findingsNotice([{ code: "no-soundscape", message: "no overall_soundscape: field" }], true)).toBe("Not sent — the reply misses the skill's format: no overall_soundscape: field. Edit it and Send.");
+    const chained = [{ code: "description-too-short", message: "Segment 2: the description is 296 words; the skill asks for 350–600", segment: 2 }, { code: "no-music", message: "Segment 2: no non_diegetic_music: field", segment: 2 }, { code: "instruction-line-on-extension", message: "Segment 3: an extension segment carries an instruction line", segment: 3 }];
+    expect(findingsNotice(chained, true)).toBe("Not sent — Segment 2 misses the skill's format: the description is 296 words; the skill asks for 350–600; no non_diegetic_music: field. Segment 3 misses the skill's format: an extension segment carries an instruction line. Edit it and Send all.");
+    expect(findingsNotice(chained.slice(0, 1), false)).toBe("Segment 2 misses the skill's format: the description is 296 words; the skill asks for 350–600. Edit it, or send it as it is.");
+    expect(reduceComposer(state, { type: "agent-reply", prompt: "p", findings: [], notSent: true }).agent.notice).toBeUndefined(); // a clean reply held back is not a thing any more: it is queued
   });
   it("a refusal, an error and a stop keep the chip on and the notes, with their words; reopening a run puts the notes back", () => {
     let state = reduceComposer(video(), { type: "agent-toggle" });

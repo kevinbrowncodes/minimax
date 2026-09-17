@@ -87,6 +87,24 @@ describe("the Agent chip", () => {
     expect(screen.queryByTestId("agent-chip")).not.toBeInTheDocument();
   });
 
+  it("BUG_011: the saved skill is applied when the settings arrive after the mount, and a pick still wins", async () => {
+    const f = fetchWith();
+    const tree = (settings: typeof DEFAULT_SETTINGS) => (
+      <SettingsContext.Provider value={{ settings, update }}>
+        <Composer fetchImpl={f.fetch} />
+      </SettingsContext.Provider>
+    );
+    const view = render(tree(DEFAULT_SETTINGS)); // the Shell's defaults: /api/settings has not answered yet
+    fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
+    fireEvent.click(chip());
+    await waitFor(() => { expect(chip()).toHaveAttribute("aria-label", "Agent on · Thirst trap"); });
+    view.rerender(tree({ ...DEFAULT_SETTINGS, agentSkill: "minimax-h3-director-thirst-trap-chain" })); // the settings land
+    await waitFor(() => { expect(chip()).toHaveAttribute("aria-label", "Agent on · Chain director"); });
+    expect(update).not.toHaveBeenCalled(); // applied, not written back
+    view.rerender(tree({ ...DEFAULT_SETTINGS, agentSkill: "no-such-skill" })); // a folder that is gone keeps the current pick
+    expect(chip()).toHaveAttribute("aria-label", "Agent on · Chain director");
+  });
+
   it("a run inside StrictMode with fake timers: Thinking… and Stop, then the prompt in the box, the chip off, the duration 10 s, the ≈ line — one request", async () => {
     vi.useFakeTimers();
     let resolveRun: ((r: Response) => void) | undefined;

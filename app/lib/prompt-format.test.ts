@@ -80,13 +80,26 @@ describe("chains (the rule STORY_053 builds on)", () => {
   it("an extension segment with an instruction line or a picture, or a short one, is named by its number", () => {
     const segments = splitSegments(chain);
     const withPicture = [segments[0], `For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.\n\n${segments[1] ?? ""}`, segments[2]].join("\n\n");
-    expect(checkPromptFormat(withPicture, { chain: true }).findings).toEqual([{ code: "text-before-instruction", message: expect.stringContaining("Segment 2:") as string, segment: 2 }]);
+    expect(checkPromptFormat(withPicture, { chain: true }).findings).toEqual([{ code: "instruction-line-on-extension", message: expect.stringContaining("Segment 2:") as string, segment: 2 }]);
     const short = [segments[0], segments[1], (segments[2] ?? "").replace(/(integrated_multimodal_description:\s*\[Shot 1\][^.]*\.)[\s\S]*?(\n\s*overall_soundscape:)/, "$1 A few words only.$2")].join("\n\n");
     const findings = checkPromptFormat(short, { chain: true }).findings;
     expect(findings.map((f) => [f.code, f.segment])).toEqual([["description-too-short", 3]]);
   });
   it("a single prompt under chain: true is one segment under the single-clip rules", () => {
     expect(checkPromptFormat(office, { chain: true })).toMatchObject({ segments: 1, findings: [] });
+  });
+  it("a chain of bracketed scripts is not checked under the chain rules — it has no marker to split at", () => {
+    const scripts = "A scene.\n\n[0:00-0:03] First.\n[0:03-0:05] Then.\n\n[0:00-0:04] Second.";
+    const check = checkPromptFormat(scripts, { chain: true });
+    expect(check.segments).toBe(1);
+    expect(check.isPrompt).toBe(false);
+    expect(check.findings.map((f) => f.code)).not.toContain("timestamps");
+  });
+  it("an instruction line that is not the model's word for word is a finding of its own (STORY_053: the adapter passes it through)", () => {
+    const mangled = office.replace("<Picture 1> (from [Shot 1])", "<Picture 1(from [Shot 1])");
+    expect(codes(mangled)).toEqual(["instruction-line-differs"]);
+    expect(checkPromptFormat(mangled).findings[0]?.message).toContain('must read "For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced."');
+    expect(codes(office)).toEqual([]);
   });
 });
 

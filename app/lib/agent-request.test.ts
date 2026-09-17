@@ -42,6 +42,16 @@ describe("readSkill on the committed thirst-trap director", () => {
   });
 });
 
+describe("readSkill on the committed chain director (STORY_053)", () => {
+  const skill = readSkill(path.join(SKILLS, "minimax-h3-director-thirst-trap-chain"));
+  it("reads the metadata keys the app uses: the short name, the clip length and the default segment count", () => {
+    expect(skill.id).toBe("minimax-h3-director-thirst-trap-chain");
+    expect(skill.description).toContain("chain of several");
+    expect(skill.metadata).toMatchObject({ "minimax-short-name": "Chain director", "minimax-clip-seconds": "10", "minimax-segments-default": "3" });
+    expect(skill.references.map((r) => r.file)).toEqual(["references/anchor-example.md", "references/base-en.md", "references/example-i2va.md"]);
+  });
+});
+
 describe("parseFrontmatter", () => {
   it("reads strings, quoted strings and one nested map; comments and blank lines are skipped", () => {
     const { data, body } = parseFrontmatter('---\nname: x\n# a comment\ndescription: "quoted: value"\nmetadata:\n  version: "1.0"\n  minimax-adapter: 1.5.0\n\n---\n\nBody here\n');

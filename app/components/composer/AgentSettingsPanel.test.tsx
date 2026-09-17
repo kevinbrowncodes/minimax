@@ -110,12 +110,14 @@ describe("Agent settings (STORY_051)", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
-  it("Never + a chain reply is reviewed, not sent (until STORY_053)", async () => {
+  it("Never + a chain reply that does not split as the server counted it is reviewed, not sent (STORY_053 queues a chain that does — ChainDirector.test)", async () => {
+    // one prompt the server called three segments: the composer cannot post what it cannot split, so the reply is reviewed
     const calls = mount({ ...DEFAULT_SETTINGS, agentConfirm: "never" }, { kind: "prompt", prompt: PROMPT, findings: [], segments: 3 });
     await armed();
     fireEvent.click(screen.getByRole("button", { name: "Send message" }));
-    await waitFor(() => { expect(screen.getByTestId("agent-findings")).toHaveTextContent("Not sent — a chain is reviewed before Send all."); });
+    await waitFor(() => { expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue(PROMPT); });
     expect(calls.filter((c) => c.url.startsWith("/api/jobs"))).toHaveLength(0);
+    expect(push).not.toHaveBeenCalled();
   });
 
   it("Always is unchanged: the reply comes back for review", async () => {

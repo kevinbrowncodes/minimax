@@ -21,6 +21,14 @@ describe("titleFor (STORY_050: a director's prompt is named by its first action 
     expect(titleFor("integrated_multimodal_description: [Shot 1] The man in the navy trunks steps forward and holds there.\n\noverall_soundscape: none")).toBe("The man in the navy trunks steps forward and…");
     expect(titleFor("scene\n[0:00-0:03] He steps back.")).toBe("He steps back.");
   });
+  it("segment 2 of a full-format chain (STORY_053) is titled by its own action sentence, never the marker", () => {
+    const chain = readFileSync(path.resolve(__dirname, "../../tools/stub-generation-server/fixtures/agent/chain.txt"), "utf8");
+    const second = chain.split(/\n(?=integrated_multimodal_description:)/)[1] ?? "";
+    const title = titleFor(second);
+    expect(title.startsWith("integrated_multimodal_description")).toBe(false);
+    expect(/^(Live-action|The camera)/.test(title)).toBe(false);
+    expect(title.length).toBeGreaterThan(10);
+  });
 });
 
 describe("titleFor", () => {

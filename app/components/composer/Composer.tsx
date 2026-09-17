@@ -2,13 +2,13 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
 import Link from "next/link";
-import { agentSkill, canSend, durationOptions, extensionOf, initialComposer, maxAdded, modelLabel, overlapOptions, paramsLabel, reduceComposer, skillClipSeconds, type AgentSkill, type ComposerImage, type ExtendSource, type InitialRequest } from "@/lib/composer-state";
+import { agentSkill, canSend, durationOptions, extensionOf, initialComposer, maxAdded, modelLabel, overlapOptions, paramsLabel, reduceComposer, skillClipSeconds, type AgentSkill, type ComposerImage, type ComposerState, type ExtendSource, type InitialRequest } from "@/lib/composer-state";
 import { formatNotBefore, toLocalInput } from "@/lib/queue-view";
 import { ordinal } from "@/lib/todo-steps";
 import { cx } from "@/lib/cx";
 import { overlapSeconds } from "@/lib/extend";
 import type { Capabilities } from "@/lib/job-api";
-import { submitAgentRun, submitChain, submitJob } from "@/lib/submit-job";
+import { submitAgentRun, submitChain, submitJob, type ChainResult } from "@/lib/submit-job";
 import { sparkTimeLine } from "@/lib/spark-time";
 import { DESCRIPTION_MARKER } from "@/lib/prompt-format";
 import { AgentChip } from "./AgentChip";
@@ -16,7 +16,7 @@ import { AgentSettingsPanel } from "./AgentSettingsPanel";
 import { AgentInstructionsPanel } from "./AgentInstructionsPanel";
 import { decide } from "@/lib/agent-decision";
 import { IconMenu, IconSettings } from "@/components/shell/icons";
-import { chainPlan, segmentPrompt, splitChain } from "@/lib/chain";
+import { chainPlan, segmentPrompt, splitChain, type ChainPlan, type ChainSplit } from "@/lib/chain";
 import { ChainStrip, type ChainStart } from "./ChainStrip";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/upload-validation";
 import { AgentModelMenu, AttachMenu } from "./ComposerMenus";
@@ -133,6 +133,10 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
   }, []);
+  // BUG_011: the settings arrive after the mount (the Shell loads them), so the saved skill is applied when they do
+  useEffect(() => {
+    if (settings.agentSkill !== undefined) dispatch({ type: "agent-skill", skillId: settings.agentSkill });
+  }, [settings.agentSkill, state.agent.skills]);
   // STORY_052: the ≡ badge — how many instructions are active
   useEffect(() => {
     let cancelled = false;
@@ -285,6 +289,29 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
       dispatch({ type: "error", error: { message: sent.message, ...(sent.field === undefined ? {} : { field: sent.field }) } });
       return;
     }
+    if (decision === "queue-chain" && result.kind === "prompt") {
+      // STORY_053: every segment came back clean — the chain is posted as Send all would post it, before anything paints
+      const clip = skillClipSeconds(agentSkill(state));
+      const chainState: ComposerState = { ...state, ...(clip === undefined ? {} : { durationSeconds: clip }) };
+      const reply = splitChain(result.prompt);
+      const replyPlan = planFor(reply.segments, chainState.durationSeconds);
+      if (reply.segments.length < 2 || !replyPlan.fits) {
+        // the reply does not split as the server counted it, or the chain is longer than the server extends: reviewed, not sent
+        dispatch({ type: "agent-reply", prompt: result.prompt, findings: result.findings, notSent: true, ...(clip === undefined ? {} : { clipSeconds: clip }) });
+        return;
+      }
+      const sent = await submitChain(chainState, reply.segments.map((script) => segmentPrompt(reply.scene, script)), doFetch);
+      if (sent.ok) {
+        dispatch({ type: "agent-reply", prompt: "", findings: [] });
+        notify(`Queued — ${String(sent.ids.length)} segments, ≈ ${replyPlan.totalSeconds.toFixed(1)} s`);
+        router.push(`/task/${encodeURIComponent(sent.ids[sent.ids.length - 1] ?? "")}`);
+        return;
+      }
+      // a refusal mid-way: the segments the server took stay in the line; the rest come back for review as Send all leaves them
+      dispatch({ type: "agent-reply", prompt: result.prompt, findings: result.findings, ...(clip === undefined ? {} : { clipSeconds: clip }) });
+      await afterChainRefusal(reply, replyPlan, chainState, sent);
+      return;
+    }
     if (result.kind === "prompt") {
       dispatch({ type: "agent-reply", prompt: result.prompt, findings: result.findings, notSent: decision === "review-not-sent", ...(skillClipSeconds(agentSkill(state)) === undefined ? {} : { clipSeconds: skillClipSeconds(agentSkill(state)) }) });
       requestAnimationFrame(() => {
@@ -303,6 +330,26 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   };
   const stopAgent = (): void => {
     runController.current?.abort();
+  };
+
+  /** STORY_044's plan for a list of segments at a clip length, with the render's caps and overlap (also STORY_053's straight-through chain). */
+  const planFor = (scripts: readonly string[], seconds: number): ChainPlan =>
+    chainPlan(scripts, { seconds, overlapFrames: state.overlapFrames, extensionMax: caps ? maxAdded(caps, state.overlapFrames) : ext.durationsSeconds.max, maxSourceSeconds: ext.maxSourceSeconds, ...(extending ? { fromSource: extending.durationSeconds } : {}) });
+
+  /**
+   * A refusal mid-way through a chain (STORY_044): the accepted segments stay in the line; the composer keeps the scene
+   * and the unsent scripts, in extend mode against the last accepted one (its pending tile), so Send all again continues
+   * the chain. STORY_053's straight-through chain lands here too.
+   */
+  const afterChainRefusal = async (split: ChainSplit, chainPlanned: ChainPlan, base: ComposerState, sent: Exclude<ChainResult, { ok: true }>): Promise<void> => {
+    const lastId = sent.sent[sent.sent.length - 1];
+    if (lastId !== undefined) {
+      const accepted = chainPlanned.segments[sent.sent.length - 1];
+      const title = await doFetch(`/api/history/${encodeURIComponent(lastId)}`).then(async (res) => (res.ok ? ((await res.json()) as { title?: string }).title : undefined)).catch(() => undefined);
+      dispatch({ type: "extend-from", source: { id: lastId, title: title ?? lastId.slice(0, 8), durationSeconds: accepted?.joinedSeconds ?? base.durationSeconds, ratio: base.ratio, resolution: base.resolution, model: base.model, posterUrl: `/api/jobs/${encodeURIComponent(lastId)}/poster`, pending: true } });
+      dispatch({ type: "text", text: [split.scene, ...split.segments.slice(sent.index)].filter((part) => part !== "").join("\n\n") });
+    }
+    dispatch({ type: "error", error: { message: `Segment ${String(sent.index + 1)} was not sent: ${sent.message}`, ...(sent.field === undefined ? {} : { field: sent.field }) } });
   };
 
   const send = async (): Promise<void> => {
@@ -330,15 +377,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
         router.push(`/task/${encodeURIComponent(sent.ids[sent.ids.length - 1] ?? "")}`);
         return;
       }
-      // a refusal mid-way: the accepted segments stay in the line; the composer keeps the scene and the unsent scripts, in extend mode against the last accepted one (its pending tile), so Send all again continues the chain
-      const lastId = sent.sent[sent.sent.length - 1];
-      if (lastId !== undefined) {
-        const accepted = plan.segments[sent.sent.length - 1];
-        const title = await doFetch(`/api/history/${encodeURIComponent(lastId)}`).then(async (res) => (res.ok ? ((await res.json()) as { title?: string }).title : undefined)).catch(() => undefined);
-        dispatch({ type: "extend-from", source: { id: lastId, title: title ?? lastId.slice(0, 8), durationSeconds: accepted?.joinedSeconds ?? state.durationSeconds, ratio: state.ratio, resolution: state.resolution, model: state.model, posterUrl: `/api/jobs/${encodeURIComponent(lastId)}/poster`, pending: true } });
-        dispatch({ type: "text", text: [chain.scene, ...chain.segments.slice(sent.index)].filter((part) => part !== "").join("\n\n") });
-      }
-      dispatch({ type: "error", error: { message: `Segment ${String(sent.index + 1)} was not sent: ${sent.message}`, ...(sent.field === undefined ? {} : { field: sent.field }) } });
+      await afterChainRefusal(chain, plan, state, sent);
       return;
     }
     const result = await submitJob(state, doFetch);
@@ -365,7 +404,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const split = video ? splitChain(state.text) : undefined;
   const chain = split !== undefined && split.segments.length >= 2 ? split : undefined;
   const ext = extensionOf(caps);
-  const plan = chain === undefined ? undefined : chainPlan(chain.segments, { seconds: state.durationSeconds, overlapFrames: state.overlapFrames, extensionMax: caps ? maxAdded(caps, state.overlapFrames) : ext.durationsSeconds.max, maxSourceSeconds: ext.maxSourceSeconds, ...(extending ? { fromSource: extending.durationSeconds } : {}) });
+  const plan = chain === undefined ? undefined : planFor(chain.segments, state.durationSeconds);
   const chainStart: ChainStart = extending ? { kind: "source", title: extending.title } : state.images.length > 0 ? { kind: "image" } : { kind: "text" };
   // STORY_050: the Agent chip — greyed with a reason when the agent is not configured or the composer is extending a clip
   const agentOn = video && state.agent.on;

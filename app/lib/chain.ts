@@ -1,29 +1,44 @@
 /**
  * STORY_044: one text with several scripts becomes a chain of generations — the text splits at every line that begins
  * with "[0:00-" (the owner's scripts' own convention), the text before the first such line is the scene and goes with
- * every segment, and each segment after the first is an extension of the one before it. Pure: the arithmetic of the
- * lengths comes from lib/extend.ts (what the continuation tile shows), the cap from the capabilities, never a literal.
+ * every segment, and each segment after the first is an extension of the one before it. STORY_053: a text with no such
+ * line and two or more description markers is a full-format chain (the chain director's reply) — a segment starts at
+ * each marker line, the instruction line before the first is part of segment 1, and there is no scene, so every
+ * segment goes out unchanged. Pure: the arithmetic of the lengths comes from lib/extend.ts (what the continuation tile
+ * shows), the cap from the capabilities, never a literal.
  */
 import { FPS, extensionLength, lengthForSeconds } from "./extend";
+import { DESCRIPTION_MARKER, describedAction, splitSegments } from "./prompt-format";
 
 const SEGMENT_START = /^\[0?0:00-/;
 const TIMESTAMPED_LINE = /^\[(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})\]\s*/;
 
 export interface ChainSplit {
-  /** The text before the first "[0:00-" line, trimmed; "" when there is none. */
+  /** The text before the first "[0:00-" line, trimmed; "" when there is none — and always "" for a full-format chain. */
   readonly scene: string;
-  /** One entry per script; the whole text when it has no "[0:00-" line. */
+  /** One entry per script; the whole text when it has no "[0:00-" line and fewer than two markers. */
   readonly segments: readonly string[];
+  /** STORY_053: "full" when the segments are the model's own format (the marker rule); "scripts" for the owner's bracketed scripts. */
+  readonly format: "scripts" | "full";
 }
 
-/** Split the composer's text into the scene and its scripts. A text with fewer than two scripts is not a chain — the caller sends it as it is. */
+/**
+ * Split the composer's text into the scene and its scripts. A text with fewer than two scripts is not a chain — the
+ * caller sends it as it is. The bracket rule wins when a text has both conventions (STORY_053: said so, so the behaviour
+ * is decided, not accidental); the marker rule splits as the format check does (prompt-format › splitSegments), so a
+ * stray instruction line before a later segment lands on that segment, where the check names it.
+ */
 export function splitChain(text: string): ChainSplit {
   const lines = text.split(/\r?\n/);
   const starts = lines.flatMap((line, i) => (SEGMENT_START.test(line.trim()) ? [i] : []));
-  if (starts.length === 0) return { scene: "", segments: [text.trim()] };
+  if (starts.length === 0) {
+    const markers = lines.filter((line) => line.trimStart().startsWith(DESCRIPTION_MARKER)).length;
+    if (markers >= 2) return { scene: "", segments: splitSegments(text), format: "full" };
+    return { scene: "", segments: [text.trim()], format: markers === 1 ? "full" : "scripts" };
+  }
   const scene = lines.slice(0, starts[0]).join("\n").trim();
   const segments = starts.map((start, k) => lines.slice(start, starts[k + 1] ?? lines.length).join("\n").trim());
-  return { scene, segments };
+  return { scene, segments, format: "scripts" };
 }
 
 /** The prompt one segment goes out with: the scene, a blank line, the script — the recipe of the verified chains (STORY_020). */
@@ -130,7 +145,7 @@ export function chainPlan(scripts: readonly string[], options: ChainPlanOptions)
   return { segments, totalSeconds: previousFrames === undefined ? 0 : tenths(previousFrames), fits: firstUnfit === undefined, ...(firstUnfit === undefined ? {} : { firstUnfit }) };
 }
 
-/** The script's words with its leading bracket dropped, whitespace collapsed. */
+/** The script's words with its leading bracket dropped — or, for a full-format segment, its first action sentence (STORY_050's title rule) — whitespace collapsed. */
 function firstWords(script: string): string {
-  return (firstTimestampedLine(script) ?? script).replace(/\s+/g, " ").trim();
+  return (firstTimestampedLine(script) ?? describedAction(script) ?? script).replace(/\s+/g, " ").trim();
 }
