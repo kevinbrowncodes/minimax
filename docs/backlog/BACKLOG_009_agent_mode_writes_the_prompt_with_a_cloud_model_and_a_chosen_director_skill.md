@@ -1,6 +1,6 @@
 # BACKLOG_009 — Agent mode writes the prompt with a cloud model and a chosen director skill
 
-**Status:** Open (2026-09-16) · **Priority:** High — the owner's next epic; he intends to architect it himself (with Fable) from this item
+**Status:** Open — the epic is drafted: [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) (Proposed 2026-09-17 00:30 EDT, nine stories 047–055 in order, for the owner's review); this item stays open until the epic closes · **Priority:** High — the owner's next epic
 
 ## Summary
 
