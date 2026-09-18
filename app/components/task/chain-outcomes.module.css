@@ -1,0 +1,63 @@
+/* STORY_057: the chain's rows under the user bubble — STORY_044's strip chrome in the Continues line's type */
+.chain {
+  margin-top: var(--spacing_8);
+  padding: var(--spacing_8) var(--spacing_12);
+  border: 1px solid var(--border_default);
+  border-radius: var(--radius_8);
+  font-size: 13px;
+  color: var(--text_default_secondary);
+}
+.summary {
+  margin: 0 0 var(--spacing_4);
+  color: var(--text_default_primary);
+}
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.row {
+  display: grid;
+  grid-template-columns: 20px 132px minmax(0, 1fr) auto;
+  gap: var(--spacing_8);
+  align-items: baseline;
+  padding: 2px 0;
+}
+.rowCurrent .words {
+  color: var(--text_default_primary);
+}
+.index {
+  color: var(--text_default_tertiary);
+  text-align: right;
+}
+.outcome {
+  white-space: nowrap;
+}
+/* the composer strip's amber (composer.module.css › chainWarn) */
+.outcomeWarn {
+  padding: 0 var(--spacing_4);
+  border-radius: var(--radius_4);
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--text_default_primary);
+}
+.words {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+}
+a.words:hover {
+  text-decoration: underline;
+}
+.this {
+  font-size: 11px;
+  color: var(--text_default_tertiary);
+}
+@media (max-width: 899px) {
+  .row {
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+  }
+  .words {
+    grid-column: 2 / span 2;
+  }
+}

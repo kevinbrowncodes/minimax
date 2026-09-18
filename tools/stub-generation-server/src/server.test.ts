@@ -266,6 +266,9 @@ describe("shot changes (STORY_020, contract v1.3; STORY_046, v1.4)", () => {
     expect(await status(flagged)).toMatchObject({ status: "done", result: { cuts: [{ frame: 270, seconds: 11.25, kind: "cut" }], camera: "static" } });
     const clean = await create("done-after-1-poll");
     expect(await status(clean)).toMatchObject({ status: "done", result: { cuts: [], camera: "static" } });
+    // STORY_057: the cut at the join of an extension of the fixture — frame 56 is the fixture's own length on the grid
+    const atJoin = await create("done-with-cut-at-join");
+    expect(await status(atJoin)).toMatchObject({ status: "done", result: { frames: 56, cuts: [{ frame: 56, seconds: 2.33, kind: "cut" }], camera: "static" } });
   });
   it("done-with-framing-move reports three framing events on a moving camera; done-with-cut-in-a-move adds a cut at 5.92 s", async () => {
     const moved = await create("done-with-framing-move");

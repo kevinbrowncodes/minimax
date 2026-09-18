@@ -6,6 +6,7 @@ export type StubScript =
   | "done-after-3-polls"
   | "done-after-1-poll"
   | "done-with-cut"
+  | "done-with-cut-at-join"
   | "slow-done-after-10-polls"
   | "fails-after-2-polls"
   | "moderated"

@@ -12,13 +12,20 @@ const entry = (over: Partial<HistoryEntry> = {}): HistoryEntry => ({ id: "j1", t
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const caps = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["16:9"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 } };
 
-function fetchScript(statuses: readonly { status: string; progress: number; result?: unknown; error?: unknown; request?: unknown }[]) {
+function fetchScript(statuses: readonly { status: string; progress: number; result?: unknown; error?: unknown; request?: unknown }[], chains: readonly (readonly { id: string; index: number; title: string; status: string; progress: number; outcome: string }[])[] = []) {
   let polls = 0;
+  let chainReads = 0;
   const calls: string[] = [];
   const posts: string[] = [];
   const impl = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     calls.push(`${init?.method ?? "GET"} ${url}`);
+    if (url === "/api/history/j1/chain") {
+      // STORY_057: the chain's rows, one script step per read (the last held)
+      const step = chains[Math.min(chainReads, chains.length - 1)];
+      chainReads += 1;
+      return Promise.resolve(step === undefined ? json({ error: { code: "not_found", message: url } }, 404) : json({ segments: step }));
+    }
     if (url === "/api/jobs" && init?.method === "POST") {
       posts.push(typeof init.body === "string" ? init.body : "");
       return Promise.resolve(json({ id: "j9", status: "queued", progress: 0 }, 202));
@@ -37,7 +44,7 @@ function fetchScript(statuses: readonly { status: string; progress: number; resu
     if (url === "/api/jobs/j1" && init?.method === "DELETE") return Promise.resolve(json({ id: "j1", status: "cancelled", progress: 41 }, 202));
     return Promise.resolve(json({ error: { code: "not_found", message: url } }, 404));
   };
-  return { fetchImpl: vi.fn(impl), calls, posts, polls: () => polls };
+  return { fetchImpl: vi.fn(impl), calls, posts, polls: () => polls, chainReads: () => chainReads };
 }
 
 /** The page under the state the Shell provides (STORY_023): the Work Area panel open, the preview pane closed. */
@@ -70,6 +77,48 @@ describe("TaskPage — a request waiting in the queue (STORY_041)", () => {
       await vi.advanceTimersByTimeAsync(5000);
     });
     expect(screen.getByTestId("indicator")).toHaveTextContent(/Done/);
+  });
+});
+
+describe("TaskPage — the chain's rows (STORY_057)", () => {
+  const row = (id: string, index: number, status: string, outcome: string, progress = 0) => ({ id, index, title: `segment ${String(index)}`, status, progress, outcome });
+  it("reads the chain on mount and after each poll while a segment is still going, stops once every segment is terminal, and shows the rows with this one marked", async () => {
+    const script = fetchScript(
+      [{ status: "running", progress: 50 }, { status: "done", progress: 100, result: { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 2, width: 320, height: 180, sizeBytes: 40157 } }],
+      [[row("s0", 1, "done", "done"), row("j1", 2, "queued", "queued"), row("s2", 3, "queued", "waiting")], [row("s0", 1, "done", "done"), row("j1", 2, "running", "running", 50), row("s2", 3, "queued", "waiting")], [row("s0", 1, "done", "done"), row("j1", 2, "done", "done"), row("s2", 3, "done", "done")]],
+    );
+    render(shell(<TaskPage entry={entry({ continuesFrom: { id: "s0", title: "segment 1" } })} fetchImpl={script.fetchImpl} />));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(script.chainReads()).toBe(1);
+    const rows = screen.getAllByTestId("chain-outcome-row");
+    expect(rows).toHaveLength(3);
+    expect(rows[1]).toHaveTextContent("2 queued segment 2 this");
+    expect(rows[2]).toHaveTextContent("3 waiting · after 2 segment 3");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(script.chainReads()).toBe(2);
+    expect(screen.getAllByTestId("chain-outcome-row")[1]).toHaveTextContent("running · 50 %");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(script.chainReads()).toBe(3); // the terminal poll reads once more; every segment is terminal now
+    expect(screen.getAllByTestId("chain-outcome-row").map((r) => r.getAttribute("data-outcome"))).toEqual(["done", "done", "done"]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(script.chainReads()).toBe(3);
+  });
+  it("a clip with no chain shows no rows and reads the route once", async () => {
+    const script = fetchScript([], [[row("j1", 1, "done", "done")]]);
+    render(shell(<TaskPage entry={entry({ status: "done", progress: 100 })} fetchImpl={script.fetchImpl} />));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByTestId("chain-outcomes")).not.toBeInTheDocument();
+    expect(script.chainReads()).toBe(1);
   });
 });
 

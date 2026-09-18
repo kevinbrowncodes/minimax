@@ -1,6 +1,6 @@
 # BACKLOG_011 — Retrying one segment of a chain re-chains the rest
 
-**Status:** Promoted (2026-09-18 06:15 EDT) — the owner chose the first remedy; it is [STORY_056](../story/STORY_056_retry_rechains_the_rest.md), which stays Proposed until he approves the draft. The second remedy (a cut at a join fails the segment) is withdrawn with the choice; the third (the strip's rows showing each segment's outcome) stays here, open. Found on the second chain of the night (STORY_053's Addendum 2)
+**Status:** Archived (2026-09-18 12:50 EDT) — every remedy built or withdrawn: the first is [STORY_056](../story/STORY_056_retry_rechains_the_rest.md) (Done), the second withdrawn with the owner's choice of the first, the third is [STORY_057](../story/STORY_057_the_task_page_shows_the_whole_chain.md) ("please complete backlog 11"). Found on the second chain of the night (STORY_053's Addendum 2)
 **Created:** 2026-09-18
 
 ## Summary
@@ -15,7 +15,7 @@ The one-in-ten join that cuts costs the owner three hand steps and 67 min of GPU
 
 - ~~On a chain segment's page, **Retry** offers *Retry this segment and re-chain the rest*: cancel (or leave, if already done) the segments after it, redraw this one, and queue the later segments again as extensions of the redraw — their prompts are in history.~~ → STORY_056.
 - ~~Or, cheaper: the queue runner refuses to start a waiting extension whose source finished **with a cut at its join**, and says so in Scheduled (*waiting for a clean draw of segment 2*), so a Retry of the source re-attaches the line automatically.~~ Withdrawn 2026-09-18: the owner chose the first remedy.
-- The strip's rows could show each segment's outcome after Send all (done / cut at the join / waiting).
+- ~~The strip's rows could show each segment's outcome after Send all (done / cut at the join / waiting).~~ → STORY_057 (on the task page, where the chain lives after Send all).
 
 ## Dependencies
 

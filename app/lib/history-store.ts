@@ -9,6 +9,7 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { JobError, JobResult, JobStatus, JobStatusResponse, Overlap } from "./job-api";
+import { chainAfter } from "./chain-outcome";
 
 export interface HistoryParams {
   readonly ratio: string;
@@ -77,15 +78,8 @@ export function titleFor(prompt: string): string {
   return `${(boundary > 24 ? cut.slice(0, boundary) : clean.slice(0, TITLE_MAX)).trimEnd()}…`;
 }
 
-/**
- * STORY_056: the entries that continue from `id`, transitively, in chain order — each link's continuations oldest first,
- * each followed by its own — leaving out cancelled ones (a chain re-queued by Retry chain leaves its old links cancelled;
- * they are not links any more). Pure over a list.
- */
-export function chainAfter(entries: readonly HistoryEntry[], id: string): readonly HistoryEntry[] {
-  const next = entries.filter((e) => e.continuesFrom?.id === id && e.status !== "cancelled").sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
-  return next.flatMap((e) => [e, ...chainAfter(entries, e.id)]);
-}
+// STORY_056's walk lives in lib/chain-outcome.ts (pure, client-safe); re-exported here for the store's callers
+export { chainAfter };
 
 export class HistoryStore {
   readonly file: string;

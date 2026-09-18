@@ -51,6 +51,8 @@ export const SCRIPTS = {
   "done-with-framing-move": { steps: [q(0), r(33), r(66), done], cuts: [{ frame: 24, seconds: 1, kind: "framing" }, { frame: 100, seconds: 4.17, kind: "framing" }, { frame: 204, seconds: 8.5, kind: "framing" }], camera: "moving" },
   // STORY_046: the same, with a cut the model made at 5.92 s (STORY_020's `2f980101` frame 142) inside the move
   "done-with-cut-in-a-move": { steps: [q(0), r(33), r(66), done], cuts: [{ frame: 24, seconds: 1, kind: "framing" }, { frame: 100, seconds: 4.17, kind: "framing" }, { frame: 142, seconds: 5.92, kind: "cut" }, { frame: 204, seconds: 8.5, kind: "framing" }], camera: "moving" },
+  // STORY_057: a cut at the join — the first new frame of an extension of the 2.0 s fixture (56 frames on the grid; last night's 7b2636b9 at frame 243)
+  "done-with-cut-at-join": { steps: [q(0), done], cuts: [{ frame: 56, seconds: 2.33, kind: "cut" }], camera: "static" },
   "rejects-upload": { steps: [q(0), r(50), done], rejectsUpload: true },
 } as const satisfies Record<string, Script>;
 

@@ -8,6 +8,7 @@ import { GET as listHistory } from "@/app/api/history/route";
 import { DELETE as cancelJob, GET as getJob } from "@/app/api/jobs/[id]/route";
 import { POST as retryChain } from "@/app/api/jobs/[id]/retry-chain/route";
 import { GET as getHistoryEntry } from "@/app/api/history/[id]/route";
+import { GET as getChain } from "@/app/api/history/[id]/chain/route";
 import { GET as getResult } from "@/app/api/jobs/[id]/result/route";
 import { POST as createJob } from "@/app/api/jobs/route";
 import { DELETE as removeQueued, GET as getQueued, PATCH as patchQueued } from "@/app/api/queue/[id]/route";
@@ -249,6 +250,9 @@ describe("the queue through the app's routes", () => {
     expect(one.chainAfter.map((e) => e.id)).toEqual([s2.id, s3.id]);
     const two = (await (await getHistoryEntry(new Request(`http://app/api/history/${s2.id}`), ctx(s2.id))).json()) as { chainAfter: { id: string }[] };
     expect(two.chainAfter.map((e) => e.id)).toEqual([s3.id]);
+    // STORY_057: the whole chain from any of its segments, each with its outcome — segment 3 waiting on segment 2
+    const chainFrom3 = (await (await getChain(new Request(`http://app/api/history/${s3.id}/chain`), ctx(s3.id))).json()) as { segments: { id: string; index: number; outcome: string }[] };
+    expect(chainFrom3.segments.map((x) => [x.index, x.id, x.outcome])).toEqual([[1, s1.id, "done"], [2, s2.id, "queued"], [3, s3.id, "waiting"]]);
     // Retry chain on segment 2: the old segment 3 leaves the line cancelled, the redraw goes up as an extension of segment 1, the new segment 3 waits on the redraw
     const res = await retryChain(new Request(`http://app/api/jobs/${s2.id}/retry-chain?script=slow-done-after-10-polls`, { method: "POST" }), ctx(s2.id)); // the redraw runs slowly, so the new segment 3 is seen waiting
     expect(res.status).toBe(202);
@@ -262,6 +266,13 @@ describe("the queue through the app's routes", () => {
     const newThree = entries.find((e) => e.id === body.rechained[0]);
     expect(newThree).toMatchObject({ prompt: "Segment three", status: "queued", continuesFrom: { id: body.id } });
     expect((await line()).map((e) => e.id)).toEqual([body.rechained[0]]);
+    // STORY_057: from the redraw's page the chain is 1 → the old segment 2 (still a link until it is cancelled) → the redraw → the new 3; the old 3 is no row
+    const chainFromRedraw = (await (await getChain(new Request(`http://app/api/history/${body.id}/chain`), ctx(body.id))).json()) as { segments: { id: string; outcome: string }[] };
+    expect(chainFromRedraw.segments.map((x) => x.id)).toEqual([s1.id, s2.id, body.id, body.rechained[0]]);
+    expect(chainFromRedraw.segments.map((x) => x.outcome).slice(0, 2)).toEqual(["done", "queued"]);
+    expect(["queued", "running"]).toContain(chainFromRedraw.segments[2]?.outcome); // the slow redraw, as far as the stub has stepped it
+    expect(chainFromRedraw.segments[3]?.outcome).toBe("waiting");
+    expect((await getChain(new Request("http://app/api/history/nope/chain"), ctx("nope"))).status).toBe(404);
     // the redraw went to the stub with no seed of ours and the source's id; the old segment 3 never did
     const received = (await (await fetch(`${stubUrl}/__stub/jobs/${body.id}/received`)).json()) as { request: { continueFrom?: string; overlapFrames?: number; seed?: unknown } };
     expect(received.request).toMatchObject({ continueFrom: s1.id, overlapFrames: 39 });

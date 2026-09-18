@@ -282,9 +282,9 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     expect(await stubApi.openJobs()).toEqual([]);
   });
 
-  test("Retry chain: a cut at segment 2's join redraws it and re-queues segment 3 behind the redraw, the old segment 3 cancelled (STORY_056)", async ({ page, request, stubApi }) => {
+  test("Retry chain: a cut at segment 2's join redraws it and re-queues segment 3 behind the redraw, the old segment 3 cancelled (STORY_056); the page lists the whole chain with each segment's outcome (STORY_057)", async ({ page, request, stubApi }) => {
     test.slow(); // a three-segment chain with a cut script, then a redraw and a re-chained segment — five jobs in all
-    await page.goto("/?script=done-with-cut"); // every segment reports a cut at 11.25 s; segment 2's notice is the one this story acts on
+    await page.goto("/?script=done-with-cut-at-join"); // every segment reports a cut at frame 56 — the fixture's length, so an extension's join; segment 2's notice is the one this story acts on
     await settled(page);
     await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
@@ -306,8 +306,17 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     await page.goto(`/task/${second}?script=done-after-1-poll`);
     await settled(page);
     const notice = page.getByTestId("cut-notice");
-    await expect(notice).toContainText("The shot changed at 00:11");
+    await expect(notice).toContainText("The shot changed at 00:02");
     await expect(notice).toContainText("Retry redraws this segment and the 1 segment queued after it with new seeds.");
+    // STORY_057: the chain's rows — segment 1's cut has no join (cut inside), segment 2's is at its join, segment 3 is on its way
+    const rows = page.getByTestId("chain-outcome-row");
+    await expect(rows).toHaveCount(3);
+    await expect(page.getByTestId("chain-outcomes")).toContainText("Chain · 3 segments");
+    await expect(rows.nth(0)).toHaveAttribute("data-outcome", "cut-inside");
+    await expect(rows.nth(1)).toHaveAttribute("data-outcome", "cut-at-join");
+    await expect(rows.nth(1)).toContainText("this");
+    expect(["waiting", "queued", "running", "cut-at-join"]).toContain(await rows.nth(2).getAttribute("data-outcome"));
+    await expect(rows.nth(0).getByRole("link")).toHaveAttribute("href", `/task/${first}`);
     const rechained = page.waitForResponse((r) => r.url().includes(`/api/jobs/${second}/retry-chain`) && r.request().method() === "POST");
     await notice.getByRole("button", { name: "Retry chain" }).click();
     const body = (await (await rechained).json()) as { id: string; rechained: string[] };
@@ -322,6 +331,15 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     for (const id of [redraw, newThird]) {
       await expect.poll(async () => ((await (await request.get(`/api/jobs/${id}`)).json()) as { status: string }).status, { timeout: 60_000 }).toBe("done");
     }
+    // STORY_057: the redraw's page lists the chain without the cancelled old segment 3
+    await page.goto(`/task/${redraw}`);
+    await settled(page);
+    const after = page.getByTestId("chain-outcome-row");
+    await expect(after).toHaveCount(4); // 1, the old 2 (its cut at the join, still a link), the redraw, the new 3
+    const hrefs = await after.locator("a").evaluateAll((links) => links.map((a) => a.getAttribute("href")));
+    expect(hrefs).not.toContain(`/task/${third}`);
+    expect(hrefs).toContain(`/task/${newThird}`);
+    await expect(after.nth(2)).toContainText("this");
     const newThirdEntry = (await (await request.get(`/api/history/${newThird}`)).json()) as { jobId?: string };
     expect((await stubApi.received(redraw)).request.continueFrom).toBe(first);
     expect((await stubApi.received(newThirdEntry.jobId ?? newThird)).request.continueFrom).toBe(redraw);

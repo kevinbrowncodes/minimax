@@ -17,6 +17,8 @@ import { useNarrow } from "@/lib/use-narrow";
 import { formatDoneAt, processedSeconds, resultLine } from "@/lib/task-view";
 import { indicatorFor, stepsFor, type Step } from "@/lib/todo-steps";
 import { CutNotice } from "./CutNotice";
+import { ChainOutcomes } from "./ChainOutcomes";
+import type { ChainSegmentView } from "@/lib/chain-outcome";
 import styles from "./task.module.css";
 
 export interface TaskPageProps {
@@ -108,6 +110,38 @@ export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, chainAft
   const [overflows, setOverflows] = useState(false);
   const opened = useRef(false);
   const threadRef = useRef<HTMLElement>(null);
+  // STORY_057: the whole chain this segment belongs to — read on mount and again after each poll while any segment is still going
+  const [chain, setChain] = useState<readonly ChainSegmentView[]>([]);
+  const chainSettled = useRef(false);
+  /** The chain's rows from the route; undefined once every segment is terminal (nothing left to watch) or when the route did not answer. */
+  const readChain = useCallback(async (): Promise<readonly ChainSegmentView[] | undefined> => {
+    if (chainSettled.current) return undefined;
+    try {
+      const res = await doFetch(`/api/history/${encodeURIComponent(entry.id)}/chain`);
+      if (!res.ok) return undefined;
+      const body = (await res.json()) as { segments?: ChainSegmentView[] };
+      const segments = Array.isArray(body.segments) ? body.segments : [];
+      if (segments.every((s) => isTerminal(s.status))) chainSettled.current = true;
+      return segments;
+    } catch {
+      return undefined; // the strip keeps what it had
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- doFetch is stable for the page's life
+  }, [entry.id]);
+  const loadChain = useCallback((): void => {
+    void readChain().then((segments) => {
+      if (segments !== undefined) setChain(segments);
+    });
+  }, [readChain]);
+  useEffect(() => {
+    let cancelled = false;
+    void readChain().then((segments) => {
+      if (!cancelled && segments !== undefined) setChain(segments);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [readChain]);
 
   // Mark the entry opened once (the sidebar's unread dot). StrictMode runs effects twice; the ref makes it once.
   useEffect(() => {
@@ -132,6 +166,7 @@ export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, chainAft
       signal: controller.signal,
       onUpdate: (response) => {
         dispatch({ type: "status", response });
+        loadChain(); // STORY_057: the other segments move while this one is polled
         if (response.request?.overlap) setOverlap(response.request.overlap);
         // The preview pane opens by itself when a job finishes while the page is open (STORY_023's one departure):
         // a watched job still ends in a playing video. A finished job reopened from history waits for Open preview.
@@ -311,6 +346,7 @@ export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, chainAft
                   {overlap ? ` · carried its last ${overlap.seconds.toFixed(1)} s` : ""}
                 </span>
               ) : null}
+              <ChainOutcomes segments={chain} currentId={entry.id} />
             </div>
 
             {running ? (
