@@ -14,6 +14,8 @@ export interface ChainStripProps {
   readonly overlapFrames: number;
   readonly overlapOptions: readonly { readonly frames: number; readonly label: string }[];
   readonly onOverlap: (frames: number) => void;
+  /** STORY_055: the draws setting — above 1 the summary says the chain is sent once. */
+  readonly draws?: number;
 }
 
 /** "segment 4" / "segments 4–6". */
@@ -27,7 +29,7 @@ function unfitRange(plan: ChainPlan): string {
  * STORY_044: the chain strip under the composer's box — one row per script, the length each adds and the length in
  * all, the overlap, and which segments the server would refuse (its source cap, read from the capabilities).
  */
-export function ChainStrip({ plan, start, maxSourceSeconds, overlapFrames, overlapOptions, onOverlap }: ChainStripProps) {
+export function ChainStrip({ plan, start, maxSourceSeconds, overlapFrames, overlapOptions, onOverlap, draws = 1 }: ChainStripProps) {
   const first = plan.segments[0];
   const extension = plan.segments.find((s) => s.sourceSeconds !== undefined);
   const each = first === undefined ? "" : extension === undefined || (first.sourceSeconds === undefined && extension.seconds === first.seconds && !extension.capped)
@@ -39,6 +41,7 @@ export function ChainStrip({ plan, start, maxSourceSeconds, overlapFrames, overl
     <div className={styles.chain} data-testid="chain-strip">
       <p className={styles.chainSummary} data-testid="chain-summary">
         {String(plan.segments.length)} segments · {each} · ≈ {plan.totalSeconds.toFixed(1)} s in all · overlap {overlapSeconds(overlapFrames)} s
+        {draws > 1 ? " · draws apply to single clips; the chain is sent once" : null}
         {plan.fits ? null : <span className={styles.chainWarn}> — the Spark extends videos up to {String(maxSourceSeconds)} s: {unfitRange(plan)} would not run</span>}
       </p>
       <ol className={styles.chainRows}>

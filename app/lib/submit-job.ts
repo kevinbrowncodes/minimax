@@ -96,6 +96,29 @@ export async function submitChain(state: ComposerState, prompts: readonly string
   return { ok: true, ids };
 }
 
+export type DrawsResult = { readonly ok: true; readonly ids: readonly string[]; readonly position?: number } | { readonly ok: false; readonly sent: readonly string[]; readonly index: number; readonly message: string; readonly field?: string };
+
+/**
+ * STORY_055: the same single-clip request `count` times, one after another, each after the previous 202 — the first
+ * as the composer would post it (its images, its run-at, its Edit's `replaces`), the rest as new requests with the
+ * same images and run-at (they wait together), never with a seed: the adapter draws one per job. A refusal stops the
+ * sequence: the accepted draws are real requests and stay; the result says which draw failed and why. A count of 1
+ * is today's one submitJob.
+ */
+export async function submitDraws(state: ComposerState, count: number, fetchImpl: typeof fetch = fetch, prompt: string = state.text): Promise<DrawsResult> {
+  const ids: string[] = [];
+  let position: number | undefined;
+  for (let i = 0; i < Math.max(1, count); i += 1) {
+    // in extend mode every draw extends the same source (the images are ignored by the request builder then, as today)
+    const segment: SegmentRequest = { prompt, images: state.images, ...(state.extend === undefined ? {} : { continueFrom: state.extend.id }), ...(state.notBefore === undefined ? {} : { notBefore: state.notBefore }), ...(i === 0 && state.queueId !== undefined ? { replaces: state.queueId } : {}) };
+    const result = await submitJob(state, fetchImpl, segment);
+    if (!result.ok) return { ok: false, sent: ids, index: i, message: result.message, ...(result.field === undefined ? {} : { field: result.field }) };
+    ids.push(result.id);
+    if (i === 0) position = result.position;
+  }
+  return { ok: true, ids, ...(position === undefined ? {} : { position }) };
+}
+
 /** STORY_050: what `POST /api/agent/runs` answers, as the composer reads it. */
 export type AgentRunResult =
   | { readonly kind: "prompt"; readonly prompt: string; readonly findings: readonly { readonly code: string; readonly message: string; readonly segment?: number }[]; readonly segments: number }

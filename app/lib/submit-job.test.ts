@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { initialComposer, reduceComposer, type ComposerImage, type ComposerState } from "./composer-state";
 import type { Capabilities } from "./job-api";
-import { buildJobRequest, submitChain, submitJob } from "./submit-job";
+import { buildJobRequest, submitChain, submitDraws, submitJob } from "./submit-job";
 
 const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["16:9"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 } };
 const typed = (): ComposerState => reduceComposer(reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: caps }), { type: "enter-video-mode" }), { type: "text", text: " A boat " });
@@ -133,5 +133,61 @@ describe("a chain's segments (STORY_044)", () => {
     const firstBody = vi.mocked(fetchImpl).mock.calls[0]?.[1]?.body;
     const first = JSON.parse(typeof firstBody === "string" ? firstBody : "{}") as { continueFrom?: string };
     expect(first.continueFrom).toBe("src");
+  });
+});
+
+describe("draws per prompt (STORY_055)", () => {
+  const collect = (refuseAt?: number) => {
+    const bodies: Record<string, unknown>[] = [];
+    let n = 0;
+    const fetchImpl = vi.fn((_url: RequestInfo | URL, init?: RequestInit) => {
+      const body = init?.body;
+      bodies.push(body instanceof FormData ? Object.fromEntries([...body.entries()].filter(([k]) => k !== "referenceImage")) : (JSON.parse(typeof body === "string" ? body : "{}") as Record<string, unknown>));
+      n += 1;
+      if (n === refuseAt) return Promise.resolve(new Response(JSON.stringify({ error: { code: "validation", message: "prompt is too long", field: "prompt" } }), { status: 400, headers: { "content-type": "application/json" } }));
+      return Promise.resolve(new Response(JSON.stringify({ id: `j${String(n)}`, status: "queued", progress: 0, ...(n > 1 ? { position: n - 1 } : {}) }), { status: 202, headers: { "content-type": "application/json" } }));
+    }) as unknown as typeof fetch;
+    return { bodies, fetchImpl };
+  };
+
+  it("posts the same request N times in order — the prompt, the image and the parameters alike, never a seed; replaces only on the first, the run-at on every draw", async () => {
+    const state = reduceComposer(reduceComposer(reduceComposer(typed(), { type: "add-images", images: [img] }), { type: "not-before", notBefore: "2026-09-16T20:00:00.000Z" }), { type: "capabilities", capabilities: caps });
+    const editing: ComposerState = { ...state, queueId: "q1" };
+    const { bodies, fetchImpl } = collect();
+    const result = await submitDraws(editing, 3, fetchImpl);
+    expect(result).toEqual({ ok: true, ids: ["j1", "j2", "j3"] });
+    expect(bodies).toHaveLength(3);
+    for (const body of bodies) {
+      expect(body).toMatchObject({ prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: "5", model: "minimax-h3", notBefore: "2026-09-16T20:00:00.000Z" });
+      expect(body).not.toHaveProperty("seed");
+      expect(body).not.toHaveProperty("continueFrom");
+    }
+    expect(bodies[0]).toHaveProperty("replaces", "q1");
+    expect(bodies[1]).not.toHaveProperty("replaces");
+    expect(bodies[2]).not.toHaveProperty("replaces");
+    // every draw went multipart with the image
+    expect(vi.mocked(fetchImpl).mock.calls.every((c) => c[1]?.body instanceof FormData)).toBe(true);
+    expect(vi.mocked(fetchImpl).mock.calls.every((c) => (c[1]?.body as FormData).get("referenceImage") instanceof File)).toBe(true);
+  });
+
+  it("a count of 1 posts once and carries the first's position; another prompt can be given (the director's) without touching the state's text", async () => {
+    const { bodies, fetchImpl } = collect();
+    const one = await submitDraws(typed(), 1, fetchImpl, "For the target video…");
+    expect(one).toEqual({ ok: true, ids: ["j1"] });
+    expect(bodies[0]).toMatchObject({ prompt: "For the target video…" });
+    const { fetchImpl: again } = collect();
+    // the position comes from the first draw's 202 (the stub gives none for the first here, n − 1 after)
+    const two = await submitDraws(typed(), 2, again);
+    expect(two).toEqual({ ok: true, ids: ["j1", "j2"] });
+  });
+
+  it("in extend mode every draw extends the same source; a refusal stops the sequence and says which draw", async () => {
+    const extending = reduceComposer(typed(), { type: "extend-from", source: { id: "src", title: "26-09-16-1100", durationSeconds: 5, ratio: "16:9", resolution: "768P", model: "minimax-h3", posterUrl: "" } });
+    const { bodies, fetchImpl } = collect(2);
+    const result = await submitDraws(extending, 3, fetchImpl);
+    expect(result).toEqual({ ok: false, sent: ["j1"], index: 1, message: "prompt is too long", field: "prompt" });
+    expect(bodies).toHaveLength(2);
+    expect(bodies[0]).toMatchObject({ continueFrom: "src", overlapFrames: 39 });
+    expect(bodies[1]).toMatchObject({ continueFrom: "src" });
   });
 });

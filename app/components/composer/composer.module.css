@@ -850,6 +850,56 @@
 .agentSectionGap {
   margin-top: var(--spacing_24);
 }
+/* STORY_055: the Draws x1 · x2 · x3 · x4 track in the panel — the parameters popover's radio track (radio-duration@1440: 36 × 24, 12 px/500) */
+.agentDraws {
+  flex: none;
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius_8);
+  background: var(--bg_default_secondary);
+}
+.agentDraw {
+  position: relative;
+  min-width: 36px;
+  height: 24px;
+  padding: 0 var(--spacing_8);
+  border-radius: var(--radius_6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text_default_secondary);
+  cursor: pointer;
+}
+/* the radio fills its segment, invisible: a click or a tap lands on the input itself */
+.agentDraw .agentRadio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.agentDrawOn {
+  background: var(--bg_default_tertiary);
+  color: var(--text_default_primary);
+  box-shadow: 0 1px 2px var(--shadow_default);
+}
+@media (max-width: 899px) {
+  .agentDraw {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+/* the ×N on Send (STORY_055) */
+.sendCount {
+  font-size: 12px;
+  font-weight: 500;
+  margin-right: 2px;
+}
 .agentPanelButtons {
   margin-top: var(--spacing_24);
   justify-content: flex-end;

@@ -8,7 +8,7 @@ import { ordinal } from "@/lib/todo-steps";
 import { cx } from "@/lib/cx";
 import { overlapSeconds } from "@/lib/extend";
 import type { Capabilities } from "@/lib/job-api";
-import { submitAgentRun, submitChain, submitJob, type ChainResult } from "@/lib/submit-job";
+import { submitAgentRun, submitChain, submitDraws, type ChainResult, type DrawsResult } from "@/lib/submit-job";
 import { sparkTimeLine } from "@/lib/spark-time";
 import { DESCRIPTION_MARKER } from "@/lib/prompt-format";
 import { AgentChip } from "./AgentChip";
@@ -289,17 +289,18 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
     runController.current = undefined;
     const decision = decide(settings.agentConfirm, result);
     if (decision === "queue" && result.kind === "prompt") {
-      // STORY_051: straight through — the prompt is posted as a Send would post it, the box never shows it; the write starts before the paint
+      // STORY_051: straight through — the prompt is posted as a Send would post it, the box never shows it; the write starts before the paint.
+      // STORY_055: as many draws as the setting says, one after another
       const clip = skillClipSeconds(agentSkill(state));
-      const sent = await submitJob({ ...state, ...(clip === undefined ? {} : { durationSeconds: clip }) }, doFetch, { prompt: result.prompt, images: state.images, ...(state.notBefore === undefined ? {} : { notBefore: state.notBefore }), ...(state.queueId === undefined ? {} : { replaces: state.queueId }) });
+      const sent = await submitDraws({ ...state, ...(clip === undefined ? {} : { durationSeconds: clip }) }, draws, doFetch, result.prompt);
       if (sent.ok) {
         dispatch({ type: "agent-reply", prompt: "", findings: [] });
-        notify(sent.position === undefined ? "Queued — the director's prompt" : `Queued — the director's prompt, ${ordinal(sent.position)} in line`);
-        router.push(state.queueId === undefined ? `/task/${encodeURIComponent(sent.id)}` : "/scheduled");
+        notify(queuedToast(sent));
+        router.push(state.queueId === undefined ? `/task/${encodeURIComponent(sent.ids[0] ?? "")}` : "/scheduled");
         return;
       }
       dispatch({ type: "agent-reply", prompt: result.prompt, findings: result.findings, ...(clip === undefined ? {} : { clipSeconds: clip }) });
-      dispatch({ type: "error", error: { message: sent.message, ...(sent.field === undefined ? {} : { field: sent.field }) } });
+      dispatch({ type: "error", error: { message: drawsFailure(sent), ...(sent.field === undefined ? {} : { field: sent.field }) } });
       return;
     }
     if (decision === "queue-chain" && result.kind === "prompt") {
@@ -393,15 +394,28 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
       await afterChainRefusal(chain, plan, state, sent);
       return;
     }
-    const result = await submitJob(state, doFetch);
+    // STORY_055: one single-clip request as many times as the draws setting says (1 is today's one post)
+    const result = await submitDraws(state, draws, doFetch);
     if (result.ok) {
       // STORY_041: a request that went into the line says where it stands; an Edit returns to the queue
-      if (result.position !== undefined) notify(`Queued — ${ordinal(result.position)} in line`);
-      router.push(state.queueId === undefined ? `/task/${encodeURIComponent(result.id)}` : "/scheduled");
+      if (draws > 1) notify(queuedToast(result));
+      else if (result.position !== undefined) notify(`Queued — ${ordinal(result.position)} in line`);
+      router.push(state.queueId === undefined ? `/task/${encodeURIComponent(result.ids[0] ?? "")}` : "/scheduled");
       return;
     }
-    dispatch({ type: "error", error: { message: result.message, ...(result.field === undefined ? {} : { field: result.field }) } });
+    // a refusal mid-way keeps the accepted draws in the line and the composer as it was, so Send again sends the missing ones
+    dispatch({ type: "error", error: { message: drawsFailure(result), ...(result.field === undefined ? {} : { field: result.field }) } });
   };
+  /** "Queued — 2 draws" (with the first's place in the line); one draw keeps STORY_051's wording. */
+  function queuedToast(sent: Extract<DrawsResult, { ok: true }>): string {
+    const place = sent.position === undefined ? "" : `, ${ordinal(sent.position)} in line`;
+    if (sent.ids.length > 1) return `Queued — ${String(sent.ids.length)} draws${place}`;
+    return state.agent.on ? `Queued — the director's prompt${place}` : `Queued${place}`;
+  }
+  /** "Draw 2 was not sent: …" when more than one was asked for; the adapter's own words alone for a single request. */
+  function drawsFailure(sent: Extract<DrawsResult, { ok: false }>): string {
+    return draws > 1 ? `Draw ${String(sent.index + 1)} was not sent: ${sent.message}` : sent.message;
+  }
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
     if (event.key === "Enter" && !event.shiftKey && !stop && !state.agent.running) {
@@ -424,16 +438,18 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const agentRunning = state.agent.running;
   const agentDisabledReason = extending ? "Agent needs a photo — it directs from the first frame" : caps !== undefined && caps.agent?.configured === false ? caps.agent.reason : undefined;
   const agentModel = caps?.agent?.model;
+  // STORY_055: draws per prompt — a single clip goes out this many times; a chain once
+  const draws = video ? settings.agentDraws : 1;
   // "≈ N min on the Spark": only for a prompt in the model's format (the director's, or one pasted in that shape)
   const sparkLine = video && !agentOn && state.text.includes(DESCRIPTION_MARKER)
-    ? sparkTimeLine(plan === undefined ? [{ seconds: state.durationSeconds, fromImage: state.images.length > 0, extension: extending !== undefined }] : plan.segments.map((segment, i) => ({ seconds: segment.seconds, fromImage: i === 0 && !extending && state.images.length > 0, extension: i > 0 || extending !== undefined })))
+    ? sparkTimeLine(plan === undefined ? [{ seconds: state.durationSeconds, fromImage: state.images.length > 0, extension: extending !== undefined }] : plan.segments.map((segment, i) => ({ seconds: segment.seconds, fromImage: i === 0 && !extending && state.images.length > 0, extension: i > 0 || extending !== undefined })), plan === undefined ? draws : 1)
     : undefined;
 
   return (
     <>
       <EnvDialog open={envOpen} onClose={() => { setEnvOpen(false); }} fetchImpl={fetchImpl} />
       <AgentInstructionsPanel open={agentInstructionsOpen} fetchImpl={fetchImpl} narrow={narrow} notify={(text) => { notify(text); }} onClose={() => { setAgentInstructionsOpen(false); }} onSaved={(n) => { setActiveInstructions(n); }} />
-      <AgentSettingsPanel open={agentSettingsOpen} confirm={settings.agentConfirm} modelLabel={agentModel?.label ?? "—"} narrow={narrow} onClose={() => { setAgentSettingsOpen(false); }} onSave={(confirm) => { updateSettings({ agentConfirm: confirm }); setAgentSettingsOpen(false); notify("Saved"); }} />
+      <AgentSettingsPanel open={agentSettingsOpen} confirm={settings.agentConfirm} draws={settings.agentDraws} modelLabel={agentModel?.label ?? "—"} narrow={narrow} onClose={() => { setAgentSettingsOpen(false); }} onSave={(confirm, count) => { updateSettings({ agentConfirm: confirm, agentDraws: count }); setAgentSettingsOpen(false); notify("Saved"); }} />
       {state.queueId !== undefined ? (
         // STORY_041: Edit of a waiting request
         <div className={styles.editing} role="status" data-testid="editing-banner">
@@ -519,7 +535,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
         {!agentRunning && state.agent.notice?.tone === "info" ? <div className={styles.agentInfo} role="status" data-testid="agent-info">{state.agent.notice.message}</div> : null}
         {agentOn && state.images.length === 0 && !agentRunning ? <div className={styles.agentInfo} data-testid="agent-hint">Attach the photo the director starts from.</div> : null}
         {plan !== undefined ? (
-          <ChainStrip plan={plan} start={chainStart} maxSourceSeconds={ext.maxSourceSeconds} overlapFrames={state.overlapFrames} overlapOptions={ext.overlapFrames.options.map((frames) => ({ frames, label: `${overlapSeconds(frames)} s` }))} onOverlap={(overlapFrames) => { dispatch({ type: "overlap", overlapFrames }); }} />
+          <ChainStrip plan={plan} start={chainStart} maxSourceSeconds={ext.maxSourceSeconds} overlapFrames={state.overlapFrames} overlapOptions={ext.overlapFrames.options.map((frames) => ({ frames, label: `${overlapSeconds(frames)} s` }))} onOverlap={(overlapFrames) => { dispatch({ type: "overlap", overlapFrames }); }} draws={draws} />
         ) : null}
         <div className={styles.bar}>
           <span style={{ position: "relative" }} data-popover="attach">
@@ -536,6 +552,10 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 skills={skills}
                 onUseSkill={(skill) => { dispatch({ type: "text", text: applySkill(skill.template, state.text) }); textarea.current?.focus(); }}
                 onManageSkills={(create) => { router.push(create ? "/plugins?tab=Skills&create=1" : "/plugins?tab=Skills"); }}
+                directors={state.agent.skills}
+                agentSkillId={state.agent.skillId}
+                onPickDirector={(id) => { dispatch({ type: "agent-skill", skillId: id }); dispatch({ type: "agent-toggle", on: true }); updateSettings({ agentSkill: id }); }}
+                directorsDisabledReason={!video ? "Agent directs a video — pick Video generation" : agentDisabledReason}
               />
             ) : null}
           </span>
@@ -552,10 +572,6 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 onToggle={() => { dispatch({ type: "agent-toggle" }); setPopover(undefined); }}
                 onMenu={() => { setPopover(popover === "agent-skill" ? undefined : "agent-skill"); }}
                 onSkill={(id) => { dispatch({ type: "agent-skill", skillId: id }); setPopover(undefined); updateSettings({ agentSkill: id }); }}
-                directors={state.agent.skills}
-                agentSkillId={state.agent.skillId}
-                onPickDirector={(id) => { dispatch({ type: "agent-skill", skillId: id }); dispatch({ type: "agent-toggle", on: true }); updateSettings({ agentSkill: id }); }}
-                directorsDisabledReason={!video ? "Agent directs a video — pick Video generation" : agentDisabledReason}
                 onManage={() => { setPopover(undefined); router.push("/plugins?tab=Skills"); }}
               />
               {agentOn ? (
@@ -678,8 +694,9 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" /></svg>
               </button>
             ) : (
-              <button type="button" className={cx(styles.send, plan !== undefined && styles.sendAll)} aria-label={plan === undefined ? "Send message" : "Send all"} disabled={!canSend(state) || (plan !== undefined && !plan.fits)} onClick={() => void send()}>
+              <button type="button" className={cx(styles.send, plan !== undefined && styles.sendAll)} aria-label={plan === undefined ? (draws > 1 ? `Send message, ${String(draws)} draws` : "Send message") : "Send all"} disabled={!canSend(state) || (plan !== undefined && !plan.fits)} onClick={() => void send()}>
                 {plan === undefined ? null : "Send all"}
+                {plan === undefined && draws > 1 ? <span className={styles.sendCount} aria-hidden="true">×{draws}</span> : null}
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             )}

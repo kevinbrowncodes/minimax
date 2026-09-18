@@ -29,8 +29,9 @@ export function formatMinutes(minutes: number): string {
   return rest === 0 ? `≈ ${String(h)} h` : `≈ ${String(h)} h ${String(rest)} min`;
 }
 
-/** The line under Send for one job, or for a chain's segments summed. */
-export function sparkTimeLine(jobs: readonly SparkJob[]): string {
+/** The line under Send for one job, or for a chain's segments summed; STORY_055: "≈ 2 × 50 min" when a single clip is drawn more than once. */
+export function sparkTimeLine(jobs: readonly SparkJob[], draws = 1): string {
   const total = jobs.reduce((sum, job) => sum + estimateMinutes(job), 0);
+  if (draws > 1) return `≈ ${String(draws)} × ${formatMinutes(total).replace(/^≈ /, "")} on the Spark`;
   return `${formatMinutes(total)} on the Spark`;
 }

@@ -17,5 +17,9 @@ describe("spark-time (STORY_050)", () => {
     expect(formatMinutes(120)).toBe("≈ 2 h");
     expect(sparkTimeLine([{ seconds: 10, fromImage: true }])).toBe("≈ 50 min on the Spark");
     expect(sparkTimeLine([{ seconds: 10, fromImage: true }, { seconds: 10, extension: true }, { seconds: 10, extension: true }])).toBe("≈ 3 h 4 min on the Spark");
+    // STORY_055: draws multiply the line; one draw leaves it as it was
+    expect(sparkTimeLine([{ seconds: 10, fromImage: true }], 2)).toBe("≈ 2 × 50 min on the Spark");
+    expect(sparkTimeLine([{ seconds: 10, extension: true }], 4)).toBe("≈ 4 × 1 h 7 min on the Spark");
+    expect(sparkTimeLine([{ seconds: 10, fromImage: true }], 1)).toBe("≈ 50 min on the Spark");
   });
 });

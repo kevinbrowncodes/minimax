@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { cx } from "@/lib/cx";
-import type { AgentConfirm } from "@/lib/settings";
+import { AGENT_DRAWS, type AgentConfirm, type AgentDraws } from "@/lib/settings";
 import { IconClose } from "@/components/shell/icons";
 import settings from "@/components/shell/settings.module.css";
 import styles from "./composer.module.css";
@@ -9,9 +9,11 @@ import styles from "./composer.module.css";
 export interface AgentSettingsPanelProps {
   readonly open: boolean;
   readonly confirm: AgentConfirm;
+  /** STORY_055: draws per prompt. */
+  readonly draws: AgentDraws;
   /** The model the pill names (capabilities.agent.model.label); "—" when the agent is not configured. */
   readonly modelLabel: string;
-  readonly onSave: (confirm: AgentConfirm) => void;
+  readonly onSave: (confirm: AgentConfirm, draws: AgentDraws) => void;
   readonly onClose: () => void;
   readonly narrow?: boolean;
 }
@@ -19,16 +21,17 @@ export interface AgentSettingsPanelProps {
 /**
  * Agent settings (STORY_051; Google Flow's panel in the Settings dialog's chrome): Confirm before generating —
  * Always / Never, in Flow's words, ours ending "use the Spark automatically" — a Video generation default section
- * (Draws x1 until STORY_055, the model), Save. 420 px anchored right at desktop; a full-width sheet at 390 with ← in
- * the head. Nothing is written before Save; × and Escape discard.
+ * (Draws x1 · x2 · x3 · x4 — STORY_055 — and the model), Save. 420 px anchored right at desktop; a full-width sheet at
+ * 390 with ← in the head. Nothing is written before Save; × and Escape discard.
  */
 export function AgentSettingsPanel(props: AgentSettingsPanelProps) {
-  // the choice starts from the saved setting every time the panel opens: the form is remounted on open (the key)
-  return props.open ? <AgentSettingsForm key={props.confirm} {...props} /> : null;
+  // the choices start from the saved settings every time the panel opens: the form is remounted on open (the key)
+  return props.open ? <AgentSettingsForm key={`${props.confirm}:${String(props.draws)}`} {...props} /> : null;
 }
 
-function AgentSettingsForm({ open, confirm, modelLabel, onSave, onClose, narrow = false }: AgentSettingsPanelProps) {
+function AgentSettingsForm({ open, confirm, draws, modelLabel, onSave, onClose, narrow = false }: AgentSettingsPanelProps) {
   const [choice, setChoice] = useState<AgentConfirm>(confirm);
+  const [count, setCount] = useState<AgentDraws>(draws);
   const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return undefined;
@@ -71,7 +74,16 @@ function AgentSettingsForm({ open, confirm, modelLabel, onSave, onClose, narrow 
             <div className={settings.preference}>
               <span className={settings.preferenceText}>
                 <span className={settings.preferenceTitle}>Draws</span>
-                <span className={settings.preferenceDescription}>x1 — draws per prompt come with a later story</span>
+                <span className={settings.preferenceDescription}>Each draw is a job with its own seed, queued one after another.</span>
+              </span>
+              {/* STORY_055: the parameters popover's radio track (radio-duration@1440: 36 × 24, 12 px/500) */}
+              <span className={styles.agentDraws} role="radiogroup" aria-label="Draws">
+                {AGENT_DRAWS.map((n) => (
+                  <label key={n} className={cx(styles.agentDraw, count === n && styles.agentDrawOn)}>
+                    <input type="radio" name="agent-draws" value={n} checked={count === n} onChange={() => { setCount(n); }} className={styles.agentRadio} aria-label={`x${String(n)}`} />
+                    x{n}
+                  </label>
+                ))}
               </span>
             </div>
             <div className={settings.preference}>
@@ -83,7 +95,7 @@ function AgentSettingsForm({ open, confirm, modelLabel, onSave, onClose, narrow 
           </div>
           <div className={cx(settings.buttonRow, styles.agentPanelButtons)}>
             <button type="button" className={settings.secondaryButton} onClick={onClose}>Cancel</button>
-            <button type="button" className={settings.primaryButton} onClick={() => { onSave(choice); }}>Save</button>
+            <button type="button" className={settings.primaryButton} onClick={() => { onSave(choice, count); }}>Save</button>
           </div>
         </div>
       </div>

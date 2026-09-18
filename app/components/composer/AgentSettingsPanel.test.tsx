@@ -1,5 +1,5 @@
 /** STORY_051: the ⚙ and the Agent settings panel, and the straight-through path — a clean reply posted at once with no review render. */
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Capabilities } from "@/lib/job-api";
 import { SettingsContext } from "@/components/shell/SettingsContext";
@@ -69,8 +69,14 @@ describe("Agent settings (STORY_051)", () => {
     expect(update).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Agent settings" }));
     fireEvent.click(screen.getByRole("radio", { name: /Never/ }));
+    // STORY_055: the Draws track — x1 checked from the setting; x3 picked; both written by Save
+    const draws = screen.getByRole("radiogroup", { name: "Draws" });
+    expect(within(draws).getAllByRole("radio").map((r) => r.getAttribute("aria-label"))).toEqual(["x1", "x2", "x3", "x4"]);
+    expect(within(draws).getByRole("radio", { name: "x1" })).toBeChecked();
+    fireEvent.click(within(draws).getByRole("radio", { name: "x3" }));
+    expect(screen.getByText("Each draw is a job with its own seed, queued one after another.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(update).toHaveBeenCalledWith({ agentConfirm: "never" });
+    expect(update).toHaveBeenCalledWith({ agentConfirm: "never", agentDraws: 3 });
     expect(notify).toHaveBeenCalledWith("Saved");
     expect(screen.queryByRole("dialog", { name: "Agent settings" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Agent settings" }));
@@ -92,6 +98,23 @@ describe("Agent settings (STORY_051)", () => {
     expect((form.get("referenceImage") as File).name).toBe("01.png");
     expect(notify).toHaveBeenCalledWith("Queued — the director's prompt, 2nd in line");
     expect(screen.getByRole("textbox", { name: "Message" })).not.toHaveValue(PROMPT);
+  });
+
+  it("Never + a clean reply with Draws x2: two jobs posted one after another, the same prompt and photo, no seed, the toast counts them, the first draw's page (STORY_055)", async () => {
+    const calls = mount({ ...DEFAULT_SETTINGS, agentConfirm: "never", agentDraws: 2 }, { kind: "prompt", prompt: PROMPT, findings: [], segments: 1 });
+    await armed();
+    fireEvent.click(screen.getByRole("button", { name: "Send message, 2 draws" }));
+    await waitFor(() => { expect(push).toHaveBeenCalledWith("/task/j1"); });
+    const jobs = calls.filter((c) => c.url.startsWith("/api/jobs"));
+    expect(jobs).toHaveLength(2);
+    for (const job of jobs) {
+      const form = job.init?.body as FormData;
+      expect(form.get("prompt")).toBe(PROMPT);
+      expect(form.get("durationSeconds")).toBe("10");
+      expect(form.get("seed")).toBeNull();
+      expect((form.get("referenceImage") as File).name).toBe("01.png");
+    }
+    expect(notify).toHaveBeenCalledWith("Queued — 2 draws, 2nd in line");
   });
 
   it("Never + findings: the review path with 'Not sent —', nothing posted; Never + a refusal: the alert, nothing posted", async () => {

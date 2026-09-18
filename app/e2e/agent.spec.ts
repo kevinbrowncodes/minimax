@@ -4,7 +4,8 @@
  * Inbox row that reopens the composer; Stop; findings as a warning that never blocks. STORY_051: straight through.
  * STORY_052: instructions. STORY_053: the chain director — a chain reply reviewed and sent all; straight through, all
  * clean → three segments with no click; one bad segment → nothing posted. STORY_054: the Skills tab's director rows,
- * Use → the chip on, and + › Skills picking the director.
+ * Use → the chip on, and + › Skills picking the director. STORY_055: draws per prompt — x2 on a hand prompt and on a
+ * straight-through reply, two jobs each, no seed in either request.
  */
 import type { APIRequestContext, Page } from "@playwright/test";
 import { expect, test } from "./fixtures/test";
@@ -23,10 +24,10 @@ const CHAIN = "minimax-h3-director-thirst-trap-chain";
 test.beforeEach(async ({ request }) => {
   await clearHistory(request);
   await request.delete("/api/agent/runs"); // the Inbox's rows from earlier specs
-  await request.patch("/api/settings", { data: { agentConfirm: "always", agentSkill: THIRST } }); // STORY_051's default and STORY_050's first skill, whatever the last spec left
+  await request.patch("/api/settings", { data: { agentConfirm: "always", agentSkill: THIRST, agentDraws: 1 } }); // STORY_051's default, STORY_050's first skill and STORY_055's one draw, whatever the last spec left
 });
 test.afterEach(async ({ request }) => {
-  await request.patch("/api/settings", { data: { agentConfirm: "always", agentSkill: THIRST } });
+  await request.patch("/api/settings", { data: { agentConfirm: "always", agentSkill: THIRST, agentDraws: 1 } });
   await request.delete("/api/agent/runs"); // the Inbox's Messages rows: never left for the next spec
 });
 
@@ -262,9 +263,9 @@ test.describe("the Agent chip (STORY_050)", () => {
   async function expectChainRan(page: Page, request: APIRequestContext, stubApi: ReturnType<typeof stub>, ids: readonly [string, string, string]): Promise<void> {
     const [first, second, third] = ids;
     // one-poll jobs finish before a page could register a waiter for their status response, so each terminal state is
-    // polled on the app's own history — bounded, never a sleep
+    // polled through the app's job route (which records it) — bounded, never a sleep
     for (const id of [first, second, third]) {
-      await expect.poll(async () => ((await (await request.get(`/api/history/${id}`)).json()) as { status: string }).status, { timeout: 60_000 }).toBe("done");
+      await expect.poll(async () => ((await (await request.get(`/api/jobs/${id}`)).json()) as { status: string }).status, { timeout: 60_000 }).toBe("done"); // GET /api/jobs/:id is what records a status (BUG_009): the poll is the page's own
     }
     const secondEntry = (await (await request.get(`/api/history/${second}`)).json()) as { jobId?: string; continuesFrom?: { id: string } };
     const thirdEntry = (await (await request.get(`/api/history/${third}`)).json()) as { jobId?: string; continuesFrom?: { id: string } };
@@ -423,5 +424,75 @@ test.describe("the Agent chip (STORY_050)", () => {
     await page.getByRole("searchbox", { name: "Search skills" }).fill("zzz-nothing");
     await expect(page.getByText("No matching results")).toBeVisible();
     expect(((await (await request.get("/api/settings")).json()) as { agentSkill?: string }).agentSkill).toBe(THIRST);
+  });
+
+  // STORY_055 — Draws per prompt
+  test("Draws x2 saved in Agent settings: a hand prompt goes out twice — Send reads ×2, the toast counts, the first draw's page, both done, the same prompt and no seed in either request (STORY_055)", async ({ page, request, stubApi }) => {
+    test.slow();
+    await openVideoWithAgent(page, "/?script=done-after-1-poll");
+    await page.getByRole("button", { name: "Agent settings" }).click();
+    const panel = page.getByRole("dialog", { name: "Agent settings" });
+    await expect(panel.getByRole("radio", { name: "x1" })).toBeChecked();
+    await panel.getByRole("radio", { name: "x2" }).click();
+    const saved = page.waitForResponse((r) => r.url().includes("/api/settings") && r.request().method() === "PATCH");
+    await panel.getByRole("button", { name: "Save" }).click();
+    expect(((await (await saved).json()) as { agentDraws: number }).agentDraws).toBe(2);
+    await expect(panel).toBeHidden();
+    await page.getByTestId("agent-chip").click(); // off: a hand prompt, not the director
+    await expect(page.getByTestId("agent-chip")).toHaveAttribute("aria-pressed", "false");
+    await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
+    await page.getByRole("textbox", { name: "Message" }).fill("integrated_multimodal_description: [Shot 1] Live-action. The camera holds a perfectly static shot. The man in the navy trunks breathes and holds there.\n\noverall_soundscape: room tone.\n\nnon_diegetic_music: None.");
+    const send = page.getByRole("button", { name: "Send message, 2 draws" });
+    await expect(send).toContainText("×2");
+    await expect(page.getByTestId("spark-time")).toHaveText(/^≈ 2 × \d+ min on the Spark$/);
+    const created = collectCreated(page);
+    await send.click();
+    await expect.poll(() => created.length, { timeout: 15_000 }).toBe(2);
+    const [first, second] = created.map((c) => c.id) as [string, string];
+    await expect(page.getByTestId("toast")).toHaveText("Queued — 2 draws"); // the stub takes both at once, so no place in the line; the Spark's adapter would hold the second (the manual verification)
+    await expect(page).toHaveURL(new RegExp(`/task/${first}$`));
+    // both jobs recorded as their own history rows, neither an extension; both done
+    for (const id of [first, second]) {
+      await expect.poll(async () => ((await (await request.get(`/api/jobs/${id}`)).json()) as { status: string }).status, { timeout: 60_000 }).toBe("done"); // GET /api/jobs/:id is what records a status (BUG_009): the poll is the page's own
+    }
+    const secondEntry = (await (await request.get(`/api/history/${second}`)).json()) as { continuesFrom?: unknown; title: string };
+    const firstEntry = (await (await request.get(`/api/history/${first}`)).json()) as { title: string };
+    expect(secondEntry.continuesFrom).toBeUndefined(); // a draw, not an extension
+    expect(secondEntry.title).toBe(firstEntry.title); // draws share a title, as a Retry and its original do
+    const one = (await stubApi.received(first)).request as { prompt: string; seed?: unknown; referenceImages?: number };
+    const two = (await stubApi.received(second)).request as { prompt: string; seed?: unknown; referenceImages?: number };
+    expect(two.prompt).toBe(one.prompt);
+    // the stub, like the adapter, draws a seed when the request carries none (the unit lane proves the body has none): two draws, two seeds
+    expect(typeof one.seed).toBe("number");
+    expect(two.seed).not.toBe(one.seed);
+    expect(one.referenceImages).toBe(1);
+    expect(two.referenceImages).toBe(1);
+    expect(await stubApi.openJobs()).toEqual([]);
+  });
+
+  test("Never + Draws x2: the director's clean reply becomes two jobs with no click (STORY_055)", async ({ page, request, stubApi }) => {
+    test.slow();
+    await request.patch("/api/settings", { data: { agentConfirm: "never", agentDraws: 2 } });
+    await openVideoWithAgent(page, "/?agentScript=clean&script=done-after-1-poll");
+    await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
+    const created = collectCreated(page);
+    const run = page.waitForResponse((r) => r.url().includes("/api/agent/runs") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Send message, 2 draws" }).click();
+    expect((await run).status()).toBe(200);
+    await expect.poll(() => created.length, { timeout: 15_000 }).toBe(2);
+    const [first, second] = created.map((c) => c.id) as [string, string];
+    await expect(page.getByTestId("toast")).toHaveText("Queued — 2 draws");
+    await expect(page).toHaveURL(new RegExp(`/task/${first}$`));
+    for (const id of [first, second]) {
+      await expect.poll(async () => ((await (await request.get(`/api/jobs/${id}`)).json()) as { status: string }).status, { timeout: 60_000 }).toBe("done"); // GET /api/jobs/:id is what records a status (BUG_009): the poll is the page's own
+    }
+    const one = (await stubApi.received(first)).request as { prompt: string; seed?: unknown; durationSeconds?: number };
+    const two = (await stubApi.received(second)).request as { prompt: string; seed?: unknown; durationSeconds?: number };
+    expect(one.prompt.startsWith("For the target video")).toBe(true);
+    expect(two.prompt).toBe(one.prompt);
+    expect(one.durationSeconds).toBe(10);
+    expect(typeof one.seed).toBe("number");
+    expect(two.seed).not.toBe(one.seed); // the stub's own draws, as the adapter's would be
+    expect(await stubApi.openJobs()).toEqual([]);
   });
 });
