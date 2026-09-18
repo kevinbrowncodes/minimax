@@ -81,7 +81,7 @@ describe("TaskPage — a request waiting in the queue (STORY_041)", () => {
 });
 
 describe("TaskPage — the chain's rows (STORY_057)", () => {
-  const row = (id: string, index: number, status: string, outcome: string, progress = 0) => ({ id, index, title: `segment ${String(index)}`, status, progress, outcome });
+  const row = (id: string, index: number, status: string, outcome: string, progress = 0) => ({ id, index, title: `segment ${String(index)}`, status, progress, outcome, ...(index > 1 ? { sourceIndex: index - 1 } : {}) }); // BUG_012: the route names each row's source
   it("reads the chain on mount and after each poll while a segment is still going, stops once every segment is terminal, and shows the rows with this one marked", async () => {
     const script = fetchScript(
       [{ status: "running", progress: 50 }, { status: "done", progress: 100, result: { url: "/jobs/j1/result", posterUrl: "/jobs/j1/poster", mimeType: "video/mp4", durationSeconds: 2, width: 320, height: 180, sizeBytes: 40157 } }],

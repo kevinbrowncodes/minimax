@@ -6,8 +6,8 @@ import { ChainOutcomes } from "./ChainOutcomes";
 
 const rows: ChainSegmentView[] = [
   { id: "s1", index: 1, title: "In the first two seconds, the man…", status: "done", progress: 100, outcome: "done" },
-  { id: "s2", index: 2, title: "For the first moment he holds…", status: "done", progress: 100, outcome: "cut-at-join" },
-  { id: "s3", index: 3, title: "For the first moment he leans…", status: "queued", progress: 0, outcome: "waiting" },
+  { id: "s2", index: 2, title: "For the first moment he holds…", status: "done", progress: 100, outcome: "cut-at-join", sourceIndex: 1 },
+  { id: "s3", index: 3, title: "For the first moment he leans…", status: "queued", progress: 0, outcome: "waiting", sourceIndex: 2 }, // BUG_012: the label names the source, not the row before
 ];
 afterEach(cleanup);
 

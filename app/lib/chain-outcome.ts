@@ -16,16 +16,6 @@ export function chainAfter(entries: readonly HistoryEntry[], id: string): readon
 
 export type ChainOutcome = "waiting" | "queued" | "running" | "done" | "cut-at-join" | "cut-inside" | "failed" | "cancelled";
 
-export interface ChainSegmentView {
-  readonly id: string;
-  /** 1-based, along the chain. */
-  readonly index: number;
-  readonly title: string;
-  readonly status: HistoryEntry["status"];
-  readonly progress: number;
-  readonly outcome: ChainOutcome;
-}
-
 /** The first segment of the chain `id` is in: back along continuesFrom, a loop or a missing link ending the walk. */
 export function chainRoot(entries: readonly HistoryEntry[], id: string): HistoryEntry | undefined {
   const byId = new Map(entries.map((e) => [e.id, e]));
@@ -72,18 +62,34 @@ export function outcomeOf(entry: HistoryEntry, source: HistoryEntry | undefined,
   }
 }
 
-/** The rows for a chain, in order, each judged against the segment before it. */
+export interface ChainSegmentView {
+  readonly id: string;
+  /** 1-based, along the chain. */
+  readonly index: number;
+  readonly title: string;
+  readonly status: HistoryEntry["status"];
+  readonly progress: number;
+  readonly outcome: ChainOutcome;
+  /** The index of the segment this one continues from, when it is in the chain (BUG_012: a fork's branch continues an earlier row, not the one before it). */
+  readonly sourceIndex?: number;
+}
+
+/** The rows for a chain, in order, each judged against the segment it continues from (BUG_012: not the row before it — a fork's branch continues an earlier row). */
 export function chainView(entries: readonly HistoryEntry[], id: string, waiting: (id: string) => boolean = () => false): readonly ChainSegmentView[] {
   const chain = chainOf(entries, id);
-  return chain.map((entry, i) => ({ id: entry.id, index: i + 1, title: entry.title, status: entry.status, progress: entry.progress, outcome: outcomeOf(entry, chain[i - 1], waiting(entry.id)) }));
+  const byId = new Map(chain.map((e, i) => [e.id, { entry: e, index: i + 1 }]));
+  return chain.map((entry, i) => {
+    const source = entry.continuesFrom === undefined ? undefined : byId.get(entry.continuesFrom.id);
+    return { id: entry.id, index: i + 1, title: entry.title, status: entry.status, progress: entry.progress, outcome: outcomeOf(entry, source?.entry, waiting(entry.id)), ...(source === undefined ? {} : { sourceIndex: source.index }) };
+  });
 }
 
 /** The words a row shows. */
 export function outcomeLabel(segment: ChainSegmentView, chain: readonly ChainSegmentView[]): string {
   switch (segment.outcome) {
     case "waiting": {
-      const before = chain[segment.index - 2];
-      return before === undefined ? "waiting" : `waiting · after ${String(before.index)}`;
+      const source = segment.sourceIndex === undefined ? undefined : chain.find((s) => s.index === segment.sourceIndex);
+      return source === undefined ? "waiting" : `waiting · after ${String(source.index)}`;
     }
     case "running":
       return `running · ${String(Math.round(segment.progress))} %`;

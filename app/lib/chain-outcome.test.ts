@@ -42,12 +42,18 @@ describe("chainOf and chainView", () => {
     const forked = [...entries.slice(0, 2), e("s3", { continuesFrom: link("s2"), status: "cancelled", progress: 0 }), e("r2", { continuesFrom: link("s1"), status: "running", progress: 10, createdAt: "2026-09-18T02:00:00Z" }), e("r3", { continuesFrom: link("r2"), status: "queued", progress: 0, createdAt: "2026-09-18T02:00:01Z" })];
     expect(chainOf(forked, "r2").map((x) => x.id)).toEqual(["s1", "s2", "r2", "r3"]); // the bad s2 stays a row (done, cut at the join) until cancelled; the old s3 does not
     expect(chainOf(forked, "s3").map((x) => x.id)).toEqual(["s1", "s2", "r2", "r3"]);
+    // BUG_012: the redraw r2 continues s1 (243 frames), not the row before it — a cut at 243 is a cut at ITS join; r3 waits after r2, not after 3
+    const forkedCut = [...forked.slice(0, 3), e("r2", { continuesFrom: link("s1"), result: done(498, [{ frame: 243, kind: "cut" }]), createdAt: "2026-09-18T02:00:00Z" }), e("r3", { continuesFrom: link("r2"), status: "queued", progress: 0, createdAt: "2026-09-18T02:00:01Z" })];
+    const view = chainView(forkedCut, "r2", (id) => id === "r3");
+    expect(view.map((s) => [s.id, s.outcome, s.sourceIndex])).toEqual([["s1", "done", undefined], ["s2", "cut-at-join", 1], ["r2", "cut-at-join", 1], ["r3", "waiting", 3]]);
+    expect(outcomeLabel(view[3] as (typeof view)[number], view)).toBe("waiting · after 3");
     const loop = [e("a", { continuesFrom: link("b") }), e("b", { continuesFrom: link("a") })];
     expect(chainRoot(loop, "a")).toBeDefined();
   });
   it("labels: waiting names the segment before, running carries its percentage, the cuts read in words", () => {
     const view = chainView(entries, "s3", (id) => id === "s3");
     expect(view.map((s) => outcomeLabel(s, view))).toEqual(["done", "cut at the join", "waiting · after 2"]);
+    expect(view.map((s) => s.sourceIndex)).toEqual([undefined, 1, 2]);
     expect(outcomeLabel({ id: "r", index: 1, title: "t", status: "running", progress: 42.4, outcome: "running" }, [])).toBe("running · 42 %");
     expect(outcomeLabel({ id: "r", index: 1, title: "t", status: "queued", progress: 0, outcome: "waiting" }, [])).toBe("waiting");
     expect(outcomeLabel({ id: "r", index: 2, title: "t", status: "done", progress: 100, outcome: "cut-inside" }, [])).toBe("cut inside");
