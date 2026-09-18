@@ -104,8 +104,17 @@ describe("chains (the rule STORY_053 builds on)", () => {
 });
 
 describe("helpers", () => {
-  it("describedAction skips the style and camera sentences", () => {
-    expect(describedAction(office)?.startsWith("A fit young man")).toBe(true);
+  it("describedAction names the first beat (CHORE_015), else the sentence after the style and camera sentences", () => {
+    expect(describedAction(office)?.startsWith("In the first two seconds, the man in the white dress shirt")).toBe(true);
+    // the stub's chain: segments 2 and 3 open on the previous hold — their own beats, not the anchor they share
+    const chain = readFileSync(path.resolve(__dirname, "../../tools/stub-generation-server/fixtures/agent/chain.txt"), "utf8");
+    const [one, two, three] = splitSegments(chain);
+    expect(describedAction(one ?? "")?.startsWith("In the first two seconds")).toBe(true);
+    expect(describedAction(two ?? "")?.startsWith("For the first moment")).toBe(true);
+    expect(describedAction(three ?? "")?.startsWith("For the first moment")).toBe(true);
+    expect(new Set([describedAction(one ?? ""), describedAction(two ?? ""), describedAction(three ?? "")]).size).toBe(3);
+    // a prompt in the format without the openers keeps STORY_050's rule
+    expect(describedAction("integrated_multimodal_description: [Shot 1] Live-action. The camera holds. The man in the navy trunks steps forward and holds there.")).toBe("The man in the navy trunks steps forward and holds there.");
     expect(describedAction("no marker here")).toBeUndefined();
     expect(wordCount("  a  b   c ")).toBe(3);
   });

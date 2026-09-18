@@ -91,6 +91,10 @@ describe("the chain director's reply (STORY_053)", () => {
       expect(row.textContent).not.toContain("integrated_multimodal_description");
       expect(row.textContent).not.toMatch(/Live-action|The camera holds/);
     }
+    // CHORE_015: the rows read their segment's beat, so they differ
+    expect(rows[0]).toHaveTextContent("In the first two seconds");
+    expect(rows[1]).toHaveTextContent("For the first moment");
+    expect(new Set(rows.map((r) => r.textContent)).size).toBe(3);
     expect(screen.getByRole("button", { name: "Send all" })).toBeEnabled();
     expect(screen.getByTestId("spark-time")).toHaveTextContent(/on the Spark$/);
     expect(screen.queryByTestId("agent-findings")).not.toBeInTheDocument();

@@ -69,13 +69,20 @@ export function descriptionOf(prompt: string): string | undefined {
   return (end === -1 ? body : body.slice(0, end)).trim();
 }
 
-/** The first sentence of the description after the style and camera sentences — the title rule (STORY_050) and the strip's rows (STORY_053). */
+/** The skills' beat openers (CHORE_015): a clip's HOOK, a chain segment's FROM_THE_HOLD, and the two that follow them. */
+const BEAT_OPENER = /^(In the first|For the first moment|At the start|Through the middle|In the final)/i;
+
+/**
+ * The sentence a director's prompt is named by — the title rule (STORY_050) and the strip's rows (STORY_053): the first
+ * beat (CHORE_015: the sentence that opens the action, "In the first two seconds…" / "For the first moment…"), else the
+ * first sentence after the style and camera sentences (STORY_050's rule, kept for a pasted prompt without those openers).
+ */
 export function describedAction(prompt: string): string | undefined {
   const description = descriptionOf(prompt);
   if (description === undefined) return undefined;
   const text = description.replace(/^\[Shot \d+\]\s*/, "");
   const sentences = text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter((s) => s !== "");
-  return sentences.find((s) => !/^(Live-action|The camera)/i.test(s)) ?? sentences[0];
+  return sentences.find((s) => BEAT_OPENER.test(s)) ?? sentences.find((s) => !/^(Live-action|The camera)/i.test(s)) ?? sentences[0];
 }
 
 function checkSingle(text: string, extension = false): Finding[] {

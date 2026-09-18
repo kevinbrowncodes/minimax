@@ -67,6 +67,9 @@ describe("splitChain on a full-format chain (STORY_053: the marker rule)", () =>
     const plan = chainPlan(splitChain(chain).segments, { seconds: 10, overlapFrames: 39, extensionMax: 10, maxSourceSeconds: 30 });
     expect(plan.segments.map((s) => s.endsAt)).toEqual([undefined, undefined, undefined]);
     expect(plan.segments.every((s) => !s.words.startsWith("For the target video") && !s.words.startsWith("integrated_multimodal_description") && !/^(Live-action|The camera)/.test(s.words))).toBe(true);
+    // CHORE_015: each row is its segment's beat, so the three differ
+    expect(plan.segments.map((s) => s.words.split(" ").slice(0, 4).join(" "))).toEqual(["In the first two", "For the first moment", "For the first moment"]);
+    expect(new Set(plan.segments.map((s) => s.words)).size).toBe(3);
     expect(plan.totalSeconds).toBe(31.4);
     expect(plan.fits).toBe(true);
   });

@@ -14,20 +14,19 @@ function store(): HistoryStore {
   return new HistoryStore(path.join(dir, "nested", "history.json"));
 }
 
-describe("titleFor (STORY_050: a director's prompt is named by its first action sentence)", () => {
-  it("skips the instruction line and the style and camera sentences; a timestamped script and plain prose keep their rules", () => {
+describe("titleFor (STORY_050: a director's prompt is named by its first action sentence; CHORE_015: its first beat)", () => {
+  it("names the first beat, skipping the instruction line, the style and camera sentences and the anchor; a timestamped script and plain prose keep their rules", () => {
     const office = readFileSync(path.resolve(__dirname, "../test/fixtures/agent/office-expanded.txt"), "utf8");
-    expect(titleFor(office)).toBe("A fit young man in his early twenties with short…");
+    expect(titleFor(office)).toBe("In the first two seconds, the man in the white…");
     expect(titleFor("integrated_multimodal_description: [Shot 1] The man in the navy trunks steps forward and holds there.\n\noverall_soundscape: none")).toBe("The man in the navy trunks steps forward and…");
     expect(titleFor("scene\n[0:00-0:03] He steps back.")).toBe("He steps back.");
   });
-  it("segment 2 of a full-format chain (STORY_053) is titled by its own action sentence, never the marker", () => {
+  it("segment 2 of a full-format chain (STORY_053) is titled by its own beat (CHORE_015), never the marker or the shared anchor", () => {
     const chain = readFileSync(path.resolve(__dirname, "../../tools/stub-generation-server/fixtures/agent/chain.txt"), "utf8");
-    const second = chain.split(/\n(?=integrated_multimodal_description:)/)[1] ?? "";
-    const title = titleFor(second);
-    expect(title.startsWith("integrated_multimodal_description")).toBe(false);
-    expect(/^(Live-action|The camera)/.test(title)).toBe(false);
-    expect(title.length).toBeGreaterThan(10);
+    const [line, first, second] = chain.split(/\n(?=integrated_multimodal_description:)/); // the instruction line, then the three segments' descriptions
+    const title = titleFor(second ?? "");
+    expect(title.startsWith("For the first moment")).toBe(true);
+    expect(title).not.toBe(titleFor(`${line ?? ""}\n${first ?? ""}`));
   });
 });
 

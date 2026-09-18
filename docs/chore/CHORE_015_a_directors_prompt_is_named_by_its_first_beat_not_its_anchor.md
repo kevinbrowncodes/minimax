@@ -1,6 +1,6 @@
 # CHORE_015 — A director's prompt is named by its first beat, not its anchor
 
-**Status:** Proposed (2026-09-17 19:55 EDT) — found by [STORY_053](../story/STORY_053_the_chain_director.md)'s first real chain reply on the deployed app
+**Status:** Done (2026-09-18 06:10 EDT — approved by the owner that morning with the multiple-choice tool; Proposed 2026-09-17 19:55 EDT) — found by [STORY_053](../story/STORY_053_the_chain_director.md)'s first real chain reply on the deployed app
 **Created:** 2026-09-17
 
 ## Summary
@@ -15,9 +15,9 @@
 
 ## Changes
 
-- [ ] `describedAction`: prefer the first sentence that starts with one of the skills' beat openers (`In the first`, `For the first moment`, `At the start`, `Through the middle`, `In the final`); fall back to today's rule (the first sentence after the style and camera sentences) when none is present — a pasted prompt in the format without those phrases keeps its title.
-- [ ] `titleFor` (history) and `chainPlan`'s rows inherit it with no change of their own; STORY_050's and STORY_053's ACs say *the sentence after the style and camera sentences* — this chore refines that rule and is referenced from both stories' Done notes.
-- [ ] The e2e assertions that read the title of a director's job (`agent.spec`, if any name it) updated; the trial log's row words become the beats.
+- [x] `describedAction`: prefer the first sentence that starts with one of the skills' beat openers (`In the first`, `For the first moment`, `At the start`, `Through the middle`, `In the final`); fall back to today's rule (the first sentence after the style and camera sentences) when none is present — a pasted prompt in the format without those phrases keeps its title.
+- [x] `titleFor` (history) and `chainPlan`'s rows inherit it with no change of their own; STORY_050's and STORY_053's ACs say *the sentence after the style and camera sentences* — this chore refines that rule and is referenced from both stories' Done notes.
+- [x] The e2e assertions that read the title of a director's job (`agent.spec`, if any name it) updated; the trial log's row words become the beats.
 
 ## Testing
 
@@ -25,3 +25,7 @@
 - **Component (`ChainDirector.test.tsx`)**: the three rows differ and each starts with a beat opener.
 - **Integration**: none — no route changes.
 - **E2E**: the existing agent cases stay green (they assert what the rows do not contain); no new case — the row's words are a pure function covered at unit level.
+
+## Done note (2026-09-18)
+
+`lib/prompt-format.ts › describedAction`: the first sentence matching the skills' beat openers (`In the first`, `For the first moment`, `At the start`, `Through the middle`, `In the final`), else STORY_050's sentence after the style and camera sentences, else the first. Tests: `prompt-format.test` (the office reply → *In the first two seconds, the man in the white dress shirt…*; the stub's chain → three different beats, segments 2 and 3 opening *For the first moment*; a prompt without the openers keeps the old rule), `history-store.test` (the office title *In the first two seconds, the man in the white…*; segment 2 of the chain titled by its beat, unlike segment 1), `chain.test` (the plan's three rows differ and start with the beats), `ChainDirector.test` (the strip's rows). No e2e named a director job's title; the agent spec's row assertions (nothing of the instruction line, the marker, the style or camera sentences in a row) stay as they were. Both stories' Done notes point here from their observations. Gate 6/6 by hand; deployed with no job on the box.
