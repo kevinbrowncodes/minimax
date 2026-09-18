@@ -11,7 +11,6 @@ test.beforeEach(async ({ request }) => {
 /** A finished job to extend: Send with a script that lands on the first poll, and wait for that terminal response. */
 async function finishOne(page: import("@playwright/test").Page, prompt: string): Promise<string> {
   await page.goto("/?script=done-after-1-poll");
-  await page.getByRole("button", { name: /Video generation/ }).click();
   await page.getByRole("textbox", { name: "Message" }).fill(prompt);
   const terminal = waitForTerminalStatus(page);
   await page.getByRole("button", { name: "Send message" }).click();

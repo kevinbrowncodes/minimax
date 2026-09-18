@@ -77,7 +77,6 @@ test("the three-script chain through the real UI, adapter and ComfyUI", async ({
     stamp(`starting from finished job ${currentId}`);
   } else {
     await page.goto("/");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await expect(page.getByRole("button", { name: /^Model:/ })).toBeEnabled({ timeout: 60_000 });
     await page.getByRole("button", { name: /^Video parameters:/ }).click();
     await page.getByRole("radio", { name: RATIO }).click();

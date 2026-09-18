@@ -19,7 +19,6 @@ test.describe("projects (STORY_031)", () => {
       }
     };
     const send = async (prompt: string): Promise<string> => {
-      await page.getByRole("button", { name: /Video generation/ }).click();
       await page.getByRole("textbox", { name: "Message" }).fill(prompt);
       const terminal = waitForTerminalStatus(page);
       await page.getByRole("button", { name: "Send message" }).click();

@@ -3,7 +3,7 @@ import { DEFAULT_SHELL_PREFS, SHELL_PREFS_KEY, parseShellPrefs, readShellPrefs, 
 
 describe("shell preferences (STORY_021)", () => {
   it("defaults to the reference's 2026-09-14 state: Projects folded, Recents open, Pinned open (STORY_029), expanded, cards shown (no More since STORY_028)", () => {
-    expect(DEFAULT_SHELL_PREFS).toEqual({ folded: { pinned: false, projects: true, recents: false }, collapsed: false, guideDismissed: false, promoDismissed: false });
+    expect(DEFAULT_SHELL_PREFS).toEqual({ folded: { pinned: false, projects: true, recents: false }, collapsed: false, guideDismissed: false });
   });
 
   it("toggles a section, sets the rail, and dismisses each card once", () => {
@@ -14,9 +14,8 @@ describe("shell preferences (STORY_021)", () => {
     p = reduceShellPrefs(p, { type: "set-collapsed", collapsed: true });
     expect(p.collapsed).toBe(true);
     p = reduceShellPrefs(p, { type: "dismiss-guide" });
-    p = reduceShellPrefs(p, { type: "dismiss-promo" });
     expect(p.guideDismissed).toBe(true);
-    expect(p.promoDismissed).toBe(true);
+    expect(p).not.toHaveProperty("promoDismissed"); // STORY_058: the promo card is gone, its preference with it
     expect(DEFAULT_SHELL_PREFS.collapsed).toBe(false); // the reducer never mutates
   });
 

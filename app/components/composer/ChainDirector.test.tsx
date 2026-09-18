@@ -55,7 +55,6 @@ function mount(settings: Settings, run: unknown, refuseAt?: number) {
       </SettingsContext.Provider>
     </ShellContext.Provider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
   return jobs;
 }
 /** The chip on with the chain director chosen, the photo attached. */

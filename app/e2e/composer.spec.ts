@@ -5,7 +5,6 @@ import { REFERENCE_IMAGE } from "./fixtures/upload";
 test.describe("composer and video mode (STORY_013)", () => {
   test("video parameters and the model menu reflect the Spark's capabilities", async ({ page }, testInfo) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await settled(page);
     await expect(page.getByText("video-creator")).toBeVisible();
     const params = page.getByRole("button", { name: /^Video parameters:/ });
@@ -31,7 +30,6 @@ test.describe("composer and video mode (STORY_013)", () => {
 
   test("a reference image is accepted as a thumbnail and can be removed", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
     await expect(page.getByRole("img", { name: "Reference image 1" })).toBeVisible();
     await page.getByRole("button", { name: "Remove Reference image 1" }).click();
@@ -40,7 +38,6 @@ test.describe("composer and video mode (STORY_013)", () => {
 
   test("Send creates the job the stub receives and lands on the task URL", async ({ page, stubApi }) => {
     await page.goto("/?script=done-after-1-poll");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByRole("button", { name: /^Video parameters:/ }).click();
     await page.getByRole("radio", { name: "9:16" }).click();
     await page.getByRole("radio", { name: "8s" }).click();
@@ -61,12 +58,17 @@ test.describe("composer and video mode (STORY_013)", () => {
     expect(((await status.json()) as { status: string }).status).toBe("done");
   });
 
-  test("Send outside video mode says text chat is not connected to the Spark yet (STORY_026)", async ({ page }) => {
+  test("the home opens in video mode: the tag without a way out, the reference button, the placeholder saying what to do, nothing under the card, no card in the corner (STORY_058)", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("textbox", { name: "Message" }).fill("hello");
-    await page.getByRole("button", { name: "Send message" }).click();
-    // Next's route announcer is also role=alert; pick ours by its text.
-    await expect(page.getByRole("alert").filter({ hasText: "Text chat is not connected to the Spark yet" })).toBeVisible();
+    await settled(page);
+    await expect(page.getByText("video-creator", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Remove video-creator" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Add reference image" })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Message" })).toHaveAttribute("placeholder", "Describe the video — or attach a photo and turn Agent on");
+    await expect(page.getByRole("group", { name: "Modes" })).toHaveCount(0);
+    await expect(page.getByTestId("showcase")).toHaveCount(0);
+    await expect(page.getByTestId("promo-card")).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 1, name: "MiniMax" })).toBeVisible();
   });
 });
 
@@ -108,36 +110,18 @@ test.describe("the home and composer match the reference (STORY_022)", () => {
   test("desktop: the heading and the composer card sit where the capture has them", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "positions are the 1440 × 900 capture's");
     await page.goto("/");
-    const heading = await page.getByRole("heading", { name: "MiniMax makes your work easier" }).boundingBox();
+    const heading = await page.getByRole("heading", { level: 1, name: "MiniMax" }).boundingBox();
     const card = await page.getByTestId("composer").boundingBox();
     // home-signed-in@1440: heading top 231, card top 302 (tokens.md › Elements); ± 2 px.
     expect(Math.abs((heading?.y ?? 0) - 231)).toBeLessThanOrEqual(2);
     expect(Math.abs((card?.y ?? 0) - 302)).toBeLessThanOrEqual(2);
   });
 
-  test("a Showcase card fills the prompt with its parameters and Send delivers them to the server", async ({ page, stubApi }) => {
-    await page.goto("/?script=done-after-1-poll");
-    await page.getByRole("button", { name: /Video generation/ }).click();
-    await expect(page.getByRole("group", { name: "Modes" })).toBeHidden(); // the chips give way to the Showcase, as on the reference
-    await page.getByRole("button", { name: "Forest Dawn Fly-through" }).click();
-    await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue(/drone glides/);
-    await expect(page.getByRole("button", { name: /^Video parameters: 21:9 768P 8s$/ })).toBeVisible();
-    const created = page.waitForResponse((r) => r.url().includes("/api/jobs") && r.request().method() === "POST");
-    await page.getByRole("button", { name: "Send message" }).click();
-    const { id } = (await (await created).json()) as { id: string };
-    await expect(page).toHaveURL(new RegExp(`/task/${id}$`));
-    const received = await stubApi.received(id);
-    expect(received.request).toMatchObject({ ratio: "21:9", durationSeconds: 8 });
-    expect(received.request.prompt).toContain("drone glides");
-    const status = await page.request.get(`/api/jobs/${id}`);
-    expect(((await status.json()) as { status: string }).status).toBe("done");
-  });
-
-  test("one mode chip (STORY_026): Video generation alone, no Document / Website / Image Generation / More; the + menu has no Plugins submenu", async ({ page }) => {
+  test("no mode chips (STORY_026 removed the others, STORY_058 the last); the + menu has no Plugins submenu", async ({ page }) => {
     await page.goto("/");
     await settled(page);
-    await expect(page.getByRole("group", { name: "Modes" }).getByRole("button")).toHaveText([/Video generation/]);
-    await page.getByRole("button", { name: /Video generation/ }).click();
+    await expect(page.getByRole("group", { name: "Modes" })).toHaveCount(0);
+    for (const name of ["Video generation", "Document", "Website", "Image Generation", "More", "Forest Dawn Fly-through"]) await expect(page.getByRole("button", { name, exact: false })).toHaveCount(0);
     await page.getByRole("button", { name: "Add attachment" }).click();
     await expect(page.getByRole("menu", { name: "Add attachment" }).getByRole("menuitem")).toHaveText(["Add files or photos", "Add to project", "Skills", "Environment variables"]);
     await page.keyboard.press("Escape");
@@ -145,7 +129,6 @@ test.describe("the home and composer match the reference (STORY_022)", () => {
 
   test("the + menu's Add files or photos opens the reference chooser in video mode", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByRole("button", { name: "Add attachment" }).click();
     await expect(page.getByRole("menu", { name: "Add attachment" })).toBeVisible();
     const chooser = page.waitForEvent("filechooser");

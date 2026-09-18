@@ -34,7 +34,6 @@ test("the Agent chip directs a clip from the office photo through the real direc
   const shot = (name: string) => page.screenshot({ path: path.join(OUT_DIR, `agent-chip-${name}-${new Date().toISOString().replace(/[:.]/g, "-")}.png`), fullPage: false });
 
   await page.goto("/");
-  await page.getByRole("button", { name: /Video generation/ }).click();
   const chip = page.getByTestId("agent-chip");
   await expect(chip).toHaveAttribute("aria-pressed", "false");
   await shot("off");

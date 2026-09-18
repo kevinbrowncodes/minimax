@@ -122,7 +122,6 @@ describe("Agent instructions (STORY_052)", () => {
         </SettingsContext.Provider>
       </ShellContext.Provider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
     await waitFor(() => { expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled(); });
     fireEvent.click(screen.getByTestId("agent-chip"));
     await waitFor(() => { expect(screen.getByRole("button", { name: "Agent instructions, 1 active" })).toBeInTheDocument(); });

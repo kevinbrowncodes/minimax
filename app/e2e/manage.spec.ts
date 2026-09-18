@@ -8,7 +8,7 @@ import { settled } from "./fixtures/settle";
  * template are restored at the end.
  */
 test.describe("Management (STORY_040)", () => {
-  test("the plugin row, its switch off → no Video generation → on again; a created template is listed under + › Skills › Templates and Use fills the composer", async ({ page, request }, testInfo) => {
+  test("the plugin row, its switch off → the box says video is off and Send is disabled → on again; a created template is listed under + › Skills › Templates and Use fills the composer", async ({ page, request }, testInfo) => {
     const narrow = testInfo.project.name === "narrow";
     await request.patch("/api/settings", { data: { videoEnabled: true } });
     await page.goto("/plugins");
@@ -26,7 +26,11 @@ test.describe("Management (STORY_040)", () => {
     await expect(toggle).toHaveAttribute("aria-checked", "false");
     await page.goto("/");
     await settled(page);
-    await expect(page.getByRole("button", { name: /Video generation/ })).toHaveCount(0); // a text-only workstation
+    // STORY_040's text-only workstation, as STORY_058 words it: no tag, no tile, the placeholder, Send disabled
+    await expect(page.getByText("video-creator", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("textbox", { name: "Message" })).toHaveAttribute("placeholder", "Video generation is off — turn on video-creator under Plugins");
+    await page.getByRole("textbox", { name: "Message" }).fill("hello");
+    await expect(page.getByRole("button", { name: "Send message" })).toBeDisabled();
     await page.goto("/plugins");
     await settled(page);
     const on = page.waitForResponse((r) => r.url().endsWith("/api/settings") && r.request().method() === "PATCH");
@@ -34,7 +38,7 @@ test.describe("Management (STORY_040)", () => {
     expect((await on).ok()).toBe(true);
     await page.goto("/");
     await settled(page);
-    await expect(page.getByRole("button", { name: /Video generation/ })).toBeVisible();
+    await expect(page.getByText("video-creator", { exact: true })).toBeVisible(); // the video composer is back
     // Templates (STORY_054's wording): create one, find it under + › Skills › Templates, Use it
     const tag = String(Date.now()).slice(-6);
     await page.goto("/plugins?tab=Skills&create=1");

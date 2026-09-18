@@ -122,16 +122,14 @@ export type ComposerAction =
   | { readonly type: "capabilities"; readonly capabilities: Capabilities }
   | { readonly type: "capabilities-failed"; readonly message: string }
   | { readonly type: "text"; readonly text: string }
-  | { readonly type: "enter-video-mode" }
-  | { readonly type: "leave-video-mode" }
-  | { readonly type: "scene"; readonly prompt: string; readonly ratio: string; readonly resolution: string; readonly durationSeconds: number }
-  | { readonly type: "clear-scene" }
   | { readonly type: "add-images"; readonly images: readonly ComposerImage[] }
   | { readonly type: "remove-image"; readonly id: string }
   | { readonly type: "model"; readonly model: string }
   | { readonly type: "ratio"; readonly ratio: string }
   | { readonly type: "resolution"; readonly resolution: string }
   | { readonly type: "duration"; readonly durationSeconds: number }
+  /** STORY_041's Edit (and anything that hands the composer a whole request): the prompt and the parameters where the Spark allows them. */
+  | { readonly type: "request"; readonly prompt: string; readonly ratio: string; readonly resolution: string; readonly durationSeconds: number }
   | { readonly type: "extend-from"; readonly source: ExtendSource }
   | { readonly type: "clear-extend" }
   | { readonly type: "overlap"; readonly overlapFrames: number }
@@ -161,7 +159,8 @@ export const DEFAULT_DURATION = 5;
 const DEFAULT_EXTENSION: ExtensionCapabilities = { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30 };
 
 export function initialComposer(projectId?: string, text = "", more: Pick<ComposerState, "notBefore" | "queueId"> = {}): ComposerState {
-  return { mode: "text", text, images: [], capabilities: undefined, capabilitiesError: undefined, model: "", ratio: DEFAULT_RATIO, resolution: "", durationSeconds: DEFAULT_DURATION, extend: undefined, overlapFrames: DEFAULT_EXTENSION.overlapFrames.default, error: undefined, submitting: false, projectId, agent: INITIAL_AGENT, ...more };
+  // STORY_058: a new task opens in video mode — there is nothing else it can be here
+  return { mode: "video", text, images: [], capabilities: undefined, capabilitiesError: undefined, model: "", ratio: DEFAULT_RATIO, resolution: "", durationSeconds: DEFAULT_DURATION, extend: undefined, overlapFrames: DEFAULT_EXTENSION.overlapFrames.default, error: undefined, submitting: false, projectId, agent: INITIAL_AGENT, ...more };
 }
 
 /** The server's extension limits, or the contract's defaults while capabilities are unknown or lack them. */
@@ -209,16 +208,11 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
       return { ...state, capabilities: undefined, capabilitiesError: action.message };
     case "text":
       return { ...state, text: action.text, error: undefined };
-    case "enter-video-mode":
-      return state.mode === "video" ? state : { ...state, mode: "video", error: undefined };
-    case "leave-video-mode":
-      return state.mode === "text" ? state : { ...state, mode: "text", images: [], extend: undefined, error: undefined, agent: { ...state.agent, on: false, notice: undefined } };
-    case "scene": {
-      // A Showcase card: the prompt after the tag, the parameters where the Spark allows them (the capabilities clamp).
+    case "request": {
+      // the parameters where the Spark allows them (the capabilities clamp); the prompt as given
       const caps = state.capabilities;
       return {
         ...state,
-        mode: "video",
         text: action.prompt,
         ratio: caps ? (caps.ratios.includes(action.ratio) ? action.ratio : state.ratio) : action.ratio,
         resolution: caps ? (caps.resolutions.includes(action.resolution) ? action.resolution : state.resolution) : action.resolution,
@@ -226,8 +220,6 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
         error: undefined,
       };
     }
-    case "clear-scene":
-      return { ...state, text: "", images: [], error: undefined };
     case "extend-from": {
       const ext = extensionOf(state.capabilities);
       const overlapFrames = ext.overlapFrames.default;

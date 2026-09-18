@@ -86,7 +86,7 @@ test.describe("shell (STORY_012)", () => {
     await page.goto("/");
     await settled(page);
     for (const name of ["Changelog", "Download", "Download desktop"]) await expect(page.getByRole("button", { name, exact: true })).toHaveCount(0);
-    for (const name of ["Document", "Website", "Image Generation", "More"]) await expect(page.getByRole("group", { name: "Modes" }).getByRole("button", { name, exact: true })).toHaveCount(0);
+    await expect(page.getByRole("group", { name: "Modes" })).toHaveCount(0); // STORY_058: no chips row at all
     if (testInfo.project.name === "narrow") {
       await page.getByRole("button", { name: "Expand sidebar" }).click();
       await settled(page);
@@ -169,7 +169,6 @@ test.describe("shell (STORY_021)", () => {
     const narrow = testInfo.project.name === "narrow";
     // A finished job to find and then delete (the stub finishes it in one poll).
     await page.goto("/?script=done-after-1-poll");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByRole("textbox", { name: "Message" }).fill("Find me by title");
     const terminal = waitForTerminalStatus(page);
     await page.getByRole("button", { name: "Send message" }).click();
@@ -214,7 +213,6 @@ test.describe("shell (STORY_021)", () => {
       Object.defineProperty(navigator, "clipboard", { value: { writeText: (text: string) => { copied.push(text); return Promise.resolve(); } }, configurable: true });
     });
     await page.goto("/?script=done-after-1-poll");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByRole("textbox", { name: "Message" }).fill("Rename me and pin me");
     const terminal = waitForTerminalStatus(page);
     await page.getByRole("button", { name: "Send message" }).click();
@@ -292,7 +290,6 @@ test.describe("shell (STORY_021)", () => {
     };
     const makeJob = async (prompt: string): Promise<string> => {
       await page.goto("/?script=done-after-1-poll");
-      await page.getByRole("button", { name: /Video generation/ }).click();
       await page.getByRole("textbox", { name: "Message" }).fill(prompt);
       const terminal = waitForTerminalStatus(page);
       await page.getByRole("button", { name: "Send message" }).click();
@@ -378,7 +375,6 @@ test.describe("shell (STORY_021)", () => {
     const narrow = testInfo.project.name === "narrow";
     await clearHistory(request); // the count is asserted, so the list must be this test's own (CLAUDE.md §6b)
     await page.goto("/?script=done-with-framing-move");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByRole("textbox", { name: "Message" }).fill("Handheld selfie");
     const terminal = waitForTerminalStatus(page);
     await page.getByRole("button", { name: "Send message" }).click();
@@ -402,7 +398,6 @@ test.describe("shell (STORY_021)", () => {
     const narrow = testInfo.project.name === "narrow";
     await clearHistory(request); // the count is asserted, so the list must be this test's own (CLAUDE.md §6b)
     await page.goto("/?script=done-with-cut");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByRole("textbox", { name: "Message" }).fill("Tell me when done");
     const terminal = waitForTerminalStatus(page);
     await page.getByRole("button", { name: "Send message" }).click();
@@ -475,19 +470,12 @@ test.describe("shell (STORY_021)", () => {
     await expect(page.getByTestId("promo-card")).toHaveCount(0);
   });
 
-  test("desktop: the promo card shows two pages and Close hides it for the browser", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "desktop", "the card is not shown at 390");
+  test("desktop: no promo card in the corner (STORY_058 removed the reference's carousel)", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "the card was never shown at 390");
     await page.goto("/");
     await settled(page);
-    const card = page.getByTestId("promo-card");
-    await expect(card).toContainText("H3 takes the stage");
-    await card.getByRole("button", { name: "2" }).click();
-    await expect(card).toContainText("New MiniMax Desktop");
-    await card.getByRole("button", { name: "Close" }).click();
-    await expect(card).toHaveCount(0);
-    await page.reload();
-    await settled(page);
     await expect(page.getByTestId("promo-card")).toHaveCount(0);
+    await expect(page.getByText("H3 takes the stage")).toHaveCount(0);
   });
 });
 

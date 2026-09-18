@@ -4,7 +4,7 @@ import type { Capabilities } from "./job-api";
 import { buildJobRequest, submitChain, submitDraws, submitJob } from "./submit-job";
 
 const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["16:9"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 } };
-const typed = (): ComposerState => reduceComposer(reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: caps }), { type: "enter-video-mode" }), { type: "text", text: " A boat " });
+const typed = (): ComposerState => reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: caps }), { type: "text", text: " A boat " });
 const img: ComposerImage = { id: "a", file: new File(["png"], "a.png", { type: "image/png" }), url: "", name: "a.png", type: "image/png", size: 3 };
 
 describe("buildJobRequest with a project (STORY_031)", () => {
@@ -83,7 +83,7 @@ describe("submitJob", () => {
 
 describe("a chain's segments (STORY_044)", () => {
   const chainCaps: Capabilities = { ...caps, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 } };
-  const ready = (): ComposerState => reduceComposer(reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: chainCaps }), { type: "enter-video-mode" }), { type: "text", text: "Scene\n[0:00-0:03] one\n[0:00-0:03] two" });
+  const ready = (): ComposerState => reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: chainCaps }), { type: "text", text: "Scene\n[0:00-0:03] one\n[0:00-0:03] two" });
 
   it("buildJobRequest with a segment: the segment's prompt, its images for the first, continueFrom + overlapFrames and no images for an extension", () => {
     const withImage = reduceComposer(ready(), { type: "add-images", images: [img] });

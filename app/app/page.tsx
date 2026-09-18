@@ -44,7 +44,7 @@ export default async function HomePage({ searchParams }: { readonly searchParams
     : undefined;
   return (
     <main className={styles.home}>
-      <h1 className={styles.heading}>MiniMax makes your work easier</h1>
+      <h1 className={styles.heading}>MiniMax</h1>
       {/* keyed by the project, the skill and the queued request: a navigation from / to /?… must not keep the mounted composer's state */}
       <Composer key={`${project?.id ?? "no-project"}:${skill?.id ?? "no-skill"}:${initialRequest?.queueId ?? "no-queue"}:${run?.id ?? "no-run"}:${initialAgentSkill ?? "no-agent"}`} initialProjectId={project?.id} initialText={skill ? applySkill(skill.template, "") : undefined} initialRequest={initialRequest} initialAgentRun={initialAgentRun} initialAgentSkill={initialAgentSkill} />
     </main>

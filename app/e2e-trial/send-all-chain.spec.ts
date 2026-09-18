@@ -44,7 +44,6 @@ test("one image and three scripts go out in one Send and run as a chain on the S
   mkdirSync(OUT_DIR, { recursive: true });
   const text = readFileSync(TEXT_FILE, "utf8").trim();
   await page.goto("/");
-  await page.getByRole("button", { name: /Video generation/ }).click();
   await expect(page.getByRole("button", { name: /^Model:/ })).toBeEnabled({ timeout: 30_000 });
   await page.getByTestId("reference-input").setInputFiles(IMAGE);
   await page.getByRole("button", { name: /^Video parameters:/ }).click();

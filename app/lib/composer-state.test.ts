@@ -14,12 +14,11 @@ describe("reduceComposer", () => {
     expect(durationOptions(s)).toEqual([4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
   });
 
-  it("enters and leaves video mode, clearing images on leave", () => {
-    let s = reduceComposer(ready(), { type: "enter-video-mode" });
-    s = reduceComposer(s, { type: "add-images", images: [img("a")] });
+  it("opens in video mode (STORY_058: there is no other mode to enter or leave) and takes images there", () => {
+    expect(initialComposer().mode).toBe("video");
+    const s = reduceComposer(ready(), { type: "add-images", images: [img("a")] });
     expect(s.images).toHaveLength(1);
-    s = reduceComposer(s, { type: "leave-video-mode" });
-    expect(s).toMatchObject({ mode: "text", images: [] });
+    expect(s.mode).toBe("video");
   });
 
   it("refuses a third image, a gif and an oversize file with the validation message and field", () => {
@@ -54,7 +53,7 @@ describe("reduceComposer", () => {
     const typed = reduceComposer(empty, { type: "text", text: "  a boat " });
     expect(canSend(typed)).toBe(true);
     expect(canSend(reduceComposer(typed, { type: "submit-start" }))).toBe(false);
-    const noCaps = reduceComposer(reduceComposer(initialComposer(), { type: "enter-video-mode" }), { type: "text", text: "x" });
+    const noCaps = reduceComposer(initialComposer(), { type: "text", text: "x" });
     expect(canSend(noCaps)).toBe(false);
     expect(reduceComposer(noCaps, { type: "capabilities-failed", message: "down" }).capabilitiesError).toBe("down");
   });
@@ -67,8 +66,6 @@ describe("the project choice (STORY_031)", () => {
     expect(s.projectId).toBe("p1");
     expect(reduceComposer(s, { type: "project", projectId: "p1" })).toBe(s); // no-op keeps identity
     s = reduceComposer(s, { type: "project", projectId: "p2" });
-    s = reduceComposer(s, { type: "enter-video-mode" });
-    s = reduceComposer(s, { type: "leave-video-mode" });
     s = reduceComposer(s, { type: "clear-extend" });
     expect(s.projectId).toBe("p2");
     expect(reduceComposer(s, { type: "project", projectId: undefined }).projectId).toBeUndefined();
@@ -83,7 +80,7 @@ describe("the run-at time and an Edit's queue id (STORY_041)", () => {
     let t = reduceComposer(initialComposer(), { type: "not-before", notBefore: "2026-09-16T06:00:00.000Z" });
     expect(t.notBefore).toBe("2026-09-16T06:00:00.000Z");
     expect(reduceComposer(t, { type: "not-before", notBefore: "2026-09-16T06:00:00.000Z" })).toBe(t);
-    t = reduceComposer(reduceComposer(t, { type: "enter-video-mode" }), { type: "leave-video-mode" });
+    t = reduceComposer(t, { type: "clear-extend" });
     expect(t.notBefore).toBe("2026-09-16T06:00:00.000Z");
     expect(reduceComposer(t, { type: "not-before", notBefore: undefined }).notBefore).toBeUndefined();
   });
@@ -92,8 +89,7 @@ describe("the run-at time and an Edit's queue id (STORY_041)", () => {
 describe("reduceComposer edge branches", () => {
   it("keeps state identity for no-op actions and falls back when capabilities omit the current ratio", () => {
     const s = ready();
-    expect(reduceComposer(reduceComposer(s, { type: "enter-video-mode" }), { type: "enter-video-mode" })).toEqual(reduceComposer(s, { type: "enter-video-mode" }));
-    expect(reduceComposer(s, { type: "leave-video-mode" })).toBe(s);
+    expect(reduceComposer(s, { type: "project", projectId: undefined })).toBe(s);
     const narrowCaps: Capabilities = { ...caps, ratios: ["1:1"], models: [], resolutions: [] };
     const fallback = reduceComposer(initialComposer(), { type: "capabilities", capabilities: narrowCaps });
     expect(fallback).toMatchObject({ ratio: "1:1", model: "", resolution: "" });
@@ -153,7 +149,7 @@ describe("extend mode (STORY_016, STORY_017)", () => {
     expect(canSend(reduceComposer(s, { type: "text", text: "next" }))).toBe(true);
   });
 
-  it("the overlap re-clamps the duration while extending and is kept as the chain strip's outside it (STORY_044); clear-extend / leave-video-mode restore the normal composer", () => {
+  it("the overlap re-clamps the duration while extending and is kept as the chain strip's outside it (STORY_044); clear-extend restores the normal composer", () => {
     const s = reduceComposer(ready(), { type: "extend-from", source });
     expect(reduceComposer(s, { type: "overlap", overlapFrames: 22 })).toMatchObject({ overlapFrames: 22 });
     expect(durationOptions(reduceComposer(s, { type: "overlap", overlapFrames: 22 }))).toEqual([4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
@@ -173,41 +169,33 @@ describe("extend mode (STORY_016, STORY_017)", () => {
     const cleared = reduceComposer(reduceComposer(s, { type: "overlap", overlapFrames: 22 }), { type: "clear-extend" });
     expect(cleared).toMatchObject({ extend: undefined, ratio: "16:9", resolution: "768P", model: "minimax-h3", durationSeconds: 5, overlapFrames: 39 });
     expect(paramsLabel(cleared)).toBe("16:9 768P 5s");
-    expect(reduceComposer(s, { type: "leave-video-mode" })).toMatchObject({ mode: "text", extend: undefined });
     // capabilities that arrive while extending keep the source's values and clamp into the server's ranges
     const late = reduceComposer(reduceComposer(initialComposer(), { type: "extend-from", source }), { type: "capabilities", capabilities: extCaps });
     expect(late).toMatchObject({ extend: source, ratio: "9:16", model: "minimax-h3", durationSeconds: 10, overlapFrames: 39 });
   });
 });
 
-describe("the modes and the Showcase (STORY_022, STORY_026)", () => {
-  it("text mode can send once there is text; video mode also needs capabilities; leave-video-mode returns to text (STORY_026: no other modes)", () => {
+describe("the one mode (STORY_026, STORY_058) and a whole request (STORY_041's Edit)", () => {
+  it("video mode needs text and capabilities to send; there is no text mode to fall back to", () => {
     let state = reduceComposer(initialComposer(), { type: "text", text: "hello" });
-    expect(state.mode).toBe("text");
-    expect(canSend(state)).toBe(true);
-    state = reduceComposer(state, { type: "enter-video-mode" });
+    expect(state.mode).toBe("video");
     expect(canSend(state)).toBe(false); // no capabilities yet
-    state = reduceComposer(state, { type: "leave-video-mode" });
-    expect(state.mode).toBe("text");
+    state = reduceComposer(state, { type: "capabilities", capabilities: caps });
     expect(canSend(state)).toBe(true);
   });
 
-  it("a scene types the prompt, enters video mode and takes the parameters the Spark allows; clear-scene empties", () => {
+  it("a request types the prompt and takes the parameters the Spark allows", () => {
     const narrowCaps: Capabilities = { ...caps, ratios: ["16:9", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 5, max: 10, step: 1 } };
     let state = reduceComposer(initialComposer(), { type: "capabilities", capabilities: narrowCaps });
-    state = reduceComposer(state, { type: "scene", prompt: "A neon street", ratio: "9:16", resolution: "2K", durationSeconds: 15 });
-    expect(state.mode).toBe("video");
+    state = reduceComposer(state, { type: "request", prompt: "A neon street", ratio: "9:16", resolution: "2K", durationSeconds: 15 });
     expect(state.text).toBe("A neon street");
     expect(state.ratio).toBe("9:16");
     expect(state.resolution).toBe("768P"); // 2K is not offered by these capabilities
     expect(state.durationSeconds).toBe(10); // clamped to the Spark's maximum
-    state = reduceComposer(state, { type: "clear-scene" });
-    expect(state.text).toBe("");
-    expect(state.mode).toBe("video");
   });
 
-  it("without capabilities a scene's parameters are taken as given", () => {
-    const state = reduceComposer(initialComposer(), { type: "scene", prompt: "p", ratio: "21:9", resolution: "2K", durationSeconds: 8 });
+  it("without capabilities a request's parameters are taken as given", () => {
+    const state = reduceComposer(initialComposer(), { type: "request", prompt: "p", ratio: "21:9", resolution: "2K", durationSeconds: 8 });
     expect([state.ratio, state.resolution, state.durationSeconds]).toEqual(["21:9", "2K", 8]);
   });
 });
@@ -217,7 +205,7 @@ describe("the Agent chip (STORY_050)", () => {
     { id: "minimax-h3-director-thirst-trap", name: "minimax-h3-director-thirst-trap", description: "Directs one…", metadata: { "minimax-short-name": "Thirst trap", "minimax-clip-seconds": "10" } },
     { id: "minimax-h3-director-thirst-trap-chain", name: "minimax-h3-director-thirst-trap-chain", description: "Directs a whole…", metadata: { "minimax-short-name": "Chain director" } },
   ];
-  const video = (): ComposerState => reduceComposer(ready(), { type: "enter-video-mode" });
+  const video = (): ComposerState => ready();
   it("the skills arrive: the setting's is chosen, else the first; the label is the short name", () => {
     const first = reduceComposer(video(), { type: "agent-skills", skills });
     expect(first.agent.skillId).toBe("minimax-h3-director-thirst-trap");
@@ -252,7 +240,6 @@ describe("the Agent chip (STORY_050)", () => {
     expect(reduceComposer(extending, { type: "agent-toggle" }).agent.on).toBe(false);
     const on = reduceComposer(video(), { type: "agent-toggle" });
     expect(reduceComposer(on, { type: "extend-from", source }).agent.on).toBe(false);
-    expect(reduceComposer(on, { type: "leave-video-mode" }).agent.on).toBe(false);
   });
   it("a run: start, then the reply into the box with the chip off, the photo kept, the duration the skill's, findings as a warning", () => {
     let state = reduceComposer(reduceComposer(video(), { type: "agent-skills", skills }), { type: "agent-toggle" });

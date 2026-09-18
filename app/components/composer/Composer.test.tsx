@@ -37,7 +37,7 @@ afterEach(() => {
 async function renderReady(onJobs: (init: RequestInit | undefined) => Response = () => json({ id: "j1", status: "queued", progress: 0 }, 202)) {
   const fetchImpl = fetchWith(onJobs);
   render(<Composer fetchImpl={fetchImpl} />);
-  fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
+  // STORY_058: the composer opens in video mode — nothing to click first
   await waitFor(() => {
     expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled();
   });
@@ -45,7 +45,7 @@ async function renderReady(onJobs: (init: RequestInit | undefined) => Response =
 }
 
 describe("Composer", () => {
-  it("toggles video mode with the chip and the tag's ×, and Send follows the text", async () => {
+  it("opens in video mode — the tag, the reference button — and Send follows the text (STORY_058: no chip to click, no × to leave by)", async () => {
     await renderReady();
     expect(screen.getByText("video-creator")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add reference image" })).toBeInTheDocument();
@@ -53,8 +53,7 @@ describe("Composer", () => {
     expect(send).toBeDisabled();
     fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "A paper boat" } });
     expect(send).toBeEnabled();
-    fireEvent.click(screen.getByRole("button", { name: "Remove video-creator" }));
-    expect(screen.queryByText("video-creator")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Remove video-creator" })).not.toBeInTheDocument();
   });
 
   it("the parameters and the model menu list only what the Spark reports (STORY_026: no greyed 2K, H3-Max or H2.3), and the label follows the choice", async () => {
@@ -115,14 +114,13 @@ describe("Composer", () => {
     });
   });
 
-  it("outside video mode, Send says text chat is not connected to the Spark yet (STORY_026)", async () => {
+  it("opens in video mode with the placeholder saying what to do and the tag without a way out (STORY_058)", () => {
     render(<Composer fetchImpl={fetchWith(() => json({}, 500))} />);
-    fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "hello" } });
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
-      await Promise.resolve();
-    });
-    expect(screen.getByRole("alert")).toHaveTextContent("Text chat is not connected to the Spark yet — pick Video generation");
+    expect(screen.getByRole("textbox", { name: "Message" })).toHaveAttribute("placeholder", "Describe the video — or attach a photo and turn Agent on");
+    expect(screen.getByText("video-creator")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Remove video-creator" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Modes" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("showcase")).not.toBeInTheDocument();
   });
 });
 
@@ -198,7 +196,6 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
         <Composer fetchImpl={fetchImpl} initialProjectId="p2" />
       </ProjectsContext.Provider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled();
     });
@@ -310,14 +307,14 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     expect(push).toHaveBeenLastCalledWith("/plugins?tab=Skills&create=1");
   });
 
-  it("+ › Skills lists the directors as radio rows: disabled in text mode with the reason; in video mode picking one writes the setting and turns the chip on (STORY_054)", async () => {
+  it("+ › Skills lists the directors as radio rows: disabled with the reason while the plugin is off; picking one writes the setting and turns the chip on (STORY_054; STORY_058: video is the only mode)", async () => {
     const update = vi.fn();
-    render(
-      <SettingsContext.Provider value={{ settings: { ...DEFAULT_SETTINGS, agentSkill: "minimax-h3-director-thirst-trap-chain" }, update }}>
+    const off = render(
+      <SettingsContext.Provider value={{ settings: { ...DEFAULT_SETTINGS, videoEnabled: false, agentSkill: "minimax-h3-director-thirst-trap-chain" }, update }}>
         <Composer fetchImpl={fetchWith(() => json({}))} />
       </SettingsContext.Provider>,
     );
-    // text mode: the rows are there, checked by the setting, disabled with the reason
+    // the plugin off: the rows are there, checked by the setting, disabled with the reason
     fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
     const skillsMenu = screen.getByRole("menu", { name: "Skills" });
@@ -325,13 +322,18 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     const rows = within(skillsMenu).getAllByRole("menuitemradio");
     expect(rows.map((r) => r.getAttribute("aria-checked"))).toEqual(["false", "true"]);
     expect(rows[0]).toHaveAttribute("aria-disabled", "true");
-    expect(rows[0]).toHaveAttribute("title", "Agent directs a video — pick Video generation");
+    expect(rows[0]).toHaveAttribute("title", "Video generation is off — turn on video-creator under Plugins");
     fireEvent.click(rows[0] as HTMLElement);
     expect(update).not.toHaveBeenCalled();
     expect(screen.getByRole("menu", { name: "Add attachment" })).toBeInTheDocument(); // nothing happened, the menu stays
     fireEvent.keyDown(window, { key: "Escape" });
-    // video mode: a pick writes the setting, turns the chip on and closes the menu
-    fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
+    off.unmount();
+    // the plugin on: a pick writes the setting, turns the chip on and closes the menu
+    render(
+      <SettingsContext.Provider value={{ settings: { ...DEFAULT_SETTINGS, agentSkill: "minimax-h3-director-thirst-trap-chain" }, update }}>
+        <Composer fetchImpl={fetchWith(() => json({}))} />
+      </SettingsContext.Provider>,
+    );
     await waitFor(() => { expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled(); });
     fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
@@ -363,19 +365,22 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     await waitFor(() => { expect(screen.getByTestId("agent-chip")).toHaveAttribute("aria-label", "Agent on · Thirst trap"); });
   });
 
-  it("starts with the skill's template when told to, and hides Video generation when the plugin is off (STORY_040)", () => {
+  it("starts with the template's text when told to, in video mode; with the plugin off (STORY_040) the box says so and Send is disabled (STORY_058)", () => {
     render(<Composer fetchImpl={fetchWith(() => json({}))} initialText="Loop: {{idea}}" />);
     expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("Loop: {{idea}}");
-    expect(screen.getByRole("group", { name: "Modes" })).toBeInTheDocument();
+    expect(screen.getByText("video-creator")).toBeInTheDocument();
     cleanup();
     render(
       <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: false, agentConfirm: "always", agentDraws: 1 }, update: () => undefined }}>
         <Composer fetchImpl={fetchWith(() => json({}))} />
       </SettingsContext.Provider>,
     );
-    expect(screen.queryByRole("group", { name: "Modes" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Video generation/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Message" })).toHaveAttribute("placeholder", "Video generation is off — turn on video-creator under Plugins");
     expect(screen.queryByText("video-creator")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("agent-chip")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reference" })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "hello" } });
+    expect(screen.getByRole("button", { name: "Send message" })).toBeDisabled();
     cleanup();
     // the docked composer starts in video mode; with the plugin off it is text-only too (no video parameters)
     render(
@@ -440,8 +445,6 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
         <Composer fetchImpl={fetchImpl} />
       </ShellContext.Provider>,
     );
-    expect(screen.queryByRole("button", { name: "Run at" })).not.toBeInTheDocument(); // text mode: no queue controls
-    fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled();
     });
@@ -495,23 +498,10 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     expect(screen.queryByRole("menu", { name: "Agent model" })).not.toBeInTheDocument();
   });
 
-  it("one mode chip: Video generation; the reference's Document / Website / Image Generation / More are gone (STORY_026)", () => {
-    const fetchImpl = fetchWith(() => json({}, 500));
-    render(<Composer fetchImpl={fetchImpl} />);
-    const chips = within(screen.getByRole("group", { name: "Modes" })).getAllByRole("button");
-    expect(chips.map((el) => el.textContent.replace(/\s+/g, " ").trim())).toEqual(["Video generation H3"]);
-    for (const name of ["Document", "Website", "Image Generation", "More"]) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
-  });
-
-  it("a video Showcase card types its prompt and sets its parameters; Clear selected scene empties and hides the row", async () => {
+  it("no mode chips and no Showcase under the card (STORY_026 removed the other modes; STORY_058 the last chip and the scenes)", async () => {
     await renderReady();
-    expect(screen.queryByRole("group", { name: "Modes" })).not.toBeInTheDocument(); // chips hide once a mode is on
-    fireEvent.click(screen.getByRole("button", { name: "Forest Dawn Fly-through" }));
-    expect(screen.getByRole("textbox", { name: "Message" })).toHaveDisplayValue(/drone glides/);
-    expect(screen.getByRole("button", { name: /^Video parameters: 21:9 768P 8s$/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Send message" })).toBeEnabled();
-    fireEvent.click(screen.getByRole("button", { name: "Clear selected scene" }));
-    expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("");
+    expect(screen.queryByRole("group", { name: "Modes" })).not.toBeInTheDocument();
+    for (const name of ["Video generation", "Document", "Website", "Image Generation", "More", "Forest Dawn Fly-through", "Clear selected scene"]) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
     expect(screen.queryByTestId("showcase")).not.toBeInTheDocument();
   });
 });
@@ -583,7 +573,6 @@ describe("Composer — a chain from one text (STORY_044)", () => {
         <Composer fetchImpl={fetchImpl} />
       </ShellContext.Provider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled();
     });

@@ -40,7 +40,6 @@ function mount(settings: Settings, refuseAt?: number) {
       </SettingsContext.Provider>
     </ShellContext.Provider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
   return jobs;
 }
 const ready = async (): Promise<void> => { await waitFor(() => { expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled(); }); };

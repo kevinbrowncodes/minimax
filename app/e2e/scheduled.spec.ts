@@ -22,7 +22,6 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     const send = async (prompt: string, script = "done-after-1-poll"): Promise<string> => {
       await page.goto(`/?script=${script}`);
       await settled(page);
-      await page.getByRole("button", { name: /Video generation/ }).click();
       await page.getByRole("textbox", { name: "Message" }).fill(prompt);
       await page.getByRole("button", { name: "Send message" }).click();
       await expect(page).toHaveURL(/\/task\/[^/]+$/);
@@ -130,7 +129,6 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     // a slow clip: ten polls to done — long enough to queue an extension against it
     await page.goto("/?script=slow-done-after-10-polls");
     await settled(page);
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByRole("textbox", { name: "Message" }).fill("A slow clip");
     const sourceDone = waitForTerminalStatus(page, { timeout: 90_000 });
     await page.getByRole("button", { name: "Send message" }).click();
@@ -215,7 +213,6 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     const narrow = testInfo.project.name === "narrow";
     await page.goto("/?script=done-after-3-polls");
     await settled(page);
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
     // the scene, then three scripts in the owner's convention; 5 s (the default) is the shortest chain
     const scene = "A red kite over a windy beach at golden hour.";
@@ -286,7 +283,6 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     test.slow(); // a three-segment chain with a cut script, then a redraw and a re-chained segment — five jobs in all
     await page.goto("/?script=done-with-cut-at-join"); // every segment reports a cut at frame 56 — the fixture's length, so an extension's join; segment 2's notice is the one this story acts on
     await settled(page);
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
     const scene = "A red kite over a windy beach at golden hour.";
     const scripts = ["[0:00-0:02] The kite climbs.\n[0:02-0:05] It steadies.", "[0:00-0:02] The kite turns.\n[0:02-0:05] It dips.", "[0:00-0:02] The kite rises again.\n[0:02-0:05] It holds."];

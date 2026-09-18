@@ -16,7 +16,6 @@ test.beforeEach(async ({ request }) => {
 /** Enter video mode, type the prompt, register the terminal wait, click Send, land on the task page. */
 async function submit(page: import("@playwright/test").Page, script: string, prompt: string, options: { readonly withImage?: boolean; readonly waitTerminal?: boolean } = {}) {
   await page.goto(`/?script=${script}`);
-  await page.getByRole("button", { name: /Video generation/ }).click();
   if (options.withImage) await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
   await page.getByRole("textbox", { name: "Message" }).fill(prompt);
   // Registered before the click (CLAUDE.md §6b). A cancel ends with the DELETE response instead, so its spec opts out.

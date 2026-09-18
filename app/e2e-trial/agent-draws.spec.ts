@@ -33,7 +33,6 @@ test("Draws x2: the director's prompt for the office photo goes out twice on the
   const shot = (name: string) => page.screenshot({ path: path.join(OUT_DIR, `agent-draws-${name}-${STAMP}.png`), fullPage: false });
 
   await page.goto("/");
-  await page.getByRole("button", { name: /Video generation/ }).click();
   const chip = page.getByTestId("agent-chip");
   await chip.click();
   await expect(chip).toHaveAttribute("aria-label", "Agent on · Thirst trap");

@@ -27,10 +27,10 @@ import { useShell } from "@/components/shell/ShellContext";
 import { useNarrow } from "@/lib/use-narrow";
 import { applySkill, type Skill } from "@/lib/skills";
 import { IconProject } from "@/components/shell/icons";
-import { Showcase } from "./Showcase";
 import styles from "./composer.module.css";
 
-const PLACEHOLDER = "Enter message... (use / for commands)";
+const PLACEHOLDER = "Describe the video — or attach a photo and turn Agent on"; // STORY_058: what to do, not the reference's slash-command hint
+const OFF_PLACEHOLDER = "Video generation is off — turn on video-creator under Plugins"; // STORY_040's text-only workstation, said plainly
 const EXTEND_PLACEHOLDER = "Describe what happens next…";
 const FIXED_NOTE = "fixed by the video being extended";
 
@@ -80,12 +80,12 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const narrow = useNarrow();
   const videoEnabled = settings.videoEnabled;
   const [state, dispatch] = useReducer(reduceComposer, { docked, initialProjectId, initialText, initialRequest, initialAgentSkill }, (init) => {
-    // STORY_041: an Edit starts in video mode with the request's words, project and run-at; its parameters and images follow once capabilities arrive
+    // STORY_041: an Edit starts with the request's words, project and run-at; its parameters and images follow once capabilities arrive.
+    // STORY_058: every composer opens in video mode (initialComposer), the docked one and an Edit included
     const request = init.initialRequest;
     const base = initialComposer(init.initialProjectId ?? request?.projectId, init.initialText ?? request?.prompt ?? "", request ? { queueId: request.queueId, ...(request.notBefore === undefined ? {} : { notBefore: request.notBefore }) } : {});
-    // STORY_054: Use on a director starts in video mode with the chip on; the skill is chosen when the list arrives
-    if (init.initialAgentSkill !== undefined) return reduceComposer(base, { type: "agent-toggle", on: true });
-    return init.docked || request ? reduceComposer(base, { type: "enter-video-mode" }) : base;
+    // STORY_054: Use on a director starts with the chip on; the skill is chosen when the list arrives
+    return init.initialAgentSkill === undefined ? base : reduceComposer(base, { type: "agent-toggle", on: true });
   });
   const [runAtOpen, setRunAtOpen] = useState(false); // STORY_041: the Run at… control beside Send
   const requestApplied = useRef(false);
@@ -98,7 +98,6 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const [agentInstructionsOpen, setAgentInstructionsOpen] = useState(false); // STORY_052: the ≡ panel
   const [activeInstructions, setActiveInstructions] = useState(0); // STORY_052: the ≡ badge
   const [envOpen, setEnvOpen] = useState(false); // STORY_035
-  const [showcaseDismissed, setShowcaseDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const urls = useRef(new Map<string, string>());
@@ -246,11 +245,11 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
     event.target.value = "";
   };
 
-  // STORY_041: once the Spark's capabilities are known, an Edit takes the request's parameters (clamped as a scene is) and its images
+  // STORY_041: once the Spark's capabilities are known, an Edit takes the request's parameters (clamped) and its images
   useEffect(() => {
     if (!initialRequest || requestApplied.current || state.capabilities === undefined) return;
     requestApplied.current = true;
-    dispatch({ type: "scene", prompt: initialRequest.prompt, ratio: initialRequest.ratio, resolution: initialRequest.resolution, durationSeconds: initialRequest.durationSeconds });
+    dispatch({ type: "request", prompt: initialRequest.prompt, ratio: initialRequest.ratio, resolution: initialRequest.resolution, durationSeconds: initialRequest.durationSeconds });
     dispatch({ type: "model", model: initialRequest.model });
     let cancelled = false;
     void Promise.all(initialRequest.images.map(async (image) => {
@@ -368,13 +367,9 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
 
   const send = async (): Promise<void> => {
     if (!canSend(state)) return;
-    if (state.mode === "video" && state.agent.on) {
+    if (!video) return; // STORY_040's plugin switch off: the box says so and Send is disabled
+    if (state.agent.on) {
       await runAgent();
-      return;
-    }
-    if (state.mode !== "video") {
-      // BACKLOG_006 wires the text mode to a local text model; until then it says so (STORY_026)
-      dispatch({ type: "error", error: { message: "Text chat is not connected to the Spark yet — pick Video generation" } });
       return;
     }
     dispatch({ type: "submit-start" });
@@ -508,7 +503,6 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
             <span className={styles.tag}>
               <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="3" width="8" height="8" rx="2" fill="currentColor" /><path d="M9 6.5 13 4.5v5L9 7.5z" fill="currentColor" /></svg>
               video-creator
-              <button type="button" className={styles.tagRemove} aria-label="Remove video-creator" onClick={() => { dispatch({ type: "leave-video-mode" }); }}>×</button>
             </span>
           ) : null}
           {project && !docked ? (
@@ -522,7 +516,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
             ref={textarea}
             className={styles.editor}
             aria-label="Message"
-            placeholder={extending ? EXTEND_PLACEHOLDER : PLACEHOLDER}
+            placeholder={extending ? EXTEND_PLACEHOLDER : video || docked ? PLACEHOLDER : OFF_PLACEHOLDER}
             value={state.text}
             rows={2}
             readOnly={agentRunning}
@@ -555,7 +549,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 directors={state.agent.skills}
                 agentSkillId={state.agent.skillId}
                 onPickDirector={(id) => { dispatch({ type: "agent-skill", skillId: id }); dispatch({ type: "agent-toggle", on: true }); updateSettings({ agentSkill: id }); }}
-                directorsDisabledReason={!video ? "Agent directs a video — pick Video generation" : agentDisabledReason}
+                directorsDisabledReason={!video ? OFF_PLACEHOLDER : agentDisabledReason}
               />
             ) : null}
           </span>
@@ -694,7 +688,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" /></svg>
               </button>
             ) : (
-              <button type="button" className={cx(styles.send, plan !== undefined && styles.sendAll)} aria-label={plan === undefined ? (draws > 1 ? `Send message, ${String(draws)} draws` : "Send message") : "Send all"} disabled={!canSend(state) || (plan !== undefined && !plan.fits)} onClick={() => void send()}>
+              <button type="button" className={cx(styles.send, plan !== undefined && styles.sendAll)} aria-label={plan === undefined ? (draws > 1 ? `Send message, ${String(draws)} draws` : "Send message") : "Send all"} disabled={!video || !canSend(state) || (plan !== undefined && !plan.fits)} onClick={() => void send()}>
                 {plan === undefined ? null : "Send all"}
                 {plan === undefined && draws > 1 ? <span className={styles.sendCount} aria-hidden="true">×{draws}</span> : null}
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -715,21 +709,6 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
         </div>
       ) : null}
       {state.capabilitiesError ? <div className={styles.error} role="alert">{state.capabilitiesError}</div> : null}
-      {docked || video || !videoEnabled ? null : (
-        // one mode chip (STORY_026): the reference's Document / Website / Image Generation / More are gone
-        <div className={styles.chips} role="group" aria-label="Modes">
-          <button type="button" className={styles.chip} onClick={() => { dispatch({ type: "enter-video-mode" }); }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="9" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="m10.5 7 4-2v6l-4-2z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
-            Video generation <span className={styles.h3}>H3</span>
-          </button>
-        </div>
-      )}
-      {docked || !video || showcaseDismissed || extending ? null : (
-        <Showcase
-          onScene={(scene) => { dispatch({ type: "scene", prompt: scene.prompt, ratio: scene.ratio, resolution: scene.resolution, durationSeconds: scene.durationSeconds }); textarea.current?.focus(); }}
-          onDismiss={() => { dispatch({ type: "clear-scene" }); setShowcaseDismissed(true); }}
-        />
-      )}
     </div>
     </>
   );

@@ -23,7 +23,6 @@ test("the ≡ shows the saved instructions on the deployed app", async ({ page, 
   if (EXPECT_ACTIVE !== undefined) expect(active).toBe(Number(EXPECT_ACTIVE));
 
   await page.goto("/");
-  await page.getByRole("button", { name: /Video generation/ }).click();
   const chip = page.getByTestId("agent-chip");
   await chip.click();
   await expect(chip).toHaveAttribute("aria-label", "Agent on · Thirst trap");

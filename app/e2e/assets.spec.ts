@@ -15,7 +15,6 @@ test.beforeEach(async ({ request }) => {
 
 async function finishOneJob(page: import("@playwright/test").Page, prompt: string): Promise<string> {
   await page.goto("/?script=done-after-1-poll");
-  await page.getByRole("button", { name: /Video generation/ }).click();
   await page.getByRole("textbox", { name: "Message" }).fill(prompt);
   const terminal = waitForTerminalStatus(page);
   await page.getByRole("button", { name: "Send message" }).click();
@@ -87,7 +86,6 @@ test.describe("Assets — Star, From you and the preview's ⋯ (STORY_032)", () 
     const narrow = testInfo.project.name === "narrow";
     // an image-to-video job: the fixture image is kept with it
     await page.goto("/?script=done-after-1-poll");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
     await page.getByRole("textbox", { name: "Message" }).fill("Starry clip");
     const terminal = waitForTerminalStatus(page);

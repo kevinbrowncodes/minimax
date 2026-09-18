@@ -15,7 +15,6 @@ import { CreateProjectDialog } from "./CreateProjectDialog";
 import { DeleteProjectDialog } from "./DeleteProjectDialog";
 import { ProjectsContext, type ProjectsState } from "./ProjectsContext";
 import { SettingsContext, type SettingsState } from "./SettingsContext";
-import { PromoCard } from "./PromoCard";
 import { SearchDialog } from "./SearchDialog";
 import { SettingsDialog, type SettingsSection } from "./SettingsDialog";
 import { Toast, ToastLink } from "./Toast";
@@ -419,13 +418,6 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
           </ProjectsContext.Provider>
         </div>
       </div>
-      {bar.kind === "home" && !narrow && !prefs.promoDismissed ? (
-        <PromoCard
-          onDismiss={() => {
-            dispatchPrefs({ type: "dismiss-promo" });
-          }}
-        />
-      ) : null}
       <Toast toast={toast} onClose={clearToast} />
       <SettingsDialog
         open={settingsOpen}

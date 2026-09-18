@@ -35,7 +35,6 @@ test("the Chain director writes three segments from the office photo, and Send a
   const shot = (name: string) => page.screenshot({ path: path.join(OUT_DIR, `agent-chain-${name}-${STAMP}.png`), fullPage: false });
 
   await page.goto("/");
-  await page.getByRole("button", { name: /Video generation/ }).click();
   const chip = page.getByTestId("agent-chip");
   await chip.click();
   await expect(chip).toHaveAttribute("aria-pressed", "true");

@@ -47,7 +47,6 @@ function renderAgent(options: Parameters<typeof fetchWith>[0] = {}, { strict = f
     </SettingsContext.Provider>
   );
   render(strict ? <StrictMode>{tree}</StrictMode> : tree);
-  fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
   return f;
 }
 const chip = () => screen.getByTestId("agent-chip");
@@ -61,7 +60,7 @@ afterEach(() => {
 });
 
 describe("the Agent chip", () => {
-  it("is off and muted in video mode, absent in text mode; on, it names the skill, opens the Skills menu, and the pill names the agent's model", async () => {
+  it("is off and muted at first; on, it names the skill, opens the Skills menu, and the pill names the agent's model", async () => {
     renderAgent();
     await waitFor(() => { expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled(); });
     expect(chip()).toHaveAttribute("aria-pressed", "false");
@@ -83,8 +82,7 @@ describe("the Agent chip", () => {
     expect(screen.getAllByRole("menuitemradio").map((r) => r.textContent)).toEqual(["✓Gemini 3.8 Flash"]);
     expect(screen.queryByRole("switch", { name: "Thinking" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    fireEvent.click(screen.getByRole("button", { name: "Remove video-creator" }));
-    expect(screen.queryByTestId("agent-chip")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Remove video-creator" })).not.toBeInTheDocument(); // STORY_058: no way out of video mode
   });
 
   it("BUG_011: the saved skill is applied when the settings arrive after the mount, and a pick still wins", async () => {
@@ -95,7 +93,6 @@ describe("the Agent chip", () => {
       </SettingsContext.Provider>
     );
     const view = render(tree(DEFAULT_SETTINGS)); // the Shell's defaults: /api/settings has not answered yet
-    fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
     fireEvent.click(chip());
     await waitFor(() => { expect(chip()).toHaveAttribute("aria-label", "Agent on · Thirst trap"); });
     view.rerender(tree({ ...DEFAULT_SETTINGS, agentSkill: "minimax-h3-director-thirst-trap-chain" })); // the settings land

@@ -2,7 +2,6 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { INERT_NOTICE } from "./Inert";
 import { CreateProjectDialog } from "./CreateProjectDialog";
-import { PromoCard } from "./PromoCard";
 import { SearchDialog } from "./SearchDialog";
 import { DeleteProjectDialog } from "./DeleteProjectDialog";
 import { SettingsDialog } from "./SettingsDialog";
@@ -120,23 +119,6 @@ describe("CreateProjectDialog (STORY_021; page-add-new-project@1440)", () => {
   });
 });
 
-describe("PromoCard (STORY_021; home-signed-in@1440, promo-carousel-page-2@1440)", () => {
-  it("has two pages behind dots named 1 and 2, an inert Download desktop on page 2, and a close", () => {
-    const onDismiss = vi.fn();
-    render(<PromoCard onDismiss={onDismiss} />);
-    expect(screen.getByText(/H3 takes the stage/)).toBeInTheDocument();
-    act(() => {
-      screen.getByRole("button", { name: "2" }).click();
-    });
-    expect(screen.getByText("New MiniMax Desktop")).toBeInTheDocument();
-    act(() => {
-      screen.getByRole("button", { name: "Download desktop" }).click();
-    });
-    expect(screen.getByRole("status")).toHaveTextContent(INERT_NOTICE);
-    screen.getByRole("button", { name: "Close" }).click();
-    expect(onDismiss).toHaveBeenCalledTimes(1);
-  });
-});
 
 describe("SettingsDialog sections (STORY_021; settings-archived-tasks@1440; STORY_026 removed Account and Usage)", () => {
   it("the nav is General and Archived tasks; Archived tasks has its search and the project filter (real since STORY_031)", () => {

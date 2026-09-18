@@ -34,7 +34,6 @@ function mount(settings: Settings, run: unknown, runStatus = 200) {
       </SettingsContext.Provider>
     </ShellContext.Provider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
   return calls;
 }
 const armed = async (): Promise<void> => {

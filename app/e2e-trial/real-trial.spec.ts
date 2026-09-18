@@ -22,8 +22,7 @@ test("image-to-video through the real UI, adapter and ComfyUI", async ({ page },
   };
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: "MiniMax makes your work easier" })).toBeVisible();
-  await page.getByRole("button", { name: /Video generation/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "MiniMax" })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Model:/ })).toBeEnabled({ timeout: 60_000 });
   stamp("capabilities loaded from the adapter");
 

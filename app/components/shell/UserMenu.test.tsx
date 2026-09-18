@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
-import { INERT_NOTICE } from "./Inert";
+import { INERT_NOTICE, Inert } from "./Inert";
 import { SettingsDialog } from "./SettingsDialog";
 import { Shell } from "./Shell";
 import { UserMenu } from "./UserMenu";
@@ -147,18 +147,16 @@ describe("Shell theme choice end to end in jsdom (STORY_019)", () => {
     expect(screen.getByRole("radio", { name: "Light mode" })).toHaveAttribute("aria-checked", "true");
   });
 
-  it("an inert control in the Shell shows the notice and clears it after two seconds (STORY_026: the top bar has none left; the promo card's Download desktop does)", () => {
+  it("an inert control in the Shell shows the notice and clears it after two seconds (STORY_026: the top bar has none left; STORY_058 removed the promo card, so the control is one rendered in the Shell's page)", () => {
     render(
       <StrictMode>
         <Shell>
-          <p>content</p>
+          <Inert label="Download desktop" className="x">Download desktop</Inert>
         </Shell>
       </StrictMode>,
     );
-    for (const name of ["Changelog", "Download"]) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
-    act(() => {
-      screen.getByRole("button", { name: "2" }).click();
-    });
+    for (const name of ["Changelog", "Download", "2"]) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("promo-card")).not.toBeInTheDocument();
     act(() => {
       screen.getByRole("button", { name: "Download desktop" }).click();
     });

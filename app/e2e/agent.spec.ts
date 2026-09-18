@@ -33,7 +33,6 @@ test.afterEach(async ({ request }) => {
 
 async function openVideoWithAgent(page: Page, url: string): Promise<void> {
   await page.goto(url);
-  await page.getByRole("button", { name: /Video generation/ }).click();
   await settled(page);
   const chip = page.getByTestId("agent-chip");
   await expect(chip).toHaveAttribute("aria-pressed", "false");
@@ -189,7 +188,6 @@ test.describe("the Agent chip (STORY_050)", () => {
     await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue(/^For the target video/);
     expect(((await (await request.get(`${STUB}/__stub/jobs`)).json()) as { jobs: unknown[] }).jobs).toEqual([]);
     await page.goto("/?agentScript=refusal");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await page.getByTestId("agent-chip").click();
     await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
     const refused = page.waitForResponse((r) => r.url().includes("/api/agent/runs") && r.request().method() === "POST");
@@ -339,7 +337,6 @@ test.describe("the Agent chip (STORY_050)", () => {
     test.slow();
     await request.patch("/api/settings", { data: { agentConfirm: "never", agentSkill: CHAIN } });
     await page.goto("/?agentScript=chain&script=done-after-1-poll");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await settled(page);
     await page.getByTestId("agent-chip").click();
     await expect(page.getByTestId("agent-chip")).toHaveAttribute("aria-label", "Agent on · Chain director");
@@ -359,7 +356,6 @@ test.describe("the Agent chip (STORY_050)", () => {
   test("Never + one bad segment: nothing is posted — Not sent, Segment 2 named (STORY_053)", async ({ page, request, stubApi }) => {
     await request.patch("/api/settings", { data: { agentConfirm: "never", agentSkill: CHAIN } });
     await page.goto("/?agentScript=chain-warn");
-    await page.getByRole("button", { name: /Video generation/ }).click();
     await settled(page);
     await page.getByTestId("agent-chip").click();
     await expect(page.getByTestId("agent-chip")).toHaveAttribute("aria-label", "Agent on · Chain director");
