@@ -4,7 +4,7 @@ description: Directs a whole thirst-trap video from one attached photo as a chai
 compatibility: Portable to any agent that can read local files and view the attached image; no tools, network access or runtime required. Written for MiniMax-H3 served locally (ComfyUI) through the MiniMax Local adapter, which sends a base-format segment unchanged and continues a clip from its last 1.6 seconds (a 39-frame overlap).
 metadata:
   author: kevinbrowncodes
-  version: "0.1"
+  version: "1.0"
   minimax-short-name: Chain director
   minimax-clip-seconds: "10"
   minimax-segments-default: "3"
@@ -13,7 +13,7 @@ metadata:
   minimax-text-encoder: qwen3vl_32b_minimax_h3_nvfp4_awq
   minimax-comfyui: "0.35.1"
   minimax-adapter: "1.5.0"
-  minimax-verified-on: "draft — not yet generated on the model (STORY_053 verifies)"
+  minimax-verified-on: "2026-09-17"
   minimax-source-guide: MiniMax Video Prompt Writing Guide (base, T2VA/I2VA/FL2VA/L2VA), references/base-en.md
 ---
 
@@ -85,7 +85,7 @@ Turn one attached image into one 10-second, single-shot MiniMax-H3 prompt. The i
 4. Write the prompt with the template under **Output**, then run the **Checklist**.
 5. Output only the prompt. No title, no commentary, no markdown.
 
-If the register is unfamiliar, read [references/example-i2va.md](references/example-i2va.md) (MiniMax's own image-to-video example, ~700 words) and [references/anchor-example.md](references/anchor-example.md) (a scene anchor that held its set on our box). The full format specification is [references/base-en.md](references/base-en.md).
+If the register is unfamiliar, read [references/example-i2va.md](references/example-i2va.md) (MiniMax's own image-to-video example, ~700 words) and [references/anchor-example.md](references/anchor-example.md) (a scene anchor that held its set on our box). The full format specification is [references/base-en.md](references/base-en.md). **A whole chain in this format that held on our box** — three segments from an office photo, 2026-09-17 — is [references/chain-example.md](references/chain-example.md): its anchor, its joins and its `ten-second` / `twelve-second` sentences are the shape to reproduce.
 
 ## Role
 

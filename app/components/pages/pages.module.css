@@ -972,10 +972,10 @@
 .skillSectionFoot a {
   color: inherit;
 }
+/* the meta line wraps rather than truncates: the verified date at its end is the part worth reading */
 .skillMeta {
   font-size: 12px;
+  line-height: 16px;
   color: var(--text_default_tertiary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
