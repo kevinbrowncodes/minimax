@@ -100,7 +100,7 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     await expect(page).toHaveURL(new RegExp(`/\\?queue=${third}$`));
     await expect(page.getByTestId("editing-banner")).toBeVisible();
     await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue("Edit me later");
-    await expect(page.getByText("video-creator")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add reference image" })).toBeVisible(); // video mode (STORY_059: no tag)
     await page.getByRole("textbox", { name: "Message" }).fill("Edited while waiting");
     const replaced = page.waitForResponse((r) => r.url().includes("/api/jobs") && r.request().method() === "POST");
     await page.getByRole("button", { name: "Send message" }).click();

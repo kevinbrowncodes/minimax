@@ -14,7 +14,7 @@ const OUT_DIR = process.env["TRIAL_OUT_DIR"] ?? "/work/spark/data/smoke";
 const STAMP = new Date().toISOString().replace(/[:.]/g, "-");
 
 async function tabAt(page: import("@playwright/test").Page, name: string): Promise<void> {
-  await page.goto("/plugins?tab=Skills");
+  await page.goto("/skills");
   const rows = page.getByTestId("director-row");
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(0).getByTestId("director-meta")).toContainText("verified 2026-09-16");

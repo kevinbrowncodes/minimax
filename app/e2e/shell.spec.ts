@@ -22,7 +22,7 @@ test.describe("shell (STORY_012)", () => {
     await expect(sidebar.getByRole("link", { name: "Assets" })).toHaveAttribute("aria-current", "page");
   });
 
-  test("the sidebar's rows open our renderings of the reference's pages, whose controls are inert (STORY_025)", async ({ page }, testInfo) => {
+  test("the sidebar's Skills row opens the Skills page and lights up there (STORY_025; STORY_059: Plugins became Skills, the inert pages are gone)", async ({ page }, testInfo) => {
     const narrow = testInfo.project.name === "narrow";
     const openDrawer = async () => {
       if (narrow) {
@@ -31,44 +31,33 @@ test.describe("shell (STORY_012)", () => {
       }
     };
     const sidebar = page.getByRole("navigation", { name: "Sidebar" });
-    // force: Playwright's actionability check treats aria-disabled as not enabled; the control does respond — that is the point.
-    // STORY_026: Plugins is the Management page; Scheduled is gone
-    const rows: readonly { row: string; url: RegExp; inert: string; testid: string }[] = [
-      { row: "Plugins", url: /\/plugins$/, inert: "Create agent", testid: "manage-page" },
-    ]; // CHORE_010: Connect mobile is gone
-    for (const { row, url, inert, testid } of rows) {
-      await page.goto("/");
-      await settled(page);
-      await openDrawer();
-      await sidebar.getByRole("link", { name: row }).click();
-      await expect(page).toHaveURL(url);
-      await expect(page.getByTestId(testid)).toBeVisible();
-      await settled(page); // the drawer slides shut on navigation at 390; a forced click through it would land on a row
-      if (row === "Plugins") await page.getByRole("tab", { name: /^Agents/ }).click(); // STORY_040: Plugins opens first; the inert editor is the Agents tab
-      const control = page.getByRole("button", { name: inert });
-      await expect(control).toHaveAttribute("aria-disabled", "true");
-      await control.click({ force: true });
-      await expect(page.getByRole("status").filter({ hasText: "Not part of MiniMax Local" }).first()).toBeVisible();
-      await expect(page).toHaveURL(url);
-      await openDrawer();
-      await expect(sidebar.getByRole("link", { name: row })).toHaveAttribute("aria-current", "page");
-    }
+    await page.goto("/");
+    await settled(page);
+    await openDrawer();
+    await expect(sidebar.getByRole("link", { name: "Plugins" })).toHaveCount(0);
+    await sidebar.getByRole("link", { name: "Skills" }).click();
+    await expect(page).toHaveURL(/\/skills$/);
+    await expect(page.getByTestId("skills-page")).toBeVisible();
+    await settled(page);
+    await openDrawer();
+    await expect(sidebar.getByRole("link", { name: "Skills" })).toHaveAttribute("aria-current", "page");
   });
 
-  test("the Agents guide's View now opens the Management page at /plugins; /plugins/manage redirects there; /max-hermes and /max-claw are gone and /scheduled is back (STORY_025, STORY_026, STORY_028, STORY_041)", async ({ page }, testInfo) => {
+  test("no Agents guide card; /plugins, /plugins?tab=Agents and /plugins/manage redirect to /skills; /max-hermes and /max-claw are gone and /scheduled is back (STORY_025, STORY_026, STORY_028, STORY_041, STORY_059)", async ({ page }, testInfo) => {
     await page.goto("/");
     await settled(page);
     if (testInfo.project.name === "narrow") {
       await page.getByRole("button", { name: "Expand sidebar" }).click();
       await settled(page);
     }
-    await page.getByRole("link", { name: "View now" }).click();
-    await expect(page).toHaveURL(/\/plugins\?tab=Agents$/); // the guide promises Agents, so it lands on that tab (STORY_040)
-    await expect(page.getByRole("heading", { name: "Management" })).toBeVisible();
-    await expect(page.getByRole("textbox", { name: "Name" })).toHaveValue("General");
-    await expect(page.getByRole("tab", { name: "Personal" })).toBeHidden(); // the marketplace is gone
-    await page.goto("/plugins/manage");
-    await expect(page).toHaveURL(/\/plugins$/);
+    await expect(page.getByTestId("agents-guide")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "View now" })).toHaveCount(0);
+    for (const path of ["/plugins", "/plugins?tab=Agents", "/plugins/manage"]) {
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/skills$/);
+    }
+    await expect(page.getByRole("heading", { level: 1, name: "Skills" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Management" })).toHaveCount(0);
     for (const path of ["/max-hermes", "/max-claw", "/connect-mobile"]) expect((await page.request.get(path)).status(), path).toBe(404); // /connect-mobile: CHORE_010; /scheduled is back (STORY_041)
     expect((await page.request.get("/scheduled")).status()).toBe(200);
     await page.goto("/");

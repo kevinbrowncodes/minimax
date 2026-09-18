@@ -9,7 +9,7 @@ export function GET(): Promise<Response> {
   return guarded(() => Promise.resolve(Response.json(readSettings())));
 }
 
-/** PATCH /api/settings { removeWatermark?, videoEnabled?, agentSkill?, agentConfirm?, agentDraws? } — Settings › General's switch (STORY_034), the video-creator plugin's switch (STORY_040), the Agent chip's skill (STORY_050), Confirm before generating (STORY_051), draws per prompt (STORY_055). */
+/** PATCH /api/settings { removeWatermark?, agentSkill?, agentConfirm?, agentDraws? } — Settings › General's switch (STORY_034), the Agent chip's skill (STORY_050), Confirm before generating (STORY_051), draws per prompt (STORY_055). STORY_059 retired videoEnabled. */
 export function PATCH(request: Request): Promise<Response> {
   return guarded(async () => {
     let body: unknown;
@@ -30,7 +30,7 @@ export function PATCH(request: Request): Promise<Response> {
       if (key === "agentSkill" && typeof value === "string") patch.agentSkill = value;
       else if (key === "agentConfirm" && (value === "always" || value === "never")) patch.agentConfirm = value;
       else if (key === "agentDraws" && isAgentDraws(value)) patch.agentDraws = value;
-      else if ((key === "removeWatermark" || key === "videoEnabled") && typeof value === "boolean") patch[key] = value;
+      else if (key === "removeWatermark" && typeof value === "boolean") patch.removeWatermark = value;
     }
     return Response.json(writeSettings(patch));
   });

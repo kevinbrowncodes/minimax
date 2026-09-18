@@ -1,13 +1,10 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SettingsContext } from "@/components/shell/SettingsContext";
-import { ShellStateProvider, useShell } from "@/components/shell/ShellContext";
-import { AGENT_SYSTEM_PROMPT } from "@/lib/reference-pages";
 import { BUILT_IN_SKILLS, type Skill } from "@/lib/skills";
-import { ManagePage } from "./ManagePage";
+import { SkillsPage } from "./SkillsPage";
 
 const push = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push }), usePathname: () => "/plugins" }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }), usePathname: () => "/skills" }));
 
 afterEach(() => {
   cleanup();
@@ -55,73 +52,21 @@ function fetchWith(options: { readonly reachable?: boolean; readonly skills?: Sk
   return { fetchImpl: vi.fn(impl), calls, skills };
 }
 
-/** The Shell's top bar, reduced to its slot: what a page puts there is what the bar shows. */
-function Bar() {
-  const { pageActions } = useShell();
-  return <div data-testid="bar">{pageActions}</div>;
-}
-const inShell = (page: React.ReactElement) => (
-  <ShellStateProvider scope="/x">
-    <Bar />
-    {page}
-  </ShellStateProvider>
-);
-
-describe("the pages behind the sidebar (STORY_025; STORY_026 removed the marketplace and Scheduled)", () => {
-  it("Plugins is the Management page (STORY_026): nothing in the bar, the four counted tabs (Plugins first since STORY_040), the three agents, and the read-only editor", async () => {
-    render(inShell(<ManagePage fetchImpl={fetchWith().fetchImpl} />));
-    expect(screen.getByTestId("bar")).toBeEmptyDOMElement();
-    expect(screen.getByRole("heading", { name: "Management" })).toBeInTheDocument();
-    const tabs = screen.getByRole("tablist", { name: "Management" });
+describe("the Skills page (STORY_059 — the Skills tab of STORY_040/054's Management page, lifted out; the Plugins, Apps and Agents tabs went)", () => {
+  it("is one page: the heading, the search, the two sections, no tabs, no plugin row", async () => {
+    render(<SkillsPage fetchImpl={fetchWith().fetchImpl} />);
+    expect(screen.getByRole("heading", { level: 1, name: "Skills" })).toBeInTheDocument();
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("plugin-row")).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "video-creator enabled" })).not.toBeInTheDocument();
     await waitFor(() => {
-      expect(within(tabs).getAllByRole("tab").map((t) => t.textContent.trim())).toEqual(["Plugins 1", "Skills 3", "Apps 0", "Agents 3"]); // Skills counts the two director folders and what is stored (the built-in) — STORY_054
+      expect(screen.getAllByTestId("director-row")).toHaveLength(2);
     });
-    expect(within(tabs).getByRole("tab", { name: "Plugins 1" })).toHaveAttribute("aria-selected", "true");
-    fireEvent.click(within(tabs).getByRole("tab", { name: "Agents 3" }));
-    expect(within(tabs).getByRole("tab", { name: "Agents 3" })).toHaveAttribute("aria-selected", "true");
-    for (const agent of ["General", "Coder", "Verifier", "Create agent"]) expect(screen.getByRole("button", { name: agent })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("General");
-    expect(screen.getByRole("textbox", { name: "Name" })).toHaveAttribute("readonly");
-    expect(screen.getByRole("textbox", { name: "System prompt" })).toHaveValue(AGENT_SYSTEM_PROMPT);
-    expect(screen.getByRole("button", { name: "Chat with it" })).toHaveAttribute("aria-disabled", "true");
-  });
-
-  it("Plugins: the video-creator row is described from the adapter's capabilities with its reachability and details; the switch flips the video setting (STORY_040)", async () => {
-    const update = vi.fn();
-    const { fetchImpl } = fetchWith();
-    const { rerender } = render(
-      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: true, agentConfirm: "always", agentDraws: 1 }, update }}>
-        <ManagePage fetchImpl={fetchImpl} />
-      </SettingsContext.Provider>,
-    );
-    const row = screen.getByTestId("plugin-row");
-    await waitFor(() => {
-      expect(row).toHaveTextContent("MiniMax-H3.0 on the Spark through the adapter · 768P · 4–15 s · ● reachable");
-    });
-    expect(within(row).getByText("video-creator")).toBeInTheDocument();
-    fireEvent.click(within(row).getByRole("button", { name: "Details" }));
-    const details = screen.getByTestId("plugin-details");
-    expect(details).toHaveTextContent("Ratios16:9 · 9:16");
-    expect(details).toHaveTextContent("Extension+4–14 s, sources up to 30 s");
-    const toggle = within(row).getByRole("switch", { name: "video-creator enabled" });
-    expect(toggle).toHaveAttribute("aria-checked", "true");
-    fireEvent.click(toggle);
-    expect(update).toHaveBeenCalledWith({ videoEnabled: false });
-    rerender(
-      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: false, agentConfirm: "always", agentDraws: 1 }, update }}>
-        <ManagePage fetchImpl={fetchImpl} />
-      </SettingsContext.Provider>,
-    );
-    expect(screen.getByRole("switch", { name: "video-creator enabled" })).toHaveAttribute("aria-checked", "false");
-    cleanup();
-    render(<ManagePage fetchImpl={fetchWith({ reachable: false }).fetchImpl} />);
-    await waitFor(() => {
-      expect(screen.getByTestId("plugin-row")).toHaveTextContent("○ not reachable");
-    });
+    expect(screen.getByTestId("templates")).toBeInTheDocument();
   });
 
   it("Skills: the director folders above the templates — the short name, the Folder badge, the meta line, Use → /?agent=; no Edit or Delete; the search runs over both sections and hides an empty one (STORY_054)", async () => {
-    render(<ManagePage initialTab="Skills" fetchImpl={fetchWith().fetchImpl} />);
+    render(<SkillsPage fetchImpl={fetchWith().fetchImpl} />);
     await waitFor(() => {
       expect(screen.getAllByTestId("director-row")).toHaveLength(2);
     });
@@ -154,17 +99,17 @@ describe("the pages behind the sidebar (STORY_025; STORY_026 removed the marketp
     expect(screen.queryByTestId("templates")).not.toBeInTheDocument();
     // no folders at all: the section says so, the templates stay
     cleanup();
-    render(<ManagePage initialTab="Skills" fetchImpl={fetchWith({ directors: [] }).fetchImpl} />);
+    render(<SkillsPage fetchImpl={fetchWith({ directors: [] }).fetchImpl} />);
     await waitFor(() => {
       expect(screen.getByTestId("director-skills")).toHaveTextContent("No director skills");
     });
     expect(screen.getAllByTestId("skill-row")).toHaveLength(1);
   });
 
-  it("Templates: the built-in listed and protected; search; Create posts; Edit patches; Delete confirms; Use opens the composer with the template; Apps says there are none (STORY_040; STORY_054's wording)", async () => {
+  it("Templates: the built-in listed and protected; search; Create posts; Edit patches; Delete confirms; Use opens the composer with the template (STORY_040; STORY_054's wording)", async () => {
     const { fetchImpl, calls } = fetchWith({ skills: [...BUILT_IN_SKILLS, { id: "loop", name: "Loop", description: "Seamless loops", template: "Loop: {{idea}}" }] });
     const confirmImpl = vi.fn(() => true);
-    render(<ManagePage initialTab="Skills" fetchImpl={fetchImpl} confirmImpl={confirmImpl} />);
+    render(<SkillsPage fetchImpl={fetchImpl} confirmImpl={confirmImpl} />);
     await waitFor(() => {
       expect(screen.getAllByTestId("skill-row")).toHaveLength(2);
     });
@@ -217,12 +162,10 @@ describe("the pages behind the sidebar (STORY_025; STORY_026 removed the marketp
     await waitFor(() => {
       expect(screen.getAllByTestId("skill-row")).toHaveLength(2);
     });
-    fireEvent.click(screen.getByRole("tab", { name: /^Apps/ }));
-    expect(screen.getByText("No apps — MiniMax Local has no app store.")).toBeInTheDocument();
   });
 
   it("opens the Create template form when told to (+ › Skills › Add template)", async () => {
-    render(<ManagePage initialTab="Skills" createSkill fetchImpl={fetchWith().fetchImpl} />);
+    render(<SkillsPage createTemplate fetchImpl={fetchWith().fetchImpl} />);
     expect(screen.getByRole("form", { name: "Create template" })).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getAllByTestId("skill-row")).toHaveLength(1);

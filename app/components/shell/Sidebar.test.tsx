@@ -13,12 +13,12 @@ describe("Sidebar", () => {
   it("renders the captured rows in order with More and Projects folded by default (2026-09-14); the rows lead to our pages (STORY_025)", () => {
     const { container } = render(<Sidebar pathname="/" recents={[]} />);
     const texts = [...container.querySelectorAll('[class*="rowLabel"]')].map((el) => el.textContent);
-    expect(texts).toEqual(["New task", "Search", "Plugins", "Scheduled", "Assets"]); // STORY_041: Scheduled is back (the queue); CHORE_010: no Connect mobile
+    expect(texts).toEqual(["New task", "Search", "Skills", "Scheduled", "Assets"]); // STORY_041: Scheduled is back (the queue); CHORE_010: no Connect mobile; STORY_059: Plugins is Skills
     expect(screen.getByRole("link", { name: "Scheduled" })).toHaveAttribute("href", "/scheduled");
     expect(screen.getByRole("link", { name: "New task" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("href", "/assets");
-    expect(screen.getByRole("link", { name: "Plugins" })).toHaveAttribute("href", "/plugins");
-    expect(screen.getByRole("link", { name: "View now" })).toHaveAttribute("href", "/plugins?tab=Agents"); // Management lives at /plugins (STORY_026); the guide promises Agents (STORY_040)
+    expect(screen.getByRole("link", { name: "Skills" })).toHaveAttribute("href", "/skills");
+    expect(screen.queryByRole("link", { name: "View now" })).not.toBeInTheDocument(); // STORY_059: the Agents guide card is gone
     const search = screen.getByText("Search").closest("[role=link]");
     expect(search).toHaveAttribute("aria-disabled", "true"); // Search without a handler stays inert
     expect(screen.queryByRole("button", { name: "More" })).not.toBeInTheDocument(); // STORY_028: no More section
@@ -27,7 +27,6 @@ describe("Sidebar", () => {
     expect(screen.getByText("No task history.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Owner" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Inbox/ })).toBeInTheDocument();
-    expect(screen.getByTestId("agents-guide")).toHaveTextContent("You can now find Agents in Plugins");
   });
 
   it("unfolded sections show their rows; the header reports the toggle (STORY_021)", () => {
@@ -329,14 +328,12 @@ describe("Sidebar", () => {
     expect(screen.queryByRole("button", { name: "Show more" })).not.toBeInTheDocument();
   });
 
-  it("the guide card dismisses; Search and Add new project open our dialogs; the Inbox opens its popover", () => {
-    const onDismissGuide = vi.fn();
+  it("no guide card (STORY_059); Search and Add new project open our dialogs; the Inbox opens its popover", () => {
     const onOpenSearch = vi.fn();
     const onOpenCreateProject = vi.fn();
     const prefs = { ...DEFAULT_SHELL_PREFS, folded: { ...DEFAULT_SHELL_PREFS.folded, projects: false } };
-    render(<Sidebar pathname="/" recents={[]} prefs={prefs} onDismissGuide={onDismissGuide} onOpenSearch={onOpenSearch} onOpenCreateProject={onOpenCreateProject} />);
-    screen.getByRole("button", { name: "Dismiss Agents guide" }).click();
-    expect(onDismissGuide).toHaveBeenCalledTimes(1);
+    render(<Sidebar pathname="/" recents={[]} prefs={prefs} onOpenSearch={onOpenSearch} onOpenCreateProject={onOpenCreateProject} />);
+    expect(screen.queryByTestId("agents-guide")).not.toBeInTheDocument();
     screen.getByRole("button", { name: "Search" }).click();
     expect(onOpenSearch).toHaveBeenCalledTimes(1);
     screen.getByRole("button", { name: "Add new project" }).click();
@@ -379,8 +376,8 @@ describe("Sidebar", () => {
     });
     expect(screen.getByRole("status")).toHaveTextContent("Not part of MiniMax Local");
     cleanup();
-    render(<Sidebar pathname="/plugins" recents={[]} />);
-    expect(screen.getByRole("link", { name: "Plugins" })).toHaveAttribute("aria-current", "page");
+    render(<Sidebar pathname="/skills" recents={[]} />);
+    expect(screen.getByRole("link", { name: "Skills" })).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("button", { name: "Download desktop" })).not.toBeInTheDocument(); // STORY_026
     cleanup();
     render(<Sidebar pathname="/scheduled" recents={[]} rail />);

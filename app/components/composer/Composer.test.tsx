@@ -45,9 +45,9 @@ async function renderReady(onJobs: (init: RequestInit | undefined) => Response =
 }
 
 describe("Composer", () => {
-  it("opens in video mode — the tag, the reference button — and Send follows the text (STORY_058: no chip to click, no × to leave by)", async () => {
+  it("opens in video mode — the reference button, no tag (STORY_059) — and Send follows the text (STORY_058: no chip to click, no × to leave by)", async () => {
     await renderReady();
-    expect(screen.getByText("video-creator")).toBeInTheDocument();
+    expect(screen.queryByText("video-creator")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add reference image" })).toBeInTheDocument();
     const send = screen.getByRole("button", { name: "Send message" });
     expect(send).toBeDisabled();
@@ -117,8 +117,7 @@ describe("Composer", () => {
   it("opens in video mode with the placeholder saying what to do and the tag without a way out (STORY_058)", () => {
     render(<Composer fetchImpl={fetchWith(() => json({}, 500))} />);
     expect(screen.getByRole("textbox", { name: "Message" })).toHaveAttribute("placeholder", "Describe the video — or attach a photo and turn Agent on");
-    expect(screen.getByText("video-creator")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Remove video-creator" })).not.toBeInTheDocument();
+    expect(screen.queryByText("video-creator")).not.toBeInTheDocument(); // STORY_059: the plugin's tag went with the plugin
     expect(screen.queryByRole("group", { name: "Modes" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("showcase")).not.toBeInTheDocument();
   });
@@ -300,35 +299,15 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
     fireEvent.click(await screen.findByRole("menuitem", { name: "Manage skills" }));
-    expect(push).toHaveBeenLastCalledWith("/plugins?tab=Skills");
+    expect(push).toHaveBeenLastCalledWith("/skills");
     fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
     fireEvent.click(await screen.findByRole("menuitem", { name: "Add template" }));
-    expect(push).toHaveBeenLastCalledWith("/plugins?tab=Skills&create=1");
+    expect(push).toHaveBeenLastCalledWith("/skills?create=1");
   });
 
-  it("+ › Skills lists the directors as radio rows: disabled with the reason while the plugin is off; picking one writes the setting and turns the chip on (STORY_054; STORY_058: video is the only mode)", async () => {
+  it("+ › Skills lists the directors as radio rows checked by the setting; picking one writes the setting and turns the chip on (STORY_054; STORY_059: no plugin to switch off)", async () => {
     const update = vi.fn();
-    const off = render(
-      <SettingsContext.Provider value={{ settings: { ...DEFAULT_SETTINGS, videoEnabled: false, agentSkill: "minimax-h3-director-thirst-trap-chain" }, update }}>
-        <Composer fetchImpl={fetchWith(() => json({}))} />
-      </SettingsContext.Provider>,
-    );
-    // the plugin off: the rows are there, checked by the setting, disabled with the reason
-    fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
-    const skillsMenu = screen.getByRole("menu", { name: "Skills" });
-    await waitFor(() => { expect(within(skillsMenu).getAllByRole("menuitemradio")).toHaveLength(2); });
-    const rows = within(skillsMenu).getAllByRole("menuitemradio");
-    expect(rows.map((r) => r.getAttribute("aria-checked"))).toEqual(["false", "true"]);
-    expect(rows[0]).toHaveAttribute("aria-disabled", "true");
-    expect(rows[0]).toHaveAttribute("title", "Video generation is off — turn on video-creator under Plugins");
-    fireEvent.click(rows[0] as HTMLElement);
-    expect(update).not.toHaveBeenCalled();
-    expect(screen.getByRole("menu", { name: "Add attachment" })).toBeInTheDocument(); // nothing happened, the menu stays
-    fireEvent.keyDown(window, { key: "Escape" });
-    off.unmount();
-    // the plugin on: a pick writes the setting, turns the chip on and closes the menu
     render(
       <SettingsContext.Provider value={{ settings: { ...DEFAULT_SETTINGS, agentSkill: "minimax-h3-director-thirst-trap-chain" }, update }}>
         <Composer fetchImpl={fetchWith(() => json({}))} />
@@ -365,30 +344,13 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     await waitFor(() => { expect(screen.getByTestId("agent-chip")).toHaveAttribute("aria-label", "Agent on · Thirst trap"); });
   });
 
-  it("starts with the template's text when told to, in video mode; with the plugin off (STORY_040) the box says so and Send is disabled (STORY_058)", () => {
+  it("starts with the template's text when told to, in video mode (STORY_040; STORY_058); the docked composer too", () => {
     render(<Composer fetchImpl={fetchWith(() => json({}))} initialText="Loop: {{idea}}" />);
     expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("Loop: {{idea}}");
-    expect(screen.getByText("video-creator")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add reference image" })).toBeInTheDocument();
     cleanup();
-    render(
-      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: false, agentConfirm: "always", agentDraws: 1 }, update: () => undefined }}>
-        <Composer fetchImpl={fetchWith(() => json({}))} />
-      </SettingsContext.Provider>,
-    );
-    expect(screen.getByRole("textbox", { name: "Message" })).toHaveAttribute("placeholder", "Video generation is off — turn on video-creator under Plugins");
-    expect(screen.queryByText("video-creator")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("agent-chip")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Reference" })).not.toBeInTheDocument();
-    fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "hello" } });
-    expect(screen.getByRole("button", { name: "Send message" })).toBeDisabled();
-    cleanup();
-    // the docked composer starts in video mode; with the plugin off it is text-only too (no video parameters)
-    render(
-      <SettingsContext.Provider value={{ settings: { removeWatermark: true, videoEnabled: false, agentConfirm: "always", agentDraws: 1 }, update: () => undefined }}>
-        <Composer fetchImpl={fetchWith(() => json({}))} variant="docked" />
-      </SettingsContext.Provider>,
-    );
-    expect(screen.queryByRole("button", { name: /^Video parameters:/ })).not.toBeInTheDocument();
+    render(<Composer fetchImpl={fetchWith(() => json({}))} variant="docked" />);
+    expect(screen.getByRole("textbox", { name: "Message" })).toHaveAttribute("placeholder", "Describe the video — or attach a photo and turn Agent on");
   });
 
   it("Edit of a queued request (STORY_041): starts in video mode with the request's words, project, time and images once capabilities arrive; Send posts replaces and returns to Scheduled; Cancel editing leads there too", async () => {
@@ -407,7 +369,7 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     expect(screen.getByTestId("editing-banner")).toHaveTextContent("Editing a queued job — Send replaces it, Cancel editing keeps it.");
     expect(screen.getByRole("link", { name: "Cancel editing" })).toHaveAttribute("href", "/scheduled");
     expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("Same boat, wider");
-    expect(screen.getByText("video-creator")).toBeInTheDocument(); // video mode from the start
+    expect(screen.getByRole("button", { name: "Add reference image" })).toBeInTheDocument(); // video mode from the start (STORY_059: no tag)
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Video parameters: 9:16 768P 8s" })).toBeInTheDocument(); // the request's parameters once capabilities arrived
     });
@@ -487,15 +449,12 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     expect(screen.queryByRole("menu", { name: "Add attachment" })).not.toBeInTheDocument();
   });
 
-  it("MiniMax-M3 opens its menu, every entry inert (kept for BACKLOG_006); Escape closes", () => {
+  it("no MiniMax-M3 pill and no cloud-agent menu (STORY_059): the right-hand pill shows only with the Agent chip on", () => {
     const fetchImpl = fetchWith(() => json({}, 500));
     render(<Composer fetchImpl={fetchImpl} />);
-    fireEvent.click(screen.getByRole("button", { name: "MiniMax-M3" }));
-    const agent = screen.getByRole("menu", { name: "Agent model" });
-    expect(agent).toHaveTextContent("MiniMax-M2.7 HighSpeed");
-    expect(screen.getByRole("switch", { name: "Thinking" })).toHaveAttribute("aria-disabled", "true");
-    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("button", { name: "MiniMax-M3" })).not.toBeInTheDocument();
     expect(screen.queryByRole("menu", { name: "Agent model" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "Thinking" })).not.toBeInTheDocument();
   });
 
   it("no mode chips and no Showcase under the card (STORY_026 removed the other modes; STORY_058 the last chip and the scenes)", async () => {

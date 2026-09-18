@@ -360,9 +360,6 @@ function ShellFrame({ children, confirmImpl }: ShellProps) {
           onToggleSection={(section: Section) => {
             dispatchPrefs({ type: "toggle-section", section });
           }}
-          onDismissGuide={() => {
-            dispatchPrefs({ type: "dismiss-guide" });
-          }}
           onOpenSettings={() => {
             setSettingsOpen(true);
           }}

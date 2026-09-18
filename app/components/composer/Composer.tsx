@@ -30,7 +30,6 @@ import { IconProject } from "@/components/shell/icons";
 import styles from "./composer.module.css";
 
 const PLACEHOLDER = "Describe the video — or attach a photo and turn Agent on"; // STORY_058: what to do, not the reference's slash-command hint
-const OFF_PLACEHOLDER = "Video generation is off — turn on video-creator under Plugins"; // STORY_040's text-only workstation, said plainly
 const EXTEND_PLACEHOLDER = "Describe what happens next…";
 const FIXED_NOTE = "fixed by the video being extended";
 
@@ -75,10 +74,8 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const textarea = useRef<HTMLTextAreaElement>(null);
   const { projects, openCreate } = useProjects();
   const { notify } = useShell();
-  // STORY_040: the video-creator plugin's switch — off is a text-only workstation: no mode chip, no video controls
   const { settings, update: updateSettings } = useSettings();
   const narrow = useNarrow();
-  const videoEnabled = settings.videoEnabled;
   const [state, dispatch] = useReducer(reduceComposer, { docked, initialProjectId, initialText, initialRequest, initialAgentSkill }, (init) => {
     // STORY_041: an Edit starts with the request's words, project and run-at; its parameters and images follow once capabilities arrive.
     // STORY_058: every composer opens in video mode (initialComposer), the docked one and an Edit included
@@ -367,7 +364,6 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
 
   const send = async (): Promise<void> => {
     if (!canSend(state)) return;
-    if (!video) return; // STORY_040's plugin switch off: the box says so and Send is disabled
     if (state.agent.on) {
       await runAgent();
       return;
@@ -419,7 +415,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
     }
   };
 
-  const video = state.mode === "video" && videoEnabled;
+  const video = state.mode === "video"; // STORY_058/059: the one mode — always true; kept as the name the controls read
   const caps = state.capabilities;
   const extending = state.extend;
   // STORY_044: two or more "[0:00-" scripts in the text make a chain; the strip and Send all follow from the text alone
@@ -499,12 +495,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
           </div>
         ) : null}
         <div className={styles.editorRow}>
-          {video && !docked ? (
-            <span className={styles.tag}>
-              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="3" width="8" height="8" rx="2" fill="currentColor" /><path d="M9 6.5 13 4.5v5L9 7.5z" fill="currentColor" /></svg>
-              video-creator
-            </span>
-          ) : null}
+          {/* STORY_059: the reference's video-creator plugin tag went with the plugin — the line starts at the box */}
           {project && !docked ? (
             <span className={cx(styles.tag, styles.projectTag)} data-testid="project-chip">
               <IconProject />
@@ -516,7 +507,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
             ref={textarea}
             className={styles.editor}
             aria-label="Message"
-            placeholder={extending ? EXTEND_PLACEHOLDER : video || docked ? PLACEHOLDER : OFF_PLACEHOLDER}
+            placeholder={extending ? EXTEND_PLACEHOLDER : PLACEHOLDER}
             value={state.text}
             rows={2}
             readOnly={agentRunning}
@@ -545,11 +536,11 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 onEnv={() => { setEnvOpen(true); }}
                 skills={skills}
                 onUseSkill={(skill) => { dispatch({ type: "text", text: applySkill(skill.template, state.text) }); textarea.current?.focus(); }}
-                onManageSkills={(create) => { router.push(create ? "/plugins?tab=Skills&create=1" : "/plugins?tab=Skills"); }}
+                onManageSkills={(create) => { router.push(create ? "/skills?create=1" : "/skills"); }}
                 directors={state.agent.skills}
                 agentSkillId={state.agent.skillId}
                 onPickDirector={(id) => { dispatch({ type: "agent-skill", skillId: id }); dispatch({ type: "agent-toggle", on: true }); updateSettings({ agentSkill: id }); }}
-                directorsDisabledReason={!video ? OFF_PLACEHOLDER : agentDisabledReason}
+                directorsDisabledReason={agentDisabledReason}
               />
             ) : null}
           </span>
@@ -651,10 +642,13 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
             </>
           ) : null}
           <div className={styles.barRight}>
-            <span style={{ position: "relative" }} data-popover="agent">
-              <button type="button" className={styles.inertModel} aria-label={agentOn && agentModel ? `Agent model: ${agentModel.label}` : "MiniMax-M3"} aria-haspopup="menu" aria-expanded={popover === "agent"} disabled={agentRunning} onClick={() => { setPopover(popover === "agent" ? undefined : "agent"); }}>{agentOn && agentModel ? agentModel.label : "MiniMax-M3"} <span aria-hidden="true">⌄</span></button>
-              {popover === "agent" ? <AgentModelMenu onClose={() => { setPopover(undefined); }} {...(agentOn && agentModel ? { model: agentModel } : {})} /> : null}
-            </span>
+            {/* STORY_059: the pill names the director's model while the chip is on (STORY_050); the reference's cloud-agent pill is gone */}
+            {agentOn && agentModel ? (
+              <span style={{ position: "relative" }} data-popover="agent">
+                <button type="button" className={styles.inertModel} aria-label={`Agent model: ${agentModel.label}`} aria-haspopup="menu" aria-expanded={popover === "agent"} disabled={agentRunning} onClick={() => { setPopover(popover === "agent" ? undefined : "agent"); }}>{agentModel.label} <span aria-hidden="true">⌄</span></button>
+                {popover === "agent" ? <AgentModelMenu onClose={() => { setPopover(undefined); }} model={agentModel} /> : null}
+              </span>
+            ) : null}
             {video && !docked && !extending ? (
               // STORY_041: Run at… — hold the request in the queue until a time; set, it reads "Not before …" with a ×
               <span className={styles.runAtWrap} data-popover="run-at">
@@ -688,7 +682,7 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" /></svg>
               </button>
             ) : (
-              <button type="button" className={cx(styles.send, plan !== undefined && styles.sendAll)} aria-label={plan === undefined ? (draws > 1 ? `Send message, ${String(draws)} draws` : "Send message") : "Send all"} disabled={!video || !canSend(state) || (plan !== undefined && !plan.fits)} onClick={() => void send()}>
+              <button type="button" className={cx(styles.send, plan !== undefined && styles.sendAll)} aria-label={plan === undefined ? (draws > 1 ? `Send message, ${String(draws)} draws` : "Send message") : "Send all"} disabled={!canSend(state) || (plan !== undefined && !plan.fits)} onClick={() => void send()}>
                 {plan === undefined ? null : "Send all"}
                 {plan === undefined && draws > 1 ? <span className={styles.sendCount} aria-hidden="true">×{draws}</span> : null}
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>

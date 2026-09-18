@@ -374,7 +374,7 @@ test.describe("the Agent chip (STORY_050)", () => {
   // STORY_054 — The Skills tab
   test("Management › Skills lists the two directors with their meta lines; Use opens the composer with the chip on; + › Skills shows it checked and picks the other (STORY_054)", async ({ page, request }, testInfo) => {
     const narrow = testInfo.project.name === "narrow";
-    await page.goto("/plugins?tab=Skills");
+    await page.goto("/skills");
     await settled(page);
     const rows = page.getByTestId("director-row");
     await expect(rows).toHaveCount(2);
@@ -386,8 +386,7 @@ test.describe("the Agent chip (STORY_050)", () => {
     await expect(rows.nth(1).getByTestId("director-meta")).toContainText("ComfyUI 0.35.1");
     await expect(rows.nth(0).getByRole("button", { name: /Edit|Delete/ })).toHaveCount(0);
     await expect(page.getByTestId("templates")).toContainText("Short-to-script");
-    const templates = await page.getByTestId("skill-row").count(); // never a fixed number: the tab counts directors + whatever templates are stored
-    await expect(page.getByRole("tab", { name: /^Skills/ })).toHaveText(new RegExp(`Skills\\s*${String(2 + templates)}$`));
+    await expect(page.getByRole("heading", { level: 1, name: "Skills" })).toBeVisible(); // STORY_059: one page, no tabs and no counts
     // Use on the chain director: the home composer in video mode, the chip on with it, the setting written
     const saved = page.waitForResponse((r) => r.url().includes("/api/settings") && r.request().method() === "PATCH");
     await rows.nth(1).getByRole("button", { name: "Use Chain director" }).click();
@@ -412,7 +411,7 @@ test.describe("the Agent chip (STORY_050)", () => {
     await expect(chip).toHaveAttribute("aria-label", "Agent on · Thirst trap");
     await expect(page.getByRole("menu", { name: "Add attachment" })).toBeHidden();
     // the search on the tab runs over both sections
-    await page.goto("/plugins?tab=Skills");
+    await page.goto("/skills");
     await settled(page);
     await page.getByRole("searchbox", { name: "Search skills" }).fill("Chain director"); // the first director's description mentions chains too
     await expect(page.getByTestId("director-row")).toHaveCount(1);

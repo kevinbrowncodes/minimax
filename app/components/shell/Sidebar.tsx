@@ -16,7 +16,6 @@ import {
   IconAvatar,
   IconBell,
   IconChevronDown,
-  IconClose,
   IconClock,
   IconCollapse,
   IconCopy,
@@ -25,11 +24,11 @@ import {
   IconMore,
   IconMove,
   IconPin,
-  IconPlugins,
   IconPlus, IconPlusCircle,
   IconProject,
   IconRename,
   IconSearch,
+  IconSkill,
   IconTrash,
 } from "./icons";
 
@@ -45,7 +44,6 @@ export interface SidebarProps {
   readonly onCollapse?: () => void;
   readonly onExpand?: () => void;
   readonly onToggleSection?: (section: Section) => void;
-  readonly onDismissGuide?: () => void;
   readonly onOpenSettings?: () => void;
   readonly onOpenSearch?: () => void;
   /** STORY_031: opens the Create project dialog; the callback receives the project it makes (Move / Add to project › Add new project). */
@@ -333,7 +331,7 @@ function ProjectRow({ project, tasks, active, expanded, onToggle, onNavigate, on
   );
 }
 
-export function Sidebar({ pathname, recents, agentRuns = [], prefs = DEFAULT_SHELL_PREFS, rail = false, onNavigate, onCollapse, onExpand, onToggleSection, onDismissGuide, onOpenSettings, onOpenSearch, onOpenCreateProject, onDeleteRecent, onRenameRecent, onPinRecent, onCopyRecentId, onArchiveRecent, projects = [], onRenameProject, onPinProject, onDeleteProject, onNewTask, onMoveRecent, inboxReadAt, onInboxReadAll, onOpenInboxEvent, onInboxOpen }: SidebarProps) {
+export function Sidebar({ pathname, recents, agentRuns = [], prefs = DEFAULT_SHELL_PREFS, rail = false, onNavigate, onCollapse, onExpand, onToggleSection, onOpenSettings, onOpenSearch, onOpenCreateProject, onDeleteRecent, onRenameRecent, onPinRecent, onCopyRecentId, onArchiveRecent, projects = [], onRenameProject, onPinProject, onDeleteProject, onNewTask, onMoveRecent, inboxReadAt, onInboxReadAll, onOpenInboxEvent, onInboxOpen }: SidebarProps) {
   const active = activeRow(pathname);
   const [showAll, setShowAll] = useState(false);
   // STORY_031: which project rows are expanded to their tasks (a click on the row toggles; not remembered)
@@ -351,7 +349,7 @@ export function Sidebar({ pathname, recents, agentRuns = [], prefs = DEFAULT_SHE
         <button type="button" className={styles.railLogo} aria-label="Expand sidebar" title="Expand sidebar" onClick={onExpand}><IconLogo /></button>
         {pill("/", "new-task", <IconPlusCircle />, "New task")}
         <Inert label="Search" className={styles.railPill} align="start"><IconSearch /></Inert>
-        {pill("/plugins", "plugins", <IconPlugins />, "Plugins")}
+        {pill("/skills", "skills", <IconSkill />, "Skills")}
         {pill("/scheduled", "scheduled", <IconClock />, "Scheduled")}
         {pill("/assets", "assets", <IconFolder />, "Assets")}
         <div className={styles.spacer} />
@@ -408,8 +406,8 @@ export function Sidebar({ pathname, recents, agentRuns = [], prefs = DEFAULT_SHE
       </div>
       {link("/", "new-task", <IconPlusCircle />, "New task")}
       {onOpenSearch ? <ActionRow icon={<IconSearch />} label="Search" onClick={onOpenSearch} /> : <InertRow icon={<IconSearch />} label="Search" />}
-      {/* STORY_025: the rows lead to our renderings of the reference's pages; STORY_026 removed Scheduled and the marketplace (Plugins is Management) */}
-      {link("/plugins", "plugins", <IconPlugins />, "Plugins")}
+      {/* STORY_025: the rows lead to our renderings of the reference's pages; STORY_026 removed the marketplace; STORY_059 made Plugins (Management) the Skills page */}
+      {link("/skills", "skills", <IconSkill />, "Skills")}
       {link("/scheduled", "scheduled", <IconClock />, "Scheduled")}
       {link("/assets", "assets", <IconFolder />, "Assets")}
 
@@ -445,19 +443,6 @@ export function Sidebar({ pathname, recents, agentRuns = [], prefs = DEFAULT_SHE
           </>
         )}
       </div>
-      {prefs.guideDismissed ? null : (
-        <div className={styles.guide} data-testid="agents-guide">
-          <button type="button" className={styles.guideClose} aria-label="Dismiss Agents guide" onClick={onDismissGuide}><IconClose /></button>
-          <p className={styles.guideText}>You can now find Agents in Plugins</p>
-          <Link href="/plugins?tab=Agents" className={styles.guideLink} onClick={onNavigate}>View now</Link>
-          <div className={styles.guideArt} aria-hidden="true">
-            <span className={styles.guideArtCard}>
-              <span className={styles.guideArtTitle}>Manage</span>
-              <span className={styles.guideArtRow}><i /><i /><i /><i /><b>Agents</b></span>
-            </span>
-          </div>
-        </div>
-      )}
       <div className={styles.spacer} />
       <div className={styles.footer}>
         <UserMenu onOpenSettings={onOpenSettings ?? (() => undefined)} />

@@ -337,7 +337,7 @@ export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, chainAft
         <section className={styles.thread} aria-label="Task" ref={threadRef} onScroll={closeCardMenu}>
           <div className={styles.column}>
             <div className={styles.bubble} data-testid="user-message">
-              <span className={styles.mention}>@video-creator</span> {entry.prompt}
+              {entry.prompt}
               {entry.referenceImages > 0 ? <div className={styles.refs}>{String(entry.referenceImages)} reference image{entry.referenceImages > 1 ? "s" : ""} attached</div> : null}
               {entry.continuesFrom ? (
                 <span className={styles.continues} data-testid="continues">

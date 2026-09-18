@@ -26,7 +26,7 @@ export type TopBar = { readonly kind: "home" } | { readonly kind: "assets" } | {
 
 /** The pages behind the sidebar (STORY_025): each is a route of ours rendering the reference's page, inert. */
 export const REFERENCE_PAGES = {
-  "/plugins": "plugins",
+  "/skills": "skills", // STORY_059: the Management page (Plugins) became Skills
   "/scheduled": "scheduled", // STORY_041: back, with our meaning (the queue)
 } as const;
 export type ReferencePage = (typeof REFERENCE_PAGES)[keyof typeof REFERENCE_PAGES];
@@ -55,7 +55,7 @@ export function isUnread(entry: RecentEntry): boolean {
   return Date.parse(entry.openedAt) < Date.parse(entry.finishedAt);
 }
 
-export type ActiveRow = "new-task" | "assets" | "plugins" | "scheduled" | `task:${string}` | `project:${string}`;
+export type ActiveRow = "new-task" | "assets" | "skills" | "scheduled" | `task:${string}` | `project:${string}`;
 
 export function activeRow(pathname: string): ActiveRow | undefined {
   if (pathname === "/") return "new-task";

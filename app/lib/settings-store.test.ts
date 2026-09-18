@@ -16,14 +16,13 @@ afterEach(() => {
 
 describe("the server-wide settings (STORY_034)", () => {
   it("default to clean downloads, live beside the history file, round-trip a write, and survive garbage", () => {
-    expect(DEFAULT_SETTINGS).toEqual({ removeWatermark: true, videoEnabled: true, agentConfirm: "always", agentDraws: 1 }); // videoEnabled: STORY_040
+    expect(DEFAULT_SETTINGS).toEqual({ removeWatermark: true, agentConfirm: "always", agentDraws: 1 }); // STORY_059 retired STORY_040's videoEnabled
     expect(settingsFile()).toBe(path.join(dir, "settings.json"));
     expect(readSettings()).toEqual(DEFAULT_SETTINGS);
-    expect(writeSettings({ removeWatermark: false })).toEqual({ removeWatermark: false, videoEnabled: true, agentConfirm: "always", agentDraws: 1 });
-    expect(readSettings()).toEqual({ removeWatermark: false, videoEnabled: true, agentConfirm: "always", agentDraws: 1 });
-    expect(JSON.parse(readFileSync(settingsFile(), "utf8"))).toEqual({ removeWatermark: false, videoEnabled: true, agentConfirm: "always", agentDraws: 1 });
-    expect(writeSettings({ videoEnabled: false })).toEqual({ removeWatermark: false, videoEnabled: false, agentConfirm: "always", agentDraws: 1 });
-    expect(parseSettings('{"videoEnabled":false}')).toEqual({ removeWatermark: true, videoEnabled: false, agentConfirm: "always", agentDraws: 1 });
+    expect(writeSettings({ removeWatermark: false })).toEqual({ removeWatermark: false, agentConfirm: "always", agentDraws: 1 });
+    expect(readSettings()).toEqual({ removeWatermark: false, agentConfirm: "always", agentDraws: 1 });
+    expect(JSON.parse(readFileSync(settingsFile(), "utf8"))).toEqual({ removeWatermark: false, agentConfirm: "always", agentDraws: 1 });
+    expect(parseSettings('{"videoEnabled":false}')).toEqual(DEFAULT_SETTINGS); // an old file with STORY_040's key is read without it (STORY_059)
     writeFileSync(settingsFile(), "not json");
     expect(readSettings()).toEqual(DEFAULT_SETTINGS);
     expect(parseSettings('{"removeWatermark":"yes"}')).toEqual(DEFAULT_SETTINGS);

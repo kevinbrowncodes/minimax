@@ -6,7 +6,6 @@ test.describe("composer and video mode (STORY_013)", () => {
   test("video parameters and the model menu reflect the Spark's capabilities", async ({ page }, testInfo) => {
     await page.goto("/");
     await settled(page);
-    await expect(page.getByText("video-creator")).toBeVisible();
     const params = page.getByRole("button", { name: /^Video parameters:/ });
     await expect(params).toHaveAccessibleName("Video parameters: 16:9 768P 5s");
     await params.click();
@@ -58,11 +57,11 @@ test.describe("composer and video mode (STORY_013)", () => {
     expect(((await status.json()) as { status: string }).status).toBe("done");
   });
 
-  test("the home opens in video mode: the tag without a way out, the reference button, the placeholder saying what to do, nothing under the card, no card in the corner (STORY_058)", async ({ page }) => {
+  test("the home opens in video mode: the reference button, the placeholder saying what to do, nothing under the card, no card in the corner (STORY_058); no plugin tag, no cloud pill (STORY_059)", async ({ page }) => {
     await page.goto("/");
     await settled(page);
-    await expect(page.getByText("video-creator", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Remove video-creator" })).toHaveCount(0);
+    await expect(page.getByText("video-creator", { exact: true })).toHaveCount(0); // STORY_059: the plugin's tag went with the plugin
+    await expect(page.getByRole("button", { name: "MiniMax-M3" })).toHaveCount(0); // and the reference's cloud-agent pill
     await expect(page.getByRole("button", { name: "Add reference image" })).toBeVisible();
     await expect(page.getByRole("textbox", { name: "Message" })).toHaveAttribute("placeholder", "Describe the video — or attach a photo and turn Agent on");
     await expect(page.getByRole("group", { name: "Modes" })).toHaveCount(0);

@@ -11,8 +11,9 @@ describe("topBarFor", () => {
     expect(topBarFor("/task/unknown", recents)).toEqual({ kind: "task", title: "Unnamed Session" });
     expect(topBarFor("/elsewhere", recents)).toEqual({ kind: "other" });
   });
-  it("names the pages behind the sidebar (STORY_025; Plugins is the Management page since STORY_026)", () => {
-    expect(topBarFor("/plugins", recents)).toEqual({ kind: "page", page: "plugins" });
+  it("names the pages behind the sidebar (STORY_025; the Management page became Skills in STORY_059)", () => {
+    expect(topBarFor("/skills", recents)).toEqual({ kind: "page", page: "skills" });
+    expect(topBarFor("/plugins", recents)).toEqual({ kind: "other" }); // it redirects to /skills
     expect(topBarFor("/scheduled", recents)).toEqual({ kind: "page", page: "scheduled" }); // STORY_026 removed it; STORY_041 brought it back as the queue
     expect(topBarFor("/connect-mobile", recents)).toEqual({ kind: "other" }); // CHORE_010 removed Connect mobile
     for (const path of ["/max-hermes", "/max-claw"]) expect(topBarFor(path, recents)).toEqual({ kind: "other" }); // STORY_028
@@ -25,8 +26,9 @@ describe("activeRow and isUnread", () => {
     expect(activeRow("/assets")).toBe("assets");
     expect(activeRow("/task/j%201")).toBe("task:j 1");
     expect(activeRow("/nope")).toBeUndefined();
-    // STORY_025: the pages behind the sidebar light their row; Manage lights Plugins
-    expect(activeRow("/plugins")).toBe("plugins");
+    // STORY_025: the pages behind the sidebar light their row; STORY_059: Skills
+    expect(activeRow("/skills")).toBe("skills");
+    expect(activeRow("/plugins")).toBeUndefined();
     expect(activeRow("/scheduled")).toBe("scheduled"); // STORY_041
     expect(activeRow("/connect-mobile")).toBeUndefined(); // CHORE_010
     for (const path of ["/max-hermes", "/max-claw"]) expect(activeRow(path)).toBeUndefined(); // STORY_028

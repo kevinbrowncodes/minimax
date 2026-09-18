@@ -64,7 +64,8 @@ describe("the Agent chip", () => {
     renderAgent();
     await waitFor(() => { expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled(); });
     expect(chip()).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "MiniMax-M3" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "MiniMax-M3" })).not.toBeInTheDocument(); // STORY_059: no pill while the chip is off
+    expect(screen.queryByRole("button", { name: /^Agent model:/ })).not.toBeInTheDocument();
     fireEvent.click(chip());
     await waitFor(() => { expect(chip()).toHaveAttribute("aria-label", "Agent on · Thirst trap"); });
     expect(screen.getByRole("button", { name: "Agent model: Gemini 3.8 Flash" })).toBeInTheDocument();
