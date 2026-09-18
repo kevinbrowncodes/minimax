@@ -3,11 +3,12 @@ import { settled } from "./fixtures/settle";
 
 /**
  * Management (STORY_040): the video-creator plugin described from the stub's capabilities, its switch making a text-only
- * workstation and back; a skill created on the Skills tab, listed under + › Skills, and Use'd into the composer.
- * The settings and the skill are restored at the end.
+ * workstation and back; a template created on the Skills tab (STORY_054's wording — the tab's snippets are Templates,
+ * under the director skills), listed under + › Skills › Templates, and Use'd into the composer. The settings and the
+ * template are restored at the end.
  */
 test.describe("Management (STORY_040)", () => {
-  test("the plugin row, its switch off → no Video generation → on again; a created skill is listed under + › Skills and Use fills the composer", async ({ page, request }, testInfo) => {
+  test("the plugin row, its switch off → no Video generation → on again; a created template is listed under + › Skills › Templates and Use fills the composer", async ({ page, request }, testInfo) => {
     const narrow = testInfo.project.name === "narrow";
     await request.patch("/api/settings", { data: { videoEnabled: true } });
     await page.goto("/plugins");
@@ -34,16 +35,16 @@ test.describe("Management (STORY_040)", () => {
     await page.goto("/");
     await settled(page);
     await expect(page.getByRole("button", { name: /Video generation/ })).toBeVisible();
-    // Skills: create one, find it under + › Skills, Use it
+    // Templates (STORY_054's wording): create one, find it under + › Skills › Templates, Use it
     const tag = String(Date.now()).slice(-6);
     await page.goto("/plugins?tab=Skills&create=1");
     await settled(page);
-    const form = page.getByRole("form", { name: "Create skill" });
-    await form.getByRole("textbox", { name: "Skill name" }).fill(`Slow push-in ${tag}`);
-    await form.getByRole("textbox", { name: "Skill description" }).fill("A slow dolly toward the subject");
-    await form.getByRole("textbox", { name: "Skill template" }).fill(`Slow dolly toward {{idea}}, ${tag}`);
+    const form = page.getByRole("form", { name: "Create template" });
+    await form.getByRole("textbox", { name: "Template name" }).fill(`Slow push-in ${tag}`);
+    await form.getByRole("textbox", { name: "Template description" }).fill("A slow dolly toward the subject");
+    await form.getByRole("textbox", { name: "Template text" }).fill(`Slow dolly toward {{idea}}, ${tag}`);
     const created = page.waitForResponse((r) => r.url().endsWith("/api/skills") && r.request().method() === "POST");
-    await form.getByRole("button", { name: "Create skill" }).click();
+    await form.getByRole("button", { name: "Create template" }).click();
     expect((await created).status()).toBe(201);
     const skillRow = page.getByTestId("skill-row").filter({ hasText: `Slow push-in ${tag}` });
     await expect(skillRow).toBeVisible();
@@ -53,7 +54,8 @@ test.describe("Management (STORY_040)", () => {
     await page.getByRole("textbox", { name: "Message" }).fill("a paper boat");
     await page.getByRole("button", { name: "Add attachment" }).click();
     await page.getByRole("menuitem", { name: "Skills" }).click();
-    await page.getByRole("menu", { name: "Skills" }).getByRole("menuitem", { name: `Slow push-in ${tag}` }).click();
+    await page.getByRole("menu", { name: "Skills" }).getByRole("menuitem", { name: "Templates" }).click();
+    await page.getByRole("menu", { name: "Templates" }).getByRole("menuitem", { name: `Slow push-in ${tag}` }).click();
     await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue(`Slow dolly toward a paper boat, ${tag}`);
     // Use from the tab lands on the home composer with the template (the slot left for the idea)
     await page.goto("/plugins?tab=Skills");
@@ -62,7 +64,7 @@ test.describe("Management (STORY_040)", () => {
     await expect(page).toHaveURL(/\/\?skill=/);
     await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue(`Slow dolly toward {{idea}}, ${tag}`);
     if (narrow) await expect(page.getByTestId("manage-page")).toHaveCount(0);
-    // clean up: the skill goes; the built-in cannot
+    // clean up: the template goes; the built-in cannot
     const skills = (await (await request.get("/api/skills")).json()) as { skills: { id: string; name: string }[] };
     const mine = skills.skills.find((s) => s.name === `Slow push-in ${tag}`);
     expect(mine).toBeDefined();

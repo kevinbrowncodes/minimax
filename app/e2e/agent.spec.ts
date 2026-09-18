@@ -3,7 +3,8 @@
  * At both widths. A reply reviewed then sent (the job waited to its terminal status); a refusal with no job and one
  * Inbox row that reopens the composer; Stop; findings as a warning that never blocks. STORY_051: straight through.
  * STORY_052: instructions. STORY_053: the chain director — a chain reply reviewed and sent all; straight through, all
- * clean → three segments with no click; one bad segment → nothing posted.
+ * clean → three segments with no click; one bad segment → nothing posted. STORY_054: the Skills tab's director rows,
+ * Use → the chip on, and + › Skills picking the director.
  */
 import type { APIRequestContext, Page } from "@playwright/test";
 import { expect, test } from "./fixtures/test";
@@ -371,5 +372,56 @@ test.describe("the Agent chip (STORY_050)", () => {
     await expect(page.getByRole("button", { name: "Send all" })).toBeEnabled();
     expect(((await (await request.get(`${STUB}/__stub/jobs`)).json()) as { jobs: unknown[] }).jobs).toEqual([]);
     expect(await stubApi.openJobs()).toEqual([]);
+  });
+
+  // STORY_054 — The Skills tab
+  test("Management › Skills lists the two directors with their meta lines; Use opens the composer with the chip on; + › Skills shows it checked and picks the other (STORY_054)", async ({ page, request }, testInfo) => {
+    const narrow = testInfo.project.name === "narrow";
+    await page.goto("/plugins?tab=Skills");
+    await settled(page);
+    const rows = page.getByTestId("director-row");
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText("Thirst trap");
+    await expect(rows.nth(0)).toContainText("Folder");
+    await expect(rows.nth(0).getByTestId("director-meta")).toContainText("verified 2026-09-16");
+    await expect(rows.nth(0).getByTestId("director-meta")).toContainText("minimax_h3_fl2va_int8_convrot");
+    await expect(rows.nth(1)).toContainText("Chain director");
+    await expect(rows.nth(1).getByTestId("director-meta")).toContainText("ComfyUI 0.35.1");
+    await expect(rows.nth(0).getByRole("button", { name: /Edit|Delete/ })).toHaveCount(0);
+    await expect(page.getByTestId("templates")).toContainText("Short-to-script");
+    const templates = await page.getByTestId("skill-row").count(); // never a fixed number: the tab counts directors + whatever templates are stored
+    await expect(page.getByRole("tab", { name: /^Skills/ })).toHaveText(new RegExp(`Skills\\s*${String(2 + templates)}$`));
+    // Use on the chain director: the home composer in video mode, the chip on with it, the setting written
+    const saved = page.waitForResponse((r) => r.url().includes("/api/settings") && r.request().method() === "PATCH");
+    await rows.nth(1).getByRole("button", { name: "Use Chain director" }).click();
+    await expect(page).toHaveURL(/\/\?agent=minimax-h3-director-thirst-trap-chain$/);
+    expect(((await (await saved).json()) as { agentSkill: string }).agentSkill).toBe(CHAIN);
+    const chip = page.getByTestId("agent-chip");
+    await expect(chip).toHaveAttribute("aria-pressed", "true");
+    await expect(chip).toHaveAttribute("aria-label", "Agent on · Chain director");
+    if (narrow) await expect(page.getByTestId("composer")).toBeVisible();
+    // + › Skills: the two directors as radio rows, the chain director checked; picking Thirst trap changes the chip and the setting
+    await page.getByRole("button", { name: "Add attachment" }).click();
+    await page.getByRole("menuitem", { name: "Skills" }).click();
+    const menu = page.getByRole("menu", { name: "Skills" });
+    const radios = menu.getByRole("menuitemradio");
+    await expect(radios).toHaveText([/Thirst trap/, /Chain director/]);
+    await expect(radios.nth(1)).toHaveAttribute("aria-checked", "true");
+    await expect(menu.getByRole("menuitem", { name: "Templates" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "Add template" })).toBeVisible();
+    const picked = page.waitForResponse((r) => r.url().includes("/api/settings") && r.request().method() === "PATCH");
+    await radios.nth(0).click();
+    expect(((await (await picked).json()) as { agentSkill: string }).agentSkill).toBe(THIRST);
+    await expect(chip).toHaveAttribute("aria-label", "Agent on · Thirst trap");
+    await expect(page.getByRole("menu", { name: "Add attachment" })).toBeHidden();
+    // the search on the tab runs over both sections
+    await page.goto("/plugins?tab=Skills");
+    await settled(page);
+    await page.getByRole("searchbox", { name: "Search skills" }).fill("Chain director"); // the first director's description mentions chains too
+    await expect(page.getByTestId("director-row")).toHaveCount(1);
+    await expect(page.getByTestId("templates")).toHaveCount(0);
+    await page.getByRole("searchbox", { name: "Search skills" }).fill("zzz-nothing");
+    await expect(page.getByText("No matching results")).toBeVisible();
+    expect(((await (await request.get("/api/settings")).json()) as { agentSkill?: string }).agentSkill).toBe(THIRST);
   });
 });

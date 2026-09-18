@@ -5,12 +5,13 @@ import type { Capabilities } from "@/lib/job-api";
 import { ProjectsContext } from "@/components/shell/ProjectsContext";
 import { SettingsContext } from "@/components/shell/SettingsContext";
 import { ShellContext } from "@/components/shell/ShellContext";
+import { DEFAULT_SETTINGS } from "@/lib/settings";
 import { Composer } from "./Composer";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
-const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 }, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 } };
+const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 }, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 }, agent: { configured: true, model: { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash" } } };
 const source: ExtendSource = { id: "src", title: "The first clip", durationSeconds: 2, ratio: "16:9", resolution: "768P", model: "minimax-h3", posterUrl: "/api/jobs/src/poster" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
@@ -21,6 +22,8 @@ function fetchWith(onJobs: (init: RequestInit | undefined) => Response): typeof 
     if (url.startsWith("/api/jobs")) return Promise.resolve(onJobs(init));
     if (url.includes("/reference/")) return Promise.resolve(new Response(new Blob(["png-bytes"], { type: "image/png" }), { status: 200, headers: { "content-type": "image/png" } }));
     if (url === "/api/skills") return Promise.resolve(json({ skills: [{ id: "short-to-script", name: "Short-to-script", description: "Expands an idea", template: "integrated_multimodal_description: [Shot 1] {{idea}}", builtIn: true }, { id: "loop", name: "Loop", description: "Seamless loops", template: "Loop: {{idea}}" }] }));
+    // STORY_054: the director folders, for + › Skills' radio rows
+    if (url === "/api/agent/skills") return Promise.resolve(json({ skills: [{ id: "minimax-h3-director-thirst-trap", name: "minimax-h3-director-thirst-trap", description: "one clip", metadata: { "minimax-short-name": "Thirst trap", "minimax-clip-seconds": "10" } }, { id: "minimax-h3-director-thirst-trap-chain", name: "minimax-h3-director-thirst-trap-chain", description: "a chain", metadata: { "minimax-short-name": "Chain director", "minimax-clip-seconds": "10" } }] }));
     return Promise.resolve(json({ error: { code: "not_found", message: url } }, 404));
   };
   return vi.fn(impl);
@@ -287,12 +290,13 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     expect(puts[1]).toEqual({ vars: {} });
   });
 
-  it("+ › Skills › a skill drops its template into the composer with the typed idea in the slot; Manage skills and Add skill open Management › Skills (STORY_040)", async () => {
+  it("+ › Skills › Templates › a template drops its text into the composer with the typed idea in the slot; Manage skills and Add template open Management › Skills (STORY_040; STORY_054's levels)", async () => {
     await renderReady();
     fireEvent.change(screen.getByRole("textbox", { name: "Message" }), { target: { value: "a paper boat" } });
     fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
-    const loop = await screen.findByRole("menuitem", { name: "Loop" });
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Templates" }));
+    const loop = await within(screen.getByRole("menu", { name: "Templates" })).findByRole("menuitem", { name: "Loop" });
     fireEvent.click(loop);
     expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue("Loop: a paper boat");
     expect(screen.queryByRole("menu", { name: "Add attachment" })).not.toBeInTheDocument();
@@ -302,8 +306,61 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     expect(push).toHaveBeenLastCalledWith("/plugins?tab=Skills");
     fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
-    fireEvent.click(await screen.findByRole("menuitem", { name: "Add skill" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Add template" }));
     expect(push).toHaveBeenLastCalledWith("/plugins?tab=Skills&create=1");
+  });
+
+  it("+ › Skills lists the directors as radio rows: disabled in text mode with the reason; in video mode picking one writes the setting and turns the chip on (STORY_054)", async () => {
+    const update = vi.fn();
+    render(
+      <SettingsContext.Provider value={{ settings: { ...DEFAULT_SETTINGS, agentSkill: "minimax-h3-director-thirst-trap-chain" }, update }}>
+        <Composer fetchImpl={fetchWith(() => json({}))} />
+      </SettingsContext.Provider>,
+    );
+    // text mode: the rows are there, checked by the setting, disabled with the reason
+    fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
+    const skillsMenu = screen.getByRole("menu", { name: "Skills" });
+    await waitFor(() => { expect(within(skillsMenu).getAllByRole("menuitemradio")).toHaveLength(2); });
+    const rows = within(skillsMenu).getAllByRole("menuitemradio");
+    expect(rows.map((r) => r.getAttribute("aria-checked"))).toEqual(["false", "true"]);
+    expect(rows[0]).toHaveAttribute("aria-disabled", "true");
+    expect(rows[0]).toHaveAttribute("title", "Agent directs a video — pick Video generation");
+    fireEvent.click(rows[0] as HTMLElement);
+    expect(update).not.toHaveBeenCalled();
+    expect(screen.getByRole("menu", { name: "Add attachment" })).toBeInTheDocument(); // nothing happened, the menu stays
+    fireEvent.keyDown(window, { key: "Escape" });
+    // video mode: a pick writes the setting, turns the chip on and closes the menu
+    fireEvent.click(screen.getByRole("button", { name: /Video generation/ }));
+    await waitFor(() => { expect(screen.getByRole("button", { name: /^Model:/ })).toBeEnabled(); });
+    fireEvent.click(screen.getByRole("button", { name: "Add attachment" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
+    const thirst = within(screen.getByRole("menu", { name: "Skills" })).getAllByRole("menuitemradio")[0] as HTMLElement;
+    expect(thirst).not.toHaveAttribute("aria-disabled");
+    fireEvent.click(thirst);
+    expect(update).toHaveBeenCalledWith({ agentSkill: "minimax-h3-director-thirst-trap" });
+    expect(screen.queryByRole("menu", { name: "Add attachment" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("agent-chip")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("agent-chip")).toHaveAttribute("aria-label", "Agent on · Thirst trap");
+  });
+
+  it("starts in video mode with the chip on and the director chosen when told to (STORY_054: /?agent=), and writes the setting; a missing id falls back to the setting's", async () => {
+    const update = vi.fn();
+    render(
+      <SettingsContext.Provider value={{ settings: { ...DEFAULT_SETTINGS, agentSkill: "minimax-h3-director-thirst-trap" }, update }}>
+        <Composer fetchImpl={fetchWith(() => json({}))} initialAgentSkill="minimax-h3-director-thirst-trap-chain" />
+      </SettingsContext.Provider>,
+    );
+    expect(screen.getByTestId("agent-chip")).toHaveAttribute("aria-pressed", "true");
+    await waitFor(() => { expect(screen.getByTestId("agent-chip")).toHaveAttribute("aria-label", "Agent on · Chain director"); });
+    expect(update).toHaveBeenCalledWith({ agentSkill: "minimax-h3-director-thirst-trap-chain" });
+    cleanup();
+    render(
+      <SettingsContext.Provider value={{ settings: { ...DEFAULT_SETTINGS, agentSkill: "minimax-h3-director-thirst-trap" }, update }}>
+        <Composer fetchImpl={fetchWith(() => json({}))} initialAgentSkill="no-such-folder" />
+      </SettingsContext.Provider>,
+    );
+    await waitFor(() => { expect(screen.getByTestId("agent-chip")).toHaveAttribute("aria-label", "Agent on · Thirst trap"); });
   });
 
   it("starts with the skill's template when told to, and hides Video generation when the plugin is off (STORY_040)", () => {
@@ -419,7 +476,7 @@ describe("Composer — the reference's menus, the mode chip and the Showcase (ST
     fireEvent.click(screen.getByRole("menuitem", { name: "Skills" }));
     const skills = screen.getByRole("menu", { name: "Skills" });
     await waitFor(() => {
-      expect(within(skills).getAllByRole("menuitem").map((el) => el.textContent.trim())).toEqual(["Short-to-script", "Loop", "Manage skills", "Add skill"]); // STORY_040: the stored skills, then the two links
+      expect(within(skills).getAllByRole("menuitem").map((el) => el.textContent.trim())).toEqual(["Templates", "Manage skills", "Add template"]); // STORY_054: the templates one level down, then the two links; the directors are radio rows
     });
     expect(screen.getByRole("menuitem", { name: "Manage skills" })).not.toHaveAttribute("aria-disabled");
     fireEvent.click(screen.getByRole("menuitem", { name: "Add files or photos" }));

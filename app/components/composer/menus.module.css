@@ -56,6 +56,14 @@
 .itemStatic:hover {
   background: transparent;
 }
+/* STORY_054: a director row the composer cannot take now (text mode, extend mode) — the reason is in its title */
+.itemDisabled {
+  color: var(--text_default_tertiary);
+  cursor: not-allowed;
+}
+.itemDisabled:hover {
+  background: transparent;
+}
 .icon {
   display: inline-flex;
   color: var(--icon_default_secondary);

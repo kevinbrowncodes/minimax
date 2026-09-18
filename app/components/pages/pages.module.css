@@ -938,3 +938,44 @@
   font-size: 13px;
   line-height: var(--line_height_20);
 }
+
+/* STORY_054: the two sections of Management › Skills — Director skills (the folders) above Templates (STORY_040's snippets) */
+.skillSection {
+  margin-top: var(--spacing_16);
+}
+.skillSectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing_8);
+  margin-bottom: var(--spacing_4);
+}
+.skillSectionTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: var(--line_height_20);
+  color: var(--text_default_primary);
+}
+.skillSectionNote,
+.skillSectionFoot,
+.skillSectionEmpty {
+  font-size: 12px;
+  color: var(--text_default_tertiary);
+}
+.skillSectionFoot {
+  margin: var(--spacing_8) 0 0;
+}
+.skillSectionEmpty {
+  margin: var(--spacing_12) 0;
+}
+.skillSectionFoot a {
+  color: inherit;
+}
+.skillMeta {
+  font-size: 12px;
+  color: var(--text_default_tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

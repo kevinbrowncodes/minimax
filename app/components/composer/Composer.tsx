@@ -64,10 +64,12 @@ export interface ComposerProps {
   readonly initialRequest?: InitialRequest;
   /** STORY_050: an Inbox row of a director run that ended without a prompt (`/?agentRun=`) — the notes back, the chip on, the words shown. */
   readonly initialAgentRun?: { readonly notes: string; readonly message: string; readonly skill: string };
+  /** STORY_054: Management › Skills › Use on a director (`/?agent=<id>`) — video mode, the chip on, that skill chosen. */
+  readonly initialAgentSkill?: string;
 }
 
 /** The home composer (STORY_013): text mode, video mode with references, model, parameters, Send; extend mode (STORY_016). */
-export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExtending, initialProjectId, initialText, initialRequest, initialAgentRun }: ComposerProps) {
+export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExtending, initialProjectId, initialText, initialRequest, initialAgentRun, initialAgentSkill }: ComposerProps) {
   const router = useRouter();
   const docked = variant === "docked";
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -77,10 +79,12 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
   const { settings, update: updateSettings } = useSettings();
   const narrow = useNarrow();
   const videoEnabled = settings.videoEnabled;
-  const [state, dispatch] = useReducer(reduceComposer, { docked, initialProjectId, initialText, initialRequest }, (init) => {
+  const [state, dispatch] = useReducer(reduceComposer, { docked, initialProjectId, initialText, initialRequest, initialAgentSkill }, (init) => {
     // STORY_041: an Edit starts in video mode with the request's words, project and run-at; its parameters and images follow once capabilities arrive
     const request = init.initialRequest;
     const base = initialComposer(init.initialProjectId ?? request?.projectId, init.initialText ?? request?.prompt ?? "", request ? { queueId: request.queueId, ...(request.notBefore === undefined ? {} : { notBefore: request.notBefore }) } : {});
+    // STORY_054: Use on a director starts in video mode with the chip on; the skill is chosen when the list arrives
+    if (init.initialAgentSkill !== undefined) return reduceComposer(base, { type: "agent-toggle", on: true });
     return init.docked || request ? reduceComposer(base, { type: "enter-video-mode" }) : base;
   });
   const [runAtOpen, setRunAtOpen] = useState(false); // STORY_041: the Run at… control beside Send
@@ -126,17 +130,26 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
       })
       .catch(() => [] as AgentSkill[])
       .then((list) => {
-        if (!cancelled) dispatch({ type: "agent-skills", skills: list, chosen: settings.agentSkill ?? initialAgentRun?.skill });
+        if (!cancelled) dispatch({ type: "agent-skills", skills: list, chosen: initialAgentSkill ?? settings.agentSkill ?? initialAgentRun?.skill });
       });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
   }, []);
-  // BUG_011: the settings arrive after the mount (the Shell loads them), so the saved skill is applied when they do
+  // BUG_011: the settings arrive after the mount (the Shell loads them), so the saved skill is applied when they do —
+  // unless the page was opened on a director (STORY_054's /?agent=), which wins until its own write has landed
+  const pinnedSkill = useRef(initialAgentSkill);
   useEffect(() => {
-    if (settings.agentSkill !== undefined) dispatch({ type: "agent-skill", skillId: settings.agentSkill });
+    if (settings.agentSkill === undefined) return;
+    if (pinnedSkill.current !== undefined && settings.agentSkill !== pinnedSkill.current) return;
+    pinnedSkill.current = undefined;
+    dispatch({ type: "agent-skill", skillId: settings.agentSkill });
   }, [settings.agentSkill, state.agent.skills]);
+  useEffect(() => {
+    if (initialAgentSkill !== undefined) updateSettings({ agentSkill: initialAgentSkill }); // STORY_054: Use writes the choice, as the menu does
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
+  }, []);
   // STORY_052: the ≡ badge — how many instructions are active
   useEffect(() => {
     let cancelled = false;
@@ -539,6 +552,10 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                 onToggle={() => { dispatch({ type: "agent-toggle" }); setPopover(undefined); }}
                 onMenu={() => { setPopover(popover === "agent-skill" ? undefined : "agent-skill"); }}
                 onSkill={(id) => { dispatch({ type: "agent-skill", skillId: id }); setPopover(undefined); updateSettings({ agentSkill: id }); }}
+                directors={state.agent.skills}
+                agentSkillId={state.agent.skillId}
+                onPickDirector={(id) => { dispatch({ type: "agent-skill", skillId: id }); dispatch({ type: "agent-toggle", on: true }); updateSettings({ agentSkill: id }); }}
+                directorsDisabledReason={!video ? "Agent directs a video — pick Video generation" : agentDisabledReason}
                 onManage={() => { setPopover(undefined); router.push("/plugins?tab=Skills"); }}
               />
               {agentOn ? (

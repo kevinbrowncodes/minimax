@@ -5,6 +5,7 @@ import { Inert } from "@/components/shell/Inert";
 import { IconChevronRight, IconMove, IconPlusCircle, IconProject, IconSettings } from "@/components/shell/icons";
 import type { Project } from "@/lib/project-store";
 import type { Skill } from "@/lib/skills";
+import { agentSkillLabel, type AgentSkill } from "@/lib/composer-state";
 import styles from "./menus.module.css";
 
 /**
@@ -23,6 +24,8 @@ const IconKey = () => (
 );
 
 type Submenu = "project" | "skills";
+/** STORY_054: the one second-level submenu — Templates, inside Skills. */
+type Nested = "templates";
 
 export interface AttachMenuProps {
   /** In video mode, Add files or photos opens the reference-image chooser; elsewhere it shows the notice. */
@@ -35,17 +38,24 @@ export interface AttachMenuProps {
   readonly onNewProject: () => void;
   /** STORY_035: Environment variables opens the dialog; without a handler it keeps the notice. */
   readonly onEnv?: () => void;
-  /** STORY_040: the skills — each drops its template into the composer; Manage skills and Add skill open Management › Skills. */
+  /** STORY_040: the templates (under Skills › Templates since STORY_054) — each drops its text into the composer; Manage skills and Add template open Management › Skills. */
   readonly skills?: readonly Skill[];
   readonly onUseSkill?: (skill: Skill) => void;
   readonly onManageSkills?: (create: boolean) => void;
+  /** STORY_054: the director skills as radio rows — picking one sets the agent's skill and turns the chip on. */
+  readonly directors?: readonly AgentSkill[];
+  readonly agentSkillId?: string;
+  readonly onPickDirector?: (id: string) => void;
+  /** Text mode or extend mode: the director rows are disabled with the chip's own reason. */
+  readonly directorsDisabledReason?: string;
 }
 
 /** attach-menu-open@1440 and its submenus: 190 px, 32 px entries; submenus 8 px to the right. */
-export function AttachMenu({ onAddFiles, onClose, projects, projectId, onProject, onNewProject, onEnv, skills = [], onUseSkill, onManageSkills }: AttachMenuProps) {
+export function AttachMenu({ onAddFiles, onClose, projects, projectId, onProject, onNewProject, onEnv, skills = [], onUseSkill, onManageSkills, directors = [], agentSkillId, onPickDirector, directorsDisabledReason }: AttachMenuProps) {
   const [open, setOpen] = useState<Submenu | undefined>(undefined);
+  const [nested, setNested] = useState<Nested | undefined>(undefined);
   const entry = (id: Submenu, icon: ReactNode, label: string, children: ReactNode) => (
-    <div className={styles.entryWrap} onMouseEnter={() => { setOpen(id); }}>
+    <div className={styles.entryWrap} onMouseEnter={() => { setOpen(id); setNested(undefined); }}>
       {/* a click opens (never toggles): the pointer's hover has often opened it already, and a tap at 390 would close it again (STORY_040) */}
       <button type="button" role="menuitem" aria-haspopup="menu" aria-expanded={open === id} className={cx(styles.item, open === id && styles.itemOpen)} onClick={() => { setOpen(id); }}>
         <span className={styles.icon}>{icon}</span>
@@ -55,6 +65,18 @@ export function AttachMenu({ onAddFiles, onClose, projects, projectId, onProject
       {open === id ? <div className={cx(styles.menu, styles.submenu, id === "project" && styles.submenuWide)} role="menu" aria-label={label}>{children}</div> : null}
     </div>
   );
+  // STORY_054: the same shape one level down (Templates inside Skills); at 390 it opens under its row as the first level does
+  const nestedEntry = (id: Nested, icon: ReactNode, label: string, children: ReactNode) => (
+    <div className={styles.entryWrap} onMouseEnter={() => { setNested(id); }}>
+      <button type="button" role="menuitem" aria-haspopup="menu" aria-expanded={nested === id} className={cx(styles.item, nested === id && styles.itemOpen)} onClick={() => { setNested(id); }}>
+        <span className={styles.icon}>{icon}</span>
+        <span className={styles.label}>{label}</span>
+        <span className={styles.chevron}><IconChevronRight /></span>
+      </button>
+      {nested === id ? <div className={cx(styles.menu, styles.submenu)} role="menu" aria-label={label}>{children}</div> : null}
+    </div>
+  );
+  const chosenDirector = directors.find((d) => d.id === agentSkillId)?.id ?? directors[0]?.id;
   return (
     <div className={styles.menu} role="menu" aria-label="Add attachment">
       {onAddFiles ? (
@@ -92,26 +114,44 @@ export function AttachMenu({ onAddFiles, onClose, projects, projectId, onProject
       <div className={styles.separator} />
       {entry("skills", <IconSkill />, "Skills", (
         <>
-          {onUseSkill && skills.length > 0 ? (
-            skills.map((skill) => (
-              <button key={skill.id} type="button" role="menuitem" className={styles.item} title={skill.description} onClick={() => { onClose(); onUseSkill(skill); }}>
-                <span className={styles.icon}><IconSkill /></span>
-                <span className={styles.label}>{skill.name}</span>
-              </button>
-            ))
+          {/* STORY_054: the director skills the agent can follow — radio rows; the chosen one checked */}
+          {directors.length === 0 ? (
+            <span className={styles.note}>No director skills</span>
           ) : (
-            <span className={styles.note}>No skills installed</span>
+            directors.map((director) => {
+              const disabled = directorsDisabledReason !== undefined || onPickDirector === undefined;
+              return (
+                <button key={director.id} type="button" role="menuitemradio" aria-checked={director.id === chosenDirector} aria-disabled={disabled ? true : undefined} className={cx(styles.item, disabled && styles.itemDisabled)} title={directorsDisabledReason ?? director.description} onClick={() => { if (disabled) return; onClose(); onPickDirector(director.id); }}>
+                  <span className={styles.icon}><IconSkill /></span>
+                  <span className={styles.label}>{agentSkillLabel(director)}</span>
+                  {director.id === chosenDirector ? <span className={styles.check} aria-hidden="true">✓</span> : null}
+                </button>
+              );
+            })
           )}
+          <div className={styles.separator} />
+          {nestedEntry("templates", <IconSkill />, "Templates", (
+            onUseSkill && skills.length > 0 ? (
+              skills.map((skill) => (
+                <button key={skill.id} type="button" role="menuitem" className={styles.item} title={skill.description} onClick={() => { onClose(); onUseSkill(skill); }}>
+                  <span className={styles.icon}><IconSkill /></span>
+                  <span className={styles.label}>{skill.name}</span>
+                </button>
+              ))
+            ) : (
+              <span className={styles.note}>No templates</span>
+            )
+          ))}
           <div className={styles.separator} />
           {onManageSkills ? (
             <>
               <button type="button" role="menuitem" className={styles.item} onClick={() => { onClose(); onManageSkills(false); }}><span className={styles.icon}><IconSettings /></span><span className={styles.label}>Manage skills</span></button>
-              <button type="button" role="menuitem" className={styles.item} onClick={() => { onClose(); onManageSkills(true); }}><span className={styles.icon}><IconPlusCircle /></span><span className={styles.label}>Add skill</span></button>
+              <button type="button" role="menuitem" className={styles.item} onClick={() => { onClose(); onManageSkills(true); }}><span className={styles.icon}><IconPlusCircle /></span><span className={styles.label}>Add template</span></button>
             </>
           ) : (
             <>
               <Inert role="menuitem" label="Manage skills" className={styles.item}><span className={styles.icon}><IconSettings /></span><span className={styles.label}>Manage skills</span></Inert>
-              <Inert role="menuitem" label="Add skill" className={styles.item}><span className={styles.icon}><IconPlusCircle /></span><span className={styles.label}>Add skill</span></Inert>
+              <Inert role="menuitem" label="Add template" className={styles.item}><span className={styles.icon}><IconPlusCircle /></span><span className={styles.label}>Add template</span></Inert>
             </>
           )}
         </>

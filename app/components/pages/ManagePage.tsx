@@ -5,6 +5,9 @@ import { cx } from "@/lib/cx";
 import type { Capabilities } from "@/lib/job-api";
 import { AGENTS, AGENT_SYSTEM_PROMPT, MANAGE_TABS } from "@/lib/reference-pages";
 import { searchSkills, type Skill } from "@/lib/skills";
+import { searchDirectors } from "@/lib/agent-skills";
+import type { AgentSkill } from "@/lib/composer-state";
+import { DirectorSkills } from "./DirectorSkills";
 import { Inert } from "@/components/shell/Inert";
 import { useSettings } from "@/components/shell/SettingsContext";
 import { IconAgent, IconChevronDown, IconPlus, IconSearch, IconSkill, IconVideo } from "@/components/shell/icons";
@@ -14,7 +17,7 @@ export type ManageTab = (typeof MANAGE_TABS)[number]["label"];
 
 export interface ManagePageProps {
   readonly initialTab?: ManageTab;
-  /** STORY_040: open the Create skill form (+ › Skills › Add skill). */
+  /** STORY_040: open the Create template form (+ › Skills › Add template; STORY_054's wording). */
   readonly createSkill?: boolean;
   readonly fetchImpl?: typeof fetch;
   readonly confirmImpl?: (message: string) => boolean;
@@ -24,8 +27,10 @@ export interface ManagePageProps {
  * Plugins (STORY_025; agents-guide-view-now@1440): the reference's "Management" page with its four counted tabs.
  * STORY_040 gives three of them their local meaning (behaviour-manage-tabs-02..04): **Plugins** — the one plugin,
  * video-creator, described from what the Spark's adapter reports, with its switch (the video-enabled setting) and its
- * details; **Skills** — the owner's prompt recipes (a built-in Short-to-script), searched, created, edited, deleted, and
- * **Use**d into the composer; **Apps** — the honest empty line. **Agents** stays the read-only editor (STORY_038 deferred).
+ * details; **Skills** — STORY_054: the director skills the agent follows (the folders under agents/skills/, with what each
+ * was verified against; Use → the composer with the chip on) above the owner's **Templates** (STORY_040's snippets: a
+ * built-in Short-to-script, searched, created, edited, deleted, and **Use**d into the composer); **Apps** — the honest
+ * empty line. **Agents** stays the read-only editor (STORY_038 deferred).
  */
 export function ManagePage({ initialTab = "Plugins", createSkill = false, fetchImpl, confirmImpl }: ManagePageProps) {
   const doFetch = fetchImpl ?? fetch;
@@ -36,6 +41,7 @@ export function ManagePage({ initialTab = "Plugins", createSkill = false, fetchI
   const [capabilities, setCapabilities] = useState<Capabilities | undefined | null>(undefined); // null = the adapter did not answer
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [skills, setSkills] = useState<readonly Skill[]>([]);
+  const [directors, setDirectors] = useState<readonly AgentSkill[]>([]); // STORY_054: the folders the agent can follow
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<{ readonly id?: string; readonly name: string; readonly description: string; readonly template: string } | undefined>(createSkill ? { name: "", description: "", template: "" } : undefined);
   const [formError, setFormError] = useState<string | undefined>(undefined);
@@ -59,19 +65,31 @@ export function ManagePage({ initialTab = "Plugins", createSkill = false, fetchI
       .then((list) => {
         if (!cancelled) setSkills(list);
       });
+    void doFetch("/api/agent/skills")
+      .then(async (res) => {
+        const body: unknown = res.ok ? await res.json() : undefined;
+        const list = typeof body === "object" && body !== null ? (body as { skills?: unknown }).skills : undefined;
+        return Array.isArray(list) ? (list as AgentSkill[]) : [];
+      })
+      .catch(() => [] as AgentSkill[])
+      .then((list) => {
+        if (!cancelled) setDirectors(list);
+      });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
   }, []);
 
-  const counts: Record<ManageTab, number> = { Plugins: 1, Skills: skills.length, Apps: 0, Agents: AGENTS.length };
+  const counts: Record<ManageTab, number> = { Plugins: 1, Skills: directors.length + skills.length, Apps: 0, Agents: AGENTS.length };
   const shownSkills = searchSkills(skills, query);
+  const shownDirectors = searchDirectors(directors, query);
+  const searching = query.trim() !== "";
 
   const saveSkill = async (): Promise<void> => {
     if (!editing) return;
     if (editing.name.trim() === "" || editing.template.trim() === "") {
-      setFormError("A skill needs a name and a template");
+      setFormError("A template needs a name and its text");
       return;
     }
     const body = JSON.stringify({ name: editing.name, description: editing.description, template: editing.template });
@@ -85,7 +103,7 @@ export function ManagePage({ initialTab = "Plugins", createSkill = false, fetchI
     await loadSkills();
   };
   const deleteSkill = async (skill: Skill): Promise<void> => {
-    if (!confirm(`Delete the skill "${skill.name}"?`)) return;
+    if (!confirm(`Delete the template "${skill.name}"?`)) return;
     await doFetch(`/api/skills/${encodeURIComponent(skill.id)}`, { method: "DELETE" }).catch(() => undefined);
     await loadSkills();
   };
@@ -143,33 +161,41 @@ export function ManagePage({ initialTab = "Plugins", createSkill = false, fetchI
       ) : null}
 
       {tab === "Skills" ? (
-        // behaviour-manage-tabs-03-tab-skills: glyph · name · Built-in · one line; ours add Use / Edit / Delete and Create skill
+        // behaviour-manage-tabs-03-tab-skills: glyph · name · Built-in · one line; ours add the Director skills section (STORY_054) and, under Templates, Use / Edit / Delete and Create template
         <div>
+          <DirectorSkills skills={shownDirectors} searching={searching} />
+          {searching && shownDirectors.length === 0 && shownSkills.length === 0 ? <p className={styles.manageEmpty}>No matching results</p> : null}
+          {searching && shownSkills.length === 0 ? null : (
+          <section className={styles.skillSection} aria-labelledby="templates-title" data-testid="templates">
+          <div className={styles.skillSectionHead}>
+            <h2 id="templates-title" className={styles.skillSectionTitle}>Templates</h2>
+            <span className={styles.skillSectionNote}>snippets that fill the composer</span>
+          </div>
           {editing ? (
             <form
               className={styles.skillForm}
-              aria-label={editing.id === undefined ? "Create skill" : "Edit skill"}
+              aria-label={editing.id === undefined ? "Create template" : "Edit template"}
               onSubmit={(event) => {
                 event.preventDefault();
                 void saveSkill();
               }}
             >
-              <label className={styles.skillField}><span>Name</span><input aria-label="Skill name" value={editing.name} onChange={(event) => { setEditing({ ...editing, name: event.target.value }); }} /></label>
-              <label className={styles.skillField}><span>Description</span><input aria-label="Skill description" value={editing.description} onChange={(event) => { setEditing({ ...editing, description: event.target.value }); }} /></label>
-              <label className={styles.skillField}><span>Template — {"{{idea}}"} is replaced by what is typed in the composer</span><textarea aria-label="Skill template" rows={5} value={editing.template} onChange={(event) => { setEditing({ ...editing, template: event.target.value }); }} /></label>
+              <label className={styles.skillField}><span>Name</span><input aria-label="Template name" value={editing.name} onChange={(event) => { setEditing({ ...editing, name: event.target.value }); }} /></label>
+              <label className={styles.skillField}><span>Description</span><input aria-label="Template description" value={editing.description} onChange={(event) => { setEditing({ ...editing, description: event.target.value }); }} /></label>
+              <label className={styles.skillField}><span>Template — {"{{idea}}"} is replaced by what is typed in the composer</span><textarea aria-label="Template text" rows={5} value={editing.template} onChange={(event) => { setEditing({ ...editing, template: event.target.value }); }} /></label>
               {formError !== undefined ? <p className={styles.skillError} role="alert">{formError}</p> : null}
               <div className={styles.skillFormActions}>
                 <button type="button" className={styles.barSecondary} onClick={() => { setEditing(undefined); setFormError(undefined); }}>Cancel</button>
-                <button type="submit" className={styles.barPrimary}>{editing.id === undefined ? "Create" : "Save"} skill</button>
+                <button type="submit" className={styles.barPrimary}>{editing.id === undefined ? "Create" : "Save"} template</button>
               </div>
             </form>
           ) : (
-            <button type="button" className={styles.skillCreate} onClick={() => { setEditing({ name: "", description: "", template: "" }); }}><IconPlus /> Create skill</button>
+            <button type="button" className={styles.skillCreate} onClick={() => { setEditing({ name: "", description: "", template: "" }); }}><IconPlus /> Create template</button>
           )}
           {shownSkills.length === 0 ? (
-            <p className={styles.manageEmpty}>No matching results</p>
+            <p className={styles.skillSectionEmpty}>No templates yet</p>
           ) : (
-            <ul className={styles.skillList} aria-label="Skills">
+            <ul className={styles.skillList} aria-label="Templates">
               {shownSkills.map((skill) => (
                 <li key={skill.id} className={styles.skillRow} data-testid="skill-row">
                   <span className={styles.pluginGlyph} aria-hidden="true"><IconSkill /></span>
@@ -185,6 +211,8 @@ export function ManagePage({ initialTab = "Plugins", createSkill = false, fetchI
                 </li>
               ))}
             </ul>
+          )}
+          </section>
           )}
         </div>
       ) : null}
