@@ -15,5 +15,7 @@ export default async function Task({ params, searchParams }: { readonly params: 
   // `?extend` opens the page with the docked composer already extending this video (STORY_016; Assets' menu links here).
   // STORY_043: a clip still queued or running can be extended too — its length comes from its request (a chain resolves to its first clip).
   const pending = entry.status === "queued" || entry.status === "running" ? pendingSourceSeconds(entry, (sourceId) => store.get(sourceId)) : undefined;
-  return <TaskPage entry={entry} extendOnOpen={query["extend"] !== undefined} pendingSeconds={pending} />;
+  // STORY_056: the segments that continue from this one — Retry re-queues them behind a redraw
+  const chainAfter = store.chainAfter(id).map((e) => ({ id: e.id, title: e.title }));
+  return <TaskPage entry={entry} extendOnOpen={query["extend"] !== undefined} pendingSeconds={pending} chainAfter={chainAfter} />;
 }

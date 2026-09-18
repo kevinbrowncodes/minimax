@@ -49,4 +49,13 @@ describe("CutNotice (STORY_046): the quiet note for a framing move the prompt as
     expect(screen.getByTestId("cut-notice")).toHaveTextContent("The shot changed at 00:01, 00:04 and 00:08 —");
     expect(screen.queryByTestId("framing-note")).not.toBeInTheDocument();
   });
+
+  it("with segments behind it (STORY_056): the sentence names how many, the button reads Retry chain", () => {
+    render(<CutNotice cuts={[{ frame: 243, seconds: 10.13, kind: "cut" }]} camera="static" onRetry={() => undefined} rechains={2} />);
+    expect(screen.getByTestId("cut-notice")).toHaveTextContent("Retry redraws this segment and the 2 segments queued after it with new seeds.");
+    expect(screen.getByRole("button", { name: "Retry chain" })).toBeInTheDocument();
+    cleanup();
+    render(<CutNotice cuts={[{ frame: 243, seconds: 10.13, kind: "cut" }]} camera="static" onRetry={() => undefined} rechains={1} />);
+    expect(screen.getByTestId("cut-notice")).toHaveTextContent("the 1 segment queued after it");
+  });
 });

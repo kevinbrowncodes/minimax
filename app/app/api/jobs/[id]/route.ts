@@ -1,8 +1,9 @@
+import { cancelJob } from "@/lib/cancel-job";
 import { historyStore } from "@/lib/history-store";
 import type { JobStatusResponse } from "@/lib/job-api";
 import { forward, guarded, relayJson } from "@/lib/model-client";
 import { submitDue, upstreamJobId } from "@/lib/queue-runner";
-import { getQueued, removeQueued } from "@/lib/queue-store";
+import { getQueued } from "@/lib/queue-store";
 
 export const dynamic = "force-dynamic";
 
@@ -28,21 +29,10 @@ export function GET(_request: Request, context: Context): Promise<Response> {
   });
 }
 
-/** DELETE /api/jobs/:id — cancel; history is marked cancelled from the 202 on. A waiting request leaves the queue instead. */
+/** DELETE /api/jobs/:id — cancel; history is marked cancelled from the 202 on. A waiting request leaves the queue instead (lib/cancel-job.ts, shared with Retry chain). */
 export function DELETE(_request: Request, context: Context): Promise<Response> {
   return guarded(async () => {
     const { id } = await context.params;
-    const queued = getQueued(id);
-    if (queued && queued.jobId === undefined) {
-      removeQueued(id);
-      historyStore().recordStatus(id, { id, status: "cancelled", progress: 0 });
-      return Response.json({ id, status: "cancelled", progress: 0 }, { status: 202 });
-    }
-    const upstream = upstreamJobId(id);
-    const response = await forward(`/jobs/${encodeURIComponent(upstream)}`, { method: "DELETE" });
-    if (response.status !== 202) return relayJson(response);
-    const body = (await response.json()) as JobStatusResponse;
-    historyStore().recordStatus(id, { id, status: "cancelled", progress: body.progress });
-    return Response.json({ ...body, id }, { status: 202 });
+    return cancelJob(id);
   });
 }

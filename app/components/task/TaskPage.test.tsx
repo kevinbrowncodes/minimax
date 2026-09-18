@@ -23,6 +23,10 @@ function fetchScript(statuses: readonly { status: string; progress: number; resu
       posts.push(typeof init.body === "string" ? init.body : "");
       return Promise.resolve(json({ id: "j9", status: "queued", progress: 0 }, 202));
     }
+    if (url.startsWith("/api/jobs/j1/retry-chain") && init?.method === "POST") {
+      posts.push(`retry-chain ${url}`);
+      return Promise.resolve(json({ id: "j9", rechained: ["j10"] }, 202));
+    }
     if (url.startsWith("/api/capabilities")) return Promise.resolve(json(caps));
     if (url.startsWith("/api/history/")) return Promise.resolve(json({}));
     if (url === "/api/jobs/j1" && (init?.method ?? "GET") === "GET") {
@@ -192,6 +196,33 @@ describe("TaskPage — the shot-change notice (STORY_020, mounted by CHORE_009)"
     const body = JSON.parse(script.posts[0] ?? "{}") as Record<string, unknown>;
     expect(body).toMatchObject({ prompt: "A boat", continueFrom: "src", overlapFrames: 39, durationSeconds: 10 });
     expect(body).not.toHaveProperty("seed");
+    expect(push).toHaveBeenCalledWith("/task/j9");
+  });
+
+  it("with segments behind it (STORY_056) the strip says so, the button reads Retry chain and posts to retry-chain, then opens the redraw; a failed segment's Retry does the same", async () => {
+    const script = fetchScript([]);
+    const after = [{ id: "j3", title: "segment 3" }];
+    render(shell(<TaskPage entry={entry({ status: "done", progress: 100, result: result([{ frame: 243, seconds: 10.13 }]), continuesFrom: { id: "src", title: "segment 1", durationSeconds: 10.1 } })} chainAfter={after} fetchImpl={script.fetchImpl} />));
+    const notice = screen.getByTestId("cut-notice");
+    expect(notice).toHaveTextContent("Retry redraws this segment and the 1 segment queued after it with new seeds.");
+    expect(within(notice).queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(within(notice).getByRole("button", { name: "Retry chain" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(script.posts).toEqual(["retry-chain /api/jobs/j1/retry-chain"]);
+    expect(push).toHaveBeenCalledWith("/task/j9");
+    cleanup();
+    push.mockReset();
+    const failed = fetchScript([]);
+    render(shell(<TaskPage entry={entry({ status: "failed", progress: 30, error: { code: "server_error", message: "boom" } })} chainAfter={[{ id: "j2", title: "two" }, { id: "j3", title: "three" }]} fetchImpl={failed.fetchImpl} />));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Retry chain (2 after it)" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(failed.posts).toEqual(["retry-chain /api/jobs/j1/retry-chain"]);
     expect(push).toHaveBeenCalledWith("/task/j9");
   });
 });

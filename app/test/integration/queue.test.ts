@@ -6,6 +6,8 @@ import { createStubServer, DEFAULT_FIXTURES_DIR, type StubServer } from "stub-ge
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { GET as listHistory } from "@/app/api/history/route";
 import { DELETE as cancelJob, GET as getJob } from "@/app/api/jobs/[id]/route";
+import { POST as retryChain } from "@/app/api/jobs/[id]/retry-chain/route";
+import { GET as getHistoryEntry } from "@/app/api/history/[id]/route";
 import { GET as getResult } from "@/app/api/jobs/[id]/result/route";
 import { POST as createJob } from "@/app/api/jobs/route";
 import { DELETE as removeQueued, GET as getQueued, PATCH as patchQueued } from "@/app/api/queue/[id]/route";
@@ -231,5 +233,58 @@ describe("the queue through the app's routes", () => {
     expect((await createJob(jsonRequest("/api/jobs", { ...valid, replaces: a.id }))).status).toBe(409);
     expect((await removeQueued(new Request(`http://app/api/queue/${a.id}`, { method: "DELETE" }), ctx(a.id))).status).toBe(409);
     expect((await getQueued(new Request(`http://app/api/queue/${a.id}`), ctx(a.id))).status).toBe(404);
+  });
+
+  it("Retry chain (STORY_056): redraws a cut segment as an extension of its source and re-queues the segment waiting behind it on the redraw, cancelling the old one; a done later segment is left; the history entry lists what continues from it", async () => {
+    // segment 1 done; segment 2 runs slowly and will report a cut; segment 3 waits in the line for it
+    const s1 = (await (await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", valid))).json()) as CreateJobResponse;
+    let st = await status(s1.id);
+    for (let i = 0; i < 4 && st.status !== "done"; i += 1) st = await status(s1.id);
+    expect(st.status).toBe("done");
+    const s2 = (await (await createJob(jsonRequest("/api/jobs?script=slow-done-after-10-polls", { ...valid, prompt: "Segment two", durationSeconds: 10, continueFrom: s1.id, overlapFrames: 39 }))).json()) as CreateJobResponse;
+    const s3 = (await (await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, prompt: "Segment three", durationSeconds: 10, continueFrom: s2.id, overlapFrames: 39 }))).json()) as Queued;
+    expect(s3).toMatchObject({ status: "queued", position: 1 });
+    // GET /api/history/:id answers chainAfter, transitively, in chain order
+    const one = (await (await getHistoryEntry(new Request(`http://app/api/history/${s1.id}`), ctx(s1.id))).json()) as { chainAfter: { id: string; title: string; status: string }[] };
+    expect(one.chainAfter.map((e) => e.id)).toEqual([s2.id, s3.id]);
+    const two = (await (await getHistoryEntry(new Request(`http://app/api/history/${s2.id}`), ctx(s2.id))).json()) as { chainAfter: { id: string }[] };
+    expect(two.chainAfter.map((e) => e.id)).toEqual([s3.id]);
+    // Retry chain on segment 2: the old segment 3 leaves the line cancelled, the redraw goes up as an extension of segment 1, the new segment 3 waits on the redraw
+    const res = await retryChain(new Request(`http://app/api/jobs/${s2.id}/retry-chain?script=slow-done-after-10-polls`, { method: "POST" }), ctx(s2.id)); // the redraw runs slowly, so the new segment 3 is seen waiting
+    expect(res.status).toBe(202);
+    const body = (await res.json()) as { id: string; rechained: string[]; refused?: unknown };
+    expect(body.rechained).toHaveLength(1);
+    expect(body.refused).toBeUndefined();
+    const entries = ((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries;
+    expect(entries.find((e) => e.id === s3.id)?.status).toBe("cancelled");
+    const redraw = entries.find((e) => e.id === body.id);
+    expect(redraw).toMatchObject({ prompt: "Segment two", continuesFrom: { id: s1.id }, params: { durationSeconds: 10, overlapFrames: 39 } });
+    const newThree = entries.find((e) => e.id === body.rechained[0]);
+    expect(newThree).toMatchObject({ prompt: "Segment three", status: "queued", continuesFrom: { id: body.id } });
+    expect((await line()).map((e) => e.id)).toEqual([body.rechained[0]]);
+    // the redraw went to the stub with no seed of ours and the source's id; the old segment 3 never did
+    const received = (await (await fetch(`${stubUrl}/__stub/jobs/${body.id}/received`)).json()) as { request: { continueFrom?: string; overlapFrames?: number; seed?: unknown } };
+    expect(received.request).toMatchObject({ continueFrom: s1.id, overlapFrames: 39 });
+    expect((await stubJobs()).map((j) => j.id)).not.toContain(s3.id);
+    // the redraw done → the new segment 3 goes, as STORY_043's line makes it
+    st = await status(body.id);
+    for (let i = 0; i < 14 && st.status !== "done"; i += 1) st = await status(body.id);
+    expect(st.status).toBe("done");
+    await listHistory();
+    expect(await line()).toEqual([]);
+    const sent = ((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries.find((e) => e.id === body.rechained[0]);
+    expect(sent?.jobId).toBeDefined();
+    const three = (await (await fetch(`${stubUrl}/__stub/jobs/${sent?.jobId ?? ""}/received`)).json()) as { request: { continueFrom?: string } };
+    expect(three.request.continueFrom).toBe(body.id);
+    // a later segment that is done is left as it is: with the old, slow segment 2 cancelled (its branch gone), Retry chain on segment 1
+    // re-posts the redraw and the new segment 3 behind a fresh segment 1 without touching the done ones
+    expect((await cancelJob(new Request(`http://app/api/jobs/${s2.id}`, { method: "DELETE" }), ctx(s2.id))).status).toBe(202);
+    const again = (await (await retryChain(new Request(`http://app/api/jobs/${s1.id}/retry-chain?script=done-after-1-poll`, { method: "POST" }), ctx(s1.id))).json()) as { id: string; rechained: string[] };
+    expect(again.rechained).toHaveLength(2);
+    const after = ((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries;
+    expect(after.find((e) => e.id === body.id)?.status).toBe("done"); // left
+    expect(after.find((e) => e.id === again.rechained[0])?.continuesFrom?.id).toBe(again.id);
+    expect(after.find((e) => e.id === again.rechained[1])?.continuesFrom?.id).toBe(again.rechained[0]);
+    for (const id of [again.id, ...again.rechained]) await cancelJob(new Request(`http://app/api/jobs/${id}`, { method: "DELETE" }), ctx(id)).catch(() => undefined);
   });
 });

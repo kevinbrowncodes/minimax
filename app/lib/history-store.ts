@@ -77,6 +77,16 @@ export function titleFor(prompt: string): string {
   return `${(boundary > 24 ? cut.slice(0, boundary) : clean.slice(0, TITLE_MAX)).trimEnd()}…`;
 }
 
+/**
+ * STORY_056: the entries that continue from `id`, transitively, in chain order — each link's continuations oldest first,
+ * each followed by its own — leaving out cancelled ones (a chain re-queued by Retry chain leaves its old links cancelled;
+ * they are not links any more). Pure over a list.
+ */
+export function chainAfter(entries: readonly HistoryEntry[], id: string): readonly HistoryEntry[] {
+  const next = entries.filter((e) => e.continuesFrom?.id === id && e.status !== "cancelled").sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+  return next.flatMap((e) => [e, ...chainAfter(entries, e.id)]);
+}
+
 export class HistoryStore {
   readonly file: string;
 
@@ -105,6 +115,11 @@ export class HistoryStore {
   /** Newest first. */
   list(): readonly HistoryEntry[] {
     return [...this.#read()].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  }
+
+  /** STORY_056: what continues from this entry, transitively, in chain order. */
+  chainAfter(id: string): readonly HistoryEntry[] {
+    return chainAfter(this.#read(), id);
   }
 
   get(id: string): HistoryEntry | undefined {

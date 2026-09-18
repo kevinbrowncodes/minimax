@@ -8,12 +8,14 @@ export const dynamic = "force-dynamic";
 
 type Context = { readonly params: Promise<{ readonly id: string }> };
 
-/** GET /api/history/:id */
+/** GET /api/history/:id — the entry, with STORY_056's `chainAfter`: the ids and titles of what continues from it, in chain order. */
 export function GET(_request: Request, context: Context): Promise<Response> {
   return guarded(async () => {
     const { id } = await context.params;
-    const entry = historyStore().get(id);
-    return entry ? Response.json(entry) : errorResponse({ status: 404, code: "not_found", message: `no history entry ${id}` });
+    const store = historyStore();
+    const entry = store.get(id);
+    if (!entry) return errorResponse({ status: 404, code: "not_found", message: `no history entry ${id}` });
+    return Response.json({ ...entry, chainAfter: store.chainAfter(id).map((e) => ({ id: e.id, title: e.title, status: e.status })) });
   });
 }
 

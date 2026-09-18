@@ -25,6 +25,8 @@ export interface TaskPageProps {
   readonly extendOnOpen?: boolean;
   /** STORY_043: the length a queued or running clip will have (from its request), so it can be extended before it finishes. */
   readonly pendingSeconds?: number;
+  /** STORY_056: the segments that continue from this one (a chain's later links), in chain order — Retry becomes Retry chain when there are any. */
+  readonly chainAfter?: readonly { readonly id: string; readonly title: string }[];
   /** Injected for tests. */
   readonly fetchImpl?: typeof fetch;
 }
@@ -82,7 +84,7 @@ function PanelSection({ title, children }: { readonly title: string; readonly ch
  * Deliverables) the top bar toggles, the Processed row and the message actions. STORY_026 removed the reference's
  * credits notice, Like / Dislike and the "MiniMax Agent is AI…" line.
  */
-export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, fetchImpl }: TaskPageProps) {
+export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, chainAfter = [], fetchImpl }: TaskPageProps) {
   const router = useRouter();
   const doFetch = fetchImpl ?? fetch;
   const { workAreaOpen, previewOpen, openPreview, closePreview, notify } = useShell();
@@ -159,6 +161,7 @@ export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, fetchImp
   };
 
   const retry = async (): Promise<void> => {
+    if (chainAfter.length > 0) return retryChain(); // STORY_056: segments continue from this one — they go again too
     setBusy("retry");
     try {
       // An extension retries as an extension (STORY_016): the source id and the requested context come from history.
@@ -166,6 +169,22 @@ export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, fetchImp
       const res = await doFetch("/api/jobs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       if (res.status === 202) {
         const body = (await res.json()) as { id: string };
+        router.push(`/task/${encodeURIComponent(body.id)}`);
+      }
+    } finally {
+      setBusy(undefined);
+    }
+  };
+  /** STORY_056: redraw this segment and re-queue every segment behind it as extensions of the redraw — one route, one click. */
+  const retryChain = async (): Promise<void> => {
+    setBusy("retry");
+    try {
+      // the e2e lane's `?script=` on the page URL is forwarded, as the composer forwards it
+      const script = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("script");
+      const res = await doFetch(`/api/jobs/${encodeURIComponent(entry.id)}/retry-chain${script === null ? "" : `?script=${encodeURIComponent(script)}`}`, { method: "POST" });
+      if (res.status === 202) {
+        const body = (await res.json()) as { id: string; rechained: string[]; refused?: { segment: number; message: string } };
+        notify(body.refused === undefined ? `Redrawing this segment and ${String(body.rechained.length)} after it` : `Redrawing this segment; segment ${String(body.refused.segment)} after it was not sent: ${body.refused.message}`);
         router.push(`/task/${encodeURIComponent(body.id)}`);
       }
     } finally {
@@ -315,7 +334,7 @@ export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, fetchImp
             {done ? (
               <div className={styles.result} data-testid="result">
                 {/* STORY_020 / CHORE_009: the server measured a shot change; Retry re-posts the request with a new seed. STORY_046: a moving camera's framing is a note */}
-                <CutNotice cuts={job.result.cuts} camera={job.result.camera} onRetry={() => void retry()} busy={busy === "retry"} />
+                <CutNotice cuts={job.result.cuts} camera={job.result.camera} onRetry={() => void retry()} busy={busy === "retry"} rechains={chainAfter.length} />
                 <p className={styles.agentLine} role="status" data-testid="indicator">{resultLine(job)}</p>
                 <div className={styles.card} data-testid="result-card">
                   <span className={styles.cardIcon} aria-hidden="true"><IconPlay /></span>
@@ -362,7 +381,7 @@ export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, fetchImp
                 </span>
                 {job.error?.code === "moderated" ? null : (
                   <button type="button" className={styles.retry} onClick={() => void retry()} disabled={busy === "retry"}>
-                    Retry{entry.referenceImages > 0 ? " (without the reference images)" : ""}
+                    {chainAfter.length > 0 ? `Retry chain (${String(chainAfter.length)} after it)` : `Retry${entry.referenceImages > 0 ? " (without the reference images)" : ""}`}
                   </button>
                 )}
               </div>

@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { HistoryStore, titleFor } from "./history-store";
+import { chainAfter, HistoryStore, titleFor } from "./history-store";
 
 let dir: string;
 afterEach(() => {
@@ -120,5 +120,22 @@ describe("HistoryStore — extensions (STORY_017)", () => {
     store.recordStatus("e1", { id: "e1", status: "running", progress: 50, request: { prompt: "next", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", referenceImages: 0, overlap: { frames: 1, seconds: 0.042 } } });
     expect(store.get("e1")?.overlap).toEqual({ frames: 22, seconds: 0.917 });
     rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe("chainAfter (STORY_056)", () => {
+  const e = (id: string, createdAt: string, continuesFrom?: string, status: "queued" | "done" | "cancelled" = "done") => ({ id, title: id, prompt: id, params: { ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3" }, referenceImages: 0, createdAt, status, progress: 0, ...(continuesFrom === undefined ? {} : { continuesFrom: { id: continuesFrom, title: continuesFrom } }) });
+  it("walks the links after an entry in chain order; the last has none; a fork lists both branches oldest first; cancelled links are left out", () => {
+    const entries = [e("s1", "2026-09-18T01:00:00Z"), e("s2", "2026-09-18T01:00:01Z", "s1"), e("s3", "2026-09-18T01:00:02Z", "s2", "queued"), e("other", "2026-09-18T01:00:03Z")];
+    expect(chainAfter(entries, "s1").map((x) => x.id)).toEqual(["s2", "s3"]);
+    expect(chainAfter(entries, "s2").map((x) => x.id)).toEqual(["s3"]);
+    expect(chainAfter(entries, "s3")).toEqual([]);
+    expect(chainAfter(entries, "other")).toEqual([]);
+    const forked = [...entries, e("s2b", "2026-09-18T01:00:04Z", "s1"), e("s3b", "2026-09-18T01:00:05Z", "s2b"), e("s3-old", "2026-09-18T00:59:00Z", "s2", "cancelled")];
+    expect(chainAfter(forked, "s1").map((x) => x.id)).toEqual(["s2", "s3", "s2b", "s3b"]);
+    // the store's method reads its own file
+    const s = store();
+    for (const x of entries) s.create(x);
+    expect(s.chainAfter("s1").map((x) => x.id)).toEqual(["s2", "s3"]);
   });
 });

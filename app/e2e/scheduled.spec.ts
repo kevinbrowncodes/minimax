@@ -282,6 +282,58 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     expect(await stubApi.openJobs()).toEqual([]);
   });
 
+  test("Retry chain: a cut at segment 2's join redraws it and re-queues segment 3 behind the redraw, the old segment 3 cancelled (STORY_056)", async ({ page, request, stubApi }) => {
+    test.slow(); // a three-segment chain with a cut script, then a redraw and a re-chained segment — five jobs in all
+    await page.goto("/?script=done-with-cut"); // every segment reports a cut at 11.25 s; segment 2's notice is the one this story acts on
+    await settled(page);
+    await page.getByRole("button", { name: /Video generation/ }).click();
+    await page.getByTestId("reference-input").setInputFiles(REFERENCE_IMAGE);
+    const scene = "A red kite over a windy beach at golden hour.";
+    const scripts = ["[0:00-0:02] The kite climbs.\n[0:02-0:05] It steadies.", "[0:00-0:02] The kite turns.\n[0:02-0:05] It dips.", "[0:00-0:02] The kite rises again.\n[0:02-0:05] It holds."];
+    await page.getByRole("textbox", { name: "Message" }).fill(`${scene}\n\n${scripts.join("\n\n")}`);
+    const created: { id: string }[] = [];
+    page.on("response", (r) => {
+      if (r.url().includes("/api/jobs") && r.request().method() === "POST" && r.status() === 202) void r.json().then((body: { id: string }) => created.push(body));
+    });
+    await page.getByRole("button", { name: "Send all" }).click();
+    await expect.poll(() => created.length, { timeout: 15_000 }).toBe(3);
+    const [first, second, third] = created.map((c) => c.id) as [string, string, string];
+    // segments 1 and 2 done (each after its polls) — the page's own polls, through the job route that records them
+    for (const id of [first, second]) {
+      await expect.poll(async () => ((await (await request.get(`/api/jobs/${id}`)).json()) as { status: string }).status, { timeout: 60_000 }).toBe("done");
+    }
+    // segment 2's page: the notice says the segment behind it goes again too; ?script= on the page URL is what the redraw and the re-chain use
+    await page.goto(`/task/${second}?script=done-after-1-poll`);
+    await settled(page);
+    const notice = page.getByTestId("cut-notice");
+    await expect(notice).toContainText("The shot changed at 00:11");
+    await expect(notice).toContainText("Retry redraws this segment and the 1 segment queued after it with new seeds.");
+    const rechained = page.waitForResponse((r) => r.url().includes(`/api/jobs/${second}/retry-chain`) && r.request().method() === "POST");
+    await notice.getByRole("button", { name: "Retry chain" }).click();
+    const body = (await (await rechained).json()) as { id: string; rechained: string[] };
+    expect(body.rechained).toHaveLength(1);
+    const [redraw, newThird] = [body.id, body.rechained[0] ?? ""];
+    await expect(page.getByTestId("toast")).toHaveText("Redrawing this segment and 1 after it");
+    await expect(page).toHaveURL(new RegExp(`/task/${redraw}`));
+    // the old segment 3 is cancelled; the new one continues from the redraw; both new jobs finish, the new segment 3 after the redraw
+    expect(((await (await request.get(`/api/history/${third}`)).json()) as { status: string }).status).toBe("cancelled");
+    expect(((await (await request.get(`/api/history/${newThird}`)).json()) as { continuesFrom?: { id: string } }).continuesFrom?.id).toBe(redraw);
+    expect(((await (await request.get(`/api/history/${redraw}`)).json()) as { continuesFrom?: { id: string } }).continuesFrom?.id).toBe(first);
+    for (const id of [redraw, newThird]) {
+      await expect.poll(async () => ((await (await request.get(`/api/jobs/${id}`)).json()) as { status: string }).status, { timeout: 60_000 }).toBe("done");
+    }
+    const newThirdEntry = (await (await request.get(`/api/history/${newThird}`)).json()) as { jobId?: string };
+    expect((await stubApi.received(redraw)).request.continueFrom).toBe(first);
+    expect((await stubApi.received(newThirdEntry.jobId ?? newThird)).request.continueFrom).toBe(redraw);
+    expect((await stubApi.received(redraw)).request.prompt).toBe(`${scene}\n\n${scripts[1] ?? ""}`);
+    // Scheduled › Done today lists the redraw and the re-chained segment; the cancelled one is not waiting anywhere
+    await page.goto("/scheduled");
+    await settled(page);
+    await expect(page.getByTestId("waiting-row")).toHaveCount(0);
+    for (const id of [newThird, redraw, third, second, first]) await request.delete(`/api/history/${id}`);
+    expect(await stubApi.openJobs()).toEqual([]);
+  });
+
   test("the empty page, its search and the status filter", async ({ page }) => {
     await page.goto("/scheduled");
     await settled(page);
