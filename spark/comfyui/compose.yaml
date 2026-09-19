@@ -38,6 +38,27 @@ services:
     stop_grace_period: 30s
     restart: "no"
 
+  # STORY_063: the NSFW container — the same image (COMFYUI_TAG_NSFW lets it diverge one day; a different tag is built by
+  # hand with `compose build comfyui` under that tag), its own port, its own models and output directories, and NOTHING
+  # mounted from the SFW side: models-nsfw/ holds its own copy of the base files (fetch-nsfw.sh). Profile nsfw; one
+  # container at a time — started by run.sh --nsfw (which stops the SFW one first, never mid-job), stopped by stop.sh --nsfw.
+  comfyui-nsfw:
+    profiles: ["nsfw"]
+    image: minimax-spark/comfyui:${COMFYUI_TAG_NSFW:-v0.35.1}
+    container_name: minimax-comfyui-nsfw
+    gpus: all
+    ports:
+      - "127.0.0.1:${COMFY_PORT_NSFW:-8189}:8188"
+    volumes:
+      - ${SPARK_DATA:-../data}/models-nsfw:/comfy/ComfyUI/models
+      - ${SPARK_DATA:-../data}/output-nsfw:/comfy/ComfyUI/output
+    networks: [default, minimax]
+    environment:
+      COMFY_EXTRA_ARGS: ${COMFY_EXTRA_ARGS_NSFW:-}
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    restart: "no"
+
   adapter:
     build:
       context: ../..
@@ -51,6 +72,7 @@ services:
       - "127.0.0.1:${ADAPTER_PORT:-4020}:4020"
     volumes:
       - ${SPARK_DATA:-../data}/output:/comfy/output:ro
+      - ${SPARK_DATA:-../data}/output-nsfw:/comfy/output-nsfw:ro   # STORY_063: the NSFW container's results (read by STORY_064)
       - ${SPARK_DATA:-../data}/adapter:/comfy/adapter
     environment:
       COMFY_URL: http://comfyui:8188
@@ -71,6 +93,24 @@ services:
     volumes:
       - ${SPARK_DATA:-../data}/models:/comfy/ComfyUI/models
       - ${SPARK_DATA:-../data}/templates:/comfy/templates
+
+  # STORY_063: one-shot — fills models-nsfw/ from nsfw-files.tsv: the base files COPIED locally from models/ (mounted read-only
+  # here, for the copy only — the long-running comfyui-nsfw service never mounts it), the variant files downloaded (Civitai
+  # needs CIVITAI_TOKEN for its NSFW files; never printed), every file checked against its SHA-256. The script and the
+  # manifest are mounted, not baked, so the image stays the SFW one. Run by fetch-nsfw.sh.
+  fetch-nsfw:
+    image: minimax-spark/comfyui:${COMFYUI_TAG_NSFW:-v0.35.1}
+    profiles: ["tools"]
+    entrypoint: ["/comfy/nsfw/fetch-nsfw.sh"]
+    environment:
+      MIN_FREE_GB: ${MIN_FREE_GB:-100}
+      CIVITAI_TOKEN: ${CIVITAI_TOKEN:-}
+      HF_TOKEN: ${HF_TOKEN:-}
+    volumes:
+      - ${SPARK_DATA:-../data}/models-nsfw:/comfy/ComfyUI/models
+      - ${SPARK_DATA:-../data}/models:/comfy/models-sfw:ro
+      - ./container/fetch-nsfw.sh:/comfy/nsfw/fetch-nsfw.sh:ro
+      - ./nsfw-files.tsv:/comfy/nsfw/nsfw-files.tsv:ro
 
 networks:
   # Shared with the UI's compose project (../../compose.yaml) so the app container reaches http://adapter:4020.

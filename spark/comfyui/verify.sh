@@ -17,12 +17,54 @@ generate=0; seconds=4
 while [ $# -gt 0 ]; do
   case "$1" in
     --generate) generate=1; if [ "${2:-}" != "" ] && [ "${2#-}" = "$2" ]; then seconds="$2"; shift; fi; shift ;;
+    --nsfw) use_nsfw; shift ;;
     *) printf '[verify] unknown option %s\n' "$1" >&2; exit 2 ;;
   esac
 done
 log() { printf '[verify] %s\n' "$*"; }
 fail() { printf '[verify] FAIL: %s\n' "$*" >&2; exit 1; }
 for t in curl jq docker; do command -v "$t" > /dev/null || fail "$t is required on the host"; done
+
+# --- STORY_063: verify.sh --nsfw — the NSFW container is up with the node classes and every file the manifest names -------
+if [ "${NSFW:-0}" = 1 ]; then
+  MANIFEST="$HERE/nsfw-files.tsv"
+  log "nsfw 1/3 the NSFW container answers on $COMFY_URL"
+  stats="$(curl -fsS -m 10 "$COMFY_URL/system_stats" 2>/dev/null)" || fail "no ComfyUI on $COMFY_URL — run spark/comfyui/run.sh --nsfw"
+  container_running || fail "$COMFY_CONTAINER is not the container answering on $COMFY_URL"
+  log "    comfyui $(jq -r '.system.comfyui_version' <<< "$stats")  container $COMFY_CONTAINER  image $(docker inspect -f '{{.Config.Image}}' "$COMFY_CONTAINER")"
+  info="$(curl -fsS -m 30 "$COMFY_URL/object_info")" || fail "GET /object_info failed on $COMFY_URL"
+  log "nsfw 2/3 the node classes the nsfw graph needs (the SFW template's, plus LoraLoaderModelOnly)"
+  missing=""
+  while IFS= read -r c; do
+    jq -e --arg c "$c" 'has($c)' <<< "$info" > /dev/null || missing="$missing $c"
+  done < <(jq -r '[.[] | objects | .class_type] | unique | .[]' "$HERE/h3_t2v_prompt.json"; printf '%s\n' LoraLoaderModelOnly ImageBatchExtendWithOverlap)
+  [ -z "$missing" ] || fail "node classes missing from $COMFY_URL:$missing"
+  log "    every class present"
+  log "nsfw 3/3 every file in $(basename "$MANIFEST") is listed by ComfyUI's loaders"
+  [ -f "$MANIFEST" ] || fail "$MANIFEST is missing"
+  missing=""; listed=0
+  while IFS=$'\t' read -r dest _source _sha _bytes _note; do
+    case "$dest" in ''|'#'*) continue ;; esac
+    name="${dest#*/}"
+    case "$dest" in
+      diffusion_models/*) sel='.UNETLoader.input.required.unet_name[0]' ;;
+      loras/*) sel='.LoraLoaderModelOnly.input.required.lora_name[0]' ;;
+      text_encoders/*) sel='.CLIPLoader.input.required.clip_name[0]' ;;
+      vae/*) sel='.VAELoader.input.required.vae_name[0]' ;;
+      *) missing="$missing $dest(unknown-kind)"; continue ;;
+    esac
+    if jq -e --arg f "$name" "$sel | index(\$f) != null" <<< "$info" > /dev/null; then listed=$((listed + 1)); else missing="$missing $dest"; fi
+  done < "$MANIFEST"
+  [ -z "$missing" ] || fail "files in the manifest that ComfyUI does not list (run fetch-nsfw.sh, then restart the container):$missing"
+  log "    $listed files listed"
+  if health="$(curl -fsS -m 10 "$ADAPTER_URL/health" 2>/dev/null)"; then
+    log "    the adapter answers ($(jq -c '{version, openJobs}' <<< "$health")); its second upstream is STORY_064"
+  else
+    log "    the adapter is not answering on $ADAPTER_URL (it is shared; run.sh starts it)"
+  fi
+  log "nsfw container OK: $COMFY_CONTAINER on $COMFY_URL with every class and every manifest file"
+  exit 0
+fi
 
 log "1/3 the adapter answers on $ADAPTER_URL"
 health="$(curl -fsS -m 10 "$ADAPTER_URL/health" 2>/dev/null)" || fail "no adapter on $ADAPTER_URL — run spark/comfyui/run.sh (or: docker compose --project-directory $HERE up -d adapter)"

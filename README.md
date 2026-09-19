@@ -115,7 +115,7 @@ Present today: `app/` (skeleton), `tools/gate/`, `spark/`, `recon/`, `docs/`, th
 ```
 app/          the UI
 tools/        gate/ (the toolchain image and the gate runner), the stub generation server with its fixtures (STORY_008), other dev tooling
-spark/        comfyui/ — the ComfyUI image (Dockerfile, compose) and scripts that run the model on the Spark; gcloud/ — the one-time Vertex AI setup from Google's CLI image (STORY_047); spark/data/ (gitignored) holds weights, outputs, logs, the gcloud login and the service-account key
+spark/        comfyui/ — the ComfyUI image (Dockerfile, compose) and scripts that run the model on the Spark (the SFW container, and since STORY_063 the NSFW one: `--nsfw`, `nsfw-files.tsv`); gcloud/ — the one-time Vertex AI setup from Google's CLI image (STORY_047); spark/data/ (gitignored) holds weights (`models/`, `models-nsfw/`), outputs (`output/`, `output-nsfw/`), logs, the gcloud login and the service-account key
 recon/        Playwright recon scripts (profile and raw output are gitignored)
 agents/       skills/ — prompt-writing skills in the Agent Skills layout (agentskills.io); `minimax-h3-director-thirst-trap` directs one clip from one image, in that genre; more directors follow the same `minimax-h3-director-<genre>` pattern (CHORE_012)
 docs/
@@ -124,6 +124,7 @@ docs/
   bug/        BUG_NNN_*.md
   backlog/    BACKLOG_NNN_*.md
   chore/      CHORE_NNN_*.md
+  spike/      SPIKE_NNN_*.md — research tickets: reading, a controlled experiment, a written answer and a decision; no product code (since 2026-09-19; SPIKE_001 is the NSFW model spike)
   recon/      dated captures, measured tokens, component inventory, interaction notes
   references/ the MiniMax H3 model card, license, prompt guides, MiniMax's and ComfyUI's H3 docs, the official workflow templates and the node sources from our ComfyUI image, with an index (CHORE_002)
 ```
@@ -254,6 +255,21 @@ The Spark facts (OS, CUDA, memory, disk, what was already installed and running)
 **Decided 2026-09-12: the Spark is used outside the excluded territories, so H3's open weights are licensed for it and phase 2 builds toward MiniMax-H3 on the Spark.** **Serving stack (owner's choice, 2026-09-12): ComfyUI on the Spark with Comfy-Org quantized H3 weights, fronted by our own small job-API adapter** so the UI keeps speaking create → status → result. Precision (int8 / fp8 / NVFP4) and the exact workflow are settled by the first EPIC_004 story, which measures them; see [EPIC_004](docs/epic/EPIC_004_a_video_model_runs_on_the_dgx_spark_behind_the_same_job_api.md) for the options that were weighed ([CLAUDE.md → §4a](CLAUDE.md#4a-two-machines-the-mac-and-the-spark)).
 
 Sources: [MiniMaxAI/MiniMax-H3 model card](https://huggingface.co/MiniMaxAI/MiniMax-H3), [MiniMax H3 LICENSE](https://huggingface.co/MiniMaxAI/MiniMax-H3/raw/main/LICENSE).
+
+### The NSFW container (EPIC_010; STORY_063)
+
+A second ComfyUI container for the adult-content flavour of MiniMax-H3, isolated from the SFW one: the same pinned image, its own port, its own models and output directories, its own start, stop and verify — and nothing mounted from the SFW side. **One container runs at a time** (the owner, 2026-09-19): `run.sh --nsfw` stops the SFW container first and refuses while a job is running or waiting on it; `run.sh` does the reverse. The adapter's second upstream (the *MiniMax-H3 (uncensored)* model in the composer) is STORY_064/065; until they land the NSFW container is driven directly by the spike's scripts.
+
+| Item | Value (STORY_063, 2026-09-19) |
+| --- | --- |
+| Container · port | `minimax-comfyui-nsfw` on 127.0.0.1:8189 (compose service `comfyui-nsfw`, profile `nsfw`; image `minimax-spark/comfyui:${COMFYUI_TAG_NSFW}`, today the same tag as the SFW one) |
+| Models | `spark/data/models-nsfw/` — the container's **whole** models directory: its own copy of the base files it loads (FL2VA int8_convrot 34.0 GB, the text encoder 15.7 GB, the two VAEs 5.8 GB) plus the variant LoRAs and any merged checkpoint, every file on [`spark/comfyui/nsfw-files.tsv`](spark/comfyui/nsfw-files.tsv) with its SHA-256 and size |
+| Output | `spark/data/output-nsfw/` (mounted read-only into the adapter as `/comfy/output-nsfw`) |
+| Scripts | `spark/comfyui/run.sh --nsfw`, `stop.sh --nsfw`, `verify.sh --nsfw` (the node classes and every manifest file listed by the loaders), `fetch-nsfw.sh` (the base files copied locally from `models/`, never re-downloaded; the variant files downloaded; every file hashed; a Civitai row that needs a token is skipped and listed); `NSFW=1` in the environment points `smoke.sh` and `memwatch.sh` at the NSFW container |
+| The switch, measured | `stop.sh` 7 s, `run.sh --nsfw` answering in 10 s (the adapter recreated and healthy in the same run); the model loads happen on the first job, as on the SFW side |
+| The control clip, measured | `NSFW=1 smoke.sh` on the NSFW container with the SFW graph and no LoRA: 5 s at 1344×768, 124 frames, 20 steps — **17 min 28 s** submit → file (the SFW container: 17 min 21 s), h264 + aac; the same model loads in the same order |
+| The fetch, measured | the four base files copied and hashed in 58 s (34 GB in 40 s), six LoRAs downloaded and hashed in ≈ 3 min; three rows (HMPenis v2, both Eros Max int8 builds) need `CIVITAI_TOKEN` in the repo's `.env` — presence is reported, the value never |
+| Licence | the same MiniMax H3 Community License; the constraints EPIC_010 carries: consenting adults only, owner-only access (the container binds 127.0.0.1 and the compose network), no third-party surface |
 
 ### What the model is told, and the shot-change check (STORY_020)
 

@@ -1,31 +1,62 @@
 #!/usr/bin/env bash
-# spark/comfyui/run.sh — start the ComfyUI container (GPU attached, 127.0.0.1:8188) and the adapter (127.0.0.1:4020,
-# and http://adapter:4020 on the shared network) and wait until both answer.
-# The flags live in container/comfyui-entrypoint.sh; COMFY_EXTRA_ARGS is passed through. Logs: docker logs -t minimax-comfyui
+# spark/comfyui/run.sh — start a ComfyUI container (GPU attached) and the adapter (127.0.0.1:4020, and http://adapter:4020
+# on the shared network) and wait until both answer.
+#
+#   run.sh          the SFW container, minimax-comfyui on 127.0.0.1:8188 (what runs today)
+#   run.sh --nsfw   the NSFW container, minimax-comfyui-nsfw on 127.0.0.1:8189 (STORY_063) — its own models-nsfw/ and output-nsfw/
+#
+# One container at a time (the owner, 2026-09-19): before starting one, the other is stopped — and the start is REFUSED while a
+# job is running or waiting on the other, so a switch never interrupts a draw. The flags live in container/comfyui-entrypoint.sh;
+# COMFY_EXTRA_ARGS (COMFY_EXTRA_ARGS_NSFW for the NSFW container) is passed through. Logs: docker logs -t <container>
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib.sh
 . "$HERE/lib.sh"
 
-READY_TIMEOUT="${READY_TIMEOUT:-180}"
 log() { printf '[run] %s\n' "$*"; }
 die() { printf '[run] ERROR: %s\n' "$*" >&2; exit 1; }
+for arg in "$@"; do
+  case "$arg" in
+    --nsfw) use_nsfw ;;
+    *) die "unknown option $arg (use --nsfw)" ;;
+  esac
+done
+READY_TIMEOUT="${READY_TIMEOUT:-180}"
 
-docker image inspect "minimax-spark/comfyui:$COMFYUI_TAG" > /dev/null 2>&1 || die "image not built — run install.sh first"
+if [ "${NSFW:-0}" = 1 ]; then
+  IMAGE="minimax-spark/comfyui:$COMFYUI_TAG_NSFW"
+  OTHER_CONTAINER="$COMFY_CONTAINER_SFW"; OTHER_URL="$COMFY_URL_SFW"; OTHER_SERVICE="$COMFY_SERVICE_SFW"; OTHER_FLAG=""
+  MODELS_DIR="$SPARK_DATA/models-nsfw"; OUTPUT_DIR="$SPARK_DATA/output-nsfw"
+  export COMFY_EXTRA_ARGS_NSFW="${COMFY_EXTRA_ARGS_NSFW:-}"; extra="$COMFY_EXTRA_ARGS_NSFW"
+else
+  IMAGE="minimax-spark/comfyui:$COMFYUI_TAG"
+  OTHER_CONTAINER="$COMFY_CONTAINER_NSFW"; OTHER_URL="$COMFY_URL_NSFW"; OTHER_SERVICE="$COMFY_SERVICE_NSFW"; OTHER_FLAG=" --nsfw"
+  MODELS_DIR="$SPARK_DATA/models"; OUTPUT_DIR="$SPARK_DATA/output"
+  export COMFY_EXTRA_ARGS="${COMFY_EXTRA_ARGS:-}"; extra="$COMFY_EXTRA_ARGS"
+fi
+
+docker image inspect "$IMAGE" > /dev/null 2>&1 || die "image $IMAGE not built — run install.sh first"
 if container_running; then
   log "already running at $COMFY_URL"
   exit 0
+fi
+
+# --- one container at a time: the other one goes down first, never mid-job ----------------------------
+if container_running_named "$OTHER_CONTAINER"; then
+  n="$(comfy_queue_count "$OTHER_URL")"
+  [ "$n" = 0 ] || die "$OTHER_CONTAINER has $n job(s) running or waiting (or did not answer) — never mid-job: wait for it to finish (or stop.sh$OTHER_FLAG), then run again"
+  log "stopping $OTHER_CONTAINER first (one container at a time; its queue is empty)"
+  compose stop "$OTHER_SERVICE"
 fi
 if ss -ltn "sport = :$COMFY_PORT" 2>/dev/null | grep -q LISTEN; then
   die "port $COMFY_PORT is already in use by something that is not ours"
 fi
 
-mkdir -p "$SPARK_DATA"/{models,output,logs}
-export COMFY_EXTRA_ARGS="${COMFY_EXTRA_ARGS:-}"
-log "starting $COMFY_CONTAINER (extra args: '${COMFY_EXTRA_ARGS}')"
+mkdir -p "$MODELS_DIR" "$OUTPUT_DIR" "$SPARK_DATA/logs"
+log "starting $COMFY_CONTAINER from $IMAGE (extra args: '$extra')"
 docker network inspect minimax > /dev/null 2>&1 || die "the shared docker network minimax is missing — run install.sh"
-mkdir -p "$SPARK_DATA/adapter"
-compose up -d comfyui adapter
+mkdir -p "$SPARK_DATA/adapter" "$SPARK_DATA/output-nsfw"
+compose up -d "$COMFY_SERVICE" adapter
 
 waited=0
 until curl -fsS "$COMFY_URL/system_stats" > /dev/null 2>&1; do
