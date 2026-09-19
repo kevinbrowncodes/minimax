@@ -28,4 +28,4 @@
 
 ## Resolution
 
-Fixed 2026-09-18 in `lib/chain-outcome.ts` (a map of the chain's entries by id; `outcomeOf(entry, byId.get(entry.continuesFrom.id))`; the waiting label from the source's index); `chain-outcome.test.ts`'s fork case gained the redraw's cut and its label. Gate green; deployed with the next restart (never mid-job — the Spark is on STORY_060).
+Fixed 2026-09-18 in `lib/chain-outcome.ts` (a map of the chain's entries by id; `outcomeOf(entry, byId.get(entry.continuesFrom.id))`; the waiting label from the source's index); `chain-outcome.test.ts`'s fork case gained the redraw's cut and its label. Gate green in the hook (push 04f1285, 15:25 EDT); **deployed 2026-09-18 23:14 EDT** in STORY_060's idle window (the app had no job open; lever 4 ran straight to ComfyUI), verified on the live route: `f4abcfc7` reads *cut-at-join* with `sourceIndex` 1, and the night's six matrix draws (rows 8–13) each judged against segment 1.
