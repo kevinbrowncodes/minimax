@@ -25,7 +25,7 @@ See **[README.md](README.md)** for the full overview, MVP scope, tech stack, and
 
 ## 2. Repo Structure
 
-See **[README.md → Project Structure](README.md#project-structure)**. The `docs/` ticket conventions (epics, stories, bugs, backlog, chores, recon) are defined in Sections 3–3e below.
+See **[README.md → Project Structure](README.md#project-structure)**. The `docs/` ticket conventions (epics, stories, bugs, backlog, chores, spikes, recon) are defined in Sections 3–3f below.
 
 ---
 
@@ -98,6 +98,18 @@ See **[README.md → Project Structure](README.md#project-structure)**. The `doc
 - The `# CHORE_NNN — …` heading uses a plain-English title (same rule as stories — no raw symbols or jargon).
 - Chore prose is frozen once done, exactly like stories: flip the checklist `[ ]` → `[x]`, but don't rewrite the description. **If scope grows beyond a trivial change, promote it to a story** before writing any more code.
 - Commit chores with a `chore(CHORE_NNN): …` message.
+
+---
+
+## 3f. How Spikes Are Tracked
+
+> Spike tickets live in `docs/spike/SPIKE_NNN_short_slug.md`. Use a **spike** when the question is "which one, and does it work on our box" and the answer is reading plus a controlled experiment, never product code.
+
+- Spike numbers are three-digit zero-padded: `SPIKE_001`, `SPIKE_002`, …; the heading uses a plain-English title (the same rule as stories).
+- Sections: the user story, **Current state** (read from the files and the box that day), **Acceptance Criteria** (the sources quoted with file and line; the measured-vs-asserted table; the experiment's matrix; the answer in one paragraph; the follow-up tickets), **Technical Notes**, **Testing Plan** (unit/integration/e2e are "none" with the reason; the manual verification lists what the Done note records), **Estimated Complexity** with the owner's budget.
+- The budget is set by the owner before the GPU runs, and the spike stops at it.
+- Nothing in the product changes inside a spike; a lever that wins becomes a story or a chore, and the epic that follows cites the spike.
+- Commit with `docs(SPIKE_NNN): …`.
 
 ---
 
@@ -229,7 +241,7 @@ See **[README.md → Tech Stack](README.md#tech-stack)** and **[README.md → Ru
 3. **Every claim about live state in the summary was verified this session** — the reference by re-opening the capture, the Spark by looking at the Spark, a license by reading the license file. If something was described from the README instead, say so in the summary rather than presenting it as checked.
 4. **README.md is updated if any project fact changed** — stack, structure, the model or checkpoint on the Spark, its license status, ports, env var names, how to run anything. CLAUDE.md changes only when a _process_ lesson was learned, and the lesson goes in as a rule with its reason, not as a diary entry.
 5. **Nothing secret or heavy is in the transcript, the diff, or the recon output.** `git status --short` shows no profile, cookies, HAR, generated video, or weights; nothing was echoed.
-6. **Explicit paths were staged**, and the commit message names the ticket (`feat(STORY_NNN)`, `fix(BUG_NNN)`, `chore(CHORE_NNN)`, `docs(EPIC_NNN)`).
+6. **Explicit paths were staged**, and the commit message names the ticket (`feat(STORY_NNN)`, `fix(BUG_NNN)`, `chore(CHORE_NNN)`, `docs(EPIC_NNN)`, `docs(SPIKE_NNN)`).
 7. **Pushed to `develop`**, never `main`.
 8. **Anything the owner mentioned outside the MVP has a backlog item**, and the summary lists them.
 9. **The summary stands on its own:** what changed, what commands ran, what the outcome was, and what is next — written for someone who did not watch the session.
