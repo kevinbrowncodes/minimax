@@ -93,7 +93,7 @@ describe("extension arithmetic (STORY_017)", () => {
     expect(ref2vaFileFor("minimax_h3_fl2va_int8_convrot.safetensors")).toBe("minimax_h3_ref2va_int8_convrot.safetensors");
     for (const c of ["LoadVideo", "GetVideoComponents", "VAEEncode", "VAEEncodeAudio", "EmptyMiniMaxH3LatentAV", "LTXVSeparateAVLatent", "LTXVConcatAVLatent", "ReplaceVideoLatentFrames", "LatentCut", "LatentConcat", "SolidMask", "MaskToImage", "RepeatImageBatch", "ImageToMask", "MaskComposite", "SetLatentNoiseMask", "ImageBatch", "TrimAudioDuration", "AudioConcat"]) expect(REQUIRED_CLASSES).toContain(c);
     expect(REQUIRED_CLASSES).not.toContain("MiniMaxH3ReferenceToVideo");
-    expect(REQUIRED_CLASSES).not.toContain("MiniMaxH3AddGuide");
+    expect(REQUIRED_CLASSES).toContain("MiniMaxH3AddGuide"); // STORY_061: the end-frame anchor
   });
 
   it("builds the extension graph: the source's last 39 frames become the new clip's own masked head on FL2VA, then the join", () => {
@@ -143,6 +143,14 @@ describe("extension arithmetic (STORY_017)", () => {
     expect(graph["poster_frame"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["joined_frames", 0], batch_index: 0, length: 1 } });
     expect(graph["noise"]?.inputs).toMatchObject({ noise_seed: 3 });
     expect(graph["save"]?.inputs).toMatchObject({ filename_prefix: "video/job-2" });
+    // STORY_061: with the end anchored, the source's last frame is pinned at the new clip's last frame and the guider takes it
+    const anchored = buildGraph(template, req, [], { seed: 3, filenamePrefix: "video/job-2", continuation: { file: "video/job-src_00001_.mp4", frames: 243, overlapFrames: 39, prompt: "WRAPPED", anchorEnd: true } });
+    expect(anchored["anchor_frame"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: 242, length: 1 } });
+    expect(anchored["anchor"]).toEqual({ class_type: "MiniMaxH3AddGuide", inputs: { positive: ["cond", 0], vae: ["vae_video", 0], latent: ["latent", 0], image: ["anchor_frame", 0], frame_idx: 293 } });
+    expect(anchored["guider"]?.inputs).toMatchObject({ conditioning: ["anchor", 0], model: ["unet", 0] });
+    const without = (g: Record<string, unknown>, ...keys: string[]) => Object.fromEntries(Object.entries(g).filter(([k]) => !keys.includes(k)));
+    expect(without(anchored, "anchor_frame", "anchor", "guider")).toEqual(without(graph, "guider")); // nothing else moves
+    expect(buildGraph(template, req, [], { seed: 3, filenamePrefix: "video/job-2", continuation: { file: "video/job-src_00001_.mp4", frames: 243, overlapFrames: 39, prompt: "WRAPPED", anchorEnd: false } })).toEqual(graph);
     // what cannot be built is refused, not guessed
     expect(() => buildGraph(template, req, [], { continuation: { file: "x.mp4", frames: 243, overlapFrames: 30, prompt: "" } })).toThrow(/not one of/);
     expect(() => buildGraph(template, req, [], { continuation: { file: "x.mp4", frames: 20, overlapFrames: 39, prompt: "" } })).toThrow(/does not fit/);

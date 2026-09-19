@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Capabilities } from "./job-api";
-import { canSend, durationOptions, findingsNotice, initialComposer, isModelEnabled, isResolutionEnabled, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ComposerState, type ExtendSource, agentSkill, agentSkillLabel, skillClipSeconds, type AgentSkill } from "./composer-state";
+import { canSend, durationOptions, endAnchorOptions, findingsNotice, initialComposer, isModelEnabled, isResolutionEnabled, overlapOptions, paramsLabel, reduceComposer, type ComposerImage, type ComposerState, type ExtendSource, agentSkill, agentSkillLabel, skillClipSeconds, type AgentSkill } from "./composer-state";
 
 const caps: Capabilities = { models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }], ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], resolutions: ["768P"], durationsSeconds: { min: 4, max: 15, step: 1 }, referenceImages: { max: 2 } };
 const img = (id: string, type = "image/png", size = 1000): ComposerImage => ({ id, file: new File(["x"], `${id}.png`, { type }), url: "", name: `${id}.png`, type, size });
@@ -130,7 +130,7 @@ describe("reduceComposer edge branches", () => {
 
 describe("extend mode (STORY_016, STORY_017)", () => {
   const source: ExtendSource = { id: "src", title: "A boat", durationSeconds: 10.125, ratio: "9:16", resolution: "768P", model: "minimax-h3", posterUrl: "/api/jobs/src/poster" };
-  const extCaps: Capabilities = { ...caps, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 } };
+  const extCaps: Capabilities = { ...caps, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30, endAnchor: { options: ["source-last-frame", "none"], default: "source-last-frame" } } };
 
   it("extend-from takes the source's ratio/resolution/model and the extension defaults, locks the fixed fields and refuses images", () => {
     const s = reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: extCaps }), { type: "extend-from", source });
@@ -147,6 +147,15 @@ describe("extend mode (STORY_016, STORY_017)", () => {
     expect(durationOptions(s)).toEqual([4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
     expect(overlapOptions(s)).toEqual([{ frames: 22, label: "0.9 s" }, { frames: 39, label: "1.6 s" }, { frames: 56, label: "2.3 s" }]);
     expect(canSend(reduceComposer(s, { type: "text", text: "next" }))).toBe(true);
+    // STORY_061: the End row — the owner's default is the pinned end; the server's options in plain words; kept outside extend mode for the chain
+    expect(s.endAnchor).toBe("source-last-frame");
+    expect(endAnchorOptions(s)).toEqual([{ value: "source-last-frame", label: "Where it began" }, { value: "none", label: "Anywhere" }]);
+    expect(reduceComposer(s, { type: "end-anchor", endAnchor: "none" })).toMatchObject({ endAnchor: "none" });
+    expect(reduceComposer(s, { type: "end-anchor", endAnchor: "source-last-frame" })).toBe(s);
+    expect(reduceComposer(initialComposer(), { type: "end-anchor", endAnchor: "none" }).endAnchor).toBe("none"); // the chain's segments 2 and 3 will carry it
+    expect(endAnchorOptions(initialComposer())).toEqual([]); // no row outside extend mode
+    const older = reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: { ...caps, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 } } }), { type: "extend-from", source });
+    expect(endAnchorOptions(older)).toEqual([]); // a server before v1.5 offers no End row
   });
 
   it("the overlap re-clamps the duration while extending and is kept as the chain strip's outside it (STORY_044); clear-extend restores the normal composer", () => {

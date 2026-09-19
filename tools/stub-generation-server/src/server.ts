@@ -14,6 +14,8 @@ import { DEFAULT_SCRIPT, cameraFor, cutsFor, isScriptName, isTerminal, stepFor, 
 import { createAgentFake, loadAgentFixtures } from "./agent.ts";
 
 export const VERSION = "1.2.0";
+/** STORY_061 (contract v1.5): where an extension ends — the source's last frame pinned at the new segment's last frame, or nothing. */
+const END_ANCHORS = ["source-last-frame", "none"] as const;
 export const CAPABILITIES = {
   models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }],
   ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
@@ -21,7 +23,7 @@ export const CAPABILITIES = {
   durationsSeconds: { min: 4, max: 15, step: 1 },
   referenceImages: { max: 2 },
   /** Extending a finished video (STORY_017), the same numbers as the adapter's. */
-  extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30 },
+  extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30, endAnchor: { options: END_ANCHORS, default: "source-last-frame" } },
 } as const;
 const IMAGE_TYPES: ReadonlySet<string> = new Set(["image/png", "image/jpeg", "image/webp"]);
 const MAX_PROMPT = 6000; // STORY_020: room for a MiniMax-length prompt (mirrors the adapter's MAX_PROMPT_CHARS)
@@ -37,6 +39,8 @@ export interface JobRequest {
   readonly continueFrom?: string;
   readonly overlapFrames?: number;
   readonly overlap?: { readonly frames: number; readonly seconds: number };
+  /** STORY_061: recorded as received, so the gate can assert what the UI sent. */
+  readonly endAnchor?: (typeof END_ANCHORS)[number];
   readonly seed?: number;
 }
 export interface ReceivedUpload {
@@ -209,6 +213,13 @@ function validateRequest(fields: Record<string, unknown>, uploads: readonly Mult
     }
     if (uploads.length > 0) throw new HttpError(400, "validation", "an extension takes no reference images: the video being extended is the reference", "referenceImage");
   }
+  let endAnchor: (typeof END_ANCHORS)[number] | undefined;
+  const rawAnchor = fields["endAnchor"];
+  if (continueFrom !== undefined) {
+    if (rawAnchor === undefined || rawAnchor === null || rawAnchor === "") endAnchor = "source-last-frame";
+    else if (typeof rawAnchor === "string" && (END_ANCHORS as readonly string[]).includes(rawAnchor)) endAnchor = rawAnchor as (typeof END_ANCHORS)[number];
+    else throw new HttpError(400, "unsupported_option", `endAnchor must be one of ${END_ANCHORS.join(", ")}`, "endAnchor");
+  } else if (rawAnchor !== undefined && rawAnchor !== null && rawAnchor !== "") throw new HttpError(400, "validation", "endAnchor only applies to an extension (send continueFrom)", "endAnchor");
   let seed: number | undefined;
   const rawSeed = fields["seed"];
   if (rawSeed !== undefined && rawSeed !== null && rawSeed !== "") {
@@ -231,6 +242,7 @@ function validateRequest(fields: Record<string, unknown>, uploads: readonly Mult
     referenceImages: uploads.length,
     ...(continueFrom === undefined ? {} : { continueFrom }),
     ...(overlapFrames === undefined ? {} : { overlapFrames }),
+    ...(endAnchor === undefined ? {} : { endAnchor }),
     ...(seed === undefined ? {} : { seed }),
   };
 }

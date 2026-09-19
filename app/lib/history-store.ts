@@ -18,6 +18,8 @@ export interface HistoryParams {
   readonly model: string;
   /** STORY_017: the requested overlap of an extension, kept so Retry re-posts it. */
   readonly overlapFrames?: number;
+  /** STORY_061: where the extension ends ("source-last-frame" | "none"), kept the same way. */
+  readonly endAnchor?: string;
 }
 /** STORY_032: a reference image kept with the job — `n` is its upload ordinal (the route's key), `file` its name on disk. */
 export interface ReferenceFile {

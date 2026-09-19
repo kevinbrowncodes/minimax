@@ -16,6 +16,8 @@ export interface QueuedRequest {
   readonly model: string;
   readonly continueFrom?: string;
   readonly overlapFrames?: number;
+  /** STORY_061 */
+  readonly endAnchor?: string;
   readonly projectId?: string;
   /** The stub's script, forwarded as it was on the original URL (the gate); the adapter ignores it. */
   readonly script?: string;

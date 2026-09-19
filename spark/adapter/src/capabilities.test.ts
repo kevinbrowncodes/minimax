@@ -60,6 +60,13 @@ describe("extensions (STORY_017)", () => {
     expect(plain).not.toHaveProperty("continueFrom");
     expect(plain).not.toHaveProperty("overlapFrames");
     expect(plain.seed).toBe(7);
+    // STORY_061: endAnchor — the source's last frame pinned at the end by default, "none" on request, refused outside an extension
+    expect(ext.endAnchor).toBe("source-last-frame");
+    expect(validateRequest({ ...valid, continueFrom: "abc", durationSeconds: 10, endAnchor: "none" }, []).endAnchor).toBe("none");
+    expect(validateRequest({ ...valid, continueFrom: "abc", durationSeconds: 10, endAnchor: "" }, []).endAnchor).toBe("source-last-frame");
+    expect(() => validateRequest({ ...valid, continueFrom: "abc", durationSeconds: 10, endAnchor: "held-draw" }, [])).toThrow(/endAnchor must be one of/);
+    expect(() => validateRequest({ ...valid, endAnchor: "none" }, [])).toThrow(/only applies to an extension/);
+    expect(plain).not.toHaveProperty("endAnchor");
     // the most a step can add depends on the overlap (the model's 362-frame ceiling)
     expect(validateRequest({ ...valid, continueFrom: "abc", durationSeconds: 14, overlapFrames: 22 }, []).durationSeconds).toBe(14);
     expect(validateRequest({ ...valid, continueFrom: "abc", durationSeconds: 13, overlapFrames: 39 }, []).durationSeconds).toBe(13);
@@ -94,6 +101,6 @@ describe("extensions (STORY_017)", () => {
   });
 
   it("publishes the extension capabilities", () => {
-    expect(CAPABILITIES.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 });
+    expect(CAPABILITIES.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30, endAnchor: { options: ["source-last-frame", "none"], default: "source-last-frame" } }); // STORY_061
   });
 });

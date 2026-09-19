@@ -47,8 +47,13 @@ export interface JobRequest {
   readonly continueFrom?: string;
   readonly overlapFrames?: number;
   readonly overlap?: Overlap;
+  /** v1.5 (STORY_061): where the extension ends — the source's last frame pinned at the new segment's last frame, or nothing. */
+  readonly endAnchor?: EndAnchor;
   readonly seed?: number;
 }
+/** STORY_061 (contract v1.5): the extension's end — pinned to the source's last frame (the segment returns to where it began) or free. */
+export type EndAnchor = "source-last-frame" | "none";
+export const END_ANCHORS: readonly EndAnchor[] = ["source-last-frame", "none"];
 export interface JobStatusResponse {
   readonly id: string;
   readonly status: JobStatus;
@@ -84,6 +89,8 @@ export interface ExtensionCapabilities {
   readonly overlapFrames: { readonly options: readonly number[]; readonly default: number };
   readonly maxFrames: number;
   readonly maxSourceSeconds: number;
+  /** v1.5 (STORY_061); absent from an older server — the UI then shows no End row and sends nothing. */
+  readonly endAnchor?: { readonly options: readonly EndAnchor[]; readonly default: EndAnchor };
 }
 export interface ApiError {
   readonly error: { readonly code: string; readonly message: string; readonly field?: string };

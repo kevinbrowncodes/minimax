@@ -39,6 +39,10 @@ test.describe("extend a finished video (STORY_016, STORY_017)", () => {
     await page.getByRole("radio", { name: "0.9 s" }).click();
     await expect(page.getByTestId("overlap-line")).toHaveText("carries its last 0.9 s into the new clip");
     await expect(page.getByRole("radio", { name: "+14s" })).toBeVisible();
+    // STORY_061: the End row — Where it began is the default; this one is sent with Anywhere and the next stays pinned
+    await expect(page.getByRole("radio", { name: "Where it began" })).toHaveAttribute("aria-checked", "true");
+    await page.getByRole("radio", { name: "Anywhere" }).click();
+    await expect(page.getByRole("radio", { name: "Anywhere" })).toHaveAttribute("aria-checked", "true");
     await page.keyboard.press("Escape");
     await page.getByRole("textbox", { name: "Message" }).fill("and then he bows");
     // Registered before the click (CLAUDE.md §6b); the new task polls with the stub's default script. The URL still
@@ -52,13 +56,14 @@ test.describe("extend a finished video (STORY_016, STORY_017)", () => {
     await expect(page.getByTestId("continues")).toContainText("Continues The first clip · 2.0 s");
     expect((await terminal).status).toBe("done");
     await expect(page.getByTestId("continues")).toContainText("carried its last 0.9 s");
+    await expect(page.getByTestId("continues")).not.toContainText("ends where it began");
     await expectPlayable(page.getByTestId("result-video"), `/api/jobs/${id2}/result`);
     await page.getByTestId("preview-pane").getByRole("button", { name: "Close" }).click();
     await page.getByTestId("result-card").getByRole("button", { name: "More" }).click();
     await expect(page.getByRole("menuitem", { name: /Extend/ })).toBeVisible();
     await page.keyboard.press("Escape");
     const received = await stubApi.received(id2);
-    expect(received.request).toMatchObject({ prompt: "and then he bows", continueFrom: id1, durationSeconds: 10, overlapFrames: 22 });
+    expect(received.request).toMatchObject({ prompt: "and then he bows", continueFrom: id1, durationSeconds: 10, overlapFrames: 22, endAnchor: "none" });
   });
 
   test("Assets offers Send to new task, which opens the task extending; Stop extending restores the composer without creating a job", async ({ page, stubApi }, testInfo) => {
@@ -99,6 +104,7 @@ test.describe("extend a finished video (STORY_016, STORY_017)", () => {
     const { id: id3 } = (await (await retriedCreate).json()) as { id: string };
     await expect(page).toHaveURL(new RegExp(`/task/${id3}$`));
     expect((await retried).status).toBe("done");
-    expect((await stubApi.received(id3)).request).toMatchObject({ continueFrom: id1, overlapFrames: 39, prompt: "fail me" });
+    expect((await stubApi.received(id3)).request).toMatchObject({ continueFrom: id1, overlapFrames: 39, prompt: "fail me", endAnchor: "source-last-frame" }); // STORY_061: the default, re-posted by Retry as stored
+    await expect(page.getByTestId("continues")).toContainText("ends where it began");
   });
 });

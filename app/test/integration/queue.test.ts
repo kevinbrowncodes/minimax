@@ -15,6 +15,7 @@ import { DELETE as removeQueued, GET as getQueued, PATCH as patchQueued } from "
 import { GET as listQueue } from "@/app/api/queue/route";
 import type { HistoryEntry } from "@/lib/history-store";
 import type { CreateJobResponse, JobStatusResponse } from "@/lib/job-api";
+import { upstreamJobId } from "@/lib/queue-runner";
 
 let stub: StubServer;
 let stubUrl = "";
@@ -25,6 +26,7 @@ const jsonRequest = (p: string, body: unknown, method = "POST") => new Request(`
 type Queued = { id: string; status: string; progress: number; position?: number; notBefore?: string };
 const status = async (id: string): Promise<Queued & Partial<JobStatusResponse>> => (await (await getJob(new Request(`http://app/api/jobs/${id}`), ctx(id))).json()) as Queued & Partial<JobStatusResponse>;
 const line = async (): Promise<{ id: string; position: number; title: string; notBefore?: string }[]> => ((await (await listQueue()).json()) as { entries: { id: string; position: number; title: string; notBefore?: string }[] }).entries;
+const stubReceived = async (id: string): Promise<{ request: Record<string, unknown> }> => (await (await fetch(`${stubUrl}/__stub/jobs/${upstreamJobId(id)}/received`)).json()) as { request: Record<string, unknown> };
 const stubJobs = async (): Promise<{ id: string; status: string }[]> => ((await (await fetch(`${stubUrl}/__stub/jobs`)).json()) as { jobs: { id: string; status: string }[] }).jobs;
 
 beforeAll(async () => {
@@ -242,8 +244,8 @@ describe("the queue through the app's routes", () => {
     let st = await status(s1.id);
     for (let i = 0; i < 4 && st.status !== "done"; i += 1) st = await status(s1.id);
     expect(st.status).toBe("done");
-    const s2 = (await (await createJob(jsonRequest("/api/jobs?script=slow-done-after-10-polls", { ...valid, prompt: "Segment two", durationSeconds: 10, continueFrom: s1.id, overlapFrames: 39 }))).json()) as CreateJobResponse;
-    const s3 = (await (await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, prompt: "Segment three", durationSeconds: 10, continueFrom: s2.id, overlapFrames: 39 }))).json()) as Queued;
+    const s2 = (await (await createJob(jsonRequest("/api/jobs?script=slow-done-after-10-polls", { ...valid, prompt: "Segment two", durationSeconds: 10, continueFrom: s1.id, overlapFrames: 39, endAnchor: "source-last-frame" }))).json()) as CreateJobResponse;
+    const s3 = (await (await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, prompt: "Segment three", durationSeconds: 10, continueFrom: s2.id, overlapFrames: 39, endAnchor: "source-last-frame" }))).json()) as Queued;
     expect(s3).toMatchObject({ status: "queued", position: 1 });
     // GET /api/history/:id answers chainAfter, transitively, in chain order
     const one = (await (await getHistoryEntry(new Request(`http://app/api/history/${s1.id}`), ctx(s1.id))).json()) as { chainAfter: { id: string; title: string; status: string }[] };
@@ -262,9 +264,10 @@ describe("the queue through the app's routes", () => {
     const entries = ((await (await listHistory()).json()) as { entries: HistoryEntry[] }).entries;
     expect(entries.find((e) => e.id === s3.id)?.status).toBe("cancelled");
     const redraw = entries.find((e) => e.id === body.id);
-    expect(redraw).toMatchObject({ prompt: "Segment two", continuesFrom: { id: s1.id }, params: { durationSeconds: 10, overlapFrames: 39 } });
+    expect(redraw).toMatchObject({ prompt: "Segment two", continuesFrom: { id: s1.id }, params: { durationSeconds: 10, overlapFrames: 39, endAnchor: "source-last-frame" } }); // STORY_061: redrawn pinned, as stored
+    expect((await stubReceived(body.id)).request).toMatchObject({ endAnchor: "source-last-frame" });
     const newThree = entries.find((e) => e.id === body.rechained[0]);
-    expect(newThree).toMatchObject({ prompt: "Segment three", status: "queued", continuesFrom: { id: body.id } });
+    expect(newThree).toMatchObject({ prompt: "Segment three", status: "queued", continuesFrom: { id: body.id }, params: { endAnchor: "source-last-frame" } });
     expect((await line()).map((e) => e.id)).toEqual([body.rechained[0]]);
     // STORY_057: from the redraw's page the chain is 1 → the old segment 2 (still a link until it is cancelled) → the redraw → the new 3; the old 3 is no row
     const chainFromRedraw = (await (await getChain(new Request(`http://app/api/history/${body.id}/chain`), ctx(body.id))).json()) as { segments: { id: string; outcome: string }[] };

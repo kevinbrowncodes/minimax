@@ -40,6 +40,7 @@ export function upstreamFields(request: QueueEntry["request"]): Record<string, s
     model: request.model,
     ...(request.continueFrom === undefined ? {} : { continueFrom: upstreamJobId(request.continueFrom) }),
     ...(request.overlapFrames === undefined ? {} : { overlapFrames: request.overlapFrames }),
+    ...(request.endAnchor === undefined ? {} : { endAnchor: request.endAnchor }),
   };
 }
 

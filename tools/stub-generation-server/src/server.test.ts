@@ -225,7 +225,13 @@ describe("contract v1.2: extensions (STORY_017)", () => {
     const again = await json("/jobs?script=done-after-1-poll", { ...valid, durationSeconds: 10, continueFrom: id, overlapFrames: 56, seed: 7 });
     expect(again.status).toBe(202);
     const s2 = await status(((await again.json()) as { id: string }).id);
-    expect(s2["request"]).toMatchObject({ overlapFrames: 56, overlap: { frames: 56, seconds: 2.333 }, seed: 7 });
+    expect(s2["request"]).toMatchObject({ overlapFrames: 56, overlap: { frames: 56, seconds: 2.333 }, seed: 7, endAnchor: "source-last-frame" }); // STORY_061: pinned by default
+    // STORY_061: endAnchor is recorded as received — "none" on request; refused for a third value and outside an extension
+    const free = (await (await json("/jobs?script=done-after-1-poll", { ...valid, durationSeconds: 10, continueFrom: id, endAnchor: "none" })).json()) as { id: string };
+    expect(((await (await api(`/__stub/jobs/${free.id}/received`)).json()) as { request: Record<string, unknown> }).request).toMatchObject({ endAnchor: "none" });
+    await status(free.id);
+    expect(await errorOf(await json("/jobs?script=done-after-1-poll", { ...valid, durationSeconds: 10, continueFrom: id, endAnchor: "held-draw" }))).toMatchObject({ code: "unsupported_option", field: "endAnchor" });
+    expect(await errorOf(await json("/jobs?script=done-after-1-poll", { ...valid, endAnchor: "none" }))).toMatchObject({ code: "validation", field: "endAnchor" });
   });
 
   it("refuses an unknown or unfinished source, a mismatched ratio, an upload, an out-of-range step, a bad overlap, the old contextSeconds and a bad seed", async () => {
@@ -253,7 +259,7 @@ describe("contract v1.2: extensions (STORY_017)", () => {
     expect(withImage.status).toBe(400);
     expect(await errorOf(withImage)).toMatchObject({ code: "validation", field: "referenceImage" });
     await api(`/jobs/${running}`, { method: "DELETE" });
-    expect(CAPABILITIES.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 });
+    expect(CAPABILITIES.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30, endAnchor: { options: ["source-last-frame", "none"], default: "source-last-frame" } }); // STORY_061
     expect((await (await api("/capabilities")).json()) as Record<string, unknown>).toMatchObject({ extension: CAPABILITIES.extension });
   });
 });

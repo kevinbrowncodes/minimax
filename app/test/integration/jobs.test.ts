@@ -204,11 +204,23 @@ describe("extensions (STORY_016, STORY_017)", () => {
     const { id } = (await res.json()) as CreateJobResponse;
     const entry = historyStore().get(id);
     expect(entry).toMatchObject({ continuesFrom: { id: src, title: "A small paper boat", durationSeconds: 2 }, params: { durationSeconds: 10, overlapFrames: 22 } });
+    expect(entry?.params).not.toHaveProperty("endAnchor"); // STORY_061: only what was sent is kept; the server applies its default
     expect(entry?.overlap).toBeUndefined();
     const s = await status(id);
-    expect(s.request).toMatchObject({ continueFrom: src, overlapFrames: 22, overlap: { frames: 22, seconds: 0.917 } });
+    expect(s.request).toMatchObject({ continueFrom: src, overlapFrames: 22, overlap: { frames: 22, seconds: 0.917 }, endAnchor: "source-last-frame" }); // the server's default (v1.5)
     expect(historyStore().get(id)?.overlap).toEqual({ frames: 22, seconds: 0.917 });
     expect((await stubReceived(id)).request).toMatchObject({ continueFrom: src, overlapFrames: 22, durationSeconds: 10 });
+    // STORY_061: endAnchor as sent is kept with the params (Retry re-posts it), forwarded, and ignored on a fresh clip
+    const freeRes = await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, durationSeconds: 10, continueFrom: src, endAnchor: "none" }));
+    expect(freeRes.status).toBe(202);
+    const free = ((await freeRes.json()) as CreateJobResponse).id;
+    expect(historyStore().get(free)?.params).toMatchObject({ endAnchor: "none" });
+    expect((await stubReceived(free)).request).toMatchObject({ continueFrom: src, endAnchor: "none" });
+    await status(free);
+    // on a fresh clip the field is the server's to refuse (v1.5: "only applies to an extension"); the app never sends it there
+    const freshRes = await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, endAnchor: "none" }));
+    expect(freshRes.status).toBe(400);
+    expect(((await freshRes.json()) as { error: { code: string; field?: string } }).error).toMatchObject({ code: "validation", field: "endAnchor" });
   });
 
   it("a refused continueFrom relays the stub's 400 and writes no history entry; the old contextSeconds is refused; capabilities relay the extension limits", async () => {
@@ -223,6 +235,6 @@ describe("extensions (STORY_016, STORY_017)", () => {
     expect(((await old.json()) as ApiError).error).toMatchObject({ code: "validation", field: "contextSeconds" });
     expect(historyStore().list().length).toBe(before + 1);
     const caps = (await (await getCapabilities()).json()) as Capabilities;
-    expect(caps.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30 });
+    expect(caps.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30, endAnchor: { options: ["source-last-frame", "none"], default: "source-last-frame" } }); // STORY_061 (v1.5)
   });
 });

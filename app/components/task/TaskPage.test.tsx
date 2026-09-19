@@ -330,7 +330,12 @@ describe("TaskPage — extend (STORY_016, STORY_017)", () => {
   it("an extension's bubble names its source and what was carried, from history or from the first status", async () => {
     render(<TaskPage entry={entry({ status: "done", progress: 100, result, continuesFrom: { id: "src", title: "The first clip", durationSeconds: 10.125 }, overlap: { frames: 39, seconds: 1.625 } })} fetchImpl={fetchScript([]).fetchImpl} />);
     expect(screen.getByTestId("continues")).toHaveTextContent("Continues The first clip · 10.1 s · carried its last 1.6 s");
+    expect(screen.getByTestId("continues")).not.toHaveTextContent("ends where it began"); // a job before STORY_061, or one sent with Anywhere
     expect(screen.getByRole("link", { name: "The first clip" })).toHaveAttribute("href", "/task/src");
+    cleanup();
+    // STORY_061: the request line says when the end was pinned
+    render(<TaskPage entry={entry({ status: "done", progress: 100, result, continuesFrom: { id: "src", title: "The first clip", durationSeconds: 10.125 }, overlap: { frames: 39, seconds: 1.625 }, params: { ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", overlapFrames: 39, endAnchor: "source-last-frame" } })} fetchImpl={fetchScript([]).fetchImpl} />);
+    expect(screen.getByTestId("continues")).toHaveTextContent("Continues The first clip · 10.1 s · carried its last 1.6 s · ends where it began");
     cleanup();
     const script = fetchScript([{ status: "running", progress: 10, request: { prompt: "p", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", referenceImages: 0, continueFrom: "src", overlap: { frames: 22, seconds: 0.917 } } }, { status: "done", progress: 100, result }]);
     render(<StrictMode><TaskPage entry={entry({ continuesFrom: { id: "src", title: "The first clip" } })} fetchImpl={script.fetchImpl} /></StrictMode>);

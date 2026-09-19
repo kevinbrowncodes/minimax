@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
 import Link from "next/link";
-import { agentSkill, canSend, durationOptions, extensionOf, initialComposer, maxAdded, modelLabel, overlapOptions, paramsLabel, reduceComposer, skillClipSeconds, type AgentSkill, type ComposerImage, type ComposerState, type ExtendSource, type InitialRequest } from "@/lib/composer-state";
+import { agentSkill, canSend, durationOptions, endAnchorOptions, extensionOf, initialComposer, maxAdded, modelLabel, overlapOptions, paramsLabel, reduceComposer, skillClipSeconds, type AgentSkill, type ComposerImage, type ComposerState, type ExtendSource, type InitialRequest } from "@/lib/composer-state";
 import { formatNotBefore, toLocalInput } from "@/lib/queue-view";
 import { ordinal } from "@/lib/todo-steps";
 import { cx } from "@/lib/cx";
@@ -634,6 +634,19 @@ export function Composer({ fetchImpl, variant = "home", stop, extend, onStopExte
                             </button>
                           ))}
                         </div>
+                        {/* STORY_061: where the new clip ends — pinned to the source's last frame (holds the shot) or free; only a server at v1.5 offers it */}
+                        {endAnchorOptions(state).length > 0 ? (
+                          <>
+                            <span className={styles.sectionLabel}>End (where the new clip finishes)</span>
+                            <div className={styles.track} role="radiogroup" aria-label="End">
+                              {endAnchorOptions(state).map((option) => (
+                                <button key={option.value} type="button" role="radio" aria-checked={state.endAnchor === option.value} className={cx(styles.segment, state.endAnchor === option.value && styles.segmentSelected)} onClick={() => { dispatch({ type: "end-anchor", endAnchor: option.value }); }}>
+                                  {option.label}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        ) : null}
                       </>
                     ) : null}
                   </div>

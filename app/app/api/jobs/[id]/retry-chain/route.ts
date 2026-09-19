@@ -17,8 +17,8 @@ type Context = { readonly params: Promise<{ readonly id: string }> };
  */
 async function repost(entry: HistoryEntry, continueFrom: string | undefined, script: string | null): Promise<{ readonly ok: true; readonly id: string } | { readonly ok: false; readonly response: Response }> {
   const url = `http://app/api/jobs${script === null ? "" : `?script=${encodeURIComponent(script)}`}`;
-  const { overlapFrames, ...params } = entry.params;
-  const fields: Record<string, unknown> = { prompt: entry.prompt, ...params, ...(continueFrom === undefined || overlapFrames === undefined ? {} : { overlapFrames }), ...(entry.projectId === undefined ? {} : { projectId: entry.projectId }) };
+  const { overlapFrames, endAnchor, ...params } = entry.params;
+  const fields: Record<string, unknown> = { prompt: entry.prompt, ...params, ...(continueFrom === undefined || overlapFrames === undefined ? {} : { overlapFrames }), ...(continueFrom === undefined || endAnchor === undefined ? {} : { endAnchor }), ...(entry.projectId === undefined ? {} : { projectId: entry.projectId }) };
   let request: Request;
   if (continueFrom !== undefined) {
     request = new Request(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...fields, continueFrom }) });

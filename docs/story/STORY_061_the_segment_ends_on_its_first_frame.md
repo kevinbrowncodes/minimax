@@ -1,6 +1,6 @@
 # STORY_061 — The segment ends on its first frame
 
-**Status:** Proposed (drafted 2026-09-19 02:45 EDT from STORY_060's rows, before the owner's morning; no code until approved)
+**Status:** Approved (2026-09-19 11:35 EDT — "its pretty clear lever 4 is the move then… please proceed"; the owner's answers: the default is *Where it began*, segment 1 stays silent; drafted 02:45 from STORY_060's rows)
 **Epic:** [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md) — a follow-up of [STORY_060](STORY_060_fewer_cuts_at_the_join.md) (its lever 4′), and [BACKLOG_004](../backlog/BACKLOG_004_an_extension_can_still_change_the_scene_on_its_own_after_the_overlap.md)'s remedy 3
 **Estimate:** ≈ 2 h 30 min (an adapter graph change with its unit test, a contract bump, a composer control at both widths, the chain's segments carrying it; two hand gates) · **Estimated completion:** the afternoon of the day it is approved
 
@@ -70,5 +70,5 @@ Medium — the graph change is small but it is the adapter, so a contract bump, 
 
 ## Open questions (for the owner, by the multiple-choice tool)
 
-1. **The default:** *Where it began* on for every extension (prevention first — the owner's stated priority; a beat that must leave chooses *Anywhere*), or off until chosen? Recommended: on.
-2. **Segment 1 of a chain from a photo** cannot be pinned (no source); the director's first beat is unaffected — say so in the strip or leave it silent? Recommended: silent (minimalism).
+1. **The default:** *Where it began* on for every extension (prevention first — the owner's stated priority; a beat that must leave chooses *Anywhere*), or off until chosen? Recommended: on. **Answered 11:35: *Where it began*.**
+2. **Segment 1 of a chain from a photo** cannot be pinned (no source); the director's first beat is unaffected — say so in the strip or leave it silent? Recommended: silent (minimalism). **Answered 11:35: silent.**

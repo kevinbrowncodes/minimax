@@ -1,6 +1,15 @@
 /** What the Spark can do (STORY_006, STORY_017): one source for the contract's /capabilities and for request validation. */
 import { DEFAULT_OVERLAP, MAX_FRAMES, OVERLAP_OPTIONS, extensionLength, maxAddedSeconds, seconds } from "./grid.ts";
 
+/**
+ * STORY_061 (contract v1.5): where an extension ends. "source-last-frame" pins the source's last frame at the new
+ * segment's last frame (MiniMaxH3AddGuide), so the shot must return to where it began — STORY_060 measured it as the one
+ * lever that holds the join (8 of 8 on the seeds that cut without it); "none" leaves the end to the model.
+ */
+export const END_ANCHORS = ["source-last-frame", "none"] as const;
+export type EndAnchor = (typeof END_ANCHORS)[number];
+export const DEFAULT_END_ANCHOR: EndAnchor = "source-last-frame";
+
 export const CAPABILITIES = {
   models: [{ id: "minimax-h3", label: "MiniMax-H3.0" }],
   ratios: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
@@ -8,7 +17,7 @@ export const CAPABILITIES = {
   durationsSeconds: { min: 4, max: 15, step: 1 },
   referenceImages: { max: 2 },
   /** Extending a finished video (STORY_017): seconds added per step, the overlap that becomes the new clip's head, the limits. */
-  extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30 },
+  extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30, endAnchor: { options: END_ANCHORS, default: DEFAULT_END_ANCHOR } },
 } as const;
 export type Ratio = (typeof CAPABILITIES.ratios)[number];
 
@@ -34,6 +43,8 @@ export interface JobRequest {
   readonly overlapFrames?: number;
   /** STORY_017: what the server carried (set once the source is resolved). */
   readonly overlap?: Overlap;
+  /** STORY_061: where the extension ends — the source's last frame pinned at the new segment's last frame, or nothing. */
+  readonly endAnchor?: EndAnchor;
   /** The noise seed; given by the caller for like-for-like runs, otherwise drawn by the server and echoed. */
   readonly seed?: number;
 }
@@ -97,6 +108,14 @@ export function validateRequest(fields: Readonly<Record<string, unknown>>, uploa
     }
   }
 
+  let endAnchor: EndAnchor | undefined;
+  const rawAnchor = fields["endAnchor"];
+  if (continueFrom !== undefined) {
+    if (blank(rawAnchor)) endAnchor = DEFAULT_END_ANCHOR;
+    else if (typeof rawAnchor === "string" && (END_ANCHORS as readonly string[]).includes(rawAnchor)) endAnchor = rawAnchor as EndAnchor;
+    else throw new ValidationError("unsupported_option", "endAnchor", `endAnchor must be one of ${END_ANCHORS.join(", ")}`);
+  } else if (!blank(rawAnchor)) throw new ValidationError("validation", "endAnchor", "endAnchor only applies to an extension (send continueFrom)");
+
   const rawDuration = fields["durationSeconds"];
   const durationSeconds = typeof rawDuration === "string" ? Number(rawDuration) : rawDuration;
   if (typeof durationSeconds !== "number" || !Number.isInteger(durationSeconds)) throw new ValidationError("validation", "durationSeconds", "durationSeconds must be an integer");
@@ -137,6 +156,7 @@ export function validateRequest(fields: Readonly<Record<string, unknown>>, uploa
     referenceImages: uploads.length,
     ...(continueFrom === undefined ? {} : { continueFrom }),
     ...(overlapFrames === undefined ? {} : { overlapFrames }),
+    ...(endAnchor === undefined ? {} : { endAnchor }),
     ...(seed === undefined ? {} : { seed }),
   };
 }

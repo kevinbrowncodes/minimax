@@ -19,6 +19,8 @@ interface Fields {
   /** STORY_016/017: an extension's source and requested overlap. */
   readonly continueFrom?: string;
   readonly overlapFrames?: number;
+  /** STORY_061: where the extension ends (contract v1.5); kept with the params so Retry re-posts it. */
+  readonly endAnchor?: string;
   /** STORY_031: the project the task starts in; ours alone, never forwarded to the model. */
   readonly projectId?: string;
   /** STORY_041 (ours alone): hold the request until this time; Edit of a waiting request. */
@@ -31,6 +33,7 @@ function fieldsFrom(source: Record<string, unknown>): Fields {
   const num = (v: unknown): number => (typeof v === "number" ? v : Number(str(v)));
   const continueFrom = str(source["continueFrom"]).trim();
   const overlap = source["overlapFrames"];
+  const endAnchor = str(source["endAnchor"]).trim();
   const projectId = str(source["projectId"]).trim();
   const notBefore = str(source["notBefore"]).trim();
   const replaces = str(source["replaces"]).trim();
@@ -42,6 +45,7 @@ function fieldsFrom(source: Record<string, unknown>): Fields {
     model: str(source["model"]) || "minimax-h3",
     ...(continueFrom === "" ? {} : { continueFrom }),
     ...(continueFrom !== "" && overlap !== undefined && overlap !== null && overlap !== "" ? { overlapFrames: num(overlap) } : {}),
+    ...(continueFrom !== "" && endAnchor !== "" ? { endAnchor } : {}),
     ...(projectId === "" ? {} : { projectId }),
     ...(notBefore === "" ? {} : { notBefore }),
     ...(replaces === "" ? {} : { replaces }),
@@ -67,6 +71,7 @@ function queuedRequest(fields: Fields, script: string | null): QueueEntry["reque
     model: fields.model,
     ...(fields.continueFrom === undefined ? {} : { continueFrom: fields.continueFrom }),
     ...(fields.overlapFrames === undefined ? {} : { overlapFrames: fields.overlapFrames }),
+    ...(fields.endAnchor === undefined ? {} : { endAnchor: fields.endAnchor }),
     ...(fields.projectId === undefined ? {} : { projectId: fields.projectId }),
     ...(script === null ? {} : { script }),
   };
@@ -87,7 +92,7 @@ async function queued(fields: Fields, files: readonly File[], script: string | n
   store.create({
     id,
     prompt: fields.prompt,
-    params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model, ...(fields.overlapFrames === undefined ? {} : { overlapFrames: fields.overlapFrames }) },
+    params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model, ...(fields.overlapFrames === undefined ? {} : { overlapFrames: fields.overlapFrames }), ...(fields.endAnchor === undefined ? {} : { endAnchor: fields.endAnchor }) },
     referenceImages: files.length,
     ...(continuesFrom ? { continuesFrom } : {}),
     ...(fields.projectId === undefined ? {} : { projectId: fields.projectId }),
@@ -111,7 +116,7 @@ async function replaced(fields: Fields, files: readonly File[], script: string |
   const entry = replaceQueued(id, { request: queuedRequest(fields, script), referenceFiles, ...(fields.notBefore === undefined ? {} : { notBefore: new Date(fields.notBefore).toISOString() }) });
   historyStore().patch(id, {
     prompt: fields.prompt,
-    params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model, ...(fields.overlapFrames === undefined ? {} : { overlapFrames: fields.overlapFrames }) },
+    params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model, ...(fields.overlapFrames === undefined ? {} : { overlapFrames: fields.overlapFrames }), ...(fields.endAnchor === undefined ? {} : { endAnchor: fields.endAnchor }) },
     referenceImages: referenceFiles.length,
     referenceFiles,
     projectId: fields.projectId,
@@ -160,7 +165,7 @@ async function recorded(response: Response, fields: Fields, files: readonly File
   store.create({
     id: body.id,
     prompt: fields.prompt,
-    params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model, ...(fields.overlapFrames === undefined ? {} : { overlapFrames: fields.overlapFrames }) },
+    params: { ratio: fields.ratio, resolution: fields.resolution, durationSeconds: fields.durationSeconds, model: fields.model, ...(fields.overlapFrames === undefined ? {} : { overlapFrames: fields.overlapFrames }), ...(fields.endAnchor === undefined ? {} : { endAnchor: fields.endAnchor }) },
     referenceImages: files.length,
     ...(continuesFrom ? { continuesFrom } : {}),
     ...(fields.projectId === undefined ? {} : { projectId: fields.projectId }),

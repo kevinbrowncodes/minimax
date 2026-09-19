@@ -42,7 +42,9 @@ describe("buildJobRequest in extend mode (STORY_017)", () => {
     const extending = reduceComposer(reduceComposer(withImage, { type: "extend-from", source: { id: "src", title: "t", durationSeconds: 2, ratio: "16:9", resolution: "768P", model: "minimax-h3", posterUrl: "/p" } }), { type: "overlap", overlapFrames: 22 });
     const req = buildJobRequest(extending);
     expect(req.url).toBe("/api/jobs");
-    expect(req.init.body).toBe(JSON.stringify({ prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", continueFrom: "src", overlapFrames: 22 }));
+    expect(req.init.body).toBe(JSON.stringify({ prompt: "A boat", ratio: "16:9", resolution: "768P", durationSeconds: 10, model: "minimax-h3", continueFrom: "src", overlapFrames: 22, endAnchor: "source-last-frame" })); // STORY_061: pinned by default
+    const free = buildJobRequest(reduceComposer(extending, { type: "end-anchor", endAnchor: "none" }));
+    expect(JSON.parse(free.init.body as string)).toMatchObject({ continueFrom: "src", endAnchor: "none" });
   });
 });
 
@@ -93,7 +95,8 @@ describe("a chain's segments (STORY_044)", () => {
     expect((first.init.body as FormData).get("notBefore")).toBe("2026-09-16T20:00:00.000Z");
     expect((first.init.body as FormData).get("continueFrom")).toBeNull();
     const next = buildJobRequest(withImage, { prompt: "Scene\n\n[0:00-0:03] two", continueFrom: "j1" });
-    expect(next.init.body).toBe(JSON.stringify({ prompt: "Scene\n\n[0:00-0:03] two", ratio: "16:9", resolution: "768P", durationSeconds: 5, model: "minimax-h3", continueFrom: "j1", overlapFrames: 39 }));
+    expect(next.init.body).toBe(JSON.stringify({ prompt: "Scene\n\n[0:00-0:03] two", ratio: "16:9", resolution: "768P", durationSeconds: 5, model: "minimax-h3", continueFrom: "j1", overlapFrames: 39, endAnchor: "source-last-frame" })); // STORY_061: segments 2 and 3 end where they began; the first has no source
+    expect((first.init.body as FormData).get("endAnchor")).toBeNull();
   });
 
   it("submitChain posts in order, each continueFrom the id just answered, the first with the images and the run-at", async () => {

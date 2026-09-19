@@ -44,6 +44,8 @@ export interface Continuation {
   readonly overlapFrames: number;
   /** The prompt in MiniMax's base format (prompt.ts buildPrompt, kind "extension"). */
   readonly prompt: string;
+  /** STORY_061: pin the source's last frame at the new segment's last frame (MiniMaxH3AddGuide); off when false or absent. */
+  readonly anchorEnd?: boolean;
 }
 export interface GraphOptions {
   readonly seed?: number;
@@ -62,6 +64,8 @@ export const REQUIRED_CLASSES: readonly string[] = [
   "SolidMask", "MaskToImage", "RepeatImageBatch", "ImageToMask", "MaskComposite", "SetLatentNoiseMask", "ImageBatch", "TrimAudioDuration", "AudioConcat",
   // STORY_020: our own node (spark/comfyui/custom_nodes/minimax_local), the shot-change measure
   "MiniMaxLocalFrameChanges",
+  // STORY_061: the end-frame anchor (the model's own keyframe node; comfy_extras/nodes_minimax_h3.py)
+  "MiniMaxH3AddGuide",
 ];
 
 /** The Ref2VA checkpoint for the template's FL2VA file at the same precision (reported by health; not used by extensions since STORY_017). */
@@ -164,6 +168,15 @@ export function buildGraph(template: Graph, request: JobRequest, images: readonl
   delete cond.inputs["first_frame"];
   delete cond.inputs["last_frame"];
   sample.inputs["latent_image"] = ["latent", 0];
+  // STORY_061: the source's last frame pinned at the new clip's last frame — the segment must return to where it began
+  // (STORY_060: held the join 8 of 8 where the plain extension held 1 of 3). The guider takes the anchored conditioning.
+  if (continuation.anchorEnd) {
+    const guider = graph["guider"];
+    if (!guider) throw new Error("graph template is missing nodes");
+    graph["anchor_frame"] = { class_type: "ImageFromBatch", inputs: { image: ["source_parts", 0], batch_index: S - 1, length: 1 } };
+    graph["anchor"] = { class_type: "MiniMaxH3AddGuide", inputs: { positive: ["cond", 0], vae: ["vae_video", 0], latent: ["latent", 0], image: ["anchor_frame", 0], frame_idx: L - 1 } };
+    guider.inputs["conditioning"] = ["anchor", 0];
+  }
   // The join: the source's own frames and sound, then the new frames after the overlap.
   graph["new_frames"] = { class_type: "ImageFromBatch", inputs: { image: ["decode_video", 0], batch_index: O, length: L - O } };
   graph["new_audio"] = { class_type: "TrimAudioDuration", inputs: { audio: ["decode_audio", 0], start_index: seconds(O), duration: seconds(L - O) } };

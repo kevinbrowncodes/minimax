@@ -19,7 +19,7 @@ import { buildPrompt, cameraOf } from "./prompt.ts";
 import { detectCuts, parseFrameChanges } from "./cuts.ts";
 import { WatermarkCache, type WatermarkRunner } from "./watermark.ts";
 
-export const VERSION = "1.5.0";
+export const VERSION = "1.6.0";
 
 export interface AdapterOptions {
   /** ComfyUI's base URL, e.g. http://comfyui:8188. */
@@ -454,7 +454,7 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
       if (overlap > sourceFrames) throw new HttpError(400, "validation", `the video has ${String(sourceFrames)} frames; an overlap of ${String(overlap)} does not fit`, "overlapFrames");
       request = { ...request, overlap: { frames: overlap, seconds: seconds(overlap) } };
       const file = source.result.video.subfolder ? `${source.result.video.subfolder}/${source.result.video.filename}` : source.result.video.filename;
-      continuation = { file, frames: sourceFrames, overlapFrames: overlap, prompt: buildPrompt(request.prompt, { kind: "extension", frames: extensionLength(request.durationSeconds, overlap) }) };
+      continuation = { file, frames: sourceFrames, overlapFrames: overlap, prompt: buildPrompt(request.prompt, { kind: "extension", frames: extensionLength(request.durationSeconds, overlap) }), anchorEnd: request.endAnchor === "source-last-frame" };
     }
     if (store.open().length >= maxOpenJobs) throw new HttpError(503, "busy", `the Spark already has ${String(maxOpenJobs)} jobs open; try again later`);
     if (!comfyReachable && !(await checkComfy())) throw new HttpError(503, "busy", NOT_RUNNING);
@@ -474,7 +474,7 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
       // STORY_020: the model gets its documented format around the owner's words (an extension's is on the continuation).
       const freshPrompt = continuation ? undefined : buildPrompt(request.prompt, { kind: "fresh", frames: lengthForSeconds(request.durationSeconds), images: images.length });
       const graph = buildGraph(options.graphTemplate, request, images, { filenamePrefix: `video/job-${id}`, seed, ...(continuation ? { continuation } : {}), ...(freshPrompt === undefined ? {} : { prompt: freshPrompt }) });
-      if (continuation) log(`job ${id} continues ${continuation.file}: its last ${String(continuation.overlapFrames)} frames become the new clip's head, ${String(extensionLength(request.durationSeconds, continuation.overlapFrames))} frames generated, prompt:\n${continuation.prompt}`);
+      if (continuation) log(`job ${id} continues ${continuation.file}: its last ${String(continuation.overlapFrames)} frames become the new clip's head, ${String(extensionLength(request.durationSeconds, continuation.overlapFrames))} frames generated${continuation.anchorEnd ? ", its last frame pinned at the end (STORY_061)" : ", the end free"}, prompt:\n${continuation.prompt}`);
       else log(`job ${id} prompt as sent to the model:\n${freshPrompt ?? request.prompt}`);
       promptId = await comfy.submit(graph);
     } catch (error) {

@@ -344,6 +344,7 @@ export function TaskPage({ entry, extendOnOpen = false, pendingSeconds, chainAft
                   Continues <Link href={`/task/${encodeURIComponent(entry.continuesFrom.id)}`}>{entry.continuesFrom.title}</Link>
                   {entry.continuesFrom.durationSeconds === undefined ? "" : ` · ${entry.continuesFrom.durationSeconds.toFixed(1)} s`}
                   {overlap ? ` · carried its last ${overlap.seconds.toFixed(1)} s` : ""}
+                  {entry.params.endAnchor === "source-last-frame" ? " · ends where it began" : ""}
                 </span>
               ) : null}
               <ChainOutcomes segments={chain} currentId={entry.id} />

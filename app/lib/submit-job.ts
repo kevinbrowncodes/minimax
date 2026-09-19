@@ -34,8 +34,8 @@ export function buildJobRequest(state: ComposerState, segment?: SegmentRequest):
     // STORY_041: a run-at time holds the request in the app's queue; an Edit replaces its entry. Never forwarded.
     ...(notBefore === undefined ? {} : { notBefore }),
     ...(replaces === undefined ? {} : { replaces }),
-    // STORY_016: an extension names its source and the context; it never carries images.
-    ...(continueFrom === undefined ? {} : { continueFrom, overlapFrames: state.overlapFrames }),
+    // STORY_016: an extension names its source and the context; it never carries images. STORY_061: and where it ends.
+    ...(continueFrom === undefined ? {} : { continueFrom, overlapFrames: state.overlapFrames, endAnchor: state.endAnchor }),
   };
   // A `?script=` on the page URL is forwarded so the e2e lane can choose the stub's outcome; the adapter ignores it.
   const script = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("script");

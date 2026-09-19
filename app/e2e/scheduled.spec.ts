@@ -264,6 +264,10 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     expect(thirdEntry.continuesFrom?.id).toBe(second);
     expect((await stubApi.received(secondEntry.jobId ?? "")).request.continueFrom).toBe(first);
     expect((await stubApi.received(thirdEntry.jobId ?? "")).request.continueFrom).toBe(secondEntry.jobId);
+    // STORY_061: segments 2 and 3 end where they began (the composer's default); the first has no source to pin to
+    expect((await stubApi.received(secondEntry.jobId ?? "")).request.endAnchor).toBe("source-last-frame");
+    expect((await stubApi.received(thirdEntry.jobId ?? "")).request.endAnchor).toBe("source-last-frame");
+    expect((await stubApi.received(first)).request.endAnchor).toBeUndefined();
     // the scene with every segment; the first went multipart (the image), and FormData writes a field's newlines as CRLF
     expect((await stubApi.received(first)).request.prompt.replace(/\r\n/g, "\n")).toBe(`${scene}\n\n${scripts[0] ?? ""}`);
     expect((await stubApi.received(thirdEntry.jobId ?? "")).request.prompt).toBe(`${scene}\n\n${scripts[2] ?? ""}`);

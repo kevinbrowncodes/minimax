@@ -4,7 +4,7 @@
  * Side effects (object URLs, the request) live in the component.
  */
 import { DEFAULT_OVERLAP, MAX_FRAMES, OVERLAP_OPTIONS, maxAddedSeconds, overlapSeconds } from "./extend";
-import type { Capabilities, ExtensionCapabilities } from "./job-api";
+import { END_ANCHORS, type Capabilities, type EndAnchor, type ExtensionCapabilities } from "./job-api";
 import { validateReferenceImages, type UploadLike } from "./upload-validation";
 
 export interface ComposerImage extends UploadLike {
@@ -46,6 +46,8 @@ export interface ComposerState {
   readonly extend: ExtendSource | undefined;
   /** Extend mode (STORY_017): how many of the source's last frames become the new clip's own first frames. */
   readonly overlapFrames: number;
+  /** STORY_061: where an extension ends — the source's last frame pinned at the segment's last frame (the default), or free. Applies to every extension the chain posts too. */
+  readonly endAnchor: EndAnchor;
   readonly error: ComposerError | undefined;
   readonly submitting: boolean;
   /** STORY_031: the project the task starts in (+ › Add to project, or the row's New task); undefined = No project. */
@@ -133,6 +135,7 @@ export type ComposerAction =
   | { readonly type: "extend-from"; readonly source: ExtendSource }
   | { readonly type: "clear-extend" }
   | { readonly type: "overlap"; readonly overlapFrames: number }
+  | { readonly type: "end-anchor"; readonly endAnchor: EndAnchor }
   | { readonly type: "error"; readonly error: ComposerError }
   | { readonly type: "clear-error" }
   | { readonly type: "submit-start" }
@@ -156,11 +159,13 @@ export type ComposerAction =
  */
 export const DEFAULT_RATIO = "16:9";
 export const DEFAULT_DURATION = 5;
-const DEFAULT_EXTENSION: ExtensionCapabilities = { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30 };
+/** STORY_061: the owner's default (2026-09-19) — prevention first; a beat that must end elsewhere chooses Anywhere. */
+export const DEFAULT_END_ANCHOR: EndAnchor = "source-last-frame";
+const DEFAULT_EXTENSION: ExtensionCapabilities = { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: OVERLAP_OPTIONS, default: DEFAULT_OVERLAP }, maxFrames: MAX_FRAMES, maxSourceSeconds: 30, endAnchor: { options: END_ANCHORS, default: DEFAULT_END_ANCHOR } };
 
 export function initialComposer(projectId?: string, text = "", more: Pick<ComposerState, "notBefore" | "queueId"> = {}): ComposerState {
   // STORY_058: a new task opens in video mode — there is nothing else it can be here
-  return { mode: "video", text, images: [], capabilities: undefined, capabilitiesError: undefined, model: "", ratio: DEFAULT_RATIO, resolution: "", durationSeconds: DEFAULT_DURATION, extend: undefined, overlapFrames: DEFAULT_EXTENSION.overlapFrames.default, error: undefined, submitting: false, projectId, agent: INITIAL_AGENT, ...more };
+  return { mode: "video", text, images: [], capabilities: undefined, capabilitiesError: undefined, model: "", ratio: DEFAULT_RATIO, resolution: "", durationSeconds: DEFAULT_DURATION, extend: undefined, overlapFrames: DEFAULT_EXTENSION.overlapFrames.default, endAnchor: DEFAULT_END_ANCHOR, error: undefined, submitting: false, projectId, agent: INITIAL_AGENT, ...more };
 }
 
 /** The server's extension limits, or the contract's defaults while capabilities are unknown or lack them. */
@@ -236,6 +241,12 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
       const overlapFrames = clampOverlap(action.overlapFrames, state.capabilities);
       if (!state.extend) return state.overlapFrames === overlapFrames ? state : { ...state, overlapFrames };
       return { ...state, overlapFrames, durationSeconds: clampDuration(state.durationSeconds, state.capabilities, overlapFrames) };
+    }
+    case "end-anchor": {
+      // STORY_061: like the overlap, the choice applies to this extension and to every extension a chain will post
+      const options = extensionOf(state.capabilities).endAnchor?.options ?? END_ANCHORS;
+      const endAnchor = options.includes(action.endAnchor) ? action.endAnchor : state.endAnchor;
+      return state.endAnchor === endAnchor ? state : { ...state, endAnchor };
     }
     case "add-images": {
       if (state.extend) return { ...state, error: { message: "An extension takes no reference images — the video being extended is the reference", field: "referenceImage" } };
@@ -319,6 +330,12 @@ export function durationOptions(state: ComposerState): readonly number[] {
   const out: number[] = [];
   for (let s = range.min; s <= max; s += range.step) out.push(s);
   return out;
+}
+/** STORY_061: extend mode's End choices — the server's options, in plain words; none when the server predates v1.5. */
+export function endAnchorOptions(state: ComposerState): readonly { readonly value: EndAnchor; readonly label: string }[] {
+  if (!state.extend) return [];
+  const options = extensionOf(state.capabilities).endAnchor?.options ?? [];
+  return options.map((value) => ({ value, label: value === "source-last-frame" ? "Where it began" : "Anywhere" }));
 }
 /** Extend mode's Overlap choices: the server's options as seconds ("0.9 s", "1.6 s", "2.3 s"). */
 export function overlapOptions(state: ComposerState): readonly { readonly frames: number; readonly label: string }[] {
