@@ -11,6 +11,17 @@ The assistant flagged the Qwen Research License §2.b commercial-use bar (quoted
 
 Scope of the decision: it settles §2.b only. §4.b (display "Built with Qwen" on anything trained or improved with the model) and §4.c (do not use "Qwen" as a derivative's primary name) are obligations that still attach if we ship anything built on it, and any later change of use — a monetised surface, a paid product — reopens §2.b and this note with it.
 
+## Destination — EPIC_011 (owner, 2026-09-22)
+
+The owner: *"I would like to be our new epic be epic 11 and the epic will add the qwen image generation support."* **This item is destined to become EPIC_011**, after [EPIC_010](../epic/EPIC_010_an_nsfw_model_in_its_own_container.md). The number is reserved here so the other session working this tree does not take it.
+
+**Scope intent:** *"the whole gambit of what is possible"* — text-to-image, editing, native RGBA and reference images, rather than a minimal first slice. To be broken into stories when the epic is drafted.
+
+**Two decisions the owner deferred to epic time** (*"we will discuss more when its time to work on that epic"*) — do not settle either by assumption when drafting:
+
+1. **Same repo or a new one.** The assistant's recommendation, recorded so it is not re-derived: **same repo, its own container**, on the [STORY_063](../story/STORY_063_the_nsfw_container.md) pattern — own port, own models and output directories, own start/stop/verify. The reasons: the adapter is already becoming multi-upstream ([STORY_064](../story/STORY_064_the_adapters_second_upstream.md)), so an image model is a third upstream behind the existing [job-API contract](../contracts/job-api.md), which *is* the separation of concerns; the UI shell, stub server, Playwright suite, gate and ticket conventions all live here; and the highest-value use — a generated seed image feeding image-to-video, with [EPIC_009](../epic/EPIC_009_agent_mode_a_director_writes_the_prompt_from_the_photo.md)'s agent mode already writing prompts from photos — crosses the boundary a split would create. The real argument the other way is licence hygiene for Qwen §4.b, which a NOTICE file answers more cheaply than a second repo; the real cost of same-repo is gate time, ~9 min today (531 s on 2026-09-22) before any image e2e is added.
+2. **What the epic delivers first**, given the "whole gamut" intent — whether that lands as one large epic or a first slice with the rest following.
+
 ## Summary
 
 Add a still-image generation surface to MiniMax Local, served from the Spark in its own container, the way the video model is. The trigger is **Qwen-Image-2.1**, released 2026-09-20 — a unified text-to-image *and* image-editing model whose visual generator is 7B (32 single-stream DiT layers), small enough to sit beside the video stack rather than displace it.
