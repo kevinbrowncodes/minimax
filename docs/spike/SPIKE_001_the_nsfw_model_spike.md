@@ -389,3 +389,31 @@ Mean of the 1–5 score; **clean** = scored 4 or 5 with no anatomy answer below 
 - **C7's audio is bad.** The owner flagged it on four of the nine C7 clips (#63, #64, #65, #66), twice saying a clip "really is a 4.5" but for the sound. Nothing in the matrix measured audio, so this is the owner's ear only — and it is the one known cost of the leading stack.
 
 **Still open:** the owner's gut read on the shortlist — the seven clean C7 clips plus #42 (C4 solo), #46 (C4 buttocks), #13 (C1 solo), #19 (C1 buttocks), #55 (C5 buttocks), with #65, #67, #42 and #13 the narrow comparison — then the answer in one paragraph, whether a male-anatomy LoRA of our own is still needed (§ Findings 4b's fallback), the extension test on the winner, and STORY_064's template.
+
+## Round 2 — the second subject (proposed 2026-09-22 15:40 EDT; the owner's decisions by the tool)
+
+**Why.** All 83 clips of rounds 1 and 2's predecessor came from **one photograph**, so nothing in the data separates "this stack renders male anatomy well" from "this stack suits that man, that chair and that light". A second subject is the cheapest test of the difference, and it is what the answer paragraph needs before it names a winner. The owner: "lets narrow it down to the stacks that were give high ratings from me last time… similar tests tho just a different image" (15:35).
+
+**The subject.** A second photo of a consenting adult, which the owner puts at `spark/data/input/nsfw-reference-2.jpg` (gitignored, `.gitignore:35`; round 1's `nsfw-reference.jpg` stays where it is so both rounds stay reproducible). 16:9 preferred — the draws are 1344×768.
+
+**The stacks — four, chosen by role and not by rank** (the owner, by the tool): the three highest means **C7** (Eros Max beta5 TURBO-hybrid int8, 8 steps, + HMPenis v1.0 @0.5 — 4.00), **C4** (Mystic + Male Anatomy @1.0 — 3.89) and **C1** (Mystic XXX @1.0 — 3.70), plus **C5** (NaughtyTimes v3 unpruned @1.0, Euler/simple 30 — 3.22 overall but **4.00 on buttocks**, the best in the set, and the only stack answering "looks right" on all three *between them* rows). Ranking by mean alone would have dropped C5, and the owner's set-level answer was that penis and buttocks matter **equally** — so the shortlist covers both halves. C0 (the stock control), C2v1, C3, C6 and C8 do not draw again: C6 and C3 were the two worst stacks, C8 was worst on buttocks, and C2v1 is not the condition the matrix specified (HMPenis v1.0, not v2).
+
+**The prompts — the same three, re-written for the new photo** (the owner, by the tool): P1 at rest, P2 solo, P3 buttocks, the same beats and the same 5 s, but the thirst-trap director skill re-run on the new image so wardrobe, pose, props and setting describe what is actually in frame. Reusing round 1's text verbatim would fight a different photograph. The three prompts go in `run.md` and this ticket before the first draw, and the owner edits them if he wants to.
+
+**The seeds — three** (the owner, by the tool, 15:45): **1351805226, 20260919, 424242**, all three from round 1's pool so a seed means the same thing across rounds (the first two are round 1's at-rest pair; 424242 ran in both the solo and the buttocks sets). Three seeds × three prompts × four stacks = **36 draws**, which with the extensions needs the long night the table below prices.
+
+**The cost, on the measured per-draw times** (part 1 and 1b: C7 8.5 min, C4 19.1, C1 19.2, C5 27.9; the guard ≈ 2 min between draws):
+
+| Lever | C7 | C4 | C1 | C5 | total |
+| --- | --- | --- | --- | --- | --- |
+| minutes | 8.5 | 19.1 | 19.2 | 27.9 | — |
+| 3 seeds | 77 | 172 | 173 | 251 | 673 |
+| 2 seeds | 51 | 115 | 115 | 167 | 448 |
+
+Three seeds × three prompts = 36 draws ≈ **11.2 h** of drawing, ≈ 12.4 h with the pauses; two seeds = 24 draws ≈ 7.5 h, ≈ 8.3 h with pauses. **Plus the extension test** (below) ≈ 2.3 h. Night 2 ran 16.2 h, so three seeds fits a long night and two seeds a short one. (An earlier estimate of ≈ 8.5 h for the three-seed round was arithmetic error, corrected here.)
+
+**The extension test, at last** (the owner, by the tool): one **+10 s masked continuation** on each of round 2's two best stacks, through the adapter's own `buildGraph` with STORY_061's anchor, ≈ 70 min each. This is the half of the controlled-comparison criterion that has never been drawn — round 1's 30 s film ran on **C3**, the second-worst stack, so it proved the seams and not the anatomy, and whether a *good* stack survives an extension is still unknown.
+
+**The record.** Round 2 is **Done note part 3** of this ticket, not a new spike (the owner, by the tool) — the controlled-comparison criterion is this ticket's and round 2 closes it. A second rating page carries the new clips, and its answers are committed as `SPIKE_001_ratings_round2.csv` beside round 1's, the same way.
+
+**Not started.** Nothing draws until the owner puts the photo in place, reads the three prompts and says go; the NSFW container is switched on by `run.sh --nsfw`, which stops the SFW container first and refuses mid-job (STORY_063).
