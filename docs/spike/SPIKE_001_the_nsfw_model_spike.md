@@ -416,4 +416,23 @@ Three seeds × three prompts = 36 draws ≈ **11.2 h** of drawing, ≈ 12.4 h wi
 
 **The record.** Round 2 is **Done note part 3** of this ticket, not a new spike (the owner, by the tool) — the controlled-comparison criterion is this ticket's and round 2 closes it. A second rating page carries the new clips, and its answers are committed as `SPIKE_001_ratings_round2.csv` beside round 1's, the same way.
 
-**Not started.** Nothing draws until the owner puts the photo in place, reads the three prompts and says go; the NSFW container is switched on by `run.sh --nsfw`, which stops the SFW container first and refuses mid-job (STORY_063).
+### Round 2, the final shape (the owner's decisions by the tool, 2026-09-22 19:10 EDT — the window is 16.9 h to his noon deadline)
+
+**The at-rest prompt is dropped**, and its twelve draws spent on a fourth prompt instead. Round 1 settled at rest: C0, C1, C5 and C8 all averaged **5.00** there and the stock model needs no adapter to reach it, so the prompt discriminates nothing between the shortlisted stacks. What replaces it is the arc the owner asked for at 19:05 — **P4 climax: the subject before erection, stroking, to ejaculation**.
+
+**P4 is a 10 s draw, not 5 s.** Round 1's P2 spent its whole five seconds getting from hand-closes to full erection; the climax arc cannot fit there. A 10 s draw measured **49.9 min** against a 5 s draw's 19.0 (CH1, part 1) — **2.63x**, not 2x — which is why P4 runs on one seed and the other prompts on three.
+
+| Lever | C7 | C4 | C1 | C5 |
+| --- | --- | --- | --- | --- |
+| 5 s | 8.5 | 19.1 | 19.2 | 27.9 |
+| 10 s | 22 | 50 | 51 | 73 |
+| solo+buttocks | 51 | 115 | 115 | 167 |
+| climax | 22 | 50 | 51 | 73 |
+
+Minutes; the 10 s row scaled from CH1's measured 2.63x; solo+buttocks is six 5 s draws per stack (three seeds x two prompts).
+
+**The night:** 24 solo/buttocks draws (4 stacks x 3 seeds x 2 prompts, 5 s) = 7.5 h; 4 climax draws (4 stacks x 1 seed, 10 s) = 3.3 h; 2 extensions on the round's two best stacks = 2.3 h; the guard's pauses (30 draws x ~2 min) = 1 h. **~14.1 h**, so a 20:00 start finishes about 10:05 and leaves the owner two hours to rate before noon.
+
+**HMCumshot is fetched and added to the climax draws only** (the owner, by the tool, over drawing them unaided). HearmemanAI, 300 MB, his Hugging Face mirror (round 1 fetched a 310 MB file from it in 30 s), hash-checked into the manifest like every other file; its author's strength is **0.7**. **This confounds P4 by design and the note must say so:** the climax draws test *stack + HMCumshot*, while the solo and buttocks draws test the stack alone, so a P4 result can never be read as a statement about the stack by itself. The warning round 1 gives is C6 — the one stack that added an act LoRA on top of the anatomy pair — which came **last at 1.57** with likeness broken on 3 of 7 clips. If P4 fails across all four stacks, that is evidence about HMCumshot and the stacks together, and a round 3 would have to draw the arc unaided to separate them.
+
+**Not started.** Nothing fetches and nothing draws until the owner puts the photo at `spark/data/input/nsfw-reference-2.jpg`, reads the four prompts and says go; the NSFW container is switched on by `run.sh --nsfw`, which stops the SFW container first and refuses mid-job (STORY_063).
