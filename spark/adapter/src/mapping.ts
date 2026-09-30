@@ -53,7 +53,13 @@ export interface GraphOptions {
   readonly continuation?: Continuation;
   /** STORY_020: the prompt as built for the model for a fresh clip (prompt.ts buildPrompt); the request's text when absent. */
   readonly prompt?: string;
+  /** STORY_067: match the extension's loudness to the source's at the join (default true; AUDIO_LEVEL_MATCH=0 turns it off). */
+  readonly audioLevelMatch?: boolean;
 }
+
+/** STORY_067: the join's crossfade length and how far before the join it ends (skipping the source's quiet last 50 ms). */
+export const JOIN_FADE_SECONDS = 0.25;
+export const JOIN_SKIP_SECONDS = 0.05;
 
 const NEEDED_NODES = ["unet", "clip", "vae_video", "vae_audio", "cond", "noise", "guider", "sampler", "sigmas", "sample", "decode_video", "decode_audio", "video", "save"] as const;
 /** Node classes the graphs rely on; verified against /object_info at start (server.ts). */
@@ -61,11 +67,13 @@ export const REQUIRED_CLASSES: readonly string[] = [
   "UNETLoader", "CLIPLoader", "VAELoader", "MiniMaxH3ImageToVideo", "RandomNoise", "BasicGuider", "KSamplerSelect", "BasicScheduler", "SamplerCustomAdvanced", "VAEDecode", "VAEDecodeAudio", "CreateVideo", "SaveVideo", "LoadImage", "ImageFromBatch", "SaveImage",
   // STORY_017 extensions: the source's tail as the new clip's own head, protected by the noise mask, joined in-graph
   "LoadVideo", "GetVideoComponents", "VAEEncode", "VAEEncodeAudio", "EmptyMiniMaxH3LatentAV", "LTXVSeparateAVLatent", "LTXVConcatAVLatent", "ReplaceVideoLatentFrames", "LatentCut", "LatentConcat",
-  "SolidMask", "MaskToImage", "RepeatImageBatch", "ImageToMask", "MaskComposite", "SetLatentNoiseMask", "ImageBatch", "TrimAudioDuration", "AudioConcat",
+  "SolidMask", "MaskToImage", "RepeatImageBatch", "ImageToMask", "MaskComposite", "SetLatentNoiseMask", "ImageBatch", "TrimAudioDuration",
   // STORY_020: our own node (spark/comfyui/custom_nodes/minimax_local), the shot-change measure
   "MiniMaxLocalFrameChanges",
   // STORY_061: the end-frame anchor (the model's own keyframe node; comfy_extras/nodes_minimax_h3.py)
   "MiniMaxH3AddGuide",
+  // STORY_067: our own node, the extension's sound joined to the source's without a click or a dip
+  "MiniMaxLocalAudioJoin",
 ];
 
 /** The Ref2VA checkpoint for the template's FL2VA file at the same precision (reported by health; not used by extensions since STORY_017). */
@@ -177,11 +185,21 @@ export function buildGraph(template: Graph, request: JobRequest, images: readonl
     graph["anchor"] = { class_type: "MiniMaxH3AddGuide", inputs: { positive: ["cond", 0], vae: ["vae_video", 0], latent: ["latent", 0], image: ["anchor_frame", 0], frame_idx: L - 1 } };
     guider.inputs["conditioning"] = ["anchor", 0];
   }
-  // The join: the source's own frames and sound, then the new frames after the overlap.
+  // The join: the source's own frames and sound, then the new frames after the overlap. The sound is not butted
+  // (BUG_013: a click and a dip at every join): STORY_067's node crossfades from the source to the extension's own
+  // version of the overlap just before the join, level-matched, so the saved file is seamless and a chain built on it
+  // keeps every earlier join. new_audio is the new part of that joined track (the test rounds' standalone segments use it).
   graph["new_frames"] = { class_type: "ImageFromBatch", inputs: { image: ["decode_video", 0], batch_index: O, length: L - O } };
-  graph["new_audio"] = { class_type: "TrimAudioDuration", inputs: { audio: ["decode_audio", 0], start_index: seconds(O), duration: seconds(L - O) } };
+  graph["extension_audio"] = { class_type: "TrimAudioDuration", inputs: { audio: ["decode_audio", 0], start_index: 0, duration: seconds(L) } };
   graph["joined_frames"] = { class_type: "ImageBatch", inputs: { image1: ["source_parts", 0], image2: ["new_frames", 0] } };
-  graph["joined_audio"] = { class_type: "AudioConcat", inputs: { audio1: ["source_parts", 1], audio2: ["new_audio", 0], direction: "after" } };
+  graph["joined_audio"] = {
+    class_type: "MiniMaxLocalAudioJoin",
+    inputs: {
+      source: ["source_parts", 1], extension: ["extension_audio", 0], source_seconds: seconds(S), overlap_seconds: seconds(O),
+      fade_seconds: JOIN_FADE_SECONDS, skip_seconds: JOIN_SKIP_SECONDS, level_match: options.audioLevelMatch ?? true,
+    },
+  };
+  graph["new_audio"] = { class_type: "TrimAudioDuration", inputs: { audio: ["joined_audio", 0], start_index: seconds(S), duration: seconds(L - O) } };
   video.inputs["images"] = ["joined_frames", 0];
   // STORY_020: the shot-change measure over the joined frames, so the seam is measured too.
   graph["changes"] = { class_type: "MiniMaxLocalFrameChanges", inputs: { images: ["joined_frames", 0] } };

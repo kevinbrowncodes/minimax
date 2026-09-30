@@ -381,6 +381,14 @@ describe("resilience", () => {
 });
 
 describe("extensions (STORY_017: native masked continuation)", () => {
+  it("passes AUDIO_LEVEL_MATCH off through to the join node (STORY_067)", async () => {
+    await adapter?.close();
+    adapter = await startAdapter({ audioLevelMatch: false });
+    const src = await finish();
+    await create({ ...valid, durationSeconds: 10, continueFrom: src });
+    expect(fake.prompts[1]?.graph["joined_audio"]?.inputs["level_match"]).toBe(false);
+  });
+
   const isDone = (s: Record<string, unknown>) => s["status"] === "done";
   const finish = async (body: unknown = valid): Promise<string> => {
     const id = await create(body);
@@ -407,6 +415,8 @@ describe("extensions (STORY_017: native masked continuation)", () => {
     expect(graph?.["cond"]?.class_type).toBe("MiniMaxH3ImageToVideo");
     expect(graph?.["cond"]?.inputs).not.toHaveProperty("first_frame");
     expect(graph?.["guide"]).toBeUndefined();
+    // STORY_067: the sound is joined by our node, level-matched by default, at the source's own length
+    expect(graph?.["joined_audio"]).toMatchObject({ class_type: "MiniMaxLocalAudioJoin", inputs: { source_seconds: 5.167, overlap_seconds: 1.625, level_match: true } }); // seconds() rounds to the ms
     // STORY_020: the extension's prompt is MiniMax's format with no instruction line (the preserved head is not a Picture)
     expect(String(graph?.["cond"]?.inputs["prompt"])).toMatch(/^integrated_multimodal_description: \[Shot 1\] Live-action\. The camera holds a perfectly static shot throughout the entire 12\.25-second duration/);
     expect(String(graph?.["cond"]?.inputs["prompt"])).toContain("already in frame at the start stay exactly as they are for the whole video and the action continues without interruption. A small paper boat");

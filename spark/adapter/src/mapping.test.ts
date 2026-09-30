@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { JobRequest } from "./capabilities.ts";
-import { DEFAULT_OVERLAP, FPS, MAX_FRAMES, OVERLAP_OPTIONS, REQUIRED_CLASSES, SIZES, audioTicks, buildGraph, extensionLength, gridDown, latentFrames, lengthForSeconds, maxAddedSeconds, ref2vaFileFor, sizeFor, templateUnet, type Graph } from "./mapping.ts";
+import { DEFAULT_OVERLAP, FPS, JOIN_FADE_SECONDS, JOIN_SKIP_SECONDS, MAX_FRAMES, OVERLAP_OPTIONS, REQUIRED_CLASSES, SIZES, audioTicks, buildGraph, extensionLength, gridDown, latentFrames, lengthForSeconds, maxAddedSeconds, ref2vaFileFor, sizeFor, templateUnet, type Graph } from "./mapping.ts";
 
 const template = JSON.parse(readFileSync(path.resolve(import.meta.dirname, "../../comfyui/h3_t2v_prompt.json"), "utf8")) as Graph;
 const request: JobRequest = { prompt: "A paper boat", ratio: "16:9", resolution: "768P", durationSeconds: 5, model: "minimax-h3", referenceImages: 0 };
@@ -91,7 +91,8 @@ describe("extension arithmetic (STORY_017)", () => {
   it("names the Ref2VA checkpoint from the template's FL2VA file (reported by health, no longer used by extensions)", () => {
     expect(templateUnet(template)).toBe("minimax_h3_fl2va_int8_convrot.safetensors");
     expect(ref2vaFileFor("minimax_h3_fl2va_int8_convrot.safetensors")).toBe("minimax_h3_ref2va_int8_convrot.safetensors");
-    for (const c of ["LoadVideo", "GetVideoComponents", "VAEEncode", "VAEEncodeAudio", "EmptyMiniMaxH3LatentAV", "LTXVSeparateAVLatent", "LTXVConcatAVLatent", "ReplaceVideoLatentFrames", "LatentCut", "LatentConcat", "SolidMask", "MaskToImage", "RepeatImageBatch", "ImageToMask", "MaskComposite", "SetLatentNoiseMask", "ImageBatch", "TrimAudioDuration", "AudioConcat"]) expect(REQUIRED_CLASSES).toContain(c);
+    for (const c of ["LoadVideo", "GetVideoComponents", "VAEEncode", "VAEEncodeAudio", "EmptyMiniMaxH3LatentAV", "LTXVSeparateAVLatent", "LTXVConcatAVLatent", "ReplaceVideoLatentFrames", "LatentCut", "LatentConcat", "SolidMask", "MaskToImage", "RepeatImageBatch", "ImageToMask", "MaskComposite", "SetLatentNoiseMask", "ImageBatch", "TrimAudioDuration", "MiniMaxLocalAudioJoin"]) expect(REQUIRED_CLASSES).toContain(c);
+    expect(REQUIRED_CLASSES).not.toContain("AudioConcat"); // STORY_067: the join is our node now
     expect(REQUIRED_CLASSES).not.toContain("MiniMaxH3ReferenceToVideo");
     expect(REQUIRED_CLASSES).toContain("MiniMaxH3AddGuide"); // STORY_061: the end-frame anchor
   });
@@ -136,9 +137,21 @@ describe("extension arithmetic (STORY_017)", () => {
     expect(Object.values(graph).some((n) => n.class_type === "MiniMaxH3ReferenceToVideo" || n.class_type === "MiniMaxH3AddGuide")).toBe(false);
     // the join: the source's own frames and sound, then the new frames after the overlap
     expect(graph["new_frames"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["decode_video", 0], batch_index: 39, length: 255 } });
-    expect(graph["new_audio"]).toEqual({ class_type: "TrimAudioDuration", inputs: { audio: ["decode_audio", 0], start_index: 1.625, duration: 10.625 } });
     expect(graph["joined_frames"]).toEqual({ class_type: "ImageBatch", inputs: { image1: ["source_parts", 0], image2: ["new_frames", 0] } });
-    expect(graph["joined_audio"]).toEqual({ class_type: "AudioConcat", inputs: { audio1: ["source_parts", 1], audio2: ["new_audio", 0], direction: "after" } });
+    // STORY_067: the sound is joined by our node — the extension's whole decoded track (overlap included), crossfaded
+    // just before the join and level-matched — not butted; new_audio is the new part of that joined track
+    expect(graph["extension_audio"]).toEqual({ class_type: "TrimAudioDuration", inputs: { audio: ["decode_audio", 0], start_index: 0, duration: 12.25 } });
+    expect(graph["joined_audio"]).toEqual({
+      class_type: "MiniMaxLocalAudioJoin",
+      inputs: { source: ["source_parts", 1], extension: ["extension_audio", 0], source_seconds: 10.125, overlap_seconds: 1.625, fade_seconds: JOIN_FADE_SECONDS, skip_seconds: JOIN_SKIP_SECONDS, level_match: true },
+    });
+    expect([JOIN_FADE_SECONDS, JOIN_SKIP_SECONDS]).toEqual([0.25, 0.05]);
+    expect(graph["new_audio"]).toEqual({ class_type: "TrimAudioDuration", inputs: { audio: ["joined_audio", 0], start_index: 10.125, duration: 10.625 } });
+    expect(Object.values(graph).some((n) => n.class_type === "AudioConcat")).toBe(false);
+    // level matching can be turned off (AUDIO_LEVEL_MATCH=0); nothing else in the graph moves
+    const flat = buildGraph(template, req, [], { seed: 3, filenamePrefix: "video/job-2", audioLevelMatch: false, continuation: { file: "video/job-src_00001_.mp4", frames: 243, overlapFrames: 39, prompt: "WRAPPED" } });
+    expect(flat["joined_audio"]?.inputs["level_match"]).toBe(false);
+    expect({ ...flat, joined_audio: graph["joined_audio"] }).toEqual(graph);
     expect(graph["video"]?.inputs).toMatchObject({ images: ["joined_frames", 0], audio: ["joined_audio", 0], fps: 24 });
     expect(graph["poster_frame"]).toEqual({ class_type: "ImageFromBatch", inputs: { image: ["joined_frames", 0], batch_index: 0, length: 1 } });
     expect(graph["noise"]?.inputs).toMatchObject({ noise_seed: 3 });

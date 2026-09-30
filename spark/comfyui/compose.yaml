@@ -77,6 +77,7 @@ services:
     environment:
       COMFY_URL: http://comfyui:8188
       ADAPTER_API_KEY: ${ADAPTER_API_KEY:-}
+      AUDIO_LEVEL_MATCH: ${AUDIO_LEVEL_MATCH:-1}   # STORY_067: 0 turns off loudness matching at extension joins
     user: "${SPARK_UID:-1000}:${SPARK_GID:-1000}"
     stop_grace_period: 10s
     restart: unless-stopped

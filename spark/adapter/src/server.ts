@@ -19,7 +19,7 @@ import { buildPrompt, cameraOf } from "./prompt.ts";
 import { detectCuts, parseFrameChanges } from "./cuts.ts";
 import { WatermarkCache, type WatermarkRunner } from "./watermark.ts";
 
-export const VERSION = "1.6.0";
+export const VERSION = "1.7.0";
 
 export interface AdapterOptions {
   /** ComfyUI's base URL, e.g. http://comfyui:8188. */
@@ -52,6 +52,8 @@ export interface AdapterOptions {
   /** STORY_034: where the marked download copies are cached (default: `watermarked/` beside the store file); the ffmpeg call, injectable for tests. */
   readonly watermarkDir?: string;
   readonly watermark?: WatermarkRunner;
+  /** STORY_067: match an extension's loudness to its source's at the join (default true). */
+  readonly audioLevelMatch?: boolean;
 }
 
 export interface AdapterServer {
@@ -473,7 +475,7 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
       }
       // STORY_020: the model gets its documented format around the owner's words (an extension's is on the continuation).
       const freshPrompt = continuation ? undefined : buildPrompt(request.prompt, { kind: "fresh", frames: lengthForSeconds(request.durationSeconds), images: images.length });
-      const graph = buildGraph(options.graphTemplate, request, images, { filenamePrefix: `video/job-${id}`, seed, ...(continuation ? { continuation } : {}), ...(freshPrompt === undefined ? {} : { prompt: freshPrompt }) });
+      const graph = buildGraph(options.graphTemplate, request, images, { filenamePrefix: `video/job-${id}`, seed, audioLevelMatch: options.audioLevelMatch ?? true, ...(continuation ? { continuation } : {}), ...(freshPrompt === undefined ? {} : { prompt: freshPrompt }) });
       if (continuation) log(`job ${id} continues ${continuation.file}: its last ${String(continuation.overlapFrames)} frames become the new clip's head, ${String(extensionLength(request.durationSeconds, continuation.overlapFrames))} frames generated${continuation.anchorEnd ? ", its last frame pinned at the end (STORY_061)" : ", the end free"}, prompt:\n${continuation.prompt}`);
       else log(`job ${id} prompt as sent to the model:\n${freshPrompt ?? request.prompt}`);
       promptId = await comfy.submit(graph);

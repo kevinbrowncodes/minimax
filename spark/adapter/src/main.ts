@@ -3,6 +3,7 @@
  *   COMFY_URL (http://comfyui:8188)  OUTPUT_DIR (/comfy/output)  STORE_FILE (/comfy/adapter/jobs.json)
  *   GRAPH_TEMPLATE (../comfyui/h3_t2v_prompt.json)  ADAPTER_PORT (4020)  ADAPTER_HOST (0.0.0.0)  ADAPTER_API_KEY
  *   WATERMARK_DIR (/comfy/adapter/watermarked — STORY_034: the marked download copies, made by ffmpeg)
+ *   AUDIO_LEVEL_MATCH (on — STORY_067: "0" or "false" stops matching an extension's loudness to its source at the join)
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -22,6 +23,7 @@ const adapter = createAdapterServer({
   graphTemplate,
   apiKey: env["ADAPTER_API_KEY"] || undefined,
   watermarkDir: env["WATERMARK_DIR"] ?? "/comfy/adapter/watermarked",
+  audioLevelMatch: !["0", "false", "off"].includes((env["AUDIO_LEVEL_MATCH"] ?? "").toLowerCase()),
 });
 const port = Number(env["ADAPTER_PORT"] ?? "4020");
 const host = env["ADAPTER_HOST"] ?? "0.0.0.0";
