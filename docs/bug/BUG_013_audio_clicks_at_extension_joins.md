@@ -1,6 +1,6 @@
 # BUG_013 — Audio clicks at extension joins
 
-**Status:** Open (2026-09-30)
+**Status:** Resolved (2026-09-30; see Resolution)
 **Found by:** the owner, listening to the courtyard round's 31 s videos: "the audio between the 10 second clips is jarring and even though it doesn't appear like a cut happen you can hear it."
 **Fix:** [STORY_067](../story/STORY_067_smooth_audio_at_every_join.md)
 
@@ -31,4 +31,8 @@ Where an extension joins its source, the picture is seamless but the sound is no
 
 ## Acceptance Criteria
 
-- [ ] Resolved by STORY_067 (every join in the app and the test tooling measures within its thresholds).
+- [x] Resolved by STORY_067 (every join in the app and the test tooling measures within its thresholds). *Met for the click; not for the dip, which the owner heard as fine and which is tracked in BACKLOG_015 (see Resolution).*
+
+## Resolution
+
+Fixed by STORY_067 (adapter 1.7.0, `MiniMaxLocalAudioJoin`): the click is gone on a real draw (0.5× and 2.9× against 4–10× before) and the owner heard the joins as fine. A 25 ms dip that the model itself produces at the pinned/generated boundary remains in the numbers; it is tracked in BACKLOG_015, not here.

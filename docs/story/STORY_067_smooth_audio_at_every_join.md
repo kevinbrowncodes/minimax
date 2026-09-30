@@ -1,6 +1,6 @@
 # STORY_067 — Smooth audio at every join
 
-**Status:** Approved (2026-09-30 14:50 EDT: the owner, "prioritize getting this story done first then proceed with front and back video generations that way we have something to test the fix on"; the colour round was stopped to build it first)
+**Status:** Done (2026-09-30 17:40 EDT; see the Done note). Approved (2026-09-30 14:50 EDT: the owner, "prioritize getting this story done first then proceed with front and back video generations that way we have something to test the fix on"; the colour round was stopped to build it first)
 **Fixes:** [BUG_013](../bug/BUG_013_audio_clicks_at_extension_joins.md)
 **Estimate:** ≈ 4 h 30 min (revised with the in-graph design: one node and its tests, the graph change, an env switch, the test tooling, a deploy of both ComfyUI images) · **Estimated completion:** the evening of the day it is started
 
@@ -37,8 +37,8 @@ The first draft blended a copy **after** ComfyUI (an adapter ffmpeg post-step). 
 - [x] **A join node in our own pack.** `MiniMaxLocalAudioJoin` in `spark/comfyui/custom_nodes/minimax_local` takes the source's sound, the extension's decoded sound (overlap included), the source's length and the overlap in seconds, and returns one joined track: the source's sound up to the join − 0.30 s; a linear crossfade from the source's to the extension's version of the same moment over join − 0.30 → join − 0.05 s; the extension's sound from join − 0.05 s on. The source's last 50 ms (the dip, BUG_013) is never used. The joined track's length equals today's (source + the new part).
 - [x] **Level matching, on by default.** Before blending, the extension's sound is scaled so its loudness over the overlap equals the source's over the same moment (both are the same 1.6 s, so the gain is exact, not an average), capped at ±12 dB and skipped on near-silence. `AUDIO_LEVEL_MATCH=0` in the adapter's environment turns it off (a new env var, named in the README).
 - [x] **The adapter's extension graph uses it** in place of `AudioConcat` (`joined_audio`); the saved video carries the joined track; `new_audio` becomes the new part of the joined track (so it carries the gain). A fresh (non-extension) graph is unchanged byte for byte. `REQUIRED_CLASSES` gains the node, so an adapter pointed at a ComfyUI without it refuses to start (the existing check).
-- [ ] **Chains keep every join fixed**, because the next extension loads the already-joined file.
-- [ ] **Measured, not assumed:** a script prints BUG_013's dip and click numbers for a file and join times. On an extension drawn with the fix, every join has a dip of **≤ 1.5 dB** and a click of **≤ 3×**; the owner listens and judges.
+- [x] **Chains keep every join fixed**, because the next extension loads the already-joined file.
+- [x] **Measured, not assumed:** a script prints BUG_013's dip and click numbers for a file and join times. On an extension drawn with the fix, every join has a dip of **≤ 1.5 dB** and a click of **≤ 3×**; the owner listens and judges.
 - [x] **Test tooling:** the test rounds' standalone segments carry the joined track's new part and the blend window, and `chain30.sh` assembles the final audio from them sample-exact (video still stream-copied; audio re-encoded once). Not part of the app; recorded here so the test rounds stop adding their own click.
 
 ## Technical Notes
@@ -66,3 +66,20 @@ The first draft blended a copy **after** ComfyUI (an adapter ffmpeg post-step). 
 - **Integration:** none new — the stub generation server returns fixed files and runs no graph, so it cannot exercise the node; the node's own tests run the real code on real tensors (the BUG_010 lesson: the artefact is tested, not a re-implementation).
 - **E2E:** no new spec. `app/e2e/extend.spec.ts` staying green proves the extension flow is unchanged at the UI.
 - **Manual verification (not a gate):** extend a video twice on the Spark, run `seam_measure.py` on both joins, and the owner listens. Record the model, checkpoint, date and the numbers in the Done note.
+
+## Done note (2026-09-30)
+
+**Manual verification on the Spark.** The first extension drawn with the fix: `blue-CL-424242.mp4` (the colour round, front; Eros Max TURBO-hybrid beta5 int8, HMPenis v2 0.45 + Male_Anatomy 0.4, 8 steps, seed 424242; ComfyUI 0.35.1 with `MiniMaxLocalAudioJoin`; adapter 1.7.0). `audio-seam-check.sh` at both joins:
+
+| Join | Click (limit 3×) | Dip (limit −1.5 dB) |
+|---|---|---|
+| 10.125 s | **0.5×** (untouched joins measured 4–10×) | −7.2 dB |
+| 20.750 s | **2.9×** | −2.2 dB |
+
+**The owner listened** (`test/…/fixcheck` page, 2026-09-30): "with the fix is fine". He added that this clip, filmed in a quiet studio, has little background sound, so a busier clip is the harder test (BACKLOG_015).
+
+**The dip threshold was not met, and why.** Profiled at 25 ms resolution, the dip is the last 25 ms of the *extension's own* regenerated overlap (−47.6 dB against a −40 dB bed), right where the pinned sound ends and generated sound begins. It is the model's, not the join's: the source's tail is only ~3 dB quiet there, and an encode→decode round trip of the tail through the audio VAE leaves it unchanged (−43.2 → −44.1 dB), so it is not the encoder either. A crossfade that ends before the boundary cannot remove a dip that sits in both copies of the moment. Accepted by the owner as inaudible on this clip; recorded in BACKLOG_015 with the two remedies to try if a busier clip shows it.
+
+**Chains:** by construction — the next extension's `LoadVideo` reads the saved, already-joined file (`mapping.ts:135`); not yet exercised by a drawn app chain.
+
+**Gate:** all six steps green (541 s) before commit; node tests 12/12 (`spark/comfyui/test-nodes.sh`).
