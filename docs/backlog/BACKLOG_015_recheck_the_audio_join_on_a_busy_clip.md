@@ -15,3 +15,7 @@ STORY_067 fixed the click at extension joins and the owner heard its first video
 ## Open questions
 
 - Does a busy bed hide the dip or expose it?
+
+## Update (2026-10-02)
+
+The blonde round (an empty, silent studio) had clean first joins on all 14 videos but a click at the second join on most (to 31.8×). Traced to the test tooling (`chain30.sh` splices a lossless blended window onto a separately AAC-encoded segment file), not to the app's in-graph join. Details in `test/26-10-02-2001-blonde/run.md`. The busy-sound recheck this item asks for is still open: this photo's studio was silent by design.
