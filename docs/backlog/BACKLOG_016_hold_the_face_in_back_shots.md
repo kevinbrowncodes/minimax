@@ -2,6 +2,7 @@
 
 **Status:** Open (2026-10-01, the owner: "Might be worth exploring if minimax supports character references… those seem to be key for back videos")
 **Priority:** Medium — every back video in the colour round drifted in the face; it cost Male_Anatomy-only's courtyard back video its score (2, "his face changes").
+**Next (owner, 2026-10-02):** becomes SPIKE_002 — drafted after the Equinox vs NaughtyTimes round, since NaughtyTimes may settle the back and leave Ref2VA for the face only. The scope widens to anatomy as a reference too (the anus, BACKLOG_014). Known risk from STORY_016 (09-13): the Ref2VA route drew a match cut to a new set.
 
 ## Summary
 
