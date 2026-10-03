@@ -1,5 +1,5 @@
 /** Send the composer's request to the app's own route (STORY_013). JSON without images, multipart with them. */
-import type { ApiError, CreateJobResponse } from "./job-api";
+import type { ApiError, CreateJobResponse, EndAnchor } from "./job-api";
 import type { ComposerImage, ComposerState } from "./composer-state";
 
 export type SubmitResult = { readonly ok: true; readonly id: string; readonly position?: number } | { readonly ok: false; readonly status: number; readonly message: string; readonly field?: string };
@@ -15,6 +15,8 @@ export interface SegmentRequest {
   readonly notBefore?: string;
   /** STORY_041: only a chain's first segment may replace the queued request being edited. */
   readonly replaces?: string;
+  /** STORY_068: where this extension ends, overriding the composer's End choice (a chain's last segment ends free). */
+  readonly endAnchor?: EndAnchor;
 }
 
 export function buildJobRequest(state: ComposerState, segment?: SegmentRequest): { readonly url: string; readonly init: RequestInit } {
@@ -23,6 +25,7 @@ export function buildJobRequest(state: ComposerState, segment?: SegmentRequest):
   const images = segment ? (segment.images ?? []) : state.images;
   const notBefore = segment ? segment.notBefore : state.notBefore;
   const replaces = segment ? segment.replaces : state.queueId;
+  const endAnchor = segment?.endAnchor ?? state.endAnchor;
   const fields = {
     prompt,
     ratio: state.ratio,
@@ -35,7 +38,7 @@ export function buildJobRequest(state: ComposerState, segment?: SegmentRequest):
     ...(notBefore === undefined ? {} : { notBefore }),
     ...(replaces === undefined ? {} : { replaces }),
     // STORY_016: an extension names its source and the context; it never carries images. STORY_061: and where it ends.
-    ...(continueFrom === undefined ? {} : { continueFrom, overlapFrames: state.overlapFrames, endAnchor: state.endAnchor }),
+    ...(continueFrom === undefined ? {} : { continueFrom, overlapFrames: state.overlapFrames, endAnchor }),
   };
   // A `?script=` on the page URL is forwarded so the e2e lane can choose the stub's outcome; the adapter ignores it.
   const script = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("script");
@@ -81,14 +84,19 @@ export type ChainResult = { readonly ok: true; readonly ids: readonly string[] }
  * STORY_044: post a chain's segments one after another, each after the previous 202 — the first as the composer would
  * post a single request (its images or its source, its run-at, its Edit), each next as an extension of the id just
  * answered, so STORY_043 holds it in the line until its source is done. A refusal stops the sequence: the accepted
- * segments are real requests and stay; the result says which segment failed and why.
+ * segments are real requests and stay; the result says which segment failed and why. STORY_068: the last segment of a
+ * chain of two or more is sent with `endAnchor: "none"`; the earlier extensions carry the composer's End choice.
  */
 export async function submitChain(state: ComposerState, prompts: readonly string[], fetchImpl: typeof fetch = fetch): Promise<ChainResult> {
   const ids: string[] = [];
   for (const [i, prompt] of prompts.entries()) {
-    const segment: SegmentRequest = i === 0
+    const first: SegmentRequest = i === 0
       ? { prompt, ...(state.extend === undefined ? { images: state.images } : { continueFrom: state.extend.id }), ...(state.notBefore === undefined ? {} : { notBefore: state.notBefore }), ...(state.queueId === undefined ? {} : { replaces: state.queueId }) }
       : { prompt, continueFrom: ids[i - 1] };
+    // STORY_068: the chain's last segment ends free — pinned to its first frame (STORY_061) it snaps back in its last
+    // second whenever the script's final beat ends in a new pose; the segments before it stay pinned so the joins hold.
+    const last = prompts.length > 1 && i === prompts.length - 1;
+    const segment: SegmentRequest = last ? { ...first, endAnchor: "none" } : first;
     const result = await submitJob(state, fetchImpl, segment);
     if (!result.ok) return { ok: false, sent: ids, index: i, message: result.message, ...(result.field === undefined ? {} : { field: result.field }) };
     ids.push(result.id);

@@ -139,6 +139,61 @@ describe("a chain's segments (STORY_044)", () => {
   });
 });
 
+describe("a chain's last segment ends free (STORY_068)", () => {
+  const chainCaps: Capabilities = { ...caps, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30, endAnchor: { options: ["source-last-frame", "none"], default: "source-last-frame" } } };
+  const ready = (): ComposerState => reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: chainCaps }), { type: "text", text: "Scene" });
+  const collect = () => {
+    const bodies: Record<string, unknown>[] = [];
+    let n = 0;
+    const fetchImpl = vi.fn((_url: RequestInfo | URL, init?: RequestInit) => {
+      const body = init?.body;
+      bodies.push(body instanceof FormData ? Object.fromEntries([...body.entries()].filter(([k]) => k !== "referenceImage")) : (JSON.parse(typeof body === "string" ? body : "{}") as Record<string, unknown>));
+      n += 1;
+      return Promise.resolve(new Response(JSON.stringify({ id: `j${String(n)}`, status: "queued", progress: 0 }), { status: 202, headers: { "content-type": "application/json" } }));
+    }) as unknown as typeof fetch;
+    return { bodies, fetchImpl };
+  };
+  const source = { id: "src", title: "26-10-03-1300", durationSeconds: 10, ratio: "16:9", resolution: "768P", model: "minimax-h3", posterUrl: "" };
+
+  it("a chain of three from a photo: segment 2 pinned where it began, segment 3 sent with endAnchor none", async () => {
+    const { bodies, fetchImpl } = collect();
+    await submitChain(reduceComposer(ready(), { type: "add-images", images: [img] }), ["one", "two", "three"], fetchImpl);
+    expect(bodies[0]).not.toHaveProperty("endAnchor"); // the first segment is not an extension
+    expect(bodies[1]).toMatchObject({ continueFrom: "j1", endAnchor: "source-last-frame" });
+    expect(bodies[2]).toMatchObject({ continueFrom: "j2", endAnchor: "none" });
+  });
+
+  it("a chain of two: its one extension is the last segment and ends free", async () => {
+    const { bodies, fetchImpl } = collect();
+    await submitChain(reduceComposer(ready(), { type: "add-images", images: [img] }), ["one", "two"], fetchImpl);
+    expect(bodies[1]).toMatchObject({ continueFrom: "j1", endAnchor: "none" });
+  });
+
+  it("Send all in extend mode: the first segment (an extension of the source) keeps the End choice, the last ends free", async () => {
+    const { bodies, fetchImpl } = collect();
+    await submitChain(reduceComposer(ready(), { type: "extend-from", source }), ["one", "two"], fetchImpl);
+    expect(bodies[0]).toMatchObject({ continueFrom: "src", endAnchor: "source-last-frame" });
+    expect(bodies[1]).toMatchObject({ continueFrom: "j1", endAnchor: "none" });
+  });
+
+  it("End set to Anywhere: every extension of the chain ends free", async () => {
+    const { bodies, fetchImpl } = collect();
+    const anywhere = reduceComposer(reduceComposer(ready(), { type: "add-images", images: [img] }), { type: "end-anchor", endAnchor: "none" });
+    await submitChain(anywhere, ["one", "two", "three"], fetchImpl);
+    expect(bodies[1]).toMatchObject({ endAnchor: "none" });
+    expect(bodies[2]).toMatchObject({ endAnchor: "none" });
+  });
+
+  it("a single Extend (not a chain) still sends the composer's End choice", async () => {
+    const { bodies, fetchImpl } = collect();
+    await submitJob(reduceComposer(ready(), { type: "extend-from", source }), fetchImpl);
+    expect(bodies[0]).toMatchObject({ continueFrom: "src", endAnchor: "source-last-frame" });
+    const one = collect();
+    await submitChain(reduceComposer(ready(), { type: "extend-from", source }), ["only"], one.fetchImpl);
+    expect(one.bodies[0]).toMatchObject({ continueFrom: "src", endAnchor: "source-last-frame" }); // a chain of one is not a chain
+  });
+});
+
 describe("draws per prompt (STORY_055)", () => {
   const collect = (refuseAt?: number) => {
     const bodies: Record<string, unknown>[] = [];

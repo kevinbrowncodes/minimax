@@ -280,9 +280,17 @@ test.describe("the Agent chip (STORY_050)", () => {
     expect(two.continueFrom).toBe(first);
     expect(three.prompt.startsWith("integrated_multimodal_description: [Shot 1]")).toBe(true);
     expect(three.continueFrom).toBe(secondEntry.jobId);
-    // the last segment's page plays the whole video
+    // STORY_068: segment 2 is pinned where it began (STORY_061's default), the last segment ends free
+    expect(two.endAnchor).toBe("source-last-frame");
+    expect(three.endAnchor).toBe("none");
+    await page.goto(`/task/${second}`);
+    await settled(page);
+    await expect(page.getByTestId("continues")).toContainText("ends where it began");
+    // the last segment's page plays the whole video, and its request line no longer says it was pinned
     await page.goto(`/task/${third}`);
     await settled(page);
+    await expect(page.getByTestId("continues")).toBeVisible();
+    await expect(page.getByTestId("continues")).not.toContainText("ends where it began");
     await page.getByTestId("result-card").getByRole("button", { name: "Open preview" }).click();
     await expectPlayable(page.getByTestId("result-video"), `/api/jobs/${third}/result`);
   }
