@@ -1,6 +1,6 @@
 # STORY_066 — The NSFW director skill
 
-**Status:** Proposed (drafted 2026-09-19 16:30 EDT from [SPIKE_001](../spike/SPIKE_001_the_nsfw_model_spike.md) › Technical Notes › The director and the owner's answer "why can't you use our current skills instead?"; the genre answered 16:50 — *uncensored* / *Uncensored*; waits for the owner's go)
+**Status:** Superseded (2026-10-09 11:55 EDT) by [STORY_070](STORY_070_my_scripts_become_the_chain.md) — the owner chose a script converter that runs in the app, with the model step on Claude or Gemini ([STORY_071](STORY_071_the_director_runs_on_claude_or_gemini.md)), over a skill run by hand; the "manual" skill idea is retired, the rules this story would have carried live in the converter skill's folder. Never implemented; kept as written. (Was: Proposed — drafted 2026-09-19 16:30 EDT from [SPIKE_001](../spike/SPIKE_001_the_nsfw_model_spike.md) › Technical Notes › The director and the owner's answer "why can't you use our current skills instead?"; the genre answered 16:50 — *uncensored* / *Uncensored*)
 **Epic:** [EPIC_010](../epic/EPIC_010_an_nsfw_model_in_its_own_container.md) — the fourth story, after [STORY_065](STORY_065_the_uncensored_model_in_the_composer.md)
 **Estimate:** ≈ 1 h 30 min (the skill folder validated, one metadata key and its meta-line word, the run route's refusal, the chip's greyed entry; unit, component, e2e; two hand gates) · **Estimated completion:** the evening of the day it is started
 
