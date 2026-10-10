@@ -128,7 +128,7 @@ docs/
   chore/      CHORE_NNN_*.md
   spike/      SPIKE_NNN_*.md — research tickets: reading, a controlled experiment, a written answer and a decision; no product code (since 2026-09-19; SPIKE_001 is the NSFW model spike)
   recon/      dated captures, measured tokens, component inventory, interaction notes
-  references/ the MiniMax H3 model card, license, prompt guides, MiniMax's and ComfyUI's H3 docs, the official workflow templates and the node sources from our ComfyUI image, with an index (CHORE_002)
+  references/ the MiniMax H3 model card, license, prompt guides, MiniMax's and ComfyUI's H3 docs, the official workflow templates and the node sources from our ComfyUI image, with an index (CHORE_002); skills/ holds reference copies of skills maintained outside the repo (CHORE_019)
 ```
 
 ## Features
