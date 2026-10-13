@@ -26,3 +26,8 @@ STORY_016 used the Ref2VA reference path for extensions before STORY_017 replace
 
 - Does Eros Max have a Ref2VA counterpart, or would reference shots mean the stock checkpoint plus adapters?
 - One reference image (the face), or the full photo?
+
+## Added 2026-10-11 — a second question for the same spike (owner, by the multiple-choice tool)
+
+- **Does a rear anatomy reference improve back shots?** On Equinox the rear anatomy is drawn from words alone, and the spanish-cowboy back round showed it does not resolve under scrutiny (round notes in `test/26-10-11-1601-spanish-cowboy/`; the rule that followed is the shallow-bends memory). The spike adds one arm: the same seed and back script with and without a close rear reference image passed through Ref2VA, matched to the pose the script asks for. Judged by the owner's back-video lens (believable and in frame). Risks to record: a single-region reference may be ignored or pasted flat; the anatomy adapters may not load on the Ref2VA checkpoint (already scope item 2).
+- When the spike is drafted it becomes SPIKE_002 with both questions; nothing runs until the owner's go and budget.
