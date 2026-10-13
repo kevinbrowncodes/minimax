@@ -6,7 +6,7 @@ compatibility: Written for MiniMax-H3 image-to-video served locally (ComfyUI, Co
 
 # MiniMax H3 I2V: AMG Physique Film (Bob Mizer)
 
-Build 2026-10-13-1250
+Build 2026-10-13-1325
 
 > ## ⚠️ THIS RUN WRITES EXACTLY {{COUNT}} SHOT(S): READ FIRST
 >
@@ -76,7 +76,7 @@ You are given `{{COUNT}}`, always 3 or more, and one keyframe per scene: `keyfra
 
 ## Read the keyframe for heat first
 
-Everything after this section is structure, and structure alone produces the same film every time. Before choosing anything, list eight to twelve ways THIS body could be displayed in THIS frame that would make someone stop scrolling. Every candidate is a physique display (a body presented, worked, braced, driven, held), never merely an interesting thing a man could do in the room. Go wide and specific: what can he brace against, lean into, step up to, walk into? What does each do to the garment and to the light already in the frame? Rank by two tests: which is hottest, and which could ONLY have come from this keyframe. Keep the top four or five; those are the blocks, and the kinds fall out of them. Three guards on every candidate action, and nothing else constrains the list: the action uses something in the frame or just outside it; the action is still a physique display, with the body as the content; and the action stays under the ceiling (see *The job*).
+Everything after this section is structure, and structure alone produces the same film every time. Before choosing anything, list eight to twelve ways THIS body could be displayed in THIS frame that would make someone stop scrolling. Every candidate is a physique display (a body presented, worked, braced, driven, held), never merely an interesting thing a man could do in the room. Go wide and specific: what can he brace against, lean into, step up to, walk into? What does each do to the garment and to the light already in the frame? Rank by two tests: which is hottest, and which could ONLY have come from this keyframe. Keep the top four or five; those are the blocks, and the kinds fall out of them. They are written into the shot list before any prompt. Three guards on every candidate action, and nothing else constrains the list: the action uses something in the frame or just outside it; the action is still a physique display, with the body as the content; and the action stays under the ceiling (see *The job*).
 
 ## Building the film: the scenes
 
@@ -93,7 +93,7 @@ Scenes fill in order and the last may be short: `{{COUNT}}` 3 is the front scene
 
 **The front scene.** Anything large and fixed in the keyframe gets worked here first. Facing moves front → three-quarter → side and never turns fully away. Its last shot closes on a front double biceps (see *The subscriber close*).
 
-**The back scene.** Its keyframe should already show him turned away: a turn-away from a front-facing keyframe pushed the camera in or swung the set in 5 of 6 takes (12 Oct 2026, Equinox). When keyframes/scene-2.png shows his back, phase one of its first shot releases that keyframe's hands and feet and he stays turned away. Only when the keyframe shows his front does phase one turn him away: a step back and a turn to face the wall, the sea or the far end of the set, picked off this keyframe. Every back-scene shot stays turned away for the whole shot (a turn to camera brings the front view back and wastes the scene), writes the glute contraction in its middle phase, and ends with the head over the shoulder, face clear, eyes in the lens. Framed medium full to full, the whole posterior in frame.
+**The back scene.** Its keyframe should already show him turned away: a turn-away from a front-facing keyframe pushed the camera in or swung the set in 5 of 6 takes (12 Oct 2026, Equinox). When the back scene's keyframe shows his back, phase one of its first shot releases that keyframe's hands and feet and he stays turned away. Only when the keyframe shows his front does phase one turn him away: a step back and a turn to face the wall, the sea or the far end of the set, picked off this keyframe. Every back-scene shot stays turned away for the whole shot (a turn to camera brings the front view back and wastes the scene), writes the glute contraction in its middle phase, and ends with the head over the shoulder, face clear, eyes in the lens. Framed medium full to full, the whole posterior in frame.
 
 **The calisthenics scene.** Standing or squatting moves, nothing on the ground: jumping jacks, shadow boxing, standing calf raises, wall push-ups against a surface the keyframe shows, high knees, a lunge with both feet placed, a squat written as a shape. **Reps at real speed are untested on H3:** moves compress to about two seconds and holds stretch, so a run of reps may not land at speed. Test this first; until it is proven, write a calisthenics shot as two or three reps with the last one held, never a continuous run. Its first shot turns him from its keyframe's facing to the move's angle as its phase-one travel, when they differ. Never the same move twice in the scene.
 
@@ -145,7 +145,23 @@ Charged variants, preferred: **front lat spread with the weight dropped onto one
 
 ## Output
 
-Your REPLY is read and split by a parser. Shots are numbered `N.M`, scene N and shot M within the scene, and shot numbers restart in each scene (1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1 …). Emit, for every shot in order: its prompt wrapped in `<<<PROMPT N.M>>>` … `<<<END PROMPT>>>`, then its **blocking** wrapped in `<<<FILE scenes/scene-N/shot-M.txt>>>` … `<<<END>>>`. After the last shot, ONE shot list wrapped in `<<<FILE shot-list.md>>>` … `<<<END>>>`, and nothing else. The parser writes each prompt to `prompts/scene-N/prompt-M.txt`, each blocking to `scenes/scene-N/shot-M.txt`, and the shot list to `shot-list.md`; the keyframes `keyframes/scene-N.png` are supplied by the owner and never written by this skill. Each prompt block holds one complete H3 prompt and nothing else: the first character inside the block is the `F` of the alignment line (a scene's first shot) or the `i` of `integrated_multimodal_description:` (shots 2 and 3 of a scene).
+Your REPLY is read and split by a parser. Shots are numbered `N.M`, scene N and shot M within the scene, and shot numbers restart in each scene (1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1 …). Emit, first, ONE shot list wrapped in `<<<FILE shot-list.md>>>` … `<<<END>>>`: it is the plan, written before any prompt, with every row filled. Then, for every shot in order: its prompt wrapped in `<<<PROMPT N.M>>>` … `<<<END PROMPT>>>`, then its **blocking** wrapped in `<<<FILE scenes/scene-N/shot-M.txt>>>` … `<<<END>>>`, and nothing else. The parser writes each prompt to `prompts/scene-N/prompt-M.txt`, each blocking to `scenes/scene-N/shot-M.txt`, and the shot list to `shot-list.md`; the keyframes `keyframes/scene-N.png` are supplied by the owner and never written by this skill. Each prompt block holds one complete H3 prompt and nothing else: the first character inside the block is the `F` of the alignment line (a scene's first shot) or the `i` of `integrated_multimodal_description:` (shots 2 and 3 of a scene).
+
+**The shot list, written first.** The shot list is the plan. It is written first, after the keyframe has been read for heat, and every prompt is written to its row: the row's kind, facing, main gesture, payoff, waistband, reset, hold and director's element are what the prompt delivers. Plan fully before emitting it, because a prompt that cannot be written to its row means the plan was wrong and the shot list has already been sent; the structure checks (kinds, waistband, resets, escalating payoffs, the director's shot per scene, the final pose) are settled on the shot list, not rediscovered in the prompts.
+```
+<<<FILE shot-list.md>>>
+Scenes: <scene N, front/back/calisthenics> <shots> | <scene N, …> <shots> [| …]
+Final pose: <the pinup pose, under ten words>
+Blocks: <shot or shot range, as N.M> | <shot or shot range> | ...
+
+| Scene.Shot | Scene | Kind | Facing | Main gesture | Payoff | Waistband | Reset/Break | Hold | Director's shot |
+|---|---|---|---|---|---|---|---|---|---|
+| <N.M> | <front/back/calisthenics> | <one kind> | <facing> | <under ten words> | <what the viewer gets, under ten words> | <yes/no> | <none or which> | <long/short> | <signature element used, or blank> |
+
+Generated with minimax-h3-i2v-amg-scene Build <YYYY-MM-DD-HHMM>
+<<<END>>>
+```
+Copy the build stamp from the top of this skill verbatim, as the last line of the shot list. Hold is `long` or `short`, never seconds, because H3 does not honour counts. If you also have file tools, write `prompts/scene-N/prompt-M.txt`, `scenes/scene-N/shot-M.txt` and `shot-list.md` holding exactly the block contents; the marker blocks are the complete output on their own.
 
 **A scene's first shot (sees the keyframe):**
 ```
@@ -182,38 +198,22 @@ non_diegetic_music: None.
 - **SOUNDSCAPE**: 1 to 4 sentences, diegetic only, in time order, matching the action: the setting's own tone plus one or two concrete non-vocal sounds belonging to this frame (<the setting's own tone>, <one or two sounds the action in this frame actually makes>). End with `No voices, no dialogue, no music.`
 - The description runs 350 to 600 words in one paragraph.
 
-**The blocking, one per shot (for the director, never sent to H3):** the same shot rewritten as timed beats so a person can scrub the take against it. It is derived from the prompt after the prompt is written, carries the same beats in the same order and nothing the prompt does not say, and the windows are a reading aid only, since H3 honours order rather than seconds.
+**The blocking, one per shot (for the director, never sent to H3):** the same shot rewritten as timed beats so a person can scrub the take against it. It is derived from the prompt after the prompt is written, carries the same beats in the same order and nothing the prompt does not say, and the windows are a reading aid only, since H3 honours order rather than seconds. The header carries the **size**, read off the keyframe on the standard ladder (full, medium full, medium, medium close-up); the camera is locked, so it is the keyframe's size, written "medium full → medium" only when a walk-in changes it. Each window opens with the beat's **intention**, an actable objective aimed at the viewer, then the moves exactly as the prompt has them. The intention is a verb toward the viewer (to show you his back at full width; to put himself where you can see all of him; to catch you looking), never a mood or an expression, so the face-as-state rule still holds. Example window: `[0:07-0:10] To push it past easy and catch you watching: weight hard onto the right leg, squeezes harder, arms trembling; the look lands in the lens as the squeeze peaks`.
 ```
 <<<FILE scenes/scene-N/shot-M.txt>>>
-Scene N, Shot M | <kind> | <facing> | <director's shot: element, or blank>
-[0:00-0:03] <phase one, one line: the release of the starting state, the action, the hold, where the eyes are>
-[0:03-0:07] <phase two, one line: the main gesture, the hold, where the eyes are>
-[0:07-0:10] <phase three, one line: its own action, then the look in the last second>
+Scene N, Shot M | <kind> | <facing> | <size> | <director's shot: element, or blank>
+[0:00-0:03] To <what he does it for>: <the release of the starting state, the action, the hold, where the eyes are>
+[0:03-0:07] To <what he does it for>: <the main gesture, the hold, where the eyes are>
+[0:07-0:10] To <what he does it for>: <its own action, then the look in the last second>
 End: <the end-hold position, as the prompt states it>
 Payoff: <what the viewer gets, under ten words>
 Camera: static. Audio: <the one or two sounds named in the soundscape>
 <<<END>>>
 ```
 
-**The shot list:**
-```
-<<<FILE shot-list.md>>>
-Scenes: <scene N, front/back/calisthenics> <shots> | <scene N, …> <shots> [| …]
-Final pose: <the pinup pose, under ten words>
-Blocks: <shot or shot range, as N.M> | <shot or shot range> | ...
-
-| Scene.Shot | Scene | Kind | Facing | Main gesture | Payoff | Waistband | Reset/Break | Hold | Director's shot |
-|---|---|---|---|---|---|---|---|---|---|
-| <N.M> | <front/back/calisthenics> | <one kind> | <facing> | <under ten words> | <what the viewer gets, under ten words> | <yes/no> | <none or which> | <long/short> | <signature element used, or blank> |
-
-Generated with minimax-h3-i2v-amg-scene Build <YYYY-MM-DD-HHMM>
-<<<END>>>
-```
-Copy the build stamp from the top of this skill verbatim, as the last line of the shot list. Hold is `long` or `short`, never seconds, because H3 does not honour counts. If you also have file tools, write `prompts/scene-N/prompt-M.txt`, `scenes/scene-N/shot-M.txt` and `shot-list.md` holding exactly the block contents; the marker blocks are the complete output on their own.
-
 ## Final check, before you respond
 
-1. Exactly `{{COUNT}}` prompt blocks, numbered `N.M` in order with shot numbers restarting each scene, each followed by its `<<<FILE scenes/scene-N/shot-M.txt>>>` blocking, then exactly one `<<<FILE shot-list.md>>>` block ending with the build stamp. Every blocking matches its prompt beat for beat; nothing in a blocking is missing from the prompt.
+1. Exactly one `<<<FILE shot-list.md>>>` block first, every row filled, ending with the build stamp; then exactly `{{COUNT}}` prompt blocks, numbered `N.M` in order with shot numbers restarting each scene, each followed by its `<<<FILE scenes/scene-N/shot-M.txt>>>` blocking. Every prompt delivers its shot-list row; every blocking matches its prompt beat for beat, every window opens with an intention and the header carries the size; nothing in a blocking is missing from the prompt.
 2. Every scene's first shot starts with the alignment line verbatim, a blank line, then the three fields, with `<Picture 1>` in the camera sentence and an anchor written from that scene's keyframe; shots 2 and 3 of a scene start at `integrated_multimodal_description:` with no picture reference and carry the carry-over opener; no scene's first shot is written as an extension of the previous scene. The description is one paragraph opening with `[Shot 1]`, with no bracketed times, no timestamps, no labels, no line breaks.
 3. Style, then the full static camera sentence with "ten-second", before any action; no phase has more than two moves; a walk-in has a phase of its own; no handheld object, no liquid handled.
 4. The anchor is a state: no pose, no hand position, no stance, no object that will move; the garment is named as staying on. Shots 2 and 3 of a scene anchor the previous shot's end frame.
