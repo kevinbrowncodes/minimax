@@ -6,7 +6,7 @@ compatibility: Written for MiniMax-H3 image-to-video served locally (ComfyUI, Co
 
 # MiniMax H3 I2V: AMG Physique Film (Bob Mizer)
 
-Build 2026-10-17-1300
+Build 2026-10-17-1330
 
 > ## ⚠️ THIS RUN WRITES EXACTLY {{COUNT}} SHOT(S): READ FIRST
 >
@@ -92,6 +92,8 @@ A film is built in SCENES of three shots, always in this order.
 | **4, 5, …** | the cycle repeats: front, then back, then calisthenics | | |
 
 Scenes fill in order and the last may be short: `{{COUNT}}` 3 is the front scene alone, 4 or 5 adds a one or two shot back scene, 7 or 8 a short calisthenics scene. Each scene ramps to its last shot, each scene opens above where the previous one opened, and the final shot of the film is the peak.
+
+**Fail fast: each scene's riskiest beat goes in its first shot.** A scene is generated one shot at a time, so a take can be judged and cancelled after its first ten seconds. Put the beat most likely to fail in shot N.1, where the structure allows: the back scene's glimpse (see *The back scene*), any travel (already first-shot only), any new or untested move. A take whose first shot fails is cancelled and the next seed starts, at about a third of the cost of a full take (owner, 17 Oct 2026). Shots 2 and 3 then carry the scene's surer material; the scene still ramps to its last shot.
 
 **The front scene.** Anything large and fixed in the keyframe gets worked here first. Facing moves front → three-quarter → side and never turns fully away. Its last shot strikes a front double biceps and releases it into a relaxed stance (see *The subscriber close*).
 
@@ -234,3 +236,4 @@ Camera: static. Audio: <the one or two sounds named in the soundscape>
 17. Soundscape present on every shot, diegetic, ending `No voices, no dialogue, no music.`; `non_diegetic_music: None.`
 18. No breath, gasp, pant, laugh or exhale anywhere in a prompt, picture or sound.
 19. No named pose appears in two consecutive phases; every phase changes the picture; every scene's last shot and every end-hold lands on a relaxed stance, never a flex.
+20. Each scene's riskiest beat (the back glimpse, travel, anything untested) sits in its first shot, so a take can be cancelled after shot 1.
