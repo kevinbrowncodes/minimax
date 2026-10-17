@@ -119,6 +119,7 @@ app/          the UI
 tools/        gate/ (the toolchain image and the gate runner), the stub generation server with its fixtures (STORY_008), other dev tooling
 spark/        comfyui/ — the ComfyUI image (Dockerfile, compose) and scripts that run the model on the Spark (the SFW container, and since STORY_063 the NSFW one: `--nsfw`, `nsfw-files.tsv`); gcloud/ — the one-time Vertex AI setup from Google's CLI image (STORY_047); spark/data/ (gitignored) holds weights (`models/`, `models-nsfw/`), outputs (`output/`, `output-nsfw/`), logs, the gcloud login and the service-account key
 recon/        Playwright recon scripts (profile and raw output are gitignored)
+.claude/      skills/minimax-h3-i2v-amg-scene/ — the AMG physique-film scene skill that writes the round scripts, owned and edited here since CHORE_029 (it used to be maintained in claude.ai and synced down); every change is a commit
 agents/       skills/ — prompt-writing skills in the Agent Skills layout (agentskills.io); `minimax-h3-director-thirst-trap` directs one clip from one image, in that genre; more directors follow the same `minimax-h3-director-<genre>` pattern (CHORE_012)
 docs/
   epic/       EPIC_NNN_*.md
@@ -128,7 +129,7 @@ docs/
   chore/      CHORE_NNN_*.md
   spike/      SPIKE_NNN_*.md — research tickets: reading, a controlled experiment, a written answer and a decision; no product code (since 2026-09-19; SPIKE_001 is the NSFW model spike)
   recon/      dated captures, measured tokens, component inventory, interaction notes
-  references/ the MiniMax H3 model card, license, prompt guides, MiniMax's and ComfyUI's H3 docs, the official workflow templates and the node sources from our ComfyUI image, with an index (CHORE_002); skills/ holds reference copies of skills maintained outside the repo (CHORE_019)
+  references/ the MiniMax H3 model card, license, prompt guides, MiniMax's and ComfyUI's H3 docs, the official workflow templates and the node sources from our ComfyUI image, with an index (CHORE_002)
 ```
 
 ## Features
