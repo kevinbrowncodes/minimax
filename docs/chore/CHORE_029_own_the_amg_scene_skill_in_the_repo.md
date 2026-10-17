@@ -16,7 +16,7 @@ The owner wants to control the skill directly (2026-10-17). Edits through the cl
 - [x] `git mv docs/references/skills/minimax-h3-i2v-amg-scene .claude/skills/minimax-h3-i2v-amg-scene` (history kept).
 - [x] `SKILL.md` at Build 2026-10-17-0530: Build 0455 plus the owner's glimpse direction — every back scene carries at least one glimpse beat, never a full reveal; the brief upright spread let go at once allowed as an untested glimpse; a Glimpse column in the shot list; no wording of the hole as absent. The `compatibility:` frontmatter line is kept.
 - [x] `README.md` — Project Structure: `.claude/skills/` added; the `references/skills/` note removed.
-- [ ] Owner: remove the skill from claude.ai, so the synced copy stops arriving (cannot be done from here).
+- [x] Owner: remove the skill from claude.ai, so the synced copy stops arriving (cannot be done from here). Done by the owner 2026-10-17 (the synced folder disappeared).
 
 ## Testing
 
