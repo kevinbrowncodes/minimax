@@ -6,7 +6,7 @@ compatibility: Written for MiniMax-H3 image-to-video served locally (ComfyUI, Co
 
 # MiniMax H3 I2V: AMG Physique Film (Bob Mizer)
 
-Build 2026-10-18-1845
+Build 2026-10-18-1900
 
 > ## ⚠️ THIS RUN WRITES EXACTLY {{COUNT}} SHOT(S): READ FIRST
 >
@@ -149,7 +149,7 @@ Charged variants, preferred: **front lat spread with the weight dropped onto one
 
 ## The variety review: compare with the last three films
 
-Members watch film after film; a new model doing the same routine reads as the same video. So before the shot list is final, read the beat sheets (`scenes/scene-N/shot-M.txt`, or `shot-list.md`) of the **last three films** (the newest round folders under `test/`, then `test/archive/`) and lay the new film beside them, scene by scene and shot by shot, in a table. Flag anything that repeats: the same named pose, the same hand move (a grab, a palm to the chest), the same order of moves inside a scene, the same closing pose, the same kind of director's shot. Rework every flagged beat into something those films did not do, built from this keyframe. **What the review never changes:** the safeguards that make a take work (the back scene's squat glimpse in its first shot, the camera pull-back on a front-facing back keyframe, the frame rule, the garment rules, the facing rules); keep those on purpose and vary the choreography around them. Include the comparison table in the reply after the shot list, as `<<<FILE variety-review.md>>>` … `<<<END>>>`, so the owner sees what is new before any take runs (owner, 18 Oct 2026, after three back scenes in a row ran turn, squat, brace and grab, hip flick, turn back).
+Members watch film after film; a new model doing the same routine reads as the same video. So before the shot list is final, read the beat sheets (`scenes/scene-N/shot-M.txt`, or `shot-list.md`) of the **last three films** (the newest round folders under `test/`, then `test/archive/`) and lay the new film beside them, scene by scene and shot by shot, in a table. Flag anything that repeats: the same named pose, the same hand move (a grab, a palm to the chest), the same order of moves inside a scene, the same closing pose, the same kind of director's shot. Rework every flagged beat into something those films did not do, built from this keyframe. **What the review never changes:** every beat this skill requires (the front scene's closing front double biceps, struck and released; the back scene's glimpse in its first shot and its over-the-shoulder look; the finish's travelling arrival into a pinup held longest; the director's shot built on the signature element) and the safeguards that make a take work (the camera pull-back on a front-facing back keyframe, the frame rule, the garment rules, the facing rules). A required beat is never flagged as a repeat; vary **how he arrives at it and what he releases into** instead (the double biceps reached from a lean, a turn or a step, and released into the hips, a palm on the chest or a hand at the back of the neck), and vary everything else around it. Include the comparison table in the reply after the shot list, as `<<<FILE variety-review.md>>>` … `<<<END>>>`, so the owner sees what is new before any take runs (owner, 18 Oct 2026, after three back scenes in a row ran turn, squat, brace and grab, hip flick, turn back).
 
 ## Output
 
@@ -241,4 +241,4 @@ Camera: static. Audio: <the one or two sounds named in the soundscape>
 18. No breath, gasp, pant, laugh or exhale anywhere in a prompt, picture or sound.
 19. No named pose appears in two consecutive phases; every phase changes the picture; every scene's last shot and every end-hold lands on a relaxed stance, never a flex.
 20. The back scene's riskiest beat (the glimpse, anything untested) sits in its first shot, so a take can be cancelled after shot 1; the front scene is free of this rule.
-21. The variety review was run against the last three films: no pose, hand move, move order or closing pose repeats except the kept safeguards, and `variety-review.md` is in the reply.
+21. The variety review was run against the last three films: no pose, hand move, move order or closing pose repeats except the required beats and safeguards, whose approach and release were varied instead, and `variety-review.md` is in the reply.
