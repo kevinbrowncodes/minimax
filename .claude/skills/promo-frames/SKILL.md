@@ -2,8 +2,8 @@
 name: promo-frames
 description: Pulls the best stills from a finished OnlyGainsTV film (the owner's final cut in a round folder under test/). promo/ is the shortlist for his website, across the whole film, nude scene included; promo/yt/ holds square YouTube thumbnails cropped to meet YouTube's community guidelines. Waits for the file to finish copying, saves both sets as JPEG in film order, and ends with an scp line for the Mac. Use when the owner hands over a final video and asks for promo frames, stills, thumbnails, a cover frame, or "the best frames".
 metadata:
-  build: 2026-10-19-2130
-  tickets: CHORE_039, CHORE_040
+  build: 2026-10-19-2200
+  tickets: CHORE_039, CHORE_040, CHORE_041
 ---
 
 # Promo frames from a finished film
@@ -102,6 +102,17 @@ Give each a use:
 | Physique | the pose at its peak |
 | Backup | the alternative to the hero |
 
+### Six favorites
+
+Mark exactly **6** website frames by appending `-favorite` before `.jpg` (`06-19.75s-hand-on-chest-the-look-favorite.jpg`). The film-order number stays first, so the folder still sorts by time.
+
+- Judge for the owner's site audience, not for craft alone: the frames a paying viewer would stop on.
+- Cover both scenes and each scene's payoff (the band drawn down, the glimpse, the look back, the frontal finish).
+- No two favorites of the same pose. The hero is always one of them.
+- The `yt/` squares are not marked; the YouTube set keeps its own posting order.
+
+On the vines film the six were 09.50, 19.75, 36.25, 40.50, 50.00 and 60.50 s.
+
 ## Step 6: YouTube squares in promo/yt/
 
 For every website frame that can be cropped compliant, a square in `<round>/promo/yt/`, named like its source with `-yt.jpg`.
@@ -123,7 +134,8 @@ YouTube's standard video thumbnail is 16:9 (1280 x 720). The squares are for Sho
 
 ## Step 7: the report
 
-- A table in film order: number, time, the frame in words, its use, whether it has a YouTube square, with the hero in bold.
+- A table in film order: number, time, the frame in words, its use, whether it has a YouTube square, with the hero in bold and the six favorites marked.
+- One line per favorite on why it is one.
 - What was left out and why (blended frames, frames dropped up close), and which frames got no square.
 - **The Mac line.** The owner's Mac reaches the Spark through the Host `dgx-spark-2025` in its `~/.ssh/config` (his `connect` / `spark` shell functions are built on it; a shell function cannot be used by `scp`, the Host can):
 
