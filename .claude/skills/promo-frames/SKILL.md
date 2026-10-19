@@ -2,8 +2,8 @@
 name: promo-frames
 description: Pulls the best stills from a finished OnlyGainsTV film (the owner's final cut in a round folder under test/). promo/ is the shortlist for his website, across the whole film, nude scene included; promo/yt/ holds square YouTube thumbnails cropped to meet YouTube's community guidelines. Waits for the file to finish copying, saves both sets as JPEG in film order, and ends with an scp line for the Mac. Use when the owner hands over a final video and asks for promo frames, stills, thumbnails, a cover frame, or "the best frames".
 metadata:
-  build: 2026-10-19-2200
-  tickets: CHORE_039, CHORE_040, CHORE_041
+  build: 2026-10-19-2215
+  tickets: CHORE_039, CHORE_040, CHORE_041, CHORE_042
 ---
 
 # Promo frames from a finished film
@@ -109,7 +109,7 @@ Mark exactly **6** website frames by appending `-favorite` before `.jpg` (`06-19
 - Judge for the owner's site audience, not for craft alone: the frames a paying viewer would stop on.
 - Cover both scenes and each scene's payoff (the band drawn down, the glimpse, the look back, the frontal finish).
 - No two favorites of the same pose. The hero is always one of them.
-- The `yt/` squares are not marked; the YouTube set keeps its own posting order.
+- The `yt/` set has its own five favorites (Step 6).
 
 On the vines film the six were 09.50, 19.75, 36.25, 40.50, 50.00 and 60.50 s.
 
@@ -130,12 +130,25 @@ For every website frame that can be cropped compliant, a square in `<round>/prom
 ffmpeg -nostdin -v error -y -i "$f" -vf "crop=$SIDE:$SIDE:$X:0,scale=1080:1080:flags=lanczos" -q:v 2 "yt/${f%.jpg}-yt.jpg"
 ```
 
+### Five YouTube favorites
+
+Mark exactly **5** squares by appending `-favorite` before `.jpg` (`06-19.75s-hand-on-chest-the-look-yt-favorite.jpg`). They are a community-post carousel (YouTube takes up to 5 images per post), so pick for YouTube's feed, not the site:
+
+- Lead with the hero.
+- Vary the mood: a quiet cover, the physique shot.
+- Include a back frame that teases the second half without showing anything.
+- End on the closing look.
+- Five different poses. A website favorite is not automatically a YouTube favorite.
+
+On the vines film they were 01, 06, 09, 12 and 15, posted hero first: 06, 01, 09, 12, 15.
+
 YouTube's standard video thumbnail is 16:9 (1280 x 720). The squares are for Shorts, community posts and channel art; say so if the owner may be using them on a long-form upload.
 
 ## Step 7: the report
 
 - A table in film order: number, time, the frame in words, its use, whether it has a YouTube square, with the hero in bold and the six favorites marked.
 - One line per favorite on why it is one.
+- The five YouTube favorites in posting order, one line each, and a note to check YouTube's 5-image limit on the upload screen.
 - What was left out and why (blended frames, frames dropped up close), and which frames got no square.
 - **The Mac line.** The owner's Mac reaches the Spark through the Host `dgx-spark-2025` in its `~/.ssh/config` (his `connect` / `spark` shell functions are built on it; a shell function cannot be used by `scp`, the Host can):
 
