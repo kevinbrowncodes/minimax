@@ -1,16 +1,21 @@
 ---
 name: promo-frames
-description: Pulls the best promo stills from a finished OnlyGainsTV film (the owner's final cut in a round folder under test/) for Instagram, X, YouTube and the other off-site posts. Waits for the file to finish copying, screens out anything a platform would punish (nude frames, waistband pulls, a hand at the front of the garment), saves the shortlist at full resolution to the round's promo/ folder in film order, makes square waist-up YouTube thumbnails in promo/yt/, and ends with an scp line for the Mac. Use when the owner hands over a final video and asks for promo frames, stills, a thumbnail, a cover frame, or "the best frames".
+description: Pulls the best stills from a finished OnlyGainsTV film (the owner's final cut in a round folder under test/). promo/ is the shortlist for his website, across the whole film, nude scene included; promo/yt/ holds square YouTube thumbnails cropped to meet YouTube's community guidelines. Waits for the file to finish copying, saves both sets as JPEG in film order, and ends with an scp line for the Mac. Use when the owner hands over a final video and asks for promo frames, stills, thumbnails, a cover frame, or "the best frames".
 metadata:
-  build: 2026-10-19-1900
-  ticket: CHORE_039
+  build: 2026-10-19-2130
+  tickets: CHORE_039, CHORE_040
 ---
 
 # Promo frames from a finished film
 
-The owner hands over the final cut, usually `test/<round>/<round> <Title>.mp4`. You hand back 6 to 10 stills he can post off the site, ranked, at full resolution, in `test/<round>/promo/`.
+The owner hands over the final cut, usually `test/<round>/<round> <Title>.mp4`. You hand back two sets:
 
-The first run (the vines film, 2026-10-19) is the reference for shape: 8 frames, all from scene 1, numbered in film order.
+| Folder | For | Rule |
+|---|---|---|
+| `promo/` | **his website** | the best frames of the whole film, nude scene, waistband pulls and the squat included |
+| `promo/yt/` | **YouTube** | a square per website frame, cropped to meet YouTube's community guidelines |
+
+The vines film (2026-10-19) is the reference for shape: 15 website frames across both scenes and 14 squares, with the squat skipped because no compliant crop of it was worth posting.
 
 ## Ground rules
 
@@ -18,6 +23,7 @@ The first run (the vines film, 2026-10-19) is the reference for shape: 8 frames,
 - **Working files go in the session scratchpad.** Only the chosen frames land in the round folder. `test/` is untracked; never stage anything from it.
 - **Look at every frame you keep.** A frame is chosen by reading it, never by its timestamp alone.
 - **Quote paths.** Final cuts carry spaces and an emoji in the name.
+- **Give ffmpeg `-nostdin` inside any `while read` loop**, or it eats the list and skips every other frame.
 
 ## Step 1: wait for the whole file
 
@@ -38,86 +44,87 @@ If the first look fails with "partial file" or "Invalid NAL unit size", tell the
 ## Step 2: read what the film does
 
 - `ffprobe` for duration, resolution and frame rate.
-- The round's `shot-list.md` and `scenes/scene-N/shot-N.txt`: which scene is clothed, where each beat peaks, where the waistband moves.
+- The round's `shot-list.md` and `scenes/scene-N/shot-N.txt`: where each beat peaks, where the waistband moves, what each scene's payoff is.
 - A 1 fps timestamped contact sheet of the whole cut:
 
 ```bash
 ffmpeg -v error -y -i "$F" -vf "fps=1,scale=320:-1,drawtext=text='%{pts\:hms}':x=4:y=4:fontsize=18:fontcolor=yellow:box=1:boxcolor=black,tile=8x8" -frames:v 1 "$S/contact.png"
 ```
 
-Read it and find the scene boundary (the cut is usually scene 1, then scene 2), and the seconds where the waistband is pulled.
+**The scene boundary may be a crossfade**, not a cut: on the vines film the 1 fps sheet showed 30 s clothed and 31 s nude, and only the 4 fps sheet showed the blended frame at 30.75 s. Blended frames are never kept.
 
-**The boundary may be a crossfade**, not a cut: on the vines film the 1 fps sheet showed 30 s clothed and 31 s nude, and only the 4 fps sheet showed the blended frame at 30.75 s. Find the last clean clothed frame on a 4 fps sheet of the second either side, and treat every blended frame as part of the nude scene.
+## Step 3: the website screen
 
-## Step 3: the promo screen
+Every scene is in. The owner's site is the audience, so the payoffs are the point: the band drawn down, the glimpse, the look over the shoulder, the frontal finish.
 
-Promo is judged by the platforms' rules, not the site's.
+**Out, only for craft:**
 
-**Out, always:**
-
-- Any nude frame. In practice that is all of scene 2 and anything after the garment comes off.
-- Waistband pulls, from the first thumb hooked in the band until it is back.
-- A hand at the front of the garment: a palm or fingers on or over the pouch, or thumbs hooked in the band at the front.
-
-**In, by the owner's pick on the vines film:** hands on the hips with the fingertips at the side of the band, and a hand resting on the outer or upper thigh. Those frames (6.75, 14.50 and 23.50 s there) were kept and he called the set "really good".
+- A blended crossfade frame.
 - Motion blur, a half blink, the mouth open mid-movement, warped or extra fingers, a camera move in progress.
+- A head cut off by the frame edge, unless that frame is the only one of its pose.
 
-**Prefer:** the eyes in the lens, a pose at its peak, a clean silhouette against the set, and the frame the shot's payoff names.
+**Prefer:** the eyes in the lens, a pose at its peak, a clean silhouette against the set, and the frame each shot's payoff names. Cover both scenes.
 
 ## Step 4: candidates
 
-1. A 4 fps contact sheet for each safe window, timestamped, at most 8x4 frames per sheet:
+1. A 4 fps contact sheet for each window of the film, timestamped, at most 8x4 frames per sheet:
 
 ```bash
-ffmpeg -v error -y -ss $A -to $B -i "$F" -vf "fps=4,scale=400:-1,drawtext=text='%{eif\:t+$A\:d}.%{eif\:mod((t+$A)*100\,100)\:d\:2}':x=4:y=4:fontsize=22:fontcolor=yellow:box=1:boxcolor=black,tile=8x4" -frames:v 1 "$S/w-$A.png"
+ffmpeg -nostdin -v error -y -ss $A -to $B -i "$F" -vf "fps=4,scale=400:-1,drawtext=text='%{eif\:t+$A\:d}.%{eif\:mod((t+$A)*100\,100)\:d\:2}':x=4:y=4:fontsize=22:fontcolor=yellow:box=1:boxcolor=black,tile=8x4" -frames:v 1 "$S/w-$A.png"
 ```
 
-2. Pick 10 to 12 candidates, one per distinct pose. Near-duplicates share one slot.
+2. Pick 12 to 18 candidates, one per distinct pose. Near-duplicates share one slot.
 3. Export each at full resolution, seeking before the input. Write `T` zero-padded (`05.25`, not `5.25`) so the files sort in film order:
 
 ```bash
-for T in 00.25 05.25 19.75; do ffmpeg -v error -y -ss $T -i "$F" -frames:v 1 "$S/f/t$T.png"; done
+for T in 00.25 05.25 19.75; do ffmpeg -nostdin -v error -y -ss $T -i "$F" -frames:v 1 "$S/f/t$T.png"; done
 ```
 
 4. A review sheet of the candidates, then the likely hero frame at full size. Drop anything that fails the screen up close.
 
 ```bash
-ffmpeg -v error -y -pattern_type glob -i "$S/f/t*.png" -vf "scale=640:-1,tile=4x3" -frames:v 1 "$S/review.png"
+ffmpeg -nostdin -v error -y -pattern_type glob -i "$S/f/t*.png" -vf "scale=640:-1,tile=4x3" -frames:v 1 "$S/review.png"
 ```
 
-## Step 5: the shortlist
+## Step 5: the website shortlist in promo/
 
-Save 6 to 10 frames to `<round>/promo/` as **JPEG** (owner, 2026-10-19), converted from the full-resolution PNG candidates with `ffmpeg -nostdin -v error -y -i <candidate>.png -q:v 2 <name>.jpg` (about 300 KB each), named `NN-<seconds>s-<pose-in-words>.jpg`, **numbered in the order they occur in the film**: `01` is the earliest. Seconds are zero-padded to two digits before the point (`05.25s`), so the names sort by time in any file browser. The ranking lives in the report, not the names: the hero is marked there. Give each a use:
+Save 10 to 16 frames to `<round>/promo/` as **JPEG**, converted from the PNG candidates (`ffmpeg -nostdin -v error -y -i <candidate>.png -q:v 2 <name>.jpg`, about 300 KB each). Name them `NN-<seconds>s-<pose-in-words>.jpg`, **numbered in the order they occur in the film**: `01` is the earliest. Seconds are zero-padded (`05.25s`) so the names sort by time in any file browser. The ranking lives in the report: the hero is marked there.
+
+Give each a use:
 
 | Use | What it is |
 |---|---|
 | Hero | the strongest look in the film, eyes in the lens |
 | Cover | the most Weber-like still, often the keyframe pose |
+| Payoff | a scene's reveal: the band drawn down, the glimpse, the frontal finish |
 | Scroll-stopper | a bold pose that reads at thumbnail size |
-| Carousel | a quiet frame that rewards the swipe |
+| Gallery | a quiet frame that rewards the swipe |
 | Physique | the pose at its peak |
 | Backup | the alternative to the hero |
 
-## Step 5b: square YouTube thumbnails in promo/yt/
+## Step 6: YouTube squares in promo/yt/
 
-For every frame in the shortlist, make a square YouTube version in `<round>/promo/yt/`, named like its source with `-yt.jpg` (owner, 2026-10-19).
+For every website frame that can be cropped compliant, a square in `<round>/promo/yt/`, named like its source with `-yt.jpg`.
 
-- **Waist up, the garment never in frame.** YouTube's thumbnail policy treats a thumbnail that centres the groin as sexual content, whatever the video is. Crop from the top of the frame down to just above the waistband; no strip of band at the bottom edge.
-- **Square, 1080 x 1080, JPG under 2 MB** (`-q:v 2` lands near 130 KB). The side of the crop is the distance from the top of the frame to just above the band; centre it on his face and torso, keep the whole face inside, and scale up with lanczos.
-- **Place each crop by reading it.** Tile the shortlist with a 10 x 10 grid (`drawgrid=w=192:h=108` on 1920 x 1080) to read the band's height and his centre line, crop, then look at every square: a face cut at the edge or a sliver of band means recrop.
+**YouTube's thumbnail policy treats a thumbnail that centres the groin or the buttocks as sexual content, whatever the video is.** So:
+
+- **Front frames:** crop from the top of the frame to just above the waistband (or, nude, above the navel's lower edge). No garment pouch, no strip of band at the bottom edge.
+- **Back frames:** crop from the top of the frame to just above the glutes.
+- **No compliant crop worth posting** (a squat, a bend, a frame where cropping above the hips leaves only the back of a head): no square. Name it in the report.
+- **Square, 1080 x 1080, JPG under 2 MB** (`-q:v 2` lands near 130 KB). The crop's side is the distance from the top of the frame to the cut line; centre it on his face and torso, keep the whole face inside, scale up with lanczos.
+- **Place each crop by reading it.** Tile the shortlist with a 10 x 10 grid (`drawgrid=w=192:h=108:t=3:c=red@0.8` on 1920 x 1080) to read the cut line and his centre line, crop, then look at every square: a face cut at the edge, a sliver of band or the top of the glutes means recrop.
 - **No text, no retouching.** The frame is the film's.
-- In a `while read` loop, give ffmpeg `-nostdin`, or it eats the list and skips every other frame.
 
 ```bash
 ffmpeg -nostdin -v error -y -i "$f" -vf "crop=$SIDE:$SIDE:$X:0,scale=1080:1080:flags=lanczos" -q:v 2 "yt/${f%.jpg}-yt.jpg"
 ```
 
-## Step 6: the report
+YouTube's standard video thumbnail is 16:9 (1280 x 720). The squares are for Shorts, community posts and channel art; say so if the owner may be using them on a long-form upload.
 
-- A table in film order: number, time, the frame in words, its use, with the hero marked in bold.
-- What was left out and why (the seconds of the nude scene, the waistband pulls, any frame dropped up close).
-- **The reach note:** when the garment shows an outline (light briefs, wet fabric), say plainly that it can limit reach on Instagram.
-- **Offer crops by the multiple-choice tool**, never as a trailing question: 4:5 crops above the waistband (recommended when the outline shows), 4:5 full body, or leave as is.
+## Step 7: the report
+
+- A table in film order: number, time, the frame in words, its use, whether it has a YouTube square, with the hero in bold.
+- What was left out and why (blended frames, frames dropped up close), and which frames got no square.
 - **The Mac line.** The owner's Mac reaches the Spark through the Host `dgx-spark-2025` in its `~/.ssh/config` (his `connect` / `spark` shell functions are built on it; a shell function cannot be used by `scp`, the Host can):
 
 ```bash
@@ -128,6 +135,6 @@ scp -r dgx-spark-2025:"<absolute path to promo>" ~/Downloads/<round-name>-promo
 
 ## Never
 
-- A frame from the nude scene in `promo/`, whatever the owner's audience.
-- Pixel-level edits: no retouching, no upscaling, no brightness changes. The frame is the film's.
+- A square in `promo/yt/` that shows the garment pouch, the glutes or genitals.
+- Pixel-level edits: no retouching, no brightness changes, no text. Cropping and scaling only.
 - Deleting or overwriting anything in the round folder except an earlier `promo/` you made for that film.
