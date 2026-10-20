@@ -1,0 +1,247 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>__TITLE__ — Scene 2</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#141618;--surface:#1c1f23;--surface2:#242930;--ink:#e9e7e2;--muted:#9aa1a9;--line:#2f343a;
+  --accent:#58b7c2;--accent-ink:#0e1517;--good:#5cb985;--warn:#d9a441;--bad:#df6a5a;--neutral:#8a939c;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  color-scheme:light;
+  --bg:#f3f4f6;--surface:#ffffff;--surface2:#eceef1;--ink:#1b1f23;--muted:#5c646d;--line:#d5d9de;
+  --accent:#17858f;--accent-ink:#ffffff;--good:#2e8b5b;--warn:#a8781a;--bad:#c0483a;--neutral:#6b737c;}}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f3f4f6;--surface:#ffffff;--surface2:#eceef1;--ink:#1b1f23;--muted:#5c646d;--line:#d5d9de;
+  --accent:#17858f;--accent-ink:#ffffff;--good:#2e8b5b;--warn:#a8781a;--bad:#c0483a;--neutral:#6b737c;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "IBM Plex Sans",system-ui,sans-serif;padding-inline:16px;padding-block:0 64px}
+.mono{font-family:"IBM Plex Mono",Menlo,monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font-size:20px;font-weight:600;margin:0}
+h2{font-size:15px;font-weight:600;margin:0}
+p{margin:0}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-block:12px;margin-inline:-16px;padding-inline:16px}
+.top .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;justify-content:space-between}
+.sub{color:var(--muted);font-size:13px;max-width:80ch}
+.pill{font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.ok{border-color:var(--good);color:var(--good)}
+.pill.warn{border-color:var(--warn);color:var(--warn)}
+.intro{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px;max-width:84ch}
+.intro b{font-weight:600}
+.intro ol{margin:8px 0 0;padding-left:20px}
+.intro li{margin-bottom:5px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.cfg{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.cfg.done{border-color:var(--good)}
+.cfg header{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;padding:11px 14px;border-bottom:1px solid var(--line)}
+.tag{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:13px;color:var(--accent-ink);background:var(--accent);padding:1px 9px;border-radius:5px}
+.dl{font:inherit;font-size:12px;padding:2px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface2);color:var(--ink);cursor:pointer}
+.dl[hidden]{display:none}
+.cfg header .num{margin-left:auto;color:var(--muted);font-size:12px;font-family:"IBM Plex Mono",monospace}
+.vid{display:block;width:100%;aspect-ratio:1344/768;background:#000}
+.pending{aspect-ratio:1344/768;display:grid;place-items:center;background:var(--surface2);color:var(--muted);font-size:13px;text-align:center;padding:16px}
+.qs{padding:12px 14px;display:grid;gap:9px}
+.q{display:grid;gap:4px}
+.ql{font-size:12.5px;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{font:inherit;font-size:12.5px;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface2);color:var(--ink);cursor:pointer;--sel:var(--neutral)}
+.seg button[data-tone=good]{--sel:var(--good)}.seg button[data-tone=warn]{--sel:var(--warn)}
+.seg button[data-tone=bad]{--sel:var(--bad)}.seg button[data-tone=accent]{--sel:var(--accent)}
+.seg button.on{border-color:var(--sel);background:color-mix(in srgb,var(--sel) 24%,transparent);font-weight:500}
+textarea{width:100%;min-height:58px;resize:vertical;font:inherit;font-size:12.5px;padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--surface2);color:var(--ink)}
+.status{font-size:11.5px;color:var(--muted);min-height:14px;padding:0 14px 10px}
+.status.bad{color:var(--bad)}
+button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.verdict{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:12px}
+.verdict .q{grid-template-columns:minmax(180px,1fr) minmax(0,3fr);align-items:center;gap:6px 14px}
+@media (max-width:560px){.verdict .q{grid-template-columns:1fr}}
+.verdict textarea{min-height:90px}
+.outtakes{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.outtakes summary{cursor:pointer;font-weight:600;font-size:15px}
+.outtakes .sub{margin-top:4px}
+.ogrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+@media (max-width:900px){.ogrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.ogrid{grid-template-columns:1fr}}
+.ocard{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface2)}
+.ocard p{padding:8px 10px;font-size:12.5px}
+.ocard .why{color:var(--muted)}
+</style>
+
+<header class="top"><div class="wrap">
+  <div>
+    <h1>__TITLE__ — Scene 2</h1>
+    <p class="sub">__SUB__</p>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <span id="count" class="mono" style="font-size:12px;color:var(--muted)">0 judged</span>
+    <span id="store" class="pill">connecting…</span>
+  </div>
+</div></header>
+
+<div class="wrap">
+<section class="intro">
+  <p><b>__TITLE__ scene 2, blind.</b> __INTRO__</p>
+  <ol style="color:var(--muted);font-size:12.5px">
+    <li>Is this video shippable?</li>
+    <li>What stops it? Pick every one that applies.</li>
+    <li>Where? Every shot it happens in, or a join.</li>
+    <li>Overall, 1–5</li>
+  </ol>
+</section>
+
+<main class="grid" id="grid"></main>
+
+<section class="verdict">
+  <h2>Once you have scored them all</h2>
+  <div class="q"><span class="ql">Best clip</span><div class="seg" id="best"></div></div>
+  <div class="q"><span class="ql">Worst clip</span><div class="seg" id="worst"></div></div>
+  <div class="q"><span class="ql">Could you tell them apart at all?</span><div class="seg" id="tell">
+    <button type="button" data-v="clear" data-tone="good">Yes, clearly different</button>
+    <button type="button" data-v="slight" data-tone="warn">Slight differences</button>
+    <button type="button" data-v="same" data-tone="neutral">No, they looked the same</button>
+  </div></div>
+  <div class="q" style="grid-template-columns:1fr"><span class="ql">Anything else worth recording</span><textarea id="vnotes" placeholder="Optional"></textarea></div>
+  <div class="status" id="vstatus" style="padding:0"></div>
+</section>
+
+<details class="outtakes" id="outtakes">
+  <summary>Outtakes (NG) — <span id="ocount">0</span></summary>
+  <p class="sub">Takes cancelled after their first shot because the glimpse did not draw. Only shot 1 exists for each; nothing to score — here so you can see what was thrown away.</p>
+  <div class="ogrid" id="ogrid"></div>
+</details>
+</div>
+<script id="outtakes-data" type="application/json">[]</script>
+
+<script id="cfgs" type="application/json">[]</script>
+<script>
+(function(){
+  const COLL='__COLLB__';
+  const CFGS = JSON.parse(document.getElementById('cfgs').textContent);
+  const Q = {
+    back:   {label:'Back, buttocks and anus — believable?', opts:[['right','Right','good'],['minor','A little off','warn'],['wrong','Wrong','bad']]},
+    penis:  {label:'Penis — believable?', opts:[['right','Right','good'],['minor','A little off','warn'],['wrong','Wrong or vulva-like','bad'],['none','Never shown','neutral']]},
+    briefs: {label:'Clothing — stays on and looks right?', opts:[['right','Yes','good'],['minor','Slip or a little off','warn'],['wrong','Come off or wrong','bad']]},
+    usable: {label:'Is this video shippable?', opts:[['yes','Yes, as is','good'],['edit','With an edit','warn'],['no','No','bad']]},
+    flaw:   {label:'Biggest flaw? (where — in the notes)', opts:[['none','None','good'],['anatomy','Anatomy','bad'],['face','Face','bad'],['pose','Off-script pose','warn'],['jump','A cut or jump','warn'],['other','Other','neutral']]},
+    likeness:{label:'Face — same man as the photo?', opts:[['yes','Same','good'],['drifted','Drifts','warn'],['lost','Different man','bad']]},
+    stops:  {label:'What stops it? (pick all that apply)', multi:true, opts:[['anatomy','Anatomy','bad'],['cut','A cut or jump','warn'],['camera','Camera moved','warn'],['offframe','Subject off frame','warn'],['set','Set changed','warn'],['face','Face','bad'],['script','Off-script','warn'],['nothing','Nothing','good']]},
+    where:  {label:'Where? (pick all that apply)', multi:true, opts:[['s1','Shot 1','neutral'],['s2','Shot 2','neutral'],['s3','Shot 3','neutral'],['join','A join','warn']]},
+    score:  {label:'Overall, 1–5 (5 = ship as is)', opts:[['1','1','accent'],['2','2','accent'],['3','3','accent'],['4','4','accent'],['5','5','accent']]},
+  };
+  const ORDER=["usable", "stops", "where", "score"];
+  let state={}, verdict={}, db=null;
+  try{ state=JSON.parse(localStorage.getItem(COLL+'-state')||'{}')||{}; verdict=JSON.parse(localStorage.getItem(COLL+'-verdict')||'{}')||{}; }catch(e){}
+  const cache=()=>{ try{ localStorage.setItem(COLL+'-state',JSON.stringify(state)); localStorage.setItem(COLL+'-verdict',JSON.stringify(verdict)); }catch(e){} };
+  const ent=id=>(state[id]=state[id]||{answers:{},notes:''});
+  const $=s=>document.querySelector(s);
+  const el=(t,a={},...k)=>{const n=document.createElement(t);for(const[x,v]of Object.entries(a)){if(x==='class')n.className=v;else if(x==='text')n.textContent=v;else n.setAttribute(x,v);}for(const c of k)n.append(c);return n;};
+  function seg(id,key,opts,multi){
+    const s=el('div',{class:'seg','data-key':key});
+    for(const[v,label,tone]of opts){const b=el('button',{type:'button','data-v':v,'data-tone':tone,text:label});
+      b.addEventListener('click',()=>{const e=ent(id);
+        if(multi){ let a=Array.isArray(e.answers[key])?[...e.answers[key]]:(e.answers[key]?[e.answers[key]]:[]);
+          if(a.includes(v)) a=a.filter(x=>x!==v);
+          else { if(v==='nothing') a=[]; else a=a.filter(x=>x!=='nothing'); a.push(v); }
+          if(a.length) e.answers[key]=a; else delete e.answers[key]; }
+        else { e.answers[key]===v?delete e.answers[key]:e.answers[key]=v; }
+        paint();persist(id);});s.append(b);}
+    return s;
+  }
+  function card(c){
+    const a=el('article',{class:'cfg',id:'c-'+c.label.replace(/\s+/g,'')});
+    a.append(el('header',{},el('span',{class:'tag',text:c.label}),
+      el('span',{class:'num',text:c.seconds?c.seconds+' s':'not drawn yet'})));
+    if(c.blob){ const b=el('button',{type:'button',class:'dl',text:'Download'}); b.hidden=true; b.dataset.blob=c.blob; b.dataset.label=c.label; a.querySelector('header').append(b); }
+    if(c.blob) a.append(el('video',{class:'vid',src:'/_blob/'+c.blob,controls:'',preload:'none',playsinline:'','aria-label':c.label}));
+    else a.append(el('div',{class:'pending',text:'Still drawing — reload later.'}));
+    const qs=el('div',{class:'qs'});
+    for(const k of ORDER) qs.append(el('div',{class:'q'},el('span',{class:'ql',text:Q[k].label}),seg(c.label,k,Q[k].opts,!!Q[k].multi)));
+    const ta=el('textarea',{placeholder:'Notes on '+c.label});
+    let t; ta.addEventListener('input',()=>{ent(c.label).notes=ta.value;clearTimeout(t);t=setTimeout(()=>persist(c.label),700);});
+    ta.dataset.for=c.label; qs.append(ta); a.append(qs); a.append(el('div',{class:'status','data-for':c.label}));
+    return a;
+  }
+  function paint(){
+    for(const c of CFGS){
+      const e=ent(c.label), art=document.getElementById('c-'+c.label.replace(/\s+/g,'')); if(!art)continue;
+      for(const s of art.querySelectorAll('.seg')){ const k=s.dataset.key;
+        for(const b of s.children){ const v=e.answers[k]; b.classList.toggle('on', Array.isArray(v)?v.includes(b.dataset.v):v===b.dataset.v); } }
+      const ta=art.querySelector('textarea');
+      if(ta&&document.activeElement!==ta&&ta.value!==(e.notes||'')) ta.value=e.notes||'';
+      art.classList.toggle('done', !!e.answers.score);
+    }
+    for(const id of ['best','worst','tell']) for(const b of $('#'+id).children) b.classList.toggle('on', verdict[id]===b.dataset.v);
+    const vt=$('#vnotes'); if(document.activeElement!==vt&&vt.value!==(verdict.notes||'')) vt.value=verdict.notes||'';
+    $('#count').textContent=`${CFGS.filter(c=>state[c.label]&&state[c.label].answers.score).length} of ${CFGS.filter(c=>c.blob).length} judged`;
+  }
+  const chains={}, dirty={};
+  function persist(id){
+    cache(); dirty[id]=true;
+    const st=document.querySelector(`.status[data-for="${id}"]`);
+    if(!db){ if(st)st.textContent='kept in this browser only'; return; }
+    chains[id]=(chains[id]||Promise.resolve()).then(()=>{
+      if(!dirty[id])return; dirty[id]=false; if(st)st.textContent='saving…';
+      const e=ent(id);
+      return db.doc(COLL+'/'+id.replace(/\s+/g,'')).set({label:id,answers:{...e.answers},notes:e.notes||'',updatedAt:new Date().toISOString()})
+        .then(()=>{ if(st)st.textContent='saved'; });
+    }).catch(err=>{ dirty[id]=true; if(st){st.textContent='not saved: '+((err&&(err.code||err.message))||'error'); st.classList.add('bad');} });
+  }
+  let vch=Promise.resolve();
+  function persistV(){
+    cache(); const st=$('#vstatus');
+    if(!db){ st.textContent='kept in this browser only'; return; }
+    vch=vch.then(()=>{ st.textContent='saving…';
+      return db.doc(COLL+'/verdict').set({...verdict,updatedAt:new Date().toISOString()}).then(()=>{st.textContent='saved';}); })
+      .catch(()=>{ st.textContent='not saved'; st.classList.add('bad'); });
+  }
+  const g=$('#grid'); for(const c of CFGS) g.append(card(c));
+  for(const id of ['best','worst']) for(const c of CFGS){
+    const b=el('button',{type:'button','data-v':c.label,'data-tone':'accent',text:c.label.replace(/^(Clip|Take) /,'')});
+    b.addEventListener('click',()=>{verdict[id]=verdict[id]===c.label?undefined:c.label;paint();persistV();}); $('#'+id).append(b); }
+  for(const b of $('#tell').children) b.addEventListener('click',()=>{verdict.tell=verdict.tell===b.dataset.v?undefined:b.dataset.v;paint();persistV();});
+  let vt2; $('#vnotes').addEventListener('input',e=>{verdict.notes=e.target.value;clearTimeout(vt2);vt2=setTimeout(persistV,700);});
+  const OUT=JSON.parse(document.getElementById('outtakes-data').textContent);
+  $('#ocount').textContent=OUT.length;
+  for(const o of OUT){ const c=el('div',{class:'ocard'});
+    c.append(el('video',{class:'vid',src:'/_blob/'+o.blob,controls:'',preload:'none',playsinline:'','aria-label':o.label}));
+    c.append(el('p',{},el('span',{class:'mono',text:o.label+' · seed '+o.seed})));
+    c.append(el('p',{class:'why',text:o.why})); $('#ogrid').append(c); }
+  paint();
+  // download buttons light up only when this view can save files
+  const dlu=(window.claude&&typeof window.claude.use==='function')?window.claude.use('downloads'):Promise.resolve(null);
+  dlu.then(dl=>{ if(!dl) return;
+    for(const b of document.querySelectorAll('.dl')){
+      b.hidden=false;
+      b.addEventListener('click',async()=>{
+        const label=b.textContent; b.disabled=true; b.textContent='Preparing…';
+        try{
+          const r=await fetch('/_blob/'+b.dataset.blob); if(!r.ok) throw {code:'fetch'};
+          await dl.save({filename:'__ROUND__-back-'+b.dataset.label.toLowerCase().replace(/\s+/g,'-')+'.mp4', data:await r.blob()});
+          b.textContent='Saved';
+        }catch(e){ b.textContent=(e&&e.code==='declined')?label:'Not saved'; }
+        finally{ b.disabled=false; setTimeout(()=>{ if(b.textContent!=='Download') b.textContent='Download'; },2500); }
+      });
+    }
+  }).catch(()=>{});
+  const pill=$('#store');
+  const use=(window.claude&&typeof window.claude.use==='function')?window.claude.use('db'):Promise.resolve(null);
+  use.then(ns=>{
+    if(!ns){ pill.textContent='this browser only'; pill.className='pill warn'; return; }
+    db=ns; pill.textContent='loading saved answers…'; pill.className='pill';
+    // the shared store is the record: load it on open, so scores show in any browser (it wins over this browser's copy)
+    return ns.collection(COLL).get().then(snap=>{
+      for(const d of snap.docs){ const v=d.data()||{};
+        if(d.id==='verdict'){ const {updatedAt,...rest}=v; verdict=rest; continue; }
+        if(!v.label) continue;
+        state[v.label]={answers:{...(v.answers||{})},notes:v.notes||''};
+      }
+      cache(); paint(); pill.textContent='saving to the shared store'; pill.className='pill ok';
+    }).catch(()=>{ pill.textContent='saving, but could not load earlier answers'; pill.className='pill warn'; });
+  }).catch(()=>{ pill.textContent='this browser only'; pill.className='pill warn'; });
+})();
+</script>
+
+</body></html>
