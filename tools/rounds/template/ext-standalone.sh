@@ -13,8 +13,8 @@ anchor_args=(); case "$LABEL" in *-3) anchor_args=(--no-anchor) ;; esac
 # Owner (2026-10-09): the unpinned-middle test — UNPIN_MIDDLE=1 draws every extension unpinned (segment 2 too).
 # Owner (2026-10-10 13:45): unpinned is the DEFAULT on Equinox (0 shot changes in 14 twin draws); UNPIN_MIDDLE=0 re-pins as a fallback.
 [ "${UNPIN_MIDDLE:-1}" = 1 ] && anchor_args=(--no-anchor)
-# Hand-over length (owner 2026-10-19 A/B): frames of the previous shot the extension continues from; default 39 (1.6 s); the adapter accepts 22, 39 or 56 only.
-OVERLAP="${OVERLAP:-39}"
+# Hand-over length (owner 2026-10-19 A/B): frames of the previous shot the extension continues from; default 90 (3.75 s, STORY_080); the adapter accepts 22, 39, 56 or 90.
+OVERLAP="${OVERLAP:-90}"
 START=$(date -u +%FT%TZ); T0=$(date +%s)
 "$ROOT/spark/comfyui/memwatch.sh" "mem-$LABEL-$SEED.log" 5 2>/dev/null & MEMPID=$!
 PID=$(python3 extend.py --label "$LABEL" --source "video/$(basename "$SRC")" --frames "$FRAMES" --prompt-file "$PROMPT" \

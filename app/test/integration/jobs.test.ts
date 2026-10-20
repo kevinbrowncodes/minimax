@@ -211,7 +211,7 @@ describe("extensions (STORY_016, STORY_017)", () => {
     expect(historyStore().get(id)?.overlap).toEqual({ frames: 22, seconds: 0.917 });
     expect((await stubReceived(id)).request).toMatchObject({ continueFrom: src, overlapFrames: 22, durationSeconds: 10 });
     // STORY_061: endAnchor as sent is kept with the params (Retry re-posts it), forwarded, and ignored on a fresh clip
-    const freeRes = await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, durationSeconds: 10, continueFrom: src, endAnchor: "none" }));
+    const freeRes = await createJob(jsonRequest("/api/jobs?script=done-after-1-poll", { ...valid, durationSeconds: 10, continueFrom: src, overlapFrames: 22, endAnchor: "none" }));
     expect(freeRes.status).toBe(202);
     const free = ((await freeRes.json()) as CreateJobResponse).id;
     expect(historyStore().get(free)?.params).toMatchObject({ endAnchor: "none" });
@@ -235,6 +235,6 @@ describe("extensions (STORY_016, STORY_017)", () => {
     expect(((await old.json()) as ApiError).error).toMatchObject({ code: "validation", field: "contextSeconds" });
     expect(historyStore().list().length).toBe(before + 1);
     const caps = (await (await getCapabilities()).json()) as Capabilities;
-    expect(caps.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30, endAnchor: { options: ["source-last-frame", "none"], default: "source-last-frame" } }); // STORY_061 (v1.5)
+    expect(caps.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56, 90], default: 90 }, maxFrames: 362, maxSourceSeconds: 30, endAnchor: { options: ["source-last-frame", "none"], default: "source-last-frame" } }); // STORY_061 (v1.5)
   });
 });

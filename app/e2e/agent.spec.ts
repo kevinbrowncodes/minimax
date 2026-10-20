@@ -318,7 +318,7 @@ test.describe("the Agent chip (STORY_050)", () => {
     expect((await run).status()).toBe(200);
     // the strip: three rows titled by their action sentence, 10 s each (the skill's clip length), Send all
     await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue(/^For the target video, at 0\.00 seconds/);
-    await expect(page.getByTestId("chain-summary")).toHaveText("3 segments · 10 s each · ≈ 31.4 s in all · overlap 1.6 s");
+    await expect(page.getByTestId("chain-summary")).toHaveText("3 segments · 10 s each · ≈ 31.4 s in all · overlap 3.8 s"); // STORY_080: the default overlap
     const rows = page.getByTestId("chain-strip").getByTestId("chain-row");
     await expect(rows).toHaveCount(3);
     await expect(rows.first()).toContainText("from the image");

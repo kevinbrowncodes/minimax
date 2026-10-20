@@ -219,7 +219,7 @@ test.describe("Scheduled — the queue of generations (STORY_041)", () => {
     const scripts = ["[0:00-0:02] The kite climbs.\n[0:02-0:05] It steadies against the wind.", "[0:00-0:02] The kite turns.\n[0:02-0:05] It dips toward the sand.", "[0:00-0:02] The kite rises again.\n[0:02-0:05] It holds high and still."];
     await page.getByRole("textbox", { name: "Message" }).fill(`${scene}\n\n${scripts.join("\n\n")}`);
     const strip = page.getByTestId("chain-strip");
-    await expect(page.getByTestId("chain-summary")).toHaveText("3 segments · 5 s each · ≈ 16.5 s in all · overlap 1.6 s"); // 124 + 175 − 39 + 175 − 39 = 396 frames
+    await expect(page.getByTestId("chain-summary")).toHaveText("3 segments · 5 s each · ≈ 16.5 s in all · overlap 3.8 s"); // 124 + 226 − 90 + 226 − 90 = 396 frames (STORY_080: the default overlap)
     await expect(strip.getByTestId("chain-row")).toHaveCount(3);
     await expect(strip.getByTestId("chain-row").first()).toContainText("1 5 s from the image The kite climbs.");
     await expect(strip.getByTestId("chain-row").nth(2)).toContainText("3 +5 s continues 2 The kite rises again.");

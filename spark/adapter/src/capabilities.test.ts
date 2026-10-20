@@ -52,7 +52,7 @@ describe("validateRequest", () => {
 describe("extensions (STORY_017)", () => {
   it("parses continueFrom, overlapFrames and seed, defaulting the overlap and ignoring it outside an extension", () => {
     const ext = validateRequest({ ...valid, continueFrom: "abc", durationSeconds: 10 }, []);
-    expect(ext).toMatchObject({ continueFrom: "abc", durationSeconds: 10, overlapFrames: 39 });
+    expect(ext).toMatchObject({ continueFrom: "abc", durationSeconds: 10, overlapFrames: 90 }); // STORY_080: the default
     expect(ext).not.toHaveProperty("seed");
     const strings = validateRequest({ ...valid, continueFrom: " abc ", durationSeconds: "10", overlapFrames: "56", seed: "42" }, []);
     expect(strings).toMatchObject({ continueFrom: "abc", overlapFrames: 56, seed: 42 });
@@ -101,6 +101,6 @@ describe("extensions (STORY_017)", () => {
   });
 
   it("publishes the extension capabilities", () => {
-    expect(CAPABILITIES.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30, endAnchor: { options: ["source-last-frame", "none"], default: "source-last-frame" } }); // STORY_061
+    expect(CAPABILITIES.extension).toEqual({ durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56, 90], default: 90 }, maxFrames: 362, maxSourceSeconds: 30, endAnchor: { options: ["source-last-frame", "none"], default: "source-last-frame" } }); // STORY_061
   });
 });

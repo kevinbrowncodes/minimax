@@ -6,9 +6,17 @@
 export const FPS = 24;
 /** The model's trained ceiling: 362 frames = 15.08 s. */
 export const MAX_FRAMES = 362;
-/** How much of the source becomes the new clip's own first frames: 0.9 s, 1.6 s (the default), 2.3 s. */
-export const OVERLAP_OPTIONS: readonly number[] = [22, 39, 56];
-export const DEFAULT_OVERLAP = 39;
+/** How much of the source becomes the new clip's own first frames: 0.9 s, 1.6 s, 2.3 s, 3.75 s (the default, STORY_080). */
+export const OVERLAP_OPTIONS: readonly number[] = [22, 39, 56, 90];
+export const DEFAULT_OVERLAP = 90;
+
+/** The overlap an extension carries (STORY_080): the one asked for, or — when the source is shorter — the longest offered
+ *  overlap that fits it, so a short source still extends; `request.overlap` reports what was carried. Undefined when none fits. */
+export function fitOverlap(requested: number, sourceFrames: number): number | undefined {
+  if (requested <= sourceFrames) return requested;
+  const fits = OVERLAP_OPTIONS.filter((o) => o <= sourceFrames);
+  return fits.length > 0 ? Math.max(...fits) : undefined;
+}
 
 /** Frame count on the model's 17k+5 grid, snapped up. */
 export function lengthForSeconds(seconds: number): number {

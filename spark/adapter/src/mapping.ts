@@ -8,7 +8,7 @@
 import type { JobRequest, Ratio } from "./capabilities.ts";
 import { FPS, MAX_FRAMES, OVERLAP_OPTIONS, audioTicks, extensionLength, latentFrames, lengthForSeconds, seconds } from "./grid.ts";
 
-export { AUDIO_LATENT_FPS, DEFAULT_OVERLAP, FPS, MAX_FRAMES, OVERLAP_OPTIONS, audioTicks, extensionLength, gridDown, latentFrames, lengthForSeconds, maxAddedSeconds, seconds } from "./grid.ts";
+export { AUDIO_LATENT_FPS, DEFAULT_OVERLAP, FPS, MAX_FRAMES, OVERLAP_OPTIONS, audioTicks, extensionLength, fitOverlap, gridDown, latentFrames, lengthForSeconds, maxAddedSeconds, seconds } from "./grid.ts";
 
 /** 768 on the short side, both sides multiples of 32 — what the model was measured at (STORY_005). */
 export const SIZES: Readonly<Record<Ratio, { readonly width: number; readonly height: number }>> = {

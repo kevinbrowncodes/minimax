@@ -8,7 +8,7 @@ import argparse, json, subprocess, sys, os, urllib.request
 p = argparse.ArgumentParser()
 p.add_argument("--label", required=True); p.add_argument("--source", required=True); p.add_argument("--frames", type=int, required=True)
 p.add_argument("--prompt-file", required=True); p.add_argument("--seed", type=int, required=True); p.add_argument("--seconds", type=int, default=10)
-p.add_argument("--overlap", type=int, default=39); p.add_argument("--no-anchor", action="store_true")
+p.add_argument("--overlap", type=int, default=90); p.add_argument("--no-anchor", action="store_true")
 p.add_argument("--lora", action="append", default=[]); p.add_argument("--unet", default=None)
 p.add_argument("--steps", type=int, default=20); p.add_argument("--sampler", default="res_multistep"); p.add_argument("--scheduler", default="simple")
 p.add_argument("--standalone", action="store_true"); p.add_argument("--url", default="http://127.0.0.1:8189"); p.add_argument("--dump", default=None); p.add_argument("--no-post", action="store_true")

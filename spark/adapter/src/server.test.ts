@@ -400,7 +400,7 @@ describe("extensions (STORY_017: native masked continuation)", () => {
   it("extends a done job on FL2VA: the source's last 39 frames become the new clip's head, the overlap is echoed, the joined length reported", async () => {
     const src = await finish(); // the fixture job: 5 s → 124 frames
     expect((await status(src))["result"]).toMatchObject({ frames: 124, durationSeconds: 5.167 });
-    const ext = await create({ ...valid, durationSeconds: 10, continueFrom: src });
+    const ext = await create({ ...valid, durationSeconds: 10, continueFrom: src, overlapFrames: 39 });
     const first = await status(ext);
     expect(first["request"]).toMatchObject({ continueFrom: src, durationSeconds: 10, overlapFrames: 39, overlap: { frames: 39, seconds: 1.625 } });
     expect(typeof (first["request"] as { seed: unknown }).seed).toBe("number");
@@ -430,11 +430,12 @@ describe("extensions (STORY_017: native masked continuation)", () => {
     // BUG_003: the result is the save node's file, not the LoadVideo preview of the source that ComfyUI lists first
     expect(adapter?.store.get(ext)?.result?.video.filename).toBe(`job-${ext}_00001_.mp4`);
     expect(adapter?.store.get(ext)?.result?.poster?.filename).toBe(`job-${ext}_poster_00001_.png`);
-    // extending the extension reads the joined frames; a 56-frame overlap
-    const ext2 = await create({ ...valid, durationSeconds: 10, continueFrom: ext, overlapFrames: 56 });
-    expect((await status(ext2))["request"]).toMatchObject({ overlapFrames: 56, overlap: { frames: 56, seconds: 2.333 } });
-    expect(fake.prompts[2]?.graph["tail_frames"]?.inputs).toMatchObject({ batch_index: 379 - 56, length: 56 });
-    expect(fake.prompts[2]?.graph["canvas"]?.inputs).toMatchObject({ length: 311 });
+    // extending the extension reads the joined frames; with no overlap named the default 90 frames is carried (STORY_080)
+    const ext2 = await create({ ...valid, durationSeconds: 10, continueFrom: ext });
+    expect((await status(ext2))["request"]).toMatchObject({ overlapFrames: 90, overlap: { frames: 90, seconds: 3.75 } });
+    expect(fake.prompts[2]?.graph["tail_frames"]?.inputs).toMatchObject({ batch_index: 379 - 90, length: 90 });
+    expect(fake.prompts[2]?.graph["canvas"]?.inputs).toMatchObject({ length: 345 });
+    expect(fake.prompts[2]?.graph["mask_keep_batch"]?.inputs).toMatchObject({ amount: 27 });
     expect((await waitFor(ext2, isDone))["result"]).toMatchObject({ frames: 634 });
   });
 

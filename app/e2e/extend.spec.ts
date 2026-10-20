@@ -28,14 +28,14 @@ test.describe("extend a finished video (STORY_016, STORY_017)", () => {
     await page.getByRole("menuitem", { name: /Extend/ }).click();
     await settled(page);
     await expect(page.getByTestId("continuation")).toContainText("Continues · 2.0 s");
-    await expect(page.getByTestId("overlap-line")).toHaveText("carries its last 1.6 s into the new clip");
+    await expect(page.getByTestId("overlap-line")).toHaveText("carries its last 3.8 s into the new clip"); // STORY_080: the default
     await expect(page.getByRole("button", { name: "Add reference image" })).toBeHidden();
     await expect(page.getByRole("button", { name: "Video parameters: 16:9 768P +10s" })).toBeVisible();
     await page.getByRole("button", { name: /^Video parameters:/ }).click();
     await settled(page);
     await expect(page.getByRole("radio", { name: "9:16" })).toBeDisabled();
-    await expect(page.getByRole("radio", { name: "1.6 s" })).toHaveAttribute("aria-checked", "true");
-    await expect(page.getByRole("radio", { name: "+14s" })).toBeHidden(); // the 39-frame overlap leaves room for 13 s
+    await expect(page.getByRole("radio", { name: "3.8 s" })).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("radio", { name: "+12s" })).toBeHidden(); // the 90-frame overlap leaves room for 11 s
     await page.getByRole("radio", { name: "0.9 s" }).click();
     await expect(page.getByTestId("overlap-line")).toHaveText("carries its last 0.9 s into the new clip");
     await expect(page.getByRole("radio", { name: "+14s" })).toBeVisible();
@@ -104,7 +104,7 @@ test.describe("extend a finished video (STORY_016, STORY_017)", () => {
     const { id: id3 } = (await (await retriedCreate).json()) as { id: string };
     await expect(page).toHaveURL(new RegExp(`/task/${id3}$`));
     expect((await retried).status).toBe("done");
-    expect((await stubApi.received(id3)).request).toMatchObject({ continueFrom: id1, overlapFrames: 39, prompt: "fail me", endAnchor: "source-last-frame" }); // STORY_061: the default, re-posted by Retry as stored
+    expect((await stubApi.received(id3)).request).toMatchObject({ continueFrom: id1, overlapFrames: 90, prompt: "fail me", endAnchor: "source-last-frame" }); // STORY_061: the default, re-posted by Retry as stored
     await expect(page.getByTestId("continues")).toContainText("ends where it began");
   });
 });

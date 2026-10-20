@@ -132,6 +132,14 @@ describe("extend mode (STORY_016, STORY_017)", () => {
   const source: ExtendSource = { id: "src", title: "A boat", durationSeconds: 10.125, ratio: "9:16", resolution: "768P", model: "minimax-h3", posterUrl: "/api/jobs/src/poster" };
   const extCaps: Capabilities = { ...caps, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56], default: 39 }, maxFrames: 362, maxSourceSeconds: 30, endAnchor: { options: ["source-last-frame", "none"], default: "source-last-frame" } } };
 
+  it("starts on the 90-frame overlap and keeps it only when the server offers it (STORY_080)", () => {
+    expect(initialComposer().overlapFrames).toBe(90);
+    const current: Capabilities = { ...caps, extension: { durationsSeconds: { min: 4, max: 14, step: 1, default: 10 }, overlapFrames: { options: [22, 39, 56, 90], default: 90 }, maxFrames: 362, maxSourceSeconds: 30, endAnchor: { options: ["source-last-frame", "none"], default: "source-last-frame" } } };
+    expect(reduceComposer(initialComposer(), { type: "capabilities", capabilities: current }).overlapFrames).toBe(90);
+    // an older server without 90: the chain sends that server's default, never an overlap it would refuse
+    expect(reduceComposer(initialComposer(), { type: "capabilities", capabilities: extCaps }).overlapFrames).toBe(39);
+  });
+
   it("extend-from takes the source's ratio/resolution/model and the extension defaults, locks the fixed fields and refuses images", () => {
     const s = reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: extCaps }), { type: "extend-from", source });
     expect(s).toMatchObject({ mode: "video", extend: source, ratio: "9:16", resolution: "768P", model: "minimax-h3", durationSeconds: 10, overlapFrames: 39, images: [] });
@@ -168,15 +176,15 @@ describe("extend mode (STORY_016, STORY_017)", () => {
     // STORY_044: outside extend mode the overlap is the chain strip's — kept, the first clip's length untouched
     const fresh = reduceComposer(reduceComposer(initialComposer(), { type: "capabilities", capabilities: caps }), { type: "duration", durationSeconds: 10 });
     expect(reduceComposer(fresh, { type: "overlap", overlapFrames: 56 })).toMatchObject({ overlapFrames: 56, durationSeconds: 10, extend: undefined });
-    expect(reduceComposer(s, { type: "overlap", overlapFrames: 30 }).overlapFrames).toBe(39);
+    expect(reduceComposer(s, { type: "overlap", overlapFrames: 30 }).overlapFrames).toBe(90); // STORY_080: the contract default when the server states none
     const plain = ready();
-    // an overlap the server does not offer is snapped to one it does (39 stays 39: the same state object); the chain strip may set a real one outside extend mode (STORY_044)
+    // an overlap the server does not offer is snapped to one it does (90 stays 90: the same state object); the chain strip may set a real one outside extend mode (STORY_044)
     expect(reduceComposer(plain, { type: "overlap", overlapFrames: 30 })).toBe(plain);
     expect(reduceComposer(plain, { type: "overlap", overlapFrames: 22 })).toMatchObject({ overlapFrames: 22, extend: undefined, durationSeconds: 5 });
     expect(reduceComposer(plain, { type: "clear-extend" })).toBe(plain);
     expect(overlapOptions(plain)).toEqual([]);
     const cleared = reduceComposer(reduceComposer(s, { type: "overlap", overlapFrames: 22 }), { type: "clear-extend" });
-    expect(cleared).toMatchObject({ extend: undefined, ratio: "16:9", resolution: "768P", model: "minimax-h3", durationSeconds: 5, overlapFrames: 39 });
+    expect(cleared).toMatchObject({ extend: undefined, ratio: "16:9", resolution: "768P", model: "minimax-h3", durationSeconds: 5, overlapFrames: 90 });
     expect(paramsLabel(cleared)).toBe("16:9 768P 5s");
     // capabilities that arrive while extending keep the source's values and clamp into the server's ranges
     const late = reduceComposer(reduceComposer(initialComposer(), { type: "extend-from", source }), { type: "capabilities", capabilities: extCaps });

@@ -285,7 +285,7 @@ describe("TaskPage — extend (STORY_016, STORY_017)", () => {
     fireEvent.click(screen.getByRole("button", { name: "More" }));
     fireEvent.click(screen.getByRole("menuitem", { name: /Extend/ }));
     expect(screen.getByTestId("continuation")).toHaveTextContent("Continues · 2.0 s");
-    expect(screen.getByTestId("overlap-line")).toHaveTextContent("carries its last 1.6 s into the new clip");
+    expect(screen.getByTestId("overlap-line")).toHaveTextContent("carries its last 3.8 s into the new clip");
     expect(screen.getByPlaceholderText("Describe what happens next…")).toHaveFocus();
     fireEvent.click(screen.getByRole("button", { name: "Stop extending" }));
     expect(screen.queryByTestId("continuation")).not.toBeInTheDocument();

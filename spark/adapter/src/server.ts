@@ -12,7 +12,7 @@ import path from "node:path";
 import { CAPABILITIES, ValidationError, validateRequest, type JobRequest } from "./capabilities.ts";
 import { ComfyClient, ComfyEvents, ComfyError, type HistoryEntry } from "./comfy.ts";
 import { JobStore, isTerminal, type Job } from "./job-store.ts";
-import { FPS, REQUIRED_CLASSES, buildGraph, extensionLength, lengthForSeconds, ref2vaFileFor, seconds, sizeFor, templateUnet, type Continuation, type Graph, type UploadedImage } from "./mapping.ts";
+import { FPS, REQUIRED_CLASSES, buildGraph, extensionLength, fitOverlap, lengthForSeconds, ref2vaFileFor, seconds, sizeFor, templateUnet, type Continuation, type Graph, type UploadedImage } from "./mapping.ts";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
 import { interpret, type ComfyEvent } from "./progress.ts";
 import { buildPrompt, cameraOf } from "./prompt.ts";
@@ -452,8 +452,9 @@ export function createAdapterServer(options: AdapterOptions): AdapterServer {
       for (const field of ["ratio", "resolution", "model"] as const) {
         if (request[field] !== source.request[field]) throw new HttpError(400, "validation", `an extension keeps the source's ${field} (${source.request[field]})`, field);
       }
-      const overlap = request.overlapFrames ?? CAPABILITIES.extension.overlapFrames.default;
-      if (overlap > sourceFrames) throw new HttpError(400, "validation", `the video has ${String(sourceFrames)} frames; an overlap of ${String(overlap)} does not fit`, "overlapFrames");
+      const asked = request.overlapFrames ?? CAPABILITIES.extension.overlapFrames.default;
+      const overlap = fitOverlap(asked, sourceFrames);
+      if (overlap === undefined) throw new HttpError(400, "validation", `the video has ${String(sourceFrames)} frames; an overlap of ${String(asked)} does not fit`, "overlapFrames");
       request = { ...request, overlap: { frames: overlap, seconds: seconds(overlap) } };
       const file = source.result.video.subfolder ? `${source.result.video.subfolder}/${source.result.video.filename}` : source.result.video.filename;
       continuation = { file, frames: sourceFrames, overlapFrames: overlap, prompt: buildPrompt(request.prompt, { kind: "extension", frames: extensionLength(request.durationSeconds, overlap) }), anchorEnd: request.endAnchor === "source-last-frame" };

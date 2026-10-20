@@ -207,6 +207,8 @@ export function reduceComposer(state: ComposerState, action: ComposerAction): Co
         resolution: caps.resolutions[0] ?? "",
         ratio: caps.ratios.includes(state.ratio) ? state.ratio : (caps.ratios[0] ?? state.ratio),
         durationSeconds: clampDuration(state.durationSeconds, caps, undefined),
+        // STORY_080: the overlap a chain will send is one this server offers (an older server lacks 90 and gets its own default)
+        overlapFrames: clampOverlap(state.overlapFrames, caps),
       };
     }
     case "capabilities-failed":

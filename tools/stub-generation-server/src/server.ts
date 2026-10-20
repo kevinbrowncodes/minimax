@@ -9,7 +9,7 @@ import type { AddressInfo } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
-import { DEFAULT_OVERLAP, MAX_FRAMES, OVERLAP_OPTIONS, extensionLength, lengthForSeconds, maxAddedSeconds, seconds } from "./extension.ts";
+import { DEFAULT_OVERLAP, MAX_FRAMES, OVERLAP_OPTIONS, extensionLength, fitOverlap, lengthForSeconds, maxAddedSeconds, seconds } from "./extension.ts";
 import { DEFAULT_SCRIPT, cameraFor, cutsFor, isScriptName, isTerminal, stepFor, type JobError, type JobStatus, type ScriptName } from "./scripts.ts";
 import { createAgentFake, loadAgentFixtures } from "./agent.ts";
 
@@ -351,8 +351,9 @@ export function createStubServer(options: StubOptions = {}): StubServer {
       for (const field of ["ratio", "resolution", "model"] as const) {
         if (request[field] !== source.request[field]) throw new HttpError(400, "validation", `an extension keeps the source's ${field} (${source.request[field]})`, field);
       }
-      const overlap = request.overlapFrames ?? CAPABILITIES.extension.overlapFrames.default;
-      if (overlap > source.frames) throw new HttpError(400, "validation", `the video has ${String(source.frames)} frames; an overlap of ${String(overlap)} does not fit`, "overlapFrames");
+      const asked = request.overlapFrames ?? CAPABILITIES.extension.overlapFrames.default;
+      const overlap = fitOverlap(asked, source.frames);
+      if (overlap === undefined) throw new HttpError(400, "validation", `the video has ${String(source.frames)} frames; an overlap of ${String(asked)} does not fit`, "overlapFrames");
       request = { ...request, overlap: { frames: overlap, seconds: seconds(overlap) } };
       frames = source.frames + extensionLength(request.durationSeconds, overlap) - overlap;
     }

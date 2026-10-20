@@ -6,8 +6,16 @@
 export const FPS = 24;
 export const AUDIO_LATENT_FPS = 40;
 export const MAX_FRAMES = 362;
-export const OVERLAP_OPTIONS: readonly number[] = [22, 39, 56];
-export const DEFAULT_OVERLAP = 39;
+export const OVERLAP_OPTIONS: readonly number[] = [22, 39, 56, 90];
+export const DEFAULT_OVERLAP = 90;
+
+/** The overlap an extension carries (STORY_080): the one asked for, or — when the source is shorter — the longest offered
+ *  overlap that fits it, so a short source still extends; `request.overlap` reports what was carried. Undefined when none fits. */
+export function fitOverlap(requested: number, sourceFrames: number): number | undefined {
+  if (requested <= sourceFrames) return requested;
+  const fits = OVERLAP_OPTIONS.filter((o) => o <= sourceFrames);
+  return fits.length > 0 ? Math.max(...fits) : undefined;
+}
 
 /** Frame count on the model's 17k+5 grid, snapped up. */
 export function lengthForSeconds(seconds: number): number {

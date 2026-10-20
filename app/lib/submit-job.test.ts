@@ -245,7 +245,7 @@ describe("draws per prompt (STORY_055)", () => {
     const result = await submitDraws(extending, 3, fetchImpl);
     expect(result).toEqual({ ok: false, sent: ["j1"], index: 1, message: "prompt is too long", field: "prompt" });
     expect(bodies).toHaveLength(2);
-    expect(bodies[0]).toMatchObject({ continueFrom: "src", overlapFrames: 39 });
+    expect(bodies[0]).toMatchObject({ continueFrom: "src", overlapFrames: 90 }); // STORY_080: the default
     expect(bodies[1]).toMatchObject({ continueFrom: "src" });
   });
 });
