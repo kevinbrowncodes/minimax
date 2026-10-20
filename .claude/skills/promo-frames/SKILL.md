@@ -2,8 +2,8 @@
 name: promo-frames
 description: Pulls the best stills from a finished OnlyGainsTV film (the owner's final cut in a round folder under test/). promo/ is the shortlist for his website, across the whole film, nude scene included; promo/yt/ holds square YouTube thumbnails cropped to meet YouTube's community guidelines. Waits for the file to finish copying, saves both sets as JPEG in film order, and ends with an scp line for the Mac. Use when the owner hands over a final video and asks for promo frames, stills, thumbnails, a cover frame, or "the best frames".
 metadata:
-  build: 2026-10-19-2215
-  tickets: CHORE_039, CHORE_040, CHORE_041, CHORE_042
+  build: 2026-10-20-1130
+  tickets: CHORE_039, CHORE_040, CHORE_041, CHORE_042, CHORE_045
 ---
 
 # Promo frames from a finished film
@@ -24,19 +24,20 @@ The vines film (2026-10-19) is the reference for shape: 15 website frames across
 - **Look at every frame you keep.** A frame is chosen by reading it, never by its timestamp alone.
 - **Quote paths.** Final cuts carry spaces and an emoji in the name.
 - **Give ffmpeg `-nostdin` inside any `while read` loop**, or it eats the list and skips every other frame.
+- **Never write a positional shell variable in this file** (a dollar sign followed by a digit or `@`). Claude Code replaces it with the words typed after the skill's name, so a loop arrives broken. Pass values as named variables.
 
 ## Step 1: wait for the whole file
 
 The cut arrives by copy from the Mac and is often still growing when the owner gives you the path. A stable size is not proof: on the vines film the size held still for 10 s at 13 MB of 159 MB.
 
-The proof is a clean full decode. Run it as a background command (its own `bash -c`, so the `exit` ends the loop and not your shell) and wait for the notification, with a ceiling of about 27 minutes:
+The proof is a clean full decode. Run it as a background command (its own `bash -c`, so the `exit` ends the loop and not your shell) and wait for the notification, with a ceiling of about 27 minutes. The path goes in through the `FILM` variable:
 
 ```bash
-bash -c 'F="$1"; i=0
-until [ -z "$(ffmpeg -v error -i "$F" -f null - 2>&1 | head -3)" ]; do
-  i=$((i+1)); [ $i -ge 110 ] && { echo "still partial at $(stat -c %s "$F") bytes"; exit 1; }
+FILM="<path>" bash -c 'i=0
+until [ -z "$(ffmpeg -v error -i "$FILM" -f null - 2>&1 | head -3)" ]; do
+  i=$((i+1)); [ $i -ge 110 ] && { echo "still partial at $(stat -c %s "$FILM") bytes"; exit 1; }
   sleep 15
-done; echo "complete: $(stat -c %s "$F") bytes"' _ "<path>"
+done; echo "complete: $(stat -c %s "$FILM") bytes"'
 ```
 
 If the first look fails with "partial file" or "Invalid NAL unit size", tell the owner the copy is still running and that you are waiting for it.
