@@ -34,19 +34,19 @@ On a film set the script supervisor watches every take, logs it good or NG, catc
 | Black bars | `cropdetect` on the shot | any bars → NG |
 | Join jump | chain.sh scores each join (SSIM, last frame vs 0.35 s in) and cancels below **0.45** (calibrated: every owner-called cut 0.18–0.41, every ship ≥ 0.48) | auto-cancel → NG card; I also look at both joins and through each shot, and scrap any jump the number missed |
 | Back glimpse (scene 2 shot 1) | 2 fps crop of the squat | **clear miss → cancel** (`cancel.sh <seed> "<why>"`) → NG; **unclear → let it run** (the owner sees what crops cannot) |
-| Accessories and continuity | zoom on headbands, bracelets, garments at start, middle, end | log it; name the item in every anchor as "stays on" |
+| Accessories and continuity | zoom on every accessory (headband, each wrist, neck, waist, garment) at the start, at each join and at the end | **nothing may be lost or move** (owner, 20 Oct 2026): a lost or swapped item in shot 1 → cancel to NG; later → my score −3 and tell the owner which item and when; every anchor names each item with its side as staying on |
 | Set moves with a prop | does the backdrop/wall shift when he touches the prop? | log it; it is a fault the owner docks |
 | Framing | did the camera push in or pull back? did any part of him (face, head, feet in a full shot) leave the frame? | a face out of frame costs the most points; a written pull-back (allowed only to keep him in frame) is tracked per round, and if more than half the round's takes are scrapped at a join because of it, the round goes back to a locked camera |
 
 An NG card is the shots drawn so far, uploaded as an asset and added with `addouttake.py page-2/index.html "NG n" <blob> <seed> "<why with the score>"`, then the page republished.
 
-**Open test — a longer hand-over (owner, 19 Oct 2026):** the next round that needs a framing change in shot 1 (a pull-back, a stand-and-step) runs 3 takes with `OVERLAP=72` (3 s) in the runner's environment against its normal takes (39, 1.6 s); compare their join scores and the owner's ratings, write the result to `test/FINDINGS.md`, and make 72 the default only if it holds more joins at the same quality and time.
+**Open test — a longer hand-over (owner, 19 Oct 2026):** the next round that needs a framing change in shot 1 (a pull-back, a stand-and-step) runs 3 takes with `OVERLAP=56` (2.3 s; the adapter accepts only 22, 39 or 56 — 72 was refused on 20 Oct 2026) against its normal takes (39, 1.6 s); compare their join scores and the owner's ratings, write the result to `test/FINDINGS.md`, and make 56 the default only if it holds more joins at the same quality and time.
 
 ## 4. Post and score each finished take
 
 1. Upload the joined video as an asset to its page, `addcard.py page-N/index.html "Take n" <blob>`, republish.
 2. Build a 1 fps sheet (8×4) and look at it; zoom where needed.
-3. **Seal** a score and a note in `assistant-ratings.csv` before seeing the owner's. Score what members notice: anatomy (a wrong mark, a dot, a closed or missing hole caps at 2), jump cuts (a cut), black bars, frozen holds, heavy breathing. A lost accessory or a slightly wide frame is minor. A smooth camera move is not a fault.
+3. **Seal** a score and a note in `assistant-ratings.csv` before seeing the owner's. Score what members notice: anatomy (a wrong mark, a dot, a closed or missing hole caps at 2), jump cuts (a cut), black bars, frozen holds, heavy breathing. A lost accessory or a slightly wide frame is minor. A smooth camera move is not a fault. A face that leaves the frame risks face drift (the owner scored two such takes 2, 20 Oct 2026): score it as a likely fault, not minor framing.
 4. One short message: what landed, what to look at, the count toward the target.
 
 ## 5. Course-correct (autopilot)
