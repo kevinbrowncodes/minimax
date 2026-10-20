@@ -1,6 +1,7 @@
-# CHORE_041 — Framing changes finish early, and the hand-over is tunable
+# CHORE_044 — Framing changes finish early, and the hand-over is tunable
 
 **Status:** Done (owner's decision, 2026-10-19)
+**Renumbered:** from CHORE_041 (clashed with the promo ticket; commit 0e7b43d carries the old number)
 **Created:** 2026-10-19
 
 ## Summary

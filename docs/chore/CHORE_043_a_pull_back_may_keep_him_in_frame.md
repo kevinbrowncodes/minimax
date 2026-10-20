@@ -1,6 +1,7 @@
-# CHORE_040 — A pull-back may keep him in frame
+# CHORE_043 — A pull-back may keep him in frame
 
 **Status:** Done (owner's decision, 2026-10-19)
+**Renumbered:** from CHORE_040 (clashed with the promo ticket; commit 24e162e carries the old number)
 **Created:** 2026-10-19
 
 ## Summary
