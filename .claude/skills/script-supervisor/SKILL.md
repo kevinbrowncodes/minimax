@@ -36,7 +36,7 @@ On a film set the script supervisor watches every take, logs it good or NG, catc
 | Back glimpse (scene 2 shot 1) | 2 fps crop of the squat | **clear miss → cancel** (`cancel.sh <seed> "<why>"`) → NG; **unclear → let it run** (the owner sees what crops cannot) |
 | Accessories and continuity | zoom on headbands, bracelets, garments at start, middle, end | log it; name the item in every anchor as "stays on" |
 | Set moves with a prop | does the backdrop/wall shift when he touches the prop? | log it; it is a fault the owner docks |
-| Framing | did the camera push in or pull back? | log it; a reframe inside shot 1 predicts a jump at 10 s |
+| Framing | did the camera push in or pull back? did any part of him (face, head, feet in a full shot) leave the frame? | a face out of frame costs the most points; a written pull-back (allowed only to keep him in frame) is tracked per round, and if more than half the round's takes are scrapped at a join because of it, the round goes back to a locked camera |
 
 An NG card is the shots drawn so far, uploaded as an asset and added with `addouttake.py page-2/index.html "NG n" <blob> <seed> "<why with the score>"`, then the page republished.
 
