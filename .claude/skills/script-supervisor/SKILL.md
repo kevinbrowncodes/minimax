@@ -40,6 +40,8 @@ On a film set the script supervisor watches every take, logs it good or NG, catc
 
 An NG card is the shots drawn so far, uploaded as an asset and added with `addouttake.py page-2/index.html "NG n" <blob> <seed> "<why with the score>"`, then the page republished.
 
+**Open test — a longer hand-over (owner, 19 Oct 2026):** the next round that needs a framing change in shot 1 (a pull-back, a stand-and-step) runs 3 takes with `OVERLAP=72` (3 s) in the runner's environment against its normal takes (39, 1.6 s); compare their join scores and the owner's ratings, write the result to `test/FINDINGS.md`, and make 72 the default only if it holds more joins at the same quality and time.
+
 ## 4. Post and score each finished take
 
 1. Upload the joined video as an asset to its page, `addcard.py page-N/index.html "Take n" <blob>`, republish.

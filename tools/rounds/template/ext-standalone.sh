@@ -13,12 +13,14 @@ anchor_args=(); case "$LABEL" in *-3) anchor_args=(--no-anchor) ;; esac
 # Owner (2026-10-09): the unpinned-middle test — UNPIN_MIDDLE=1 draws every extension unpinned (segment 2 too).
 # Owner (2026-10-10 13:45): unpinned is the DEFAULT on Equinox (0 shot changes in 14 twin draws); UNPIN_MIDDLE=0 re-pins as a fallback.
 [ "${UNPIN_MIDDLE:-1}" = 1 ] && anchor_args=(--no-anchor)
+# Hand-over length (owner 2026-10-19 A/B): frames of the previous shot the extension continues from; default 39 (1.6 s).
+OVERLAP="${OVERLAP:-39}"
 START=$(date -u +%FT%TZ); T0=$(date +%s)
 "$ROOT/spark/comfyui/memwatch.sh" "mem-$LABEL-$SEED.log" 5 2>/dev/null & MEMPID=$!
 PID=$(python3 extend.py --label "$LABEL" --source "video/$(basename "$SRC")" --frames "$FRAMES" --prompt-file "$PROMPT" \
-      --seed "$SEED" --standalone "${anchor_args[@]}" --steps "$STEPS" --sampler "$SAMPLER" --scheduler "$SCHED" "${unet_args[@]}" "${lora_args[@]}" --url "$C" --dump "graph-$LABEL-$SEED.json" 2>"graph-$LABEL-$SEED.err") \
+      --seed "$SEED" --overlap "$OVERLAP" --standalone "${anchor_args[@]}" --steps "$STEPS" --sampler "$SAMPLER" --scheduler "$SCHED" "${unet_args[@]}" "${lora_args[@]}" --url "$C" --dump "graph-$LABEL-$SEED.json" 2>"graph-$LABEL-$SEED.err") \
   || { kill "$MEMPID" 2>/dev/null; echo "$START $LABEL seed=$SEED — refused: $(head -c 300 "graph-$LABEL-$SEED.err")" >> run.log; exit 1; }
-echo "$START $LABEL seed=$SEED prompt=${PID:0:8} submitted (+10 s standalone of $(basename "$SRC"), $FRAMES frames)" >> run.log
+echo "$START $LABEL seed=$SEED prompt=${PID:0:8} submitted (+10 s standalone of $(basename "$SRC"), $FRAMES frames, overlap $OVERLAP)" >> run.log
 while true; do
   h=$(curl -s -m 20 "$C/history/$PID" || echo '{}')
   st=$(python3 -c "import json,sys; d=json.loads(sys.stdin.read() or '{}'); e=d.get('$PID'); print(e['status']['status_str'] if e else 'pending')" <<<"$h")
