@@ -1,4 +1,13 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.outtakes{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.outtakes summary{cursor:pointer;font-weight:600;font-size:15px}
+.outtakes .sub{margin-top:4px}
+.ogrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+@media (max-width:900px){.ogrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.ogrid{grid-template-columns:1fr}}
+.ocard{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface2)}
+.ocard p{padding:8px 10px;font-size:12.5px}
+.ocard .why{color:var(--muted)}
+</style></head><body>
 <title>__TITLE__ — Scene 1</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -97,7 +106,14 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
   <div class="q" style="grid-template-columns:1fr"><span class="ql">Anything else worth recording</span><textarea id="vnotes" placeholder="Optional"></textarea></div>
   <div class="status" id="vstatus" style="padding:0"></div>
 </section>
+
+<details class="outtakes" id="outtakes">
+  <summary>Outtakes (NG) — <span id="ocount">0</span></summary>
+  <p class="sub">Takes scrapped before rating (a jump at a join, a lost item, a clear miss). Nothing to score — here so you can see what was thrown away.</p>
+  <div class="ogrid" id="ogrid"></div>
+</details>
 </div>
+<script id="outtakes-data" type="application/json">[]</script>
 
 <script id="cfgs" type="application/json">[]</script>
 <script>
@@ -187,6 +203,12 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
     b.addEventListener('click',()=>{verdict[id]=verdict[id]===c.label?undefined:c.label;paint();persistV();}); $('#'+id).append(b); }
   for(const b of $('#tell').children) b.addEventListener('click',()=>{verdict.tell=verdict.tell===b.dataset.v?undefined:b.dataset.v;paint();persistV();});
   let vt2; $('#vnotes').addEventListener('input',e=>{verdict.notes=e.target.value;clearTimeout(vt2);vt2=setTimeout(persistV,700);});
+  const OUT=JSON.parse(document.getElementById('outtakes-data').textContent);
+  $('#ocount').textContent=OUT.length;
+  for(const o of OUT){ const c=el('div',{class:'ocard'});
+    c.append(el('video',{class:'vid',src:'/_blob/'+o.blob,controls:'',preload:'none',playsinline:'','aria-label':o.label}));
+    c.append(el('p',{},el('span',{class:'mono',text:o.label+' · seed '+o.seed})));
+    c.append(el('p',{class:'why',text:o.why})); $('#ogrid').append(c); }
   paint();
   // download buttons light up only when this view can save files
   const dlu=(window.claude&&typeof window.claude.use==='function')?window.claude.use('downloads'):Promise.resolve(null);
