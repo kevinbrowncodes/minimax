@@ -6,7 +6,7 @@
  * (native masked continuation, docs/story/STORY_017), then joins source and segment into one clip.
  */
 import type { JobRequest, Ratio } from "./capabilities.ts";
-import { FPS, MAX_FRAMES, OVERLAP_OPTIONS, audioTicks, extensionLength, latentFrames, lengthForSeconds, seconds } from "./grid.ts";
+import { AUDIO_LATENT_FPS, FPS, MAX_FRAMES, OVERLAP_OPTIONS, audioTicks, extensionLength, latentFrames, lengthForSeconds, seconds } from "./grid.ts";
 
 export { AUDIO_LATENT_FPS, DEFAULT_OVERLAP, FPS, MAX_FRAMES, OVERLAP_OPTIONS, audioTicks, extensionLength, fitOverlap, gridDown, latentFrames, lengthForSeconds, maxAddedSeconds, seconds } from "./grid.ts";
 
@@ -46,6 +46,10 @@ export interface Continuation {
   readonly prompt: string;
   /** STORY_061: pin the source's last frame at the new segment's last frame (MiniMaxH3AddGuide); off when false or absent. */
   readonly anchorEnd?: boolean;
+  /** BUG_014: seconds at the end of the overlap whose SOUND the model regenerates instead of keeping (0 = keep it all). The
+   *  model can start its generated sound with ~75 ms of near-silence at the protected edge; moving the edge before the join's
+   *  crossfade hides that start under the source. The picture's overlap is untouched. */
+  readonly audioFreeSeconds?: number;
 }
 export interface GraphOptions {
   readonly seed?: number;
@@ -138,6 +142,8 @@ export function buildGraph(template: Graph, request: JobRequest, images: readonl
   const lL = latentFrames(L);
   const aO = audioTicks(O);
   const aL = audioTicks(L);
+  // BUG_014: the sound protected up to aKeep; the model generates it from there (the latent still starts from the source's tail)
+  const aKeep = Math.max(0, aO - Math.round((continuation.audioFreeSeconds ?? 0) * AUDIO_LATENT_FPS));
 
   // The source's tail: pixels and sound of its last O frames, encoded by the model's own VAEs.
   graph["source_video"] = { class_type: "LoadVideo", inputs: { file: `${continuation.file} [output]` } };
@@ -164,8 +170,8 @@ export function buildGraph(template: Graph, request: JobRequest, images: readonl
   graph["mask_video"] = { class_type: "ImageToMask", inputs: { image: ["mask_video_img", 0], channel: "red" } };
   graph["video_masked"] = { class_type: "SetLatentNoiseMask", inputs: { samples: ["video_latent", 0], mask: ["mask_video", 0] } };
   graph["amask_base"] = { class_type: "SolidMask", inputs: { value: 0, width: aL, height: 2 } };
-  graph["amask_new"] = { class_type: "SolidMask", inputs: { value: 1, width: aL - aO, height: 2 } };
-  graph["amask"] = { class_type: "MaskComposite", inputs: { destination: ["amask_base", 0], source: ["amask_new", 0], x: aO, y: 0, operation: "add" } };
+  graph["amask_new"] = { class_type: "SolidMask", inputs: { value: 1, width: aL - aKeep, height: 2 } };
+  graph["amask"] = { class_type: "MaskComposite", inputs: { destination: ["amask_base", 0], source: ["amask_new", 0], x: aKeep, y: 0, operation: "add" } };
   graph["audio_masked"] = { class_type: "SetLatentNoiseMask", inputs: { samples: ["audio_latent", 0], mask: ["amask", 0] } };
   graph["latent"] = { class_type: "LTXVConcatAVLatent", inputs: { video_latent: ["video_masked", 0], audio_latent: ["audio_masked", 0] } };
   // Text conditioning only (FL2VA's base format); the node's own empty latent is not used.

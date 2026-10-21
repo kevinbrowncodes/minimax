@@ -104,6 +104,20 @@ describe("extension arithmetic (STORY_017)", () => {
     expect(REQUIRED_CLASSES).toContain("MiniMaxH3AddGuide"); // STORY_061: the end-frame anchor
   });
 
+  it("BUG_014: audioFreeSeconds moves only the SOUND's protected edge back before the join's crossfade; the picture's overlap is kept", () => {
+    const req: JobRequest = { ...request, durationSeconds: 10, continueFrom: "src", overlapFrames: 90 };
+    const base = { file: "video/job-src_00001_.mp4", frames: 243, overlapFrames: 90, prompt: "WRAPPED" };
+    const kept = buildGraph(template, req, [], { seed: 3, continuation: base });
+    const freed = buildGraph(template, req, [], { seed: 3, continuation: { ...base, audioFreeSeconds: 0.3 } });
+    // 90 frames = 150 audio ticks; 0.3 s = 12 ticks handed back to the model
+    expect(kept["amask"]?.inputs).toMatchObject({ x: 150 });
+    expect(freed["amask"]?.inputs).toMatchObject({ x: 138 });
+    expect(freed["amask_new"]?.inputs).toMatchObject({ width: Number(kept["amask_new"]?.inputs["width"]) + 12 });
+    // the latent still starts from the source's whole tail, and the picture's mask is unchanged
+    expect(freed["tail_audio_latent"]).toEqual(kept["tail_audio_latent"]);
+    expect(freed["mask_keep_batch"]).toEqual(kept["mask_keep_batch"]);
+  });
+
   it("builds the extension graph: the source's last 39 frames become the new clip's own masked head on FL2VA, then the join", () => {
     const req: JobRequest = { ...request, durationSeconds: 10, continueFrom: "src", overlapFrames: 39 };
     const graph = buildGraph(template, req, [], { seed: 3, filenamePrefix: "video/job-2", continuation: { file: "video/job-src_00001_.mp4", frames: 243, overlapFrames: 39, prompt: "WRAPPED" } });
