@@ -6,7 +6,7 @@ compatibility: Written for MiniMax-H3 image-to-video served locally (ComfyUI, Co
 
 # MiniMax H3 I2V: AMG Physique Film (Bob Mizer)
 
-Build 2026-10-22-0800
+Build 2026-10-23-1900
 
 > ## ⚠️ THIS RUN WRITES EXACTLY {{COUNT}} SHOT(S): READ FIRST
 >
@@ -65,6 +65,7 @@ The prompt can never add what the frame lacks, and H3 regenerates the frame from
 
 - **A worked body.** Flush, sweat, wet hair, veins up. A dry, rested body caps the heat, and no wording recovers it.
 - **Wardrobe, worn modern, in the keyframe; never described in the script.** Briefs, trunks, compression shorts, a jock, a low-slung towel already worn. The garment must not cover the body. A mid-film costume change is a keyframe job: supply the next scene's keyframe in the new garment, never write the change.
+- **Clear skin.** Zoom into the chest, abs, back and arms before writing anything: a mole, spot or mark in the keyframe is carried and multiplied through the scene. Tell the owner before the first take so he can regenerate the photo (owner, 23 Oct 2026).
 - **An open, unguarded face.** H3 holds the keyframe's face; a stone-faced keyframe gives stone-faced shots.
 - **Framing: medium full is the house shot** (knees-up, headroom). Full is fine when the action travels. Never tighter than waist-up, never a face close-up: punch in during the edit. Leave room in the direction the action goes, because H3 will move the camera or cut the body off rather than recentre (see *Every beat's end shape must fit inside the keyframe's frame*).
 - **The floor under his feet.** For any scene with a squat, a bend or a seat, the keyframe must show the floor he stands on (the deck, sand, stone) clearly under and around his feet, with water or edges beside or behind him, not under his legs. A crop just above the ankles is fine when the floor is plainly visible beneath him.
@@ -200,7 +201,7 @@ non_diegetic_music: None.
 
 - **STYLE**: one sentence starting `Live-action`: `Live-action physique film, single hard key, locked-off tripod.`
 - **CAMERA**: `The camera holds a perfectly static shot throughout the entire ten-second duration: no cut, no dissolve, no transition and no change of framing; the man, the set and the lighting in <Picture 1> stay as they are for the whole video.` A scene's first shot verbatim apart from the subject noun; shots 2 and 3 drop `in <Picture 1>`. Name only what is in frame, never "the props" when there are none. The camera never moves in this skill; the step-in is the subject moving.
-- **ANCHOR**: 40 to 80 words describing the man as a STATE, by appearance only (build, hair, face, skin), then the framing (crop, camera height, his size in the frame). No set, no light, no garment, no accessory, no persistence sentence: the keyframe and the video context carry those (owner, 21 Oct 2026). **No pose and no changing state in the anchor**: not where his hands are, not his stance. Those belong to phase one. For shots 2 and 3 of a scene the anchor states the previous shot's end frame as fact (where he is, facing, framing) and the carry-over opener follows it.
+- **ANCHOR**: 40 to 80 words describing the man as a STATE, by appearance only (build, hair, face, skin), then the framing (crop, camera height, his size in the frame). No set, no light, no garment, no accessory, no persistence sentence: the keyframe and the video context carry those (owner, 21 Oct 2026). **No pose and no changing state in the anchor**: not where his hands are, not his stance. Those belong to phase one. For shots 2 and 3 of a scene the anchor states the previous shot's end frame as fact (where he is, facing, framing) and the carry-over opener follows it. **The skin is always written as "flawless, clear, smooth <tone> skin"** (owner, 23 Oct 2026): H3 adds small dark dots and moles to the chest and back that the keyframe does not have (pool round, 2026-10-23, on a keyframe with clean skin), and a take with them is NG. Whether the wording prevents them is being tallied in `test/FINDINGS.md`; the keyframe check below catches the ones the photo brings.
 - **CARRY-OVER OPENER** (shots 2 and 3 of a scene): `For the first moment the <man by appearance> holds where he stopped, <the previous shot's exact end pose>, then moves.`
 - **PHASE ONE**: `In the first seconds, the <man by appearance> …` Releases the starting state, then the real action underway, arriving at a held position, eyes on the work. Two moves at most.
 - **PHASE TWO**: `Through the middle of the clip, the <man by appearance> …` The main gesture driven to full range, the effort in the working muscle, squeezed at the peak and held inside this phase only, eyes still on the work. Two moves at most.
