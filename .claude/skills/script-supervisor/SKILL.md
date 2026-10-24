@@ -19,7 +19,7 @@ On a film set the script supervisor watches every take, logs it good or NG, catc
 1. Read the keyframes before anything else. Check the size (1376×768 class; crop a 16:9 image to 1.75 rather than squash). Save `keyframes/scene-1.png` (and `scene-2.png` when 04 arrives).
 2. `tools/rounds/new-round.sh test/<round> <name> "<Title>"` — copies the runner (chain.sh with the join check, draw.sh, ext-standalone.sh, extend.py, graph.py, upload.sh, rotate.sh, cancel.sh, addcard.py, addouttake.py, strip.py) and the two rating pages from `tools/rounds/template/`. Fill the page's `__SUB__`/`__INTRO__`, publish both pages with capabilities `{db:{}, user:{}, assets:{}, downloads:true}`, and write the links to `ARTIFACTS.md`.
 3. Scripts: write them with `minimax-h3-i2v-amg-scene` (it runs the variety review). Before any take, **check scene 2's script against 04 line by line** — the starting hands and feet, where he sits or stands, and that nothing is described that 04 does not show. Write the check as a table for the owner when anything differs.
-4. Start with `setsid nohup ./rotate.sh &` — **scene 1 first**, then alternating once `keyframes/scene-2.png` and `s2-aligned.flag` exist. Default target: **4 kept takes per scene** (owner, 24 Oct 2026; was 6), then autopilot keeps alternating. `touch STOP` ends after the take in progress.
+4. Start with `setsid nohup ./rotate.sh &`. **Order (owner, 24 Oct 2026):** scene 1 only until it has **4 kept takes**; then scene 2 only (`s2-aligned.flag` + `s2-only.flag`) until it has 4 kept takes; only then autopilot (remove `s2-only.flag`), which alternates. Never alternate before both scenes reach 4. Default target: **4 kept takes per scene** (was 6). `touch STOP` ends after the take in progress.
 
 ## 2. Watch
 
