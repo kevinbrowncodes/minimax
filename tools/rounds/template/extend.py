@@ -22,7 +22,7 @@ payload = {
     "request": {"prompt": prompt, "ratio": "16:9", "resolution": "768P", "durationSeconds": a.seconds, "model": "minimax-h3", "continueFrom": "spike", "overlapFrames": a.overlap},
     "images": [],
     "options": {"seed": a.seed, "filenamePrefix": prefix,
-                "continuation": {"file": a.source, "frames": a.frames, "overlapFrames": a.overlap, "prompt": prompt, "anchorEnd": not a.no_anchor}},
+                "continuation": {"file": a.source, "frames": a.frames, "overlapFrames": a.overlap, "prompt": prompt, "anchorEnd": not a.no_anchor, "audioFreeSeconds": float(os.environ.get("AUDIO_FREE_SECONDS", "0.3"))}},
 }
 js = '''const { buildGraph } = await import("/adapter/src/mapping.ts");
 let s = ""; for await (const c of process.stdin) s += c;
