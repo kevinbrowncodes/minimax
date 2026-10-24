@@ -6,7 +6,7 @@ compatibility: Written for MiniMax-H3 image-to-video served locally (ComfyUI, Co
 
 # MiniMax H3 I2V: AMG Physique Film (Bob Mizer)
 
-Build 2026-10-23-1900
+Build 2026-10-24-1540
 
 > ## ⚠️ THIS RUN WRITES EXACTLY {{COUNT}} SHOT(S): READ FIRST
 >
@@ -144,8 +144,8 @@ Charged variants, preferred: **front lat spread with the weight dropped onto one
 - **Release the keyframe's starting state in phase one of a scene's first shot.** Name what the hands and feet are doing in the first frame and move them: "the man in the dark briefs brings his hands forward from behind his back and plants them on his hips."
 - **Every phase ends in a held position**, written ("and holds," "and sets," "and locks it"), and never back in the position the shot started from: returning the hands to where they began reads as giving up the pose. Land somewhere new.
 - **Destinations, not paths.** Name the pose and the surface a hand lands on; never narrate the arm's route through the air. Move one arm at a time and say the other stays put, except for symmetrical poses, which are named and not choreographed.
-- **Name the eyes in every phase.** Phases one and two go to the work: his own arm, his chest, his hand, the surface he braces on, a spot straight ahead just past the camera when the work has nothing to look at. The target must be in front of his face for the way he is facing. The ground gets one second at most. Never the lens before the final phase, and the lens only late in that phase, after its own action, so the look lands as an event.
-- **Never write the face as a state.** No grinning, smirking, brooding, heavy-lidded, and no expression attached to a hold. A break is a physical event that decays (he shakes out his arms).
+- **Name the eyes in every phase.** Phases one and two go to the work: his own arm, his chest, his hand, the surface he braces on, a spot straight ahead just past the camera when the work has nothing to look at. The target must be in front of his face for the way he is facing. The ground gets one second at most. Never the lens before the final phase, and the lens only late in that phase, after its own action, so the look lands as an event. Broken once and it showed (hunk, 24 Oct 2026): eyes on the lens through every phase plus a "faint smirk" and "slow smile" drew a wide toothy grin into the lens through the flexes in 4 of 4 takes, which the owner called creepy and not the heat we want. With the eyes on his own chest, the mouth closed and the lens only in the final second, Take 5 read as self-admiration and then a smouldering look, and he rated it far better.
+- **Never write the face as a state.** No grinning, smirking, brooding, heavy-lidded, and no expression attached to a hold. Write the mouth as closed ("his face calm, mouth closed") in every phase where he works. When he reaches the lens, the most the face does is "the corner of his mouth lifts slightly, lips closed". "Smile" or "smirk" anywhere draws a grin. A break is a physical event that decays (he shakes out his arms).
 - **No breathing, in the picture or the sound.** H3 draws the audio with the picture, so a breath anywhere moves his mouth: a written "huffs a breath out" plus breath sounds in the soundscape drew heavy open-mouth breathing, the mouth opening and closing through the take, in 2 of 4 takes (14 to 15 Oct 2026, Equinox), and the owner rated it a fault members notice. No breath, gasp, pant, sigh or exhale in any phase, no breath sound in any soundscape, no wiping sweat from the brow as a mood beat.
 - **No invitation to cut.** Never end on a glance toward, a reach for, or a step toward something outside the frame, and never name a nearby object in the closing sentence. The close is a held state inside the frame.
 - **Present tense, concrete physical actions only.** Subject's own left and right. No metaphor, no atmosphere, no words that name the medium ("the clip," "the frame," "we see") beyond the two tested phrase and end-hold strings.
