@@ -1,6 +1,6 @@
 # CHORE_057 — Autopilot stops at two fives
 
-**Status:** Done (owner's decision, 2026-10-26)
+**Status:** Withdrawn (owner, 2026-10-26: "disregard that rule… one day I will ask that from you but right now we are still fine tuning things"). The skill line was removed the same day.
 
 ## Summary
 
