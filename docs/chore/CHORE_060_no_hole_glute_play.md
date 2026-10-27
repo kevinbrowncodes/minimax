@@ -14,6 +14,7 @@ The owner (2026-10-27): MiniMax struggles to render it; no glimpse in any film u
 
 - [x] The back-scene paragraph, the pose vocabulary, the fail-fast line, the shot-list column and final-check items 8 and 20 in the AMG skill; build bumped.
 - [x] The anatomy row and the description in the script-supervisor skill.
+- [x] Revised the same evening (owner): the allowed moves are examples, not a menu; every back scene invents at least one glute beat from its own keyframe, and the variety review flags any glute move from the last two films (Build 2026-10-27-2000).
 
 ## Testing
 
