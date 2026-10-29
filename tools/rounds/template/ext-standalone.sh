@@ -15,12 +15,14 @@ anchor_args=(); case "$LABEL" in *-3) anchor_args=(--no-anchor) ;; esac
 [ "${UNPIN_MIDDLE:-1}" = 1 ] && anchor_args=(--no-anchor)
 # Hand-over length (owner 2026-10-19 A/B): frames of the previous shot the extension continues from; default 90 (3.75 s, STORY_080); the adapter accepts 22, 39, 56 or 90.
 OVERLAP="${OVERLAP:-90}"
+# EPIC_014 / STORY_081: REF_IMAGE=<ComfyUI input name> sends the scene's keyframe as a reference picture (<Picture 1>) with this shot; empty = off.
+ref_args=(); [ -n "${REF_IMAGE:-}" ] && ref_args=(--ref-image "$REF_IMAGE")
 # Shot retry (CHORE_063): retry.sh bumps retry-<label>-<seed>.n; each attempt samples on a new seed, files keep the take's seed.
 ATTEMPT=$(cat "retry-${LABEL}-${SEED}.n" 2>/dev/null || echo 0); SAMPLE_SEED=$(( SEED + 7919 * ATTEMPT ))
 START=$(date -u +%FT%TZ); T0=$(date +%s)
 "$ROOT/spark/comfyui/memwatch.sh" "mem-$LABEL-$SEED.log" 5 2>/dev/null & MEMPID=$!
 PID=$(python3 extend.py --label "$LABEL" --source "video/$(basename "$SRC")" --frames "$FRAMES" --prompt-file "$PROMPT" \
-      --seed "$SEED" --sample-seed "$SAMPLE_SEED" --overlap "$OVERLAP" --standalone "${anchor_args[@]}" --steps "$STEPS" --sampler "$SAMPLER" --scheduler "$SCHED" "${unet_args[@]}" "${lora_args[@]}" --url "$C" --dump "graph-$LABEL-$SEED.json" 2>"graph-$LABEL-$SEED.err") \
+      --seed "$SEED" --sample-seed "$SAMPLE_SEED" --overlap "$OVERLAP" --standalone "${anchor_args[@]}" "${ref_args[@]}" --steps "$STEPS" --sampler "$SAMPLER" --scheduler "$SCHED" "${unet_args[@]}" "${lora_args[@]}" --url "$C" --dump "graph-$LABEL-$SEED.json" 2>"graph-$LABEL-$SEED.err") \
   || { kill "$MEMPID" 2>/dev/null; echo "$START $LABEL seed=$SEED — refused: $(head -c 300 "graph-$LABEL-$SEED.err")" >> run.log; exit 1; }
 echo "$START $LABEL seed=$SEED prompt=${PID:0:8} submitted (attempt $ATTEMPT, +10 s standalone of $(basename "$SRC"), $FRAMES frames, overlap $OVERLAP)" >> run.log
 while true; do

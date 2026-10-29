@@ -12,6 +12,7 @@ p.add_argument("--overlap", type=int, default=90); p.add_argument("--no-anchor",
 p.add_argument("--lora", action="append", default=[]); p.add_argument("--unet", default=None)
 p.add_argument("--steps", type=int, default=20); p.add_argument("--sampler", default="res_multistep"); p.add_argument("--scheduler", default="simple")
 p.add_argument("--standalone", action="store_true"); p.add_argument("--url", default="http://127.0.0.1:8189"); p.add_argument("--dump", default=None); p.add_argument("--no-post", action="store_true")
+p.add_argument("--ref-image", default=None, help="EPIC_014 / STORY_081: a ComfyUI input name; the scene keyframe rides as a reference picture (<Picture 1>) with this shot")
 a = p.parse_args()
 here = os.path.dirname(os.path.abspath(__file__))
 template = json.load(open(os.path.join(here, "../../spark/comfyui/h3_t2v_prompt.json")))
@@ -44,6 +45,15 @@ if prev != "unet":
         if k.startswith("lora_"): continue
         for key, val in node["inputs"].items():
             if isinstance(val, list) and len(val) == 2 and val[0] == "unet": node["inputs"][key] = [prev, 0]
+if a.ref_image:
+    # EPIC_014 / STORY_081: the scene's keyframe rides as a REFERENCE picture (MiniMaxH3ReferenceToVideo, <Picture 1>) beside the
+    # masked prefix and the end anchor. Only `cond` changes: the same clip/vae/prompt/size/length, plus the picture in slot 0 at
+    # `match` (down-scaling only; our keyframes are already the shot's size). The anchor (when on) and the guider still read cond,
+    # and the sampler still reads the masked latent, never cond's own.
+    c = g["cond"]["inputs"]
+    g["ref_image"] = {"class_type": "LoadImage", "inputs": {"image": a.ref_image}}
+    g["cond"] = {"class_type": "MiniMaxH3ReferenceToVideo", "inputs": {"clip": c["clip"], "vae": c["vae"], "prompt": c["prompt"], "width": c["width"], "height": c["height"], "length": c["length"],
+                                                                     "ref_image_size": "match", "ref_images.ref_image_0": ["ref_image", 0]}}
 if a.standalone:
     # Each segment emits ONLY its own new frames (new_frames already drops the 39-frame overlap, new_audio the 1.625 s).
     # The join to one long file is what made peak memory climb with total length; the files concat losslessly instead.

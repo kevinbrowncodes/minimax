@@ -29,6 +29,9 @@ if ls "$OUT"/__ROUND__-"$L"*-"$SEED".mp4 "$OUT"/__ROUND__-"$L"-"$SEED".mp4 >/dev
   log "$L seed $SEED: a final already exists — refusing to re-join (would duplicate, not redraw)"; exit 0
 fi
 log "=== $L seed $SEED  loras=$LORAS  unet=$UNET  steps=$STEPS  $SAMPLER/$SCHED  prompts=S1-${SEGS}$VAR"
+# EPIC_014 / STORY_081: the scene's keyframe (image.txt) rides as a reference picture with every extension shot. CHORE_066 (owner,
+# 2026-10-29 13:00): ON by default — row 1 held the chest at +2.6 min per shot; REF=0 turns it off for an A/B.
+[ "${REF:-1}" = 1 ] && export REF_IMAGE="$(cat image.txt)" && log "$L seed $SEED: reference picture $REF_IMAGE in shots 2-$SEGS"
 [ -n "$(seg_file "${L}-1")" ] && log "$L seed $SEED: seg 1 already drawn — resuming" || SECONDS_LEN=10 ./draw.sh "${L}-1" "prompts/S1$VAR.txt" "$SEED" "$LORAS" "$UNET" "$STEPS" "$SAMPLER" "$SCHED" \
   || { log "$L seg1 FAILED"; exit 1; }
 for n in $(seq 2 "$SEGS"); do
