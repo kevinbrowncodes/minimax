@@ -8,3 +8,5 @@ The scripts each round folder under `test/` runs on the Spark, kept here once (C
 How a round is run and watched is the `script-supervisor` skill (`.claude/skills/script-supervisor/`). Round folders, videos and models stay untracked.
 
 Switches a running round reads: `touch STOP` ends after the take in progress; `s2-aligned.flag` (with `keyframes/scene-2.png`) adds scene 2 and alternates; `s2-only.flag` draws scene 2 only. `AUDIO_FREE_SECONDS` (default 0.3, BUG_014) is passed by extend.py to every extension.
+
+`patch-blend.sh <upscaled> <original> <out> <x> "<t:y ...>" [w] [h]` (CHORE_061) — keeps an upscaled take but shows the original through a small moving, feathered patch (the upscaler draws the hole as a stitched slit; the original draws it naturally). Read the hole's path off 0.25–0.5 s grid frames first.
