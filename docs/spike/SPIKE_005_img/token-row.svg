@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="430" viewBox="0 0 960 430" font-family="Helvetica, Arial, sans-serif">
+  <rect width="960" height="430" fill="#ffffff"/>
+  <text x="24" y="34" font-size="20" font-weight="bold" fill="#1a1a1a">One extension shot, as the model sees it: a single row of tokens</text>
+  <text x="24" y="58" font-size="13" fill="#555">Left to right is the order inside the row. Widths are rough, not to scale (the video is ~85% of the row).</text>
+
+  <!-- today -->
+  <text x="24" y="100" font-size="15" font-weight="bold" fill="#1a1a1a">Today (shots 2–3)</text>
+  <rect x="24"  y="112" width="120" height="56" fill="#cfd8e3" stroke="#333"/>
+  <text x="84"  y="136" font-size="13" text-anchor="middle">Text</text>
+  <text x="84"  y="154" font-size="11" text-anchor="middle">the prompt</text>
+  <rect x="144" y="112" width="70" height="56" fill="#9e9e9e" stroke="#333"/>
+  <text x="179" y="136" font-size="12" text-anchor="middle">End</text>
+  <text x="179" y="152" font-size="11" text-anchor="middle">anchor</text>
+  <rect x="214" y="112" width="60" height="56" fill="#b39ddb" stroke="#333"/>
+  <text x="244" y="144" font-size="12" text-anchor="middle">Audio</text>
+  <rect x="274" y="112" width="230" height="56" fill="#9e9e9e" stroke="#333"/>
+  <text x="389" y="136" font-size="13" text-anchor="middle">Video: kept 90 frames</text>
+  <text x="389" y="154" font-size="11" text-anchor="middle">end of the previous shot (3.75 s)</text>
+  <rect x="504" y="112" width="430" height="56" fill="#ffb74d" stroke="#333"/>
+  <text x="719" y="136" font-size="13" text-anchor="middle">Video: new frames</text>
+  <text x="719" y="154" font-size="11" text-anchor="middle">drawn from noise, 10 s</text>
+
+  <!-- with ref -->
+  <text x="24" y="214" font-size="15" font-weight="bold" fill="#1a1a1a">With the keyframe as a reference (SPIKE_005)</text>
+  <rect x="24"  y="226" width="80" height="56" fill="#cfd8e3" stroke="#333"/>
+  <text x="64"  y="250" font-size="13" text-anchor="middle">Text</text>
+  <text x="64"  y="268" font-size="11" text-anchor="middle">the prompt</text>
+  <rect x="104" y="226" width="70" height="56" fill="#81c784" stroke="#333" stroke-width="2.5"/>
+  <text x="139" y="246" font-size="11" text-anchor="middle">"&lt;Picture 1&gt;:"</text>
+  <text x="139" y="262" font-size="11" text-anchor="middle">as Qwen</text>
+  <text x="139" y="276" font-size="11" text-anchor="middle">sees it</text>
+  <rect x="174" y="226" width="70" height="56" fill="#81c784" stroke="#333" stroke-width="2.5"/>
+  <text x="209" y="246" font-size="11" text-anchor="middle">Reference</text>
+  <text x="209" y="262" font-size="11" text-anchor="middle">keyframe</text>
+  <text x="209" y="276" font-size="11" text-anchor="middle">latent</text>
+  <rect x="244" y="226" width="60" height="56" fill="#9e9e9e" stroke="#333"/>
+  <text x="274" y="250" font-size="12" text-anchor="middle">End</text>
+  <text x="274" y="266" font-size="11" text-anchor="middle">anchor</text>
+  <rect x="304" y="226" width="50" height="56" fill="#b39ddb" stroke="#333"/>
+  <text x="329" y="258" font-size="12" text-anchor="middle">Audio</text>
+  <rect x="354" y="226" width="200" height="56" fill="#9e9e9e" stroke="#333"/>
+  <text x="454" y="250" font-size="13" text-anchor="middle">Video: kept 90 frames</text>
+  <text x="454" y="268" font-size="11" text-anchor="middle">unchanged</text>
+  <rect x="554" y="226" width="380" height="56" fill="#ffb74d" stroke="#333"/>
+  <text x="744" y="250" font-size="13" text-anchor="middle">Video: new frames</text>
+  <text x="744" y="268" font-size="11" text-anchor="middle">now drawn while looking at the keyframe</text>
+
+  <!-- legend -->
+  <rect x="24"  y="318" width="22" height="16" fill="#9e9e9e" stroke="#333"/>
+  <text x="54"  y="331" font-size="13">fixed: never redrawn, read at every step</text>
+  <rect x="24"  y="344" width="22" height="16" fill="#ffb74d" stroke="#333"/>
+  <text x="54"  y="357" font-size="13">redrawn: denoised over the 8 steps (the only part that becomes new video)</text>
+  <rect x="24"  y="370" width="22" height="16" fill="#81c784" stroke="#333" stroke-width="2.5"/>
+  <text x="54"  y="383" font-size="13">new with SPIKE_005: ≈ 1,000 tokens in the text span + ≈ 1,000 as a reference (≈ 2–3% of the row)</text>
+  <text x="24"  y="414" font-size="12" fill="#555">Attention has no mask (model.py:199): every token reads every other token, so the new frames can look at the keyframe at every step.</text>
+</svg>

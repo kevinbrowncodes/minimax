@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="380" viewBox="0 0 960 380" font-family="Helvetica, Arial, sans-serif">
+  <rect width="960" height="380" fill="#ffffff"/>
+  <text x="24" y="34" font-size="20" font-weight="bold" fill="#1a1a1a">Where each input sits in time (the model's position axis)</text>
+  <text x="24" y="58" font-size="13" fill="#555">Each token carries a position (time, height, width). Time is what separates "a frame at 3 s" from "something to draw from".</text>
+
+  <!-- axis -->
+  <line x1="60" y1="210" x2="920" y2="210" stroke="#333" stroke-width="2"/>
+  <polygon points="920,204 932,210 920,216" fill="#333"/>
+  <text x="936" y="214" font-size="12">time</text>
+
+  <!-- text region -->
+  <rect x="60" y="190" width="120" height="40" fill="#cfd8e3" stroke="#333"/>
+  <text x="120" y="215" font-size="12" text-anchor="middle">text positions</text>
+
+  <!-- ref slot -->
+  <rect x="180" y="190" width="40" height="40" fill="#81c784" stroke="#333" stroke-width="2.5"/>
+  <line x1="200" y1="190" x2="200" y2="120" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="200" y="96" font-size="13" text-anchor="middle" font-weight="bold" fill="#2e7d32">Reference</text>
+  <text x="200" y="112" font-size="11" text-anchor="middle" fill="#2e7d32">one slot BEFORE the clip</text>
+
+  <!-- clip -->
+  <rect x="220" y="190" width="200" height="40" fill="#9e9e9e" stroke="#333"/>
+  <text x="320" y="215" font-size="12" text-anchor="middle">kept 90 frames</text>
+  <rect x="420" y="190" width="480" height="40" fill="#ffb74d" stroke="#333"/>
+  <text x="660" y="215" font-size="12" text-anchor="middle">new frames</text>
+
+  <!-- anchor -->
+  <line x1="896" y1="190" x2="896" y2="120" stroke="#333" stroke-width="1.5"/>
+  <text x="890" y="96" font-size="13" text-anchor="end" font-weight="bold">End anchor (keyframe-style)</text>
+  <text x="890" y="112" font-size="11" text-anchor="end">sits AT the last frame's time</text>
+
+  <!-- ticks -->
+  <text x="220" y="250" font-size="11" text-anchor="middle">0 s</text>
+  <text x="420" y="250" font-size="11" text-anchor="middle">3.75 s</text>
+  <text x="900" y="250" font-size="11" text-anchor="middle">≈ 14 s</text>
+
+  <text x="24" y="290" font-size="13" fill="#1a1a1a"><tspan font-weight="bold">A keyframe</tspan> shares the clip's own grid and time, so it says "the video must look exactly like this at this moment" (shot 1's first frame, every end anchor).</text>
+  <text x="24" y="312" font-size="13" fill="#1a1a1a"><tspan font-weight="bold">A reference</tspan> sits outside the clip's time and on its own grid at its own size, so it says "draw from this" without fixing any frame.</text>
+  <text x="24" y="334" font-size="13" fill="#1a1a1a">Both are encoded the same way and pinned at the clean timestep (0.999): position is the only thing that tells them apart.</text>
+  <text x="24" y="362" font-size="12" fill="#555">Source: PackedLayout, comfy/ldm/minimax/model.py:350–470; VISUAL_COND_TIMESTEP, model.py:32; seg_t, model.py:634–637.</text>
+</svg>
