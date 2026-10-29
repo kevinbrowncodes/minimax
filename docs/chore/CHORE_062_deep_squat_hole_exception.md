@@ -14,6 +14,7 @@ The original render draws the hole naturally in the deep wide squat: waterfall s
 
 - [x] The back-scene paragraph, the shot-list column and final-check item 8 in the AMG skill; build bumped.
 - [x] The anatomy row in the script-supervisor skill.
+- [x] Same morning (owner): vary the reveal — the squat is the proven reveal, not the only one; a back scene may try a new stance-based reveal from its keyframe as an experiment, judged on full-res anatomy, back to the squat after two anatomy fails; one reveal per back scene; the variety review flags a reveal from the last two films (Build 2026-10-29-1030).
 
 ## Testing
 
