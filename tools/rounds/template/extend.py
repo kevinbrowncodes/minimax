@@ -7,7 +7,7 @@
 import argparse, json, subprocess, sys, os, urllib.request
 p = argparse.ArgumentParser()
 p.add_argument("--label", required=True); p.add_argument("--source", required=True); p.add_argument("--frames", type=int, required=True)
-p.add_argument("--prompt-file", required=True); p.add_argument("--seed", type=int, required=True); p.add_argument("--seconds", type=int, default=10)
+p.add_argument("--prompt-file", required=True); p.add_argument("--seed", type=int, required=True); p.add_argument("--sample-seed", type=int, default=None); p.add_argument("--seconds", type=int, default=10)
 p.add_argument("--overlap", type=int, default=90); p.add_argument("--no-anchor", action="store_true")
 p.add_argument("--lora", action="append", default=[]); p.add_argument("--unet", default=None)
 p.add_argument("--steps", type=int, default=20); p.add_argument("--sampler", default="res_multistep"); p.add_argument("--scheduler", default="simple")
@@ -21,7 +21,7 @@ payload = {
     "template": template,
     "request": {"prompt": prompt, "ratio": "16:9", "resolution": "768P", "durationSeconds": a.seconds, "model": "minimax-h3", "continueFrom": "spike", "overlapFrames": a.overlap},
     "images": [],
-    "options": {"seed": a.seed, "filenamePrefix": prefix,
+    "options": {"seed": a.sample_seed if a.sample_seed is not None else a.seed, "filenamePrefix": prefix,
                 "continuation": {"file": a.source, "frames": a.frames, "overlapFrames": a.overlap, "prompt": prompt, "anchorEnd": not a.no_anchor, "audioFreeSeconds": float(os.environ.get("AUDIO_FREE_SECONDS", "0.3"))}},
 }
 js = '''const { buildGraph } = await import("/adapter/src/mapping.ts");

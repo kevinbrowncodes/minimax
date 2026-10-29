@@ -10,6 +10,14 @@ IMG1=$(up scene-1.png) || { log "upload failed"; exit 1; }
 log "starts — scene 1 until scene 2 is aligned, then alternating; touch STOP to end"
 i=0
 while [ ! -f STOP ]; do
+  # Shot retry (CHORE_063): a take queued by retry.sh resumes first; its kept shots are skipped, the failed one is redrawn.
+  if [ -s retry.queue ]; then
+    read -r RL RS < retry.queue; sed -i 1d retry.queue
+    [ "$RL" = B ] && RV="-b" || RV=""
+    log "retry: resuming $RL $RS"
+    SEGS=3 ./chain.sh "$RL" "$RS" "$P2:0.45,$MA:0.4" "$EM" 8 res_multistep simple "$RV" || log "$RL $RS failed"
+    continue
+  fi
   if [ -f s2-aligned.flag ] && [ -f keyframes/scene-2.png ] && { [ -f s2-only.flag ] || [ $((i % 2)) = 1 ]; }; then
     IMG2=$(up scene-2.png) || { log "scene-2 upload failed"; exit 1; }; L=B; IMG=$IMG2; VAR="-b"
   else L=K; IMG=$IMG1; VAR=""; fi
