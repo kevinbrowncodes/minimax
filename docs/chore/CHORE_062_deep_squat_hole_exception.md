@@ -19,3 +19,4 @@ The original render draws the hole naturally in the deep wide squat: waterfall s
 ## Testing
 
 - **Unit / integration / e2e:** not applicable; skills with no runtime code. The pre-push hook still runs the full gate.
+- [x] Same morning (owner): the ban is lifted — spreads, pulls, bends and released squeezes are allowed again; every reveal must read circular, and a vertical slit sends the take to Outtakes (checked on the original render at full res; the blend only fixes the upscale). Build 2026-10-29-1045.
