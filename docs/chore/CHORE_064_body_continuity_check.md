@@ -1,10 +1,10 @@
-# CHORE_064 — Check his body against the keyframe
+# CHORE_064 — Watch for body drift
 
 **Status:** Done (owner's decision, 2026-10-29)
 
 ## Summary
 
-`.claude/skills/script-supervisor/SKILL.md` gets a "Body continuity" row. At the start, each join, every turn that shows a new side, and the end, I crop the chest, abs, back, arms and face at full resolution and compare them with the scene's keyframe. Anything on his body the keyframe doesn't have is a fault: hair that grows in, a new mole, dot or beauty mark, a new tattoo, scar or vein pattern, a change of skin tone. A clear case is retried or cancelled, and I tell the owner where and when.
+`.claude/skills/script-supervisor/SKILL.md` gets a "Body drift" row (named by the owner as the twin of face drift). At the start, each join, every turn that shows a new side, and the end, I crop the chest, abs, back, arms and face at full resolution and compare them with the scene's keyframe. Anything on his body the keyframe doesn't have is a fault: hair that grows in, a new mole, dot or beauty mark, a new tattoo, scar or vein pattern, a change of skin tone. A clear case is retried or cancelled, and I tell the owner where and when.
 
 ## Why
 
