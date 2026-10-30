@@ -5,7 +5,7 @@ The scripts each round folder under `test/` runs on the Spark, kept here once (C
 - `template/` — the runner (chain.sh with the join check, draw.sh, ext-standalone.sh, extend.py, graph.py, upload.sh, rotate.sh, cancel.sh), the page helpers (addcard.py, addouttake.py), strip.py, size.txt, and the two blind rating pages. `__ROUND__`, `__TITLE__`, `__COLLF__`/`__COLLB__`, `__SUB__`, `__INTRO__` are filled per round.
 - `new-round.sh test/<round> <name> "<Title>"` — sets up a round folder from the template; never overwrites existing files.
 
-How a round is run and watched is the `script-supervisor` skill (`.claude/skills/script-supervisor/`). Round folders, videos and models stay untracked.
+How a round is run and watched is the `assistant-director` skill (`.claude/skills/assistant-director/`). Round folders, videos and models stay untracked.
 
 Switches a running round reads: `touch STOP` ends after the take in progress; `s2-aligned.flag` (with `keyframes/scene-2.png`) adds scene 2 and alternates; `s2-only.flag` draws scene 2 only. `AUDIO_FREE_SECONDS` (default 0.3, BUG_014) is passed by extend.py to every extension.
 

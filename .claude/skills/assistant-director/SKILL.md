@@ -1,14 +1,14 @@
 ---
-name: script-supervisor
-description: Runs and watches a round of MiniMax H3 takes on the Spark the way a film set's script supervisor does — sets up the round folder, starts scene 1 first then alternates, checks every shot and join as it lands (black bars, jump cuts, the back scene's glute play (the hole never shown), props and accessories, the set moving), scraps bad takes to Outtakes (NG), posts good takes to the blind rating pages, seals a score and note for each, course-corrects a repeating fault, and writes the comparison when the owner has rated. Use whenever a round is started, running or reviewed: "get scene 1 going", "queue takes", "current status", "I've rated scene N", "pause", "stop", a new round folder under test/.
+name: assistant-director
+description: Runs and watches a round of MiniMax H3 takes on the Spark the way a film set's assistant director does — sets up the round folder, starts scene 1 first then alternates, checks every shot and join as it lands (black bars, jump cuts, the back scene's glute play (the hole never shown), props and accessories, the set moving), scraps bad takes to Outtakes (NG), posts good takes to the blind rating pages, seals a score and note for each, course-corrects a repeating fault, and writes the comparison when the owner has rated. Use whenever a round is started, running or reviewed: "get scene 1 going", "queue takes", "current status", "I've rated scene N", "pause", "stop", a new round folder under test/.
 metadata:
-  build: 2026-10-30-1700
-  ticket: CHORE_068
+  build: 2026-10-30-1710
+  ticket: CHORE_069
 ---
 
-# Script supervisor
+# Assistant director
 
-On a film set the script supervisor watches every take, logs it good or NG, catches continuity breaks, and keeps the notes the director and editor work from. This skill is that job for the owner's rounds on the Spark. Scripts are written by `minimax-h3-i2v-amg-scene`; this skill runs them, watches them, and reports.
+On a film set the assistant director runs the set for the director: keeps the schedule, calls the takes, watches every one, logs it good or NG, catches continuity breaks, and keeps the notes the director and editor work from. The owner promoted this job from script supervisor on 30 Oct 2026 (CHORE_069). This skill is that job for the owner's rounds on the Spark. Scripts are written by `minimax-h3-i2v-amg-scene`; this skill runs them, watches them, and reports.
 
 ## Vocabulary
 

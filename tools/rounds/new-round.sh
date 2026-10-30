@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Set up a round folder from the shared template (script-supervisor skill, CHORE_039).
+# Set up a round folder from the shared template (assistant-director skill, CHORE_039/069).
 #   tools/rounds/new-round.sh test/<YY-MM-DD-HHMM-name> <name> "<Title>"
 # Copies the runner scripts and the two rating pages into the round folder with the round name filled in. Existing
 # files in the round folder are never overwritten.
