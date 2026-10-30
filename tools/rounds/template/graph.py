@@ -11,6 +11,7 @@ p.add_argument("--seed", type=int, required=True); p.add_argument("--steps", typ
 p.add_argument("--sampler", default="res_multistep"); p.add_argument("--scheduler", default="simple")
 p.add_argument("--unet", default=None); p.add_argument("--lora", action="append", default=[])
 p.add_argument("--url", default="http://127.0.0.1:8189"); p.add_argument("--dump", default=None); p.add_argument("--no-post", action="store_true")
+p.add_argument("--ref-image2", default=None, help="CHORE_068: a ComfyUI input name; scene 1's arms-up frame rides as a second reference picture (<Picture 2>)")
 a = p.parse_args()
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -30,6 +31,17 @@ g["save"]["inputs"]["filename_prefix"] = prefix
 # the first frame (the owner's photo, uploaded once to the container's input/)
 g["first_frame"] = {"class_type": "LoadImage", "inputs": {"image": a.image}}
 g["cond"]["inputs"]["first_frame"] = ["first_frame", 0]
+if a.ref_image2:
+    # CHORE_068: a fresh shot that also carries scene 1's arms-up frame. The image-to-video node has no reference slots, so
+    # cond becomes the reference node with the keyframe as <Picture 1> and the arms frame as <Picture 2>, and the keyframe is
+    # pinned at frame 0 with MiniMaxH3AddGuide (the stronger "lands on it" path the first frame used). The guider takes the
+    # guided conditioning; the sampler still reads cond's own empty latent.
+    c = g["cond"]["inputs"]
+    g["ref_image2"] = {"class_type": "LoadImage", "inputs": {"image": a.ref_image2}}
+    g["cond"] = {"class_type": "MiniMaxH3ReferenceToVideo", "inputs": {"clip": c["clip"], "vae": c["vae"], "prompt": c["prompt"], "width": c["width"], "height": c["height"], "length": c["length"],
+                                                                     "ref_image_size": "match", "ref_images.ref_image_0": ["first_frame", 0], "ref_images.ref_image_1": ["ref_image2", 0]}}
+    g["first_guide"] = {"class_type": "MiniMaxH3AddGuide", "inputs": {"positive": ["cond", 0], "vae": c["vae"], "latent": ["cond", 1], "image": ["first_frame", 0], "frame_idx": 0}}
+    g["guider"]["inputs"]["conditioning"] = ["first_guide", 0]
 # the poster and the shot-change measure, as the adapter's buildGraph adds them
 g["poster_frame"] = {"class_type": "ImageFromBatch", "inputs": {"image": ["decode_video", 0], "batch_index": 0, "length": 1}}
 g["poster"] = {"class_type": "SaveImage", "inputs": {"images": ["poster_frame", 0], "filename_prefix": prefix + "_poster"}}

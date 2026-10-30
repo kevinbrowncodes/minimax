@@ -20,7 +20,9 @@ while [ ! -f STOP ]; do
   fi
   if [ -f s2-aligned.flag ] && [ -f keyframes/scene-2.png ] && { [ -f s2-only.flag ] || [ $((i % 2)) = 1 ]; }; then
     IMG2=$(up scene-2.png) || { log "scene-2 upload failed"; exit 1; }; L=B; IMG=$IMG2; VAR="-b"
-  else L=K; IMG=$IMG1; VAR=""; fi
+    # CHORE_068: scene 1's arms-up frame rides with scene 2's extensions when the round has one.
+    rm -f image2.txt; [ -f keyframes/scene-2-arms.png ] && { up scene-2-arms.png > image2.txt || { log "arms picture upload failed"; exit 1; }; }
+  else L=K; IMG=$IMG1; VAR=""; rm -f image2.txt; fi
   s=$(( (RANDOM << 15 | RANDOM) )); echo "$L $s" >> seeds-rotate.txt
   echo "$IMG" > image.txt
   SEGS=3 ./chain.sh "$L" "$s" "$P2:0.45,$MA:0.4" "$EM" 8 res_multistep simple "$VAR" || log "$L $s failed"

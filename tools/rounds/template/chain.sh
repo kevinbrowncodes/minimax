@@ -32,6 +32,10 @@ log "=== $L seed $SEED  loras=$LORAS  unet=$UNET  steps=$STEPS  $SAMPLER/$SCHED 
 # EPIC_014 / STORY_081: the scene's keyframe (image.txt) rides as a reference picture with every extension shot. CHORE_066 (owner,
 # 2026-10-29 13:00): ON by default — row 1 held the chest at +2.6 min per shot; REF=0 turns it off for an A/B.
 [ "${REF:-1}" = 1 ] && export REF_IMAGE="$(cat image.txt)" && log "$L seed $SEED: reference picture $REF_IMAGE in shots 2-$SEGS"
+# CHORE_068 (owner, 2026-10-30): scene 2 also carries scene 1's arms-up frame (image2.txt, written by rotate.sh) so the armpit
+# hair holds; on whenever the file is there, REF2=0 turns it off alone.
+unset REF_IMAGE2; [ "${REF:-1}" = 1 ] && [ "${REF2:-1}" = 1 ] && [ -s image2.txt ] && export REF_IMAGE2="$(cat image2.txt)" \
+  && log "$L seed $SEED: second picture $REF_IMAGE2 in shots 1-$SEGS"
 [ -n "$(seg_file "${L}-1")" ] && log "$L seed $SEED: seg 1 already drawn — resuming" || SECONDS_LEN=10 ./draw.sh "${L}-1" "prompts/S1$VAR.txt" "$SEED" "$LORAS" "$UNET" "$STEPS" "$SAMPLER" "$SCHED" \
   || { log "$L seg1 FAILED"; exit 1; }
 for n in $(seq 2 "$SEGS"); do

@@ -13,11 +13,13 @@ read -r WIDTH HEIGHT < size.txt     # written by matrix.sh from the photo's own 
 IMAGE="$(cat image.txt)"            # the name ComfyUI gave the uploaded photo
 lora_args=(); if [ "$LORAS" != "-" ]; then IFS=, read -ra specs <<< "$LORAS"; for s in "${specs[@]}"; do lora_args+=(--lora "$s"); done; fi
 unet_args=(); [ "$UNET" = "-" ] || unet_args=(--unet "$UNET")
+# CHORE_068: REF_IMAGE2=<ComfyUI input name> (exported by chain.sh for scene 2) adds scene 1's arms-up frame as <Picture 2>.
+ref_args=(); [ -n "${REF_IMAGE2:-}" ] && ref_args=(--ref-image2 "$REF_IMAGE2")
 START=$(date -u +%FT%TZ); T0=$(date +%s)
 MEMLOG="mem-$LABEL-$SEED.log"
 "$ROOT/spark/comfyui/memwatch.sh" "$MEMLOG" 5 2>/dev/null & MEMPID=$!
 PID=$(python3 graph.py --label "$LABEL" --prompt-file "$PROMPT_FILE" --image "$IMAGE" --width "$WIDTH" --height "$HEIGHT" --seconds "${SECONDS_LEN:-5}" --seed "$SEED" \
-      --steps "$STEPS" --sampler "$SAMPLER" --scheduler "$SCHEDULER" "${unet_args[@]}" "${lora_args[@]}" --url "$C" --dump "graph-$LABEL-$SEED.json" 2>graph-$LABEL-$SEED.err) \
+      --steps "$STEPS" --sampler "$SAMPLER" --scheduler "$SCHEDULER" "${unet_args[@]}" "${lora_args[@]}" "${ref_args[@]}" --url "$C" --dump "graph-$LABEL-$SEED.json" 2>graph-$LABEL-$SEED.err) \
   || { kill "$MEMPID" 2>/dev/null; echo "$START $LABEL seed=$SEED — ComfyUI refused the graph: $(head -c 300 "graph-$LABEL-$SEED.err")" >> run.log; echo "| $LABEL | $(basename "$PROMPT_FILE" .txt) | $SEED | — | refused | — | — | — | — |" >> run.md; exit 1; }
 echo "$START $LABEL seed=$SEED prompt=${PID:0:8} submitted (loras: $LORAS; unet: $UNET; $STEPS $SAMPLER/$SCHEDULER)" >> run.log
 while true; do

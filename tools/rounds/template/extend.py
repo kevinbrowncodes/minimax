@@ -13,7 +13,9 @@ p.add_argument("--lora", action="append", default=[]); p.add_argument("--unet", 
 p.add_argument("--steps", type=int, default=20); p.add_argument("--sampler", default="res_multistep"); p.add_argument("--scheduler", default="simple")
 p.add_argument("--standalone", action="store_true"); p.add_argument("--url", default="http://127.0.0.1:8189"); p.add_argument("--dump", default=None); p.add_argument("--no-post", action="store_true")
 p.add_argument("--ref-image", default=None, help="EPIC_014 / STORY_081: a ComfyUI input name; the scene keyframe rides as a reference picture (<Picture 1>) with this shot")
+p.add_argument("--ref-image2", default=None, help="CHORE_068: a ComfyUI input name; scene 1's arms-up frame rides as a second reference picture (<Picture 2>)")
 a = p.parse_args()
+if a.ref_image2 and not a.ref_image: p.error("--ref-image2 needs --ref-image (the slots fill in order)")
 here = os.path.dirname(os.path.abspath(__file__))
 template = json.load(open(os.path.join(here, "../../spark/comfyui/h3_t2v_prompt.json")))
 prompt = open(a.prompt_file, encoding="utf-8").read().strip()
@@ -54,6 +56,10 @@ if a.ref_image:
     g["ref_image"] = {"class_type": "LoadImage", "inputs": {"image": a.ref_image}}
     g["cond"] = {"class_type": "MiniMaxH3ReferenceToVideo", "inputs": {"clip": c["clip"], "vae": c["vae"], "prompt": c["prompt"], "width": c["width"], "height": c["height"], "length": c["length"],
                                                                      "ref_image_size": "match", "ref_images.ref_image_0": ["ref_image", 0]}}
+    if a.ref_image2:
+        # CHORE_068: scene 1's arms-up frame, cropped above the waistband, in slot 1 (<Picture 2>); `match` keeps its aspect.
+        g["ref_image2"] = {"class_type": "LoadImage", "inputs": {"image": a.ref_image2}}
+        g["cond"]["inputs"]["ref_images.ref_image_1"] = ["ref_image2", 0]
 if a.standalone:
     # Each segment emits ONLY its own new frames (new_frames already drops the 39-frame overlap, new_audio the 1.625 s).
     # The join to one long file is what made peak memory climb with total length; the files concat losslessly instead.

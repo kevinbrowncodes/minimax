@@ -17,6 +17,8 @@ anchor_args=(); case "$LABEL" in *-3) anchor_args=(--no-anchor) ;; esac
 OVERLAP="${OVERLAP:-90}"
 # EPIC_014 / STORY_081: REF_IMAGE=<ComfyUI input name> sends the scene's keyframe as a reference picture (<Picture 1>) with this shot; empty = off.
 ref_args=(); [ -n "${REF_IMAGE:-}" ] && ref_args=(--ref-image "$REF_IMAGE")
+# CHORE_068: REF_IMAGE2=<ComfyUI input name> adds scene 1's arms-up frame as a second picture (<Picture 2>); empty = off.
+[ -n "${REF_IMAGE:-}" ] && [ -n "${REF_IMAGE2:-}" ] && ref_args+=(--ref-image2 "$REF_IMAGE2")
 # Shot retry (CHORE_063): retry.sh bumps retry-<label>-<seed>.n; each attempt samples on a new seed, files keep the take's seed.
 ATTEMPT=$(cat "retry-${LABEL}-${SEED}.n" 2>/dev/null || echo 0); SAMPLE_SEED=$(( SEED + 7919 * ATTEMPT ))
 START=$(date -u +%FT%TZ); T0=$(date +%s)
