@@ -14,6 +14,11 @@ while [ ! -f STOP ]; do
   if [ -s retry.queue ]; then
     read -r RL RS < retry.queue; sed -i 1d retry.queue
     [ "$RL" = B ] && RV="-b" || RV=""
+    # BUG_015: a redraw carries its own scene's pictures, not the previous take's.
+    if [ "$RL" = B ]; then
+      up scene-2.png > image.txt || { log "scene-2 upload failed"; exit 1; }
+      rm -f image2.txt; [ -f keyframes/scene-2-arms.png ] && { up scene-2-arms.png > image2.txt || { log "arms picture upload failed"; exit 1; }; }
+    else echo "$IMG1" > image.txt; rm -f image2.txt; fi
     log "retry: resuming $RL $RS"
     SEGS=3 ./chain.sh "$RL" "$RS" "$P2:0.45,$MA:0.4" "$EM" 8 res_multistep simple "$RV" || log "$RL $RS failed"
     continue
